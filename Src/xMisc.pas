@@ -2829,6 +2829,9 @@ end;
 
 procedure TBaseProtocol.SendTRSMSG;
 begin
+   if ListBuf = nil then begin
+      ListBuf := TStringColl.Create;
+   end;
    ListBuf.Add('TRS ' + a + ' ' + c);
 end;
 
@@ -2836,13 +2839,13 @@ function TBaseProtocol.Compress;
 begin
    result := 1;
    try
-     if ZLibLoaded then begin
-        EnterCS(CS);
-        result := _compress(dest, res, src, len, 9);
-        LeaveCS(CS);
-     end;
+      if ZLibLoaded then begin
+         EnterCS(CS);
+         result := _compress(dest, res, src, len, 9);
+         LeaveCS(CS);
+      end;
    except
-     result := -1
+      result := -1
    end;
 end;
 
@@ -2850,13 +2853,13 @@ function TBaseProtocol.Uncompress;
 begin
    result := 1;
    try
-     if ZLibLoaded then begin
-        EnterCS(CS);
-        result := _uncompress(dest, res, src, len);
-        LeaveCS(CS);
-     end;
+      if ZLibLoaded then begin
+         EnterCS(CS);
+         result := _uncompress(dest, res, src, len);
+         LeaveCS(CS);
+      end;
    except
-     result := -1
+      result := -1
    end;
 end;
 
@@ -2876,31 +2879,31 @@ end;
 
 function poscn(c: char; const s: string; n: integer): integer;
 var
-  i: integer;
+   i: integer;
 begin
-  if n = 0 then  n := 1;
-  if n > 0 then begin
-     for i := 1 to length(s) do begin
-        if s[i] <> c then begin
-           dec(n);
-           result := i;
-           if n = 0 then begin
-              exit;
-           end;
-        end;
-     end;
-  end else begin
-     for i := length(s) downto 1 do begin
-        if s[i] <> c then begin
-           inc(n);
-           result := i;
-           if n = 0 then begin
-              exit;
-           end;
-        end;
-     end;
-  end;
-  poscn := 0;
+   if n = 0 then  n := 1;
+   if n > 0 then begin
+      for i := 1 to length(s) do begin
+         if s[i] <> c then begin
+            dec(n);
+            result := i;
+            if n = 0 then begin
+               exit;
+            end;
+         end;
+      end;
+   end else begin
+      for i := length(s) downto 1 do begin
+         if s[i] <> c then begin
+            inc(n);
+            result := i;
+            if n = 0 then begin
+               exit;
+            end;
+         end;
+      end;
+   end;
+   poscn := 0;
 end;
 
 const

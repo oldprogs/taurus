@@ -1536,6 +1536,7 @@ end;
 procedure DoneFidoOut;
 begin
    FreeObject(FidoOut);
+   FreeObject(AddrColl);
 end;
 
 constructor TLockFile.Create;

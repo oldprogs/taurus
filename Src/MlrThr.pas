@@ -2287,9 +2287,6 @@ var
             Exit;
          end;
       end else begin
-//         if p.FileSendDelayedBusy then p.FileSendDelayedBusy := False;
-//         if p.FileSendDelayedNoc  then p.FileSendDelayedNoc  := False;
-//         if p.FileSendDelayedBusy then p.FileSendDelayedFail := False;
          if TimerInstalled(p.LastTry) and not TimerExpired(p.LastTry) then begin
             if SC <> nil then begin
                ss := Format('%s - stand-off: %d minutes left.', [Addr2Str(p.Node.Addr), MaxD(1, (RemainingTimeSecs(p.LastTry) + 30) div 60)]);
@@ -3955,10 +3952,9 @@ end;
 
 function TFidoPoll.STryFail: string;
 begin
-   if (Typ = ptpManual) or (Typ = ptpImm) or (Typ = ptpBack) or (Typ = ptpNmIm) then
+   if (Typ = ptpManual) or (Typ = ptpImm) or (Typ = ptpBack) or (Typ = ptpNmIm) then begin
       Result := Format('%d+', [TrySessionAborted])
-   else
-   begin
+   end else begin
       Result := Format('%d/%d', [TrySessionAborted, inifile.FPFlags.Fail]);
    end;
 end;
@@ -4013,9 +4009,17 @@ begin
 end;
 
 procedure TFidoPoll.IncAbortedTries;
+var
+   s: string;
 begin
    Inc(TrySessionAborted);
    FidoPollsLog(Format('%s - session aborted [%s]', [Addr2Str(Node.Addr), STryFail]));
+   if (Typ = ptpTest) and (TrySessionAborted > 1) then begin
+      s := '';
+      SendTRSMSG(Self, 'NAK', s);
+      FidoPollsLog(s);
+      Typ := ptpOutb;
+   end;
 end;
 
 procedure TFidoPoll.IncBusyTries(const AReason: string);
@@ -5052,7 +5056,7 @@ const
    begin
       if ParseAddress(P.CustomInfo, a) then begin
          n := FindNode(a);
-         if n <> nil then begin
+         if (n <> nil) and (n.IPData <> nil) then begin
             InsertPoll(n, [osCrash], ptpTest);
             if MailerTransit.IndexOf(Self) = -1 then begin
                MailerTransit.Add(Self);
@@ -9146,14 +9150,17 @@ procedure TMailerThread.DoWZ;
    procedure FixTRS;
    var
       i: integer;
+      j: integer;
       p: TFidoPoll;
    begin
       EnterfidoPolls;
       for i := 0 to CollMax(FidoPolls) do begin
          p := FidoPolls[i];
-         if p.FileSendDelayedNoc then begin
+         if p.FileSendDelayedNoc or FidoOut.Paused(p.Node.Addr) then begin
             if SD.Prot.TRSList.Matched(Addr2Str(p.Node.Addr)) = -1 then begin
-               SD.Prot.TRSList.Ins(Addr2Str(p.Node.Addr));
+               if not SD.rmtAddrs.Search(@p.Node.Addr, j) then begin
+                  SD.Prot.TRSList.Ins(Addr2Str(p.Node.Addr));
+               end;
             end;
          end;
       end;
@@ -9459,7 +9466,7 @@ begin
                SD.Prot.FileSkip := True;
                SD.FileSkip := False
             end;
-            if IniFile.RequestTRS and (SD.Prot.ID = piBinkp) and (not SD.Prot.TransitRequested) then begin
+            if SD.PasswordProtected and IniFile.RequestTRS and (SD.Prot.ID = piBinkp) and (not SD.Prot.TransitRequested) then begin
                FixTRS;
             end;
             if SD.Prot.ID in [piRCC, piFTP, piHTTP, piSMTP, piPOP3, piGATE, piNNTP] then
@@ -14574,13 +14581,10 @@ begin
       if s <> '' then begin
          Result := ExtractWord(3, s, ['|']) + ' ' + ExtractWord(4, s, ['|']);
       end;
-   end else
-   begin
+   end else begin
       Result := SD.Station.Address;
-      for i := 0 to SD.AkaA.Count - 1 do
-      begin
-         if MatchMaskAddressListSingle(Addr, SD.AkaA[i]) then
-         begin
+      for i := 0 to SD.AkaA.Count - 1 do begin
+         if MatchMaskAddressListSingle(Addr, SD.AkaA[i]) then begin
             Result := SD.AkaB[i];
             if SD.UsedAKA <> Result then begin
                Log(ltInfo, 'Using AKAs: ' + Result);

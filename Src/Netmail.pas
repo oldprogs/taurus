@@ -169,12 +169,12 @@ begin
          FillChar(h.subject, SizeOf(h.subject), #0);
          if t <> '' then begin
             move(t[1], h.subject, Length(t));
+            n.Position := 0;
+            n.Write(h, SizeOf(h));
+            n.SaveToFile(m);
          end else begin
-            h.attr := h.attr and (not FileAttached);
+            DelFile('ClearAttach', m);
          end;
-         n.Position := 0;
-         n.Write(h, SizeOf(h));
-         n.SaveToFile(m);
       end;
       n.Free;
    end;
@@ -240,6 +240,7 @@ procedure UnpackPKT;
 var
    n: TNetmail;
    i: integer;
+   j: integer;
    m: TNetmailMSG;
    h: _fidomsgtype;
    s: TFileStream;
@@ -267,7 +268,11 @@ begin
       h.orig_net  := m.From.Net;
       h.dest_net  := m.Addr.Net;
       h.date_arrived := DateTimeToDosDateTime(Date + Time);
-      h.attr := m.Attr or KillSent or InTransit;
+      if not AddrColl.Search(@m.Addr, j) then begin
+         h.attr := m.Attr or KillSent or InTransit;
+      end else begin
+         h.attr := m.Attr and (not InTransit);
+      end;
       repeat
          inc(x);
          t := AddBackSlash(IniFile.NetmailDir) + IntToStr(x) + '.MSG';

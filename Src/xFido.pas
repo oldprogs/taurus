@@ -285,6 +285,9 @@ type
 const
   cNodePrefixFlag: array[TNodePrefixFlag] of string = ('?', 'Node', 'Point', 'Hub', 'Host', 'Zone', 'Pvt', 'Hold', 'Down', '??', '???', 'Region');
 
+var
+  AddrColl: TFidoAddrColl = nil;
+
 type
   TAdvNodeData = class(TAdvCpOnlyObject)
     Flags,

@@ -2678,22 +2678,46 @@ begin
 end;
 
 constructor TStationRec.Load(Stream: TxStream);
+var
+   a: TFidoAddrColl;
+   i: integer;
 begin
-  inherited Load(Stream);
-  Data := Stream.Get;
-  if Data.Count <> 6 then GlobalFail('TStationRec.Load Data.Count=%d', [Data.Count]);
-  Banner := Stream.ReadStr;
-  AkaA := Stream.Get;
-  AkaB := Stream.Get;
+   inherited Load(Stream);
+   Data := Stream.Get;
+   if Data.Count <> 6 then GlobalFail('TStationRec.Load Data.Count=%d', [Data.Count]);
+   if AddrColl = nil then begin
+      AddrColl := TFidoAddrColl.Create;
+      AddrColl.Duplicates := False;
+   end;
+   a := CreateAddrColl(Data.Address);
+   AddrColl.Enter;
+   for i := 0 to a.Count - 1 do begin
+      AddrColl.Ins(a[i]);
+   end;
+   AddrColl.Leave;
+   FreeObject(a);
+   Banner := Stream.ReadStr;
+   AkaA := Stream.Get;
+   AkaB := Stream.Get;
 end;
 
 procedure TStationRec.Store(Stream: TxStream);
+var
+   a: TFidoAddrColl;
+   i: integer;
 begin
-  inherited Store(Stream);
-  Stream.Put(Data);
-  Stream.WriteStr(Banner);
-  Stream.Put(AkaA);
-  Stream.Put(AkaB);
+   a := CreateAddrColl(Data.Address);
+   AddrColl.Enter;
+   for i := 0 to a.Count - 1 do begin
+      AddrColl.Ins(a[i]);
+   end;
+   AddrColl.Leave;
+   FreeObject(a);
+   inherited Store(Stream);
+   Stream.Put(Data);
+   Stream.WriteStr(Banner);
+   Stream.Put(AkaA);
+   Stream.Put(AkaB);
 end;
 
 function TStationRec.Copy;
@@ -4161,6 +4185,9 @@ begin
 end;
 
 constructor TIPRec.Load(Stream: TxStream);
+var
+   a: TFidoAddrColl;
+   i: integer;
 
 function ReadnValidate: string;
 begin
@@ -4189,6 +4216,13 @@ begin
      InPorts.Add('119');
   end;
   StationData := Stream.Get;
+  a := CreateAddrColl(StationData.Address);
+  AddrColl.Enter;
+  for i := 0 to a.Count - 1 do begin
+     AddrColl.Ins(a[i]);
+  end;
+  AddrColl.Leave;
+  FreeObject(a);
   Restriction := Stream.Get;
   InC := Stream.ReadDword;
   OutC := Stream.ReadDword;
@@ -4198,14 +4232,24 @@ begin
 end;
 
 procedure TIPRec.Store(Stream: TxStream);
+var
+   a: TFidoAddrColl;
+   i: integer;
 begin
-  Stream.Put(InPorts);
-  Stream.Put(StationData);
-  Stream.Put(Restriction);
-  Stream.WriteDword(InC);
-  Stream.WriteDword(OutC);
-  Stream.WriteDword(BList);
-  Stream.WriteStr(Banner);
+   a := CreateAddrColl(StationData.Address);
+   AddrColl.Enter;
+   for i := 0 to a.Count - 1 do begin
+      AddrColl.Ins(a[i]);
+   end;
+   AddrColl.Leave;
+   FreeObject(a);
+   Stream.Put(InPorts);
+   Stream.Put(StationData);
+   Stream.Put(Restriction);
+   Stream.WriteDword(InC);
+   Stream.WriteDword(OutC);
+   Stream.WriteDword(BList);
+   Stream.WriteStr(Banner);
 end;
 
 constructor TIPRec.Create;

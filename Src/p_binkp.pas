@@ -1046,6 +1046,8 @@ begin
    end;
    while ListBuf.Count > 0 do begin
       SendMsg(M_NUL, ListBuf[0]);
+      CustomInfo := ListBuf[0];
+      FLogFile(Self, lfLog);
       ListBuf.AtFree(0);
    end;
    for i := CollMax(TRSList) downto 0 do begin
@@ -1293,6 +1295,7 @@ begin
     bdtxSendSecondEOB:
       begin
          if RemoteCanTRS and (TRSList.Count > 0) then begin
+            FlushPkt;
             if CP.Carrier <> CP.DCD then begin
                TRSList.FreeAll;
             end;
@@ -1614,6 +1617,7 @@ begin
         FFinishSend(Self, aaAbort);
       end;
     end;
+    Sleep(50);
   until Result;
   if (R <> nil) and (rx <> bdrxWaitFileSync) then R.D.Part := InCur else R.D.Part := 0;
 end;
