@@ -585,6 +585,8 @@ type
     procedure SplitterBPanelMoved(Sender: TObject);
     procedure PollsListViewApiDropFiles(Sender: TObject);
     procedure LNameClick(Sender: TObject);
+    procedure ChatCaptionPanConstrainedResize(Sender: TObject;
+      var MinWidth, MinHeight, MaxWidth, MaxHeight: Integer);
   private
     OutBSize: int64;
     aOutbound: TAnimate;
@@ -6950,6 +6952,15 @@ begin
    v.LogName := MakeNormName(dLog, StripHotKey((Sender as TMenuItem).Caption));
    v.ShowModal;
    v.Free;
+end;
+
+procedure TMailerForm.ChatCaptionPanConstrainedResize(Sender: TObject;
+  var MinWidth, MinHeight, MaxWidth, MaxHeight: Integer);
+begin
+   sbCloseChat.Top  := 2;
+   sbCloseChat.Height := ChatCaptionPan.ClientHeight - 2;
+   sbCloseChat.Width := GetSystemMetrics(SM_CXVSCROLL);
+   sbCloseChat.Left := ChatCaptionPan.ClientWidth - sbCloseChat.Width - 2;
 end;
 
 end.

@@ -1008,7 +1008,8 @@ end;
 
 function TBinkP.CanSend: Boolean;
 begin
-  Result := (CP.OutUsed < T.D.BlkLen * 2);
+   if T.D.BlkLen = 0 then T.D.BlkLen := 1024;
+   Result := (CP.OutUsed < T.D.BlkLen * 2);
 end;
 
 procedure TBinkP.DoChat;
