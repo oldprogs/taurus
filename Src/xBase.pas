@@ -1818,7 +1818,7 @@ end;
 
 function MakeFullDir(const D, S: string): string;
 begin
-   if (Pos(':', S) > 0) or (Copy(S, 1, 2) = '\\') then begin
+   if (Pos(':', S) > 0) or (Copy(S, 1, 2) = '\\') or (Copy(S, 1, 1) = '.') then begin
       Result := S;
    end else begin
       if Copy(S, 1, 1) = '\' then begin

@@ -794,7 +794,7 @@ begin
       end;
       GetWrd(s, z, ' ');
       z := UpperCase(z);
-      if z = 'GET' then begin
+      if (z = 'GET') or (z = 'OPTIONS') then begin
          fMeth := mGet;
          fHTML := ExtractWord(1, s, [' ']);
          replace('+', ' ', fHTML);
