@@ -295,6 +295,7 @@ object PollSetupForm: TPollSetupForm
         Top = 0
         Width = 512
         Height = 194
+        FileNameCol = 3
         FixedFont.Charset = DEFAULT_CHARSET
         FixedFont.Color = clWindowText
         FixedFont.Height = -12
@@ -317,7 +318,7 @@ object PollSetupForm: TPollSetupForm
           31
           134
           140
-          184)
+          181)
       end
     end
     object tsAdditional: TTabSheet

@@ -61,42 +61,42 @@ type
             PlaySounds: boolean;
             AutoNodelist: boolean;
             accessFName: string;
-            agentFName:string;
-            StatxFName:string;
-            Polls_log:string;
-            Cronapps_log:string;
-            tariff_log:string;
+            agentFName: string;
+            StatxFName: string;
+            Polls_log: string;
+            Cronapps_log: string;
+            tariff_log: string;
             PerMinute: boolean;
 {$IFDEF WS}
-            IPDaemon_log:string;
+            IPDaemon_log: string;
 {$ENDIF}
 {$IFDEF RASDIAL}
-            ras_log:string;
+            ras_log: string;
 {$ENDIF}
-            ODBCLogging:boolean;
-            CloseBWZFile:boolean;
-            ForceAddFaxPage:boolean;
-            IgnoreEndSession:boolean;
-            IncrementArcmail:boolean;
-            CPS_MinBytes:DWORD;
-            CPS_MinSecs:DWORD;
-            FlagsCheckPeriod:byte;
-            FlagsDir:string;
-            GaugeFore:integer;
-            GaugeBack:integer;
-            LoggerFore:integer;
-            LoggerBack:integer;
-            BadWazooFore:integer;
-            BadWazooBack:integer;
-            AlwaysInTray:boolean;
-            Stealth:boolean;
+            ODBCLogging: boolean;
+            CloseBWZFile: boolean;
+            ForceAddFaxPage: boolean;
+            IgnoreEndSession: boolean;
+            IncrementArcmail: boolean;
+            CPS_MinBytes: DWORD;
+            CPS_MinSecs: DWORD;
+            FlagsCheckPeriod: byte;
+            FlagsDir: string;
+            GaugeFore: integer;
+            GaugeBack: integer;
+            LoggerFore: integer;
+            LoggerBack: integer;
+            BadWazooFore: integer;
+            BadWazooBack: integer;
+            AlwaysInTray: boolean;
+            Stealth: boolean;
             PopupKey: TShortCut;
             Priority: DWORD;
-            ShowBalloon:boolean;
-            ShowBalloonMin:boolean;
-            ShowMenuIcons:boolean;
-            UseSpace:boolean;
-            DoubleClick:boolean;
+            ShowBalloon: boolean;
+            ShowBalloonMin: boolean;
+            ShowMenuIcons: boolean;
+            UseSpace: boolean;
+            DoubleClick: boolean;
             TransmitHold: Boolean;
             DirectAsNormal: Boolean;
             PollAddFlags: string;
@@ -664,6 +664,7 @@ begin
   ini := TIniFile.Create(IniFName);
   with ini do
     try
+      Enter;
       InTemp := MakeFullDir('', ReadString(paths, 'TempInbound', ExtractFilePath(ParamStr(0)) + 'INTMP'));
       InSecure := MakeFullDir('', ReadString(paths, 'SecureInbound', ExtractFilePath(ParamStr(0)) + 'INSEC'));
       Log := MakeFullDir('', ReadString(paths, 'Logs', ExtractFilePath(ParamStr(0)) + 'LOG'));
@@ -866,7 +867,8 @@ begin
       SaveWaits := ReadBool(main, 'SaveWaits', False);
 
     finally
-      free
+      Leave;
+      free;
     end;
 
     PostMsg(WM_TrayIcon);
@@ -908,6 +910,7 @@ begin
   end;
   with TIniFile.Create(IniFName) do begin
     try
+      Enter;
       WriteInteger(main, 'CPS_MinBytes', CPS_MinBytes);
       WriteInteger(main, 'CPS_MinSecs', CPS_MinSecs);
       WriteInteger(main, 'FlagsCheckPeriod', FlagsCheckPeriod);
@@ -1150,6 +1153,7 @@ begin
       WriteBool   (IP, 'AllViaProxy', AllViaProxy);
 {end}
     finally
+      Leave;
       Free;
     end;
 
@@ -1175,7 +1179,7 @@ begin
 end;
 
 procedure TDualColl.FreeItem;
-var 
+var
   r : ^TDualRec absolute p;
 begin
    DisposeStr(r.nam);

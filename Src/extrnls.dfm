@@ -112,6 +112,7 @@ object ExternalsForm: TExternalsForm
         Top = 0
         Width = 556
         Height = 202
+        FileNameCol = 2
         FixedFont.Charset = DEFAULT_CHARSET
         FixedFont.Color = clWindowText
         FixedFont.Height = -12
@@ -133,7 +134,7 @@ object ExternalsForm: TExternalsForm
         ColWidths = (
           31
           190
-          196)
+          312)
       end
     end
     object tsFlags: TTabSheet
@@ -145,6 +146,7 @@ object ExternalsForm: TExternalsForm
         Top = 0
         Width = 556
         Height = 202
+        FileNameCol = 2
         FixedFont.Charset = DEFAULT_CHARSET
         FixedFont.Color = clWindowText
         FixedFont.Height = -12
@@ -166,7 +168,7 @@ object ExternalsForm: TExternalsForm
         ColWidths = (
           31
           190
-          196)
+          315)
       end
     end
     object tsDrs: TTabSheet
@@ -177,6 +179,7 @@ object ExternalsForm: TExternalsForm
         Top = 0
         Width = 556
         Height = 202
+        FileNameCol = 2
         FixedFont.Charset = DEFAULT_CHARSET
         FixedFont.Color = clWindowText
         FixedFont.Height = -12
@@ -198,7 +201,7 @@ object ExternalsForm: TExternalsForm
         ColWidths = (
           31
           88
-          298)
+          415)
       end
     end
     object tsCron: TTabSheet
@@ -209,6 +212,7 @@ object ExternalsForm: TExternalsForm
         Top = 0
         Width = 556
         Height = 202
+        FileNameCol = 2
         FixedFont.Charset = DEFAULT_CHARSET
         FixedFont.Color = clWindowText
         FixedFont.Height = -12
@@ -230,7 +234,7 @@ object ExternalsForm: TExternalsForm
         ColWidths = (
           31
           190
-          196)
+          309)
       end
     end
     object tsExteranals: TTabSheet
@@ -242,6 +246,7 @@ object ExternalsForm: TExternalsForm
         Top = 0
         Width = 556
         Height = 202
+        FileNameCol = 2
         FixedFont.Charset = DEFAULT_CHARSET
         FixedFont.Color = clWindowText
         FixedFont.Height = -12
@@ -263,7 +268,7 @@ object ExternalsForm: TExternalsForm
         ColWidths = (
           31
           190
-          196)
+          313)
       end
     end
     object tsHook: TTabSheet
@@ -274,6 +279,7 @@ object ExternalsForm: TExternalsForm
         Top = 0
         Width = 556
         Height = 202
+        FileNameCol = 2
         FixedFont.Charset = DEFAULT_CHARSET
         FixedFont.Color = clWindowText
         FixedFont.Height = -12

@@ -161,7 +161,7 @@ begin
 
   LINE_CREATE:
      begin
-        FillChar(ThisTapiPort.LinesArray, SizeOf(THandleArray), #0);
+//        FillChar(ThisTapiPort.LinesArray, SizeOf(THandleArray), #0);
         FillChar(ThisTapiPort.CallsArray, SizeOf(THandleArray), #0);
         LineShutDown(TapiAppHandler);
         TapiInitialized := lineInitialize(@TapiAppHandler, GetModuleHandle (nil),
@@ -559,8 +559,10 @@ begin
             Line := 0;
          end;
       end else begin
-         //
+         OldCalls := 0;
       end;
+   end else begin
+      CheckCalls;
    end;
    Leave;
 end;
@@ -778,7 +780,7 @@ begin
          end;
       end;
    until (h = 0);
-   OpenLine;
+   if Line = 0 then OpenLine;
    if PassThrough then MakeCall;
    Leave;
 end;

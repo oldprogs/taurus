@@ -1260,8 +1260,7 @@ var
       CfgEnter;
       Lines := Pointer(Cfg.Lines.Copy);
       CfgLeave;
-      for i := 0 to Lines.Count - 1 do
-      begin
+      for i := 0 to Lines.Count - 1 do begin
          LR := Lines[i];
          FOpen := MakeFullDir(IniFile.FlagsDir, 'open.' + LR.Name);
          FClose := MakeFullDir(IniFile.FlagsDir, 'close.' + LR.Name);
@@ -1269,15 +1268,12 @@ var
          open := _FileExists(FOpen);
          close := _FileExists(FClose);
 
-         if close then
-         begin
+         if close then begin
             DeleteFile(FClose);
             MailerThreads.Enter;
-            for j := 0 to MailerThreads.Count - 1 do
-            begin
+            for j := 0 to MailerThreads.Count - 1 do begin
                t := MailerThreads[j];
-               if Integer(t.LineId) = LR.Id then
-               begin
+               if Integer(t.LineId) = LR.Id then begin
                   t.InsertEvt(TMlrEvtFlagTerminate.Create);
                   reload := True;
                   Application.Title := LR.Name + ' closed';
@@ -1288,14 +1284,12 @@ var
                end;
             end;
             MailerThreads.Leave;
-         end
-         else
-            if open then
-            begin
-               t := OpenMailer(LR.Id, INVALID_HANDLE_VALUE);
-               if t <> nil then reload := True;
-               DeleteFile(FOpen);
-            end;
+         end else
+         if open then begin
+            t := OpenMailer(LR.Id, INVALID_HANDLE_VALUE);
+            if t <> nil then reload := True;
+            DeleteFile(FOpen);
+         end;
       end;
       FreeObject(Lines);
    end;
@@ -1317,47 +1311,39 @@ var
       procedure ExecuteFlag(s: string; const FlagName: string);
       begin
          s := uppercase(s);
-         if s = '%EXITNOW%' then
-         begin
+         if s = '%EXITNOW%' then begin
             FidoPolls.Log.LogSelf(Format('Detected %s - exit is defined for this flag', [FlagName]));
             PostCloseMessage;
-         end
-         else
-            if s = '%STARTRAS%' then
-            begin
-               FidoPolls.Log.LogSelf(Format('Detected %s - start RAS is defined for this flag', [FlagName]));
-   {$IFDEF RASDIAL}
-               if RASThread <> nil then RasThread.Connect(False);
-   {$ELSE}
-               FidoPolls.Log.LogSelf('RASDialUp feature is not avaible in this version');
-   {$ENDIF}
-            end
-            else
-               if s = '%STOPRAS%' then
-               begin
-                  FidoPolls.Log.LogSelf(Format('Detected %s - stop RAS is defined for this flag', [FlagName]));
-   {$IFDEF RASDIAL}
-                  if RASThread <> nil then RasThread.Disconnect;
-   {$ELSE}
-                  FidoPolls.Log.LogSelf('RASDialUp feature is not avaible in this version');
-   {$ENDIF}
-               end
-               else
-                  if copy(s, 1, 8) = '%RESTART' then
-                  begin
-                     FidoPolls.Log.LogSelf(Format('Detected %s - restart is defined for this flag', [FlagName]));
-                     delete(s, 1, 8);
-                     if pos('%', s) = 0 then
-                     begin
-                        FidoPolls.Log.LogSelf(Format('Format of %s is invalid (not closed by "%")', [FlagName]));
-                        exit;
-                     end;
-                     if (length(s) > 1) or (strtointdef(copy(s, 1, pos('%', s) - 1), 0) < 5000) then s := '5000%';
-                     StoreConfig(0);
-                     ShellExecute(0, nil, PChar(ParamStr(0)),
-                        PChar('delay' + copy(s, 1, pos('%', s) - 1)), PChar(ExtractFilePath(ParamStr(0))), sw_shownormal);
-                     PostCloseMessage;
-                  end;
+         end else
+         if s = '%STARTRAS%' then begin
+            FidoPolls.Log.LogSelf(Format('Detected %s - start RAS is defined for this flag', [FlagName]));
+{$IFDEF RASDIAL}
+            if RASThread <> nil then RasThread.Connect(False);
+{$ELSE}
+            FidoPolls.Log.LogSelf('RASDialUp feature is not avaible in this version');
+{$ENDIF}
+         end else
+         if s = '%STOPRAS%' then begin
+            FidoPolls.Log.LogSelf(Format('Detected %s - stop RAS is defined for this flag', [FlagName]));
+{$IFDEF RASDIAL}
+            if RASThread <> nil then RasThread.Disconnect;
+{$ELSE}
+            FidoPolls.Log.LogSelf('RASDialUp feature is not avaible in this version');
+{$ENDIF}
+         end else
+         if copy(s, 1, 8) = '%RESTART' then begin
+            FidoPolls.Log.LogSelf(Format('Detected %s - restart is defined for this flag', [FlagName]));
+            delete(s, 1, 8);
+            if pos('%', s) = 0 then begin
+               FidoPolls.Log.LogSelf(Format('Format of %s is invalid (not closed by "%")', [FlagName]));
+               exit;
+            end;
+            if (length(s) > 1) or (strtointdef(copy(s, 1, pos('%', s) - 1), 0) < 5000) then s := '5000%';
+            StoreConfig(0);
+            ShellExecute(0, nil, PChar(ParamStr(0)),
+               PChar('delay' + copy(s, 1, pos('%', s) - 1)), PChar(ExtractFilePath(ParamStr(0))), sw_shownormal);
+            PostCloseMessage;
+         end;
       end;
 
    begin
@@ -1368,32 +1354,28 @@ var
       end;
 
       s := MakeFullDir(IniFile.FlagsDir, 'EXIT.NOW');
-      if _FileExists(s) then
-      begin
+      if _FileExists(s) then begin
          DeleteFile(s);
          FidoPolls.Log.LogSelf(Format('Detected %s - exiting', [s]));
          PostCloseMessage;
       end;
 
       s := MakeFullDir(IniFile.FlagsDir, 'NODELIST.OK');
-      if _FileExists(s) then
-      begin
+      if _FileExists(s) then begin
          DeleteFile(s);
          FidoPolls.Log.LogSelf(Format('Detected %s - forced nodelist compilation', [s]));
          PostMsg(WM_COMPILENL);
       end;
 
       s := MakeFullDir(IniFile.FlagsDir, 'PASSWORD.OK');
-      if _FileExists(s) then
-      begin
+      if _FileExists(s) then begin
          DeleteFile(s);
          FidoPolls.Log.LogSelf(Format('Detected %s - forced password list import', [s]));
          PostMsg(WM_IMPORTPWDL);
       end;
 
       s := MakeFullDir(IniFile.FlagsDir, 'DUPOVR.OK');
-      if _FileExists(s) then
-      begin
+      if _FileExists(s) then begin
          DeleteFile(s);
          FidoPolls.Log.LogSelf(Format('Detected %s - forced dial-up nodes list import', [s]));
          PostMsg(WM_IMPORTDUPOVRL);
@@ -1401,83 +1383,68 @@ var
 
 {$IFDEF WS}
       s := MakeFullDir(IniFile.FlagsDir, 'IPOVR.OK');
-      if _FileExists(s) then
-      begin
+      if _FileExists(s) then begin
          DeleteFile(s);
          FidoPolls.Log.LogSelf(Format('Detected %s - forced TCP/IP nodes list import', [s]));
          PostMsg(WM_IMPORTIPOVRL);
       end;
 {$ENDIF}
 
-      for I := 0 to altcfg.FlagsCollA.Count - 1 do
-      begin
+      for I := 0 to altcfg.FlagsCollA.Count - 1 do begin
          c := (altcfg.FlagsCollA.Strings[I])[1];
          s := altcfg.FlagsCollA.Strings[I];
          if c in ['?', '*', '&'] then delete(s, 1, 1);
-         if not (xBase.direxists(ExtractDir(s)) = 1) then
+         if not (xBase.direxists(ExtractDir(s)) = 1) then begin
             s := MakeFullDir(IniFile.FlagsDir, s);
+         end;
          e := altcfg.FlagsCollB.Strings[I];
-         while copy(e, 1, 1) = '#' do
-            Delete(e, 1, 1);
-         while copy(e, 1, 1) = '*' do
-            Delete(e, 1, 1);
-         while copy(e, 1, 1) = '<' do
-            Delete(e, 1, 1);
-         while copy(e, 1, 1) = '>' do
-            Delete(e, 1, 1);
-         while copy(e, 1, 1) = '+' do
-            Delete(e, 1, 1);
-         while copy(e, 1, 1) = '?' do
-            Delete(e, 1, 1);
-         if not ispflag(altcfg.FlagsCollB.Strings[I]) then
-         begin
+         while copy(e, 1, 1) = '#' do Delete(e, 1, 1);
+         while copy(e, 1, 1) = '*' do Delete(e, 1, 1);
+         while copy(e, 1, 1) = '<' do Delete(e, 1, 1);
+         while copy(e, 1, 1) = '>' do Delete(e, 1, 1);
+         while copy(e, 1, 1) = '+' do Delete(e, 1, 1);
+         while copy(e, 1, 1) = '?' do Delete(e, 1, 1);
+         if not ispflag(altcfg.FlagsCollB.Strings[I]) then begin
             {
-                flagname.flg - выполнить команду, если существует (создан) флаг и
-                               удалить его;
-                *flagname.flg - выполнить команду, если отсутствует (удален) флаг;
-                ?flagname.flg - выполнить команду, если существует (создан) флаг;
-                &flagname.flg - выполнить команду, если отсутствует (удален) флаг и
-                               создать его
+             flagname.flg - выполнить команду, если существует (создан) флаг и
+                            удалить его;
+            *flagname.flg - выполнить команду, если отсутствует (удален) флаг;
+            ?flagname.flg - выполнить команду, если существует (создан) флаг;
+            &flagname.flg - выполнить команду, если отсутствует (удален) флаг и
+                            создать его
             }
             case c of
                '?':
                   begin
-                     if _FileExists(s) then
-                     begin
+                     if _FileExists(s) then begin
                         FidoPolls.Log.LogSelf(Format('Detected %s - forced executing %s', [s, e]));
                         WinExec(PChar(e), SW_SHOWMINNOACTIVE)
                      end;
                   end;
                '*':
                   begin
-                     if not _FileExists(s) then
-                     begin
+                     if not _FileExists(s) then begin
                         FidoPolls.Log.LogSelf(Format('Do not detected %s - forced executing %s', [s, e]));
                         WinExec(PChar(e), SW_SHOWMINNOACTIVE)
                      end;
                   end;
                '&':
                   begin
-                     if not _FileExists(s) then
-                     begin
+                     if not _FileExists(s) then begin
                         CloseHandle(FileCreate(s));
                         FidoPolls.Log.LogSelf(Format('Do not detected %s - forced executing %s', [s, e]));
                         WinExec(PChar(e), SW_SHOWMINNOACTIVE)
                      end;
                   end
-            else
-               begin
-                  if _FileExists(s) then
-                  begin
+            else begin
+                  if _FileExists(s) then begin
                      FidoPolls.Log.LogSelf(Format('Detected %s - forced executing %s', [s, altcfg.FlagsCollB.Strings[I]]));
                      WinExec(PChar(e), SW_SHOWMINNOACTIVE);
                      DeleteFile(s);
                   end;
                end;
             end;
-         end
-         else
-         begin
+         end else begin
             case c of
                '?':
                   begin
@@ -1491,17 +1458,15 @@ var
                   end;
                '&':
                   begin
-                     if not _FileExists(s) then
-                     begin
+                     if not _FileExists(s) then begin
                         ShellExecute(Application.Handle, nil, PChar(format('/? > %s', [s])),
                            nil, PChar(ExtractFilePath(e)), sw_hide);
                         ExecuteFlag(altcfg.FlagsCollB.Strings[I], s);
                      end;
                   end
             else
-               begin
-                  if _FileExists(s) then
                   begin
+                  if _FileExists(s) then begin
                      DeleteFile(s);
                      ExecuteFlag(altcfg.FlagsCollB.Strings[I], s);
                   end;
@@ -1509,7 +1474,6 @@ var
             end;
          end;
       end;
-
    end;
 
 begin
@@ -1521,8 +1485,7 @@ begin
    CheckDaemon;
 {$ENDIF}
    FileFlags.Leave;
-   if reload then
-   begin
+   if reload then begin
       PostMsg(WM_UPDATETABS);
       PostMsg(WM_TABCHANGE);
       PostMsg(WM_UPDATEMENUS);
@@ -4472,6 +4435,7 @@ begin
       LInfo1.Font.Assign(LogBox.Font);
       ChatPan.Font.Assign(LogBox.Font);
       ChatPan.Color := LogBox.Color;
+      eType.Font.Color := clBlack;
 
       PollsListView.GridLines := GridInPV;
       BWListView.GridLines := GridInBWZ;

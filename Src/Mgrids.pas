@@ -1282,13 +1282,13 @@ begin
       if N is TCustomForm then break;
       N := N.Parent;
     end;
-    with TIniFile.Create(MakeNormName(IniFile.HomeDir, 'AdvGrids.ini')) do
-    begin
-      s := ReadString('colwidths', FParentName + '_' + Name, '');
-      for i := 0 to WordCount(s, [',']) - 1 do
-      begin
+    with TIniFile.Create(MakeNormName(IniFile.HomeDir, 'AdvGrids.ini')) do begin
+      IniFile.Enter;
+      s := ReadString('ColWidths', FParentName + '_' + Name, '');
+      for i := 0 to WordCount(s, [',']) - 1 do begin
          ColWidths[i] := strtoint(extractword(i + 1, s, [',']));
       end;
+      IniFile.Leave;
       Free;
     end;
     if FixedRows = 0 then begin
@@ -1310,11 +1310,13 @@ var s: string;
 begin
   if not (csDesigning in ComponentState) then begin
      with TIniFile.Create(MakeNormName(IniFile.HomeDir, 'AdvGrids.ini')) do begin
+        IniFile.Enter;
         s := '';
         for i := 0 to ColCount - 1 do begin
            s := s + inttostr(ColWidths[i]) + ',';
         end;
-        WriteString('colwidths', FParentName + '_' + Name, s);
+        WriteString('ColWidths', FParentName + '_' + Name, s);
+        IniFile.Leave;
         Free;
      end;
   end;
@@ -5279,8 +5281,7 @@ procedure TAdvGrid.Initialize;
 var
   quantum: TSPAQuantum;
 begin
-  if FCols = nil then
-  begin
+  if FCols = nil then begin
     if ColCount > 512 then quantum := SPALarge else quantum := SPASmall;
     FCols := TSparseList.Create(quantum);
   end;

@@ -8,8 +8,10 @@ interface
 uses Windows, Classes, SysUtils, xBase, xFido;
 
 type
+     TPollType = (ptpUnknown, ptpOutb, ptpCron, ptpManual, ptpImm, ptpBack, ptpRCC, ptpNetm, ptpNmIm);
 
      TOutStatusSet = Set of TOutStatus;
+     TPollTypeSet = Set of TPollType;
 
      TFileInfoColl = class(TColl)
        procedure FreeItem(Item: Pointer); override;
@@ -45,6 +47,7 @@ type
 
      TOutNode = class(TOutItem)
        FStatus: TOutStatusSet;
+       FPollType: TPollTypeSet;
        Files: TOutFileColl;
        function Copy: Pointer; override;
        destructor Destroy; override;
@@ -1774,9 +1777,9 @@ var
   end;
 
 begin
-  if uFindFirst(MakeNormName(Path, '*.*'), SR) then
-  begin
+  if uFindFirst(MakeNormName(Path, '*.*'), SR) then begin
     repeat
+      Application.ProcessMessages;
       FSplit(SR.FName, Dr, Nm, Xt);
       if SR.Info.Attr and FILE_ATTRIBUTE_DIRECTORY = 0 then
       begin
@@ -1867,6 +1870,7 @@ begin
       s := osCrashMail;
       n.FStatus := n.FStatus + [s];
    end;
+   n.FPollType := n.FPollType + [p];
    if an <> nil then begin
       InsertPoll(an, [s], p);
    end;
@@ -1996,7 +2000,7 @@ begin
         if m.Fido and (pos('DIR', m.Flgs) > 0) then begin
            InsertMSGPoll(m.Addr, m);
         end else
-        if m.Fido and (m.Attr and HoldForPickUp = 0) then begin
+        if m.Fido and (m.Attr and HoldForPickUp = 0) and (pos('HLD', m.Flgs) = 0) then begin
            for nn := 0 to IniFile.NetmailAddrTo.Count - 1 do begin
               s := IniFile.NetmailAddrTo[nn];
               if s = '*' then continue;
@@ -2076,9 +2080,11 @@ begin
   n.Nfo.Size := Nfo.Size;
   n.Nfo.Time := Nfo.Time;
   n.FStatus := FStatus;
+  n.FPollType := FPollType;
   n.Name := StrAsg(Name);
-  if Files <> nil then
+  if Files <> nil then begin
     n.Files := Files.Copy;
+  end;
   Result := n;
 end;
 
@@ -2148,18 +2154,15 @@ function TOutbound._GetOutCollP(Single, AFull: Boolean; const Addr: TFidoAddress
     i: Integer;
     n: TOutNode;
   begin
-    if OutCache = nil then Result := nil else
-    begin
-      if AFull then Result := OutCache.Copy else
-      begin
+    if OutCache = nil then Result := nil else begin
+      if AFull then Result := OutCache.Copy else begin
         Result := TOutNodeColl.Create;
-        for i := 0 to OutCache.Count - 1 do
-        begin
+        for i := 0 to OutCache.Count - 1 do begin
           n := OutCache[i];
           if Single and (CompareAddrs(Addr, n.Address) <> 0) then Continue;
-          if n.FStatus <> [osNone] then
-//          Result.AtInsert(Result.Count, n.Copy);
-          Result.Insert(n.Copy);
+          if n.FStatus <> [osNone] then begin
+             Result.Insert(n.Copy);
+          end;
         end;
       end;
     end;

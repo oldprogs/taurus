@@ -223,7 +223,7 @@ begin
     Table.Duplicates := True;
     Table.CarePos := True;
     Stream := OpenRead(NDLPath);
-    if Stream = nil then 
+    if Stream = nil then
     begin
       NodelistMissed := True;
       Exit;
@@ -247,12 +247,10 @@ begin
     begin
       s := JustPathName(ParamStr(0)) + '\nodelist.sav';
       l := TStringList.Create;
-      with TIniFile.Create(s) do 
-      begin
+      with TIniFile.Create(s) do begin
         try
           ReadSection('TimeList', l);
-          for i := 0 to l.Count - 1 do 
-          begin
+          for i := 0 to l.Count - 1 do begin
             j := Lists.Add(l[i]);
             Lists.Objects[j] := Pointer(ReadInteger('TimeList', l[i], 0));
           end;
@@ -435,15 +433,12 @@ var
   s: string;
   i: integer;
 begin
-  if IniFile.AutoNodelist then
-  begin
+  if IniFile.AutoNodelist then begin
     s := JustPathName(ParamStr(0)) + '\nodelist.sav';
-    with TIniFile.Create(s) do 
-    begin
+    with TIniFile.Create(s) do begin
       try
         EraseSection('TimeList');
-        for i := 0 to Lists.Count - 1 do 
-        begin
+        for i := 0 to Lists.Count - 1 do begin
           WriteInteger('TimeList', Lists[i], Integer(Lists.Objects[i]));
         end;
       finally

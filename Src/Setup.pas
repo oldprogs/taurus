@@ -458,19 +458,19 @@ begin
 
   with TIniFile.Create(IniFName) do
   try
+    IniFile.Enter;
     WriteString('system', 'EMSI_CR', eEMSICR.Text);
     WriteString('system', 'MutexName', eMutexName.Text);
     WriteString('system', 'ActivateEventName', eActivateEventName.Text);
     WriteString('system', 'WatcherEventName', eWatcherEventName.Text);
     WriteInteger('system', 'WinSockVersion', cbWinSockVersion.ItemIndex);
-    //logs tab
-    WriteBool('system','LogThreadTimes', cbLogThreadTimes.Checked);
-    //logs end;
+    WriteBool('system', 'LogThreadTimes', cbLogThreadTimes.Checked);
     for _i := 0 to 12 do begin
        WriteString('Sounds', copy(Edits[_i].ed.Name, 3, 10), Edits[_i].ed.Text);
        WriteBool('Sounds', 'c_' + copy(Edits[_i].ed.Name, 3, 10), Edits[_i].cb.Checked);
     end;
   finally
+    IniFile.Leave;
     free;
   end;
 //System end
@@ -720,6 +720,7 @@ begin
   cbCloseBWZ.Checked := IniFile.CloseBWZFile;
   with TIniFile.Create(IniFName) do
   try
+    IniFile.Enter;
     eEMSICR.Text := ReadString('system', 'EMSI_CR', '%0D');
     eMutexName.Text := ReadString('system', 'MutexName', 'ARGUS_SEMAPHORE');
     eActivateEventName.Text := ReadString('system', 'ActivateEventName', 'ARGUS_EVENT_ACTIVATE');
@@ -735,6 +736,7 @@ begin
        Edits[n].cb.Checked := ReadBool('Sounds', 'c_' + copy(Edits[n].ed.Name, 3, 10), True);
     end;
   finally
+    IniFile.Leave;
     free;
   end;
   case IniFile.Priority of
@@ -1284,7 +1286,9 @@ var
             CRC := CRC32Int(f.Font.Size, CRC);
             CRC := UpdateCRC32(byte(f.Font.Style), CRC);
          end;
-         CalcCRC(c);
+         if c is TComponent then begin
+            CalcCRC(c);
+         end;   
       end;
    end;
 

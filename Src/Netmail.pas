@@ -321,6 +321,7 @@ begin
    if not IniFile.ScanMSG then exit;
    FP := AddBackSlash(IniFile.ReadString('MSG', 'Netmail', ''));
    if uFindFirst(FP + '*.MSG', SR) then begin
+      Application.ProcessMessages;
       NetColl.Enter;
       NetColl.MarkDel(True);
       PktColl.Enter;
@@ -426,6 +427,7 @@ begin
                      if CC = 50 then break;
                   end;
                   if not ExistFile(BN) then begin
+                     Application.ProcessMessages;
                      IgnoreNextEvent := True;
                      BF := TBusyFlag.Create(BN, False);
                      ScanPacket(path + '\' + SR.FName);
@@ -611,6 +613,7 @@ var
    o: TStringColl;
    s: string;
    z: string;
+   t: string;
    k: TKillAction;
 begin
    if not ExistFile(pack) then exit;
@@ -665,7 +668,24 @@ begin
                n.SaveToFile(pack);
             end else
             if (l <> nil) and ((h.attr and FileRequest) > 0) then begin
-               //
+               s := GetOutFileName(l.Addr, osrequest);
+               if FidoOut.Lock(l.Addr, osBusy, True) then begin
+                  o := TStringColl.Create;
+                  if ExistFile(s) then begin
+                     o.LoadFromFile(s);
+                  end;
+                  t := l.Subj;
+                  while t <> '' do begin
+                     GetWrd(t, z, ' ');
+                     o.Add(z);
+                  end;
+                  o.SaveToFile(s);
+                  n.Position := 0;
+                  h.attr := h.attr and (not FileRequest);
+                  n.Write(h, SizeOf(h));
+                  n.SaveToFile(pack);
+                  FidoOut.Unlock(l.Addr, osBusy);
+               end;
             end;
          end;
       end;

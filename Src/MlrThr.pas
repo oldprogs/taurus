@@ -667,7 +667,6 @@ type
   end;
 
   TPollDone = (pdnUnknown, pdnShutDown, pdnOK, pdnDeleted, pdnDeleteAll, pdnAttachLost, pdnNodeDestroyed);
-  TPollType = (ptpUnknown, ptpOutb, ptpCron, ptpManual, ptpImm, ptpBack, ptpRCC, ptpNetm, ptpNmIm);
 
   TFidoPoll = class
     FileSendDelayedBusy: Boolean;
@@ -2244,9 +2243,17 @@ var
             Exit;
          end;
       end else begin
-         if p.FileSendDelayedBusy then p.FileSendDelayedBusy := False;
-         if p.FileSendDelayedNoc  then p.FileSendDelayedNoc  := False;
-         if p.FileSendDelayedBusy then p.FileSendDelayedFail := False;
+//         if p.FileSendDelayedBusy then p.FileSendDelayedBusy := False;
+//         if p.FileSendDelayedNoc  then p.FileSendDelayedNoc  := False;
+//         if p.FileSendDelayedBusy then p.FileSendDelayedFail := False;
+         if TimerInstalled(p.LastTry) and not TimerExpired(p.LastTry) then begin
+            if SC <> nil then begin
+               s := Format('%s - stand-off: %d minutes left.', [Addr2Str(p.Node.Addr), MaxD(1, (RemainingTimeSecs(p.LastTry) + 30) div 60)]);
+               SC.Add(s);
+            end;
+            result := plsN_A;
+            exit;
+         end;
       end;
       Result := plsFRB;
 
@@ -2291,10 +2298,12 @@ var
          Exit;
       end;
 
-      if TimerInstalled(p.LastPoll) then begin
+      if (Mlr = PollOwnerDaemon) and TimerInstalled(p.LastPoll) then begin
          if ElapsedTime(p.LastPoll) < 30 * 20 then begin
             Result := plsHLD;
-            Exit;
+            if SC = nil then begin
+               Exit;
+            end;
          end;
       end;
 
@@ -2312,11 +2321,6 @@ var
       if SC = nil then begin
          PP.Idx := NI;
          p.Owner := Mlr;
-// qqq         NewTimerSecs(p.LastTry, inifile.FPFlags.Standoff * 60);
-{         if (p.Typ <> ptpManual) and (p.CountersExceeded) then
-         begin
-            FidoPollsLog(Format('%s - stand-off timeout (%d minutes) has started', [Addr2Str(p.Node.Addr), inifile.FPFlags.Standoff]));
-         end;}
       end;
    end;
 
@@ -2524,7 +2528,8 @@ begin
 
    if AP <> nil then begin
       OldTyp := AP.Typ;
-      NewTyp := TPollType(MaxD(DWORD(OldTyp), DWORD(ATyp)));
+//      NewTyp := TPollType(MaxD(DWORD(OldTyp), DWORD(ATyp)));
+      NewTyp := ATyp;
       if OldTyp <> NewTyp then begin
          FidoPollsLog(Format('*Poll/%s  %s  (%s)', [CTyp[NewTyp], Addr2Str(ANode.Addr), NodeDataStr(ANode, True)]));
          AP.Typ := NewTyp;
@@ -2586,7 +2591,7 @@ var
 begin
    EnterFidoPolls;
    DirAsNormal := IniFile.DirectAsNormal; //pofDirAsNormal in FidoPolls.Options.d.Flags;
-   for i := FidoPolls.Count - 1 downto 0 do begin
+    for i := FidoPolls.Count - 1 downto 0 do begin
       p := FidoPolls[i];
       p.Keep := False;
       CurrentTime := uGetSystemTime;
@@ -2597,15 +2602,19 @@ begin
          end;
          if c.Search(@p.Node.Addr, j) then begin
             n := c[j];
+            if (p.Typ in [ptpNetm..ptpNmIm]) and not (p.Typ in n.FPollType) then begin
+               FidoPollsLog(Format('*Poll/%s  %s  (%s)', ['Outb', Addr2Str(P.Node.Addr), NodeDataStr(P.Node, True)]));
+               p.Typ := ptpOutb;
+            end;
             p.Flav := p.Flav + n.FStatus;
             if  (p.Typ = ptpOutb) and ((osImmed in n.FStatus) or (osImmedMail in n.FStatus)) then p.Typ := ptpImm;
             if  (p.Typ = ptpImm ) and not (osImmed in n.FStatus) and not (osImmedMail in n.FStatus) then p.Typ := ptpOutb;
-            if ((p.Typ = ptpOutb) {or (p.Typ = ptpImm) or (p.Typ = ptpNmIm)}) and
+            if ((p.Typ = ptpOutb) or (p.Typ = ptpNetm)) and
                 (not OutDial(n.FStatus, DirAsNormal)) then
             begin
                 FreePoll_I_P;
             end;
-            c.AtFree(j);
+             c.AtFree(j);
          end else begin
             if (p.Typ = ptpOutb) or (p.Typ = ptpImm) or (p.Typ = ptpNetm) or (p.Typ = ptpNmIm) then FreePoll_I_P;
          end;
@@ -10619,17 +10628,14 @@ begin
             _read_in;
             if length(RemCtrlBuf) = 0 then exit;
             for i := Low(ShellCmd) to High(ShellCmd) do
-               if UpperCase(RemCtrlBuf)[1] = txShellMenu[ShellCmd(i)][1] then
-               begin
+               if UpperCase(RemCtrlBuf)[1] = txShellMenu[ShellCmd(i)][1] then begin
                   DoRemoteShellCmd(i);
                   CmdAccepted := True;
                   break;
                end;
 
-            if (length(trim(RemCtrlBuf)) > 0) then
-            begin
-               if not CmdAccepted then
-               begin
+            if (length(trim(RemCtrlBuf)) > 0) then begin
+               if not CmdAccepted then begin
                   SendStrLn(CRLF +
                      'Incorrect command'
 {$IFDEF USEANSI}
@@ -10638,8 +10644,7 @@ begin
                      );
                   State := msSC_0;
                end;
-            end
-            else
+            end else
                State := msSC_0;
             {end else _read_in;}
             Delete(SD.InB, 1, length(SD.InB));
@@ -10653,8 +10658,7 @@ begin
       msSCStart_1:
          begin
             CRPOS := Pos(#13, SD.InB);
-            if CRPOS > 0 then
-            begin
+            if CRPOS > 0 then begin
                SendStr(CRLF + CRLF);
                CmdAccepted := True;
                //                ShellExecute(0,'Open',PChar(RemCtrlBuf),nil,PChar(ExtractFilePath(ParamStr(0))),sw_shownormal);
@@ -10663,8 +10667,7 @@ begin
                LogFmt(ltInfo, 'Remote Control: user started a program (%s)', [remctrlbuf]);
                if (not CmdAccepted) and (length(trim(RemCtrlBuf)) > 0) then SendStrLn(CRLF + 'Operation failed');
                State := msSC_0;
-            end
-            else
+            end else
                _read_in;
             Delete(SD.InB, 1, length(SD.InB));
          end;
@@ -10679,20 +10682,17 @@ begin
       msSCTime_1:
          begin
             CRPOS := Pos(#13, SD.InB);
-            if CRPOS > 0 then
-            begin
+            if CRPOS > 0 then begin
                CmdAccepted := False;
                REP := GetRegExpr('\d{2}\:\d{2}\:\d{2}');
                b := (REP.ErrPtr = 0) and (REP.Match(trim(RemCtrlBuf)) > 0);
                REP.Unlock;
-               if b then
-               begin
+               if b then begin
                   Hour := StrToInt(ExtractWord(1, RemctrlBuf, [':']));
                   Min := StrToInt(ExtractWord(2, RemctrlBuf, [':']));
                   Sec := StrToInt(ExtractWord(3, RemctrlBuf, [':']));
                   msec := 0;
-                  if DoEncodeTime(Hour, Min, Sec, MSec, dt) then
-                  begin
+                  if DoEncodeTime(Hour, Min, Sec, MSec, dt) then begin
                      dt := dt + date;
                      DateTimeToSystemTime(dt, SystemTime);
                      SetLocalTime(SystemTime);
@@ -10703,8 +10703,7 @@ begin
                SendStrLn('');
                if (not CmdAccepted) and (length(trim(RemCtrlBuf)) > 0) then SendStrLn(CRLF + 'Incorrect input');
                State := msSC_0;
-            end
-            else
+            end else
                _read_in;
             Delete(SD.InB, 1, length(SD.InB));
          end;
@@ -10720,19 +10719,16 @@ begin
       msSCDate_1:
          begin
             CRPOS := Pos(#13, SD.InB);
-            if CRPOS > 0 then
-            begin
+            if CRPOS > 0 then begin
                CmdAccepted := False;
                REP := GetRegExpr('\d{2}\-\d{2}\-\d{4}');
                b := (REP.ErrPtr = 0) and (REP.Match(trim(RemCtrlBuf)) > 0);
                REP.Unlock;
-               if b then
-               begin
+               if b then begin
                   year := StrToInt(ExtractWord(3, RemctrlBuf, ['-']));
                   month := StrToInt(ExtractWord(2, RemctrlBuf, ['-']));
                   day := StrToInt(ExtractWord(1, RemctrlBuf, ['-']));
-                  if DoEncodeDate(year, month, day, dt) then
-                  begin
+                  if DoEncodeDate(year, month, day, dt) then begin
                      dt := dt + time;
                      DateTimeToSystemTime(dt, SystemTime);
                      SetLocalTime(SystemTime);
@@ -10743,8 +10739,7 @@ begin
                SendStrLn('');
                if (not CmdAccepted) and (length(trim(RemCtrlBuf)) > 0) then SendStrLn(CRLF + 'Incorrect input');
                State := msSC_0;
-            end
-            else
+            end else
                _read_in;
             Delete(SD.InB, 1, length(SD.InB));
          end;
@@ -10758,38 +10753,30 @@ begin
       msSCCopyF_1:
          begin
             CRPOS := Pos(#13, SD.InB);
-            if CRPOS > 0 then
-            begin
+            if CRPOS > 0 then begin
                CmdAccepted := fileexists(remctrlbuf);
                SendStr(CRLF + CRLF);
-               if (not CmdAccepted) and (length(trim(RemCtrlBuf)) > 0) then
-               begin
+               if (not CmdAccepted) and (length(trim(RemCtrlBuf)) > 0) then begin
                   SendStrLn(CRLF + 'Incorrect input');
                   State := msSC_0;
-               end
-               else
-                  if length(trim(RemCtrlBuf)) > 0 then
-                  begin
+               end else
+                  if length(trim(RemCtrlBuf)) > 0 then begin
                      State := msSCCopyF_2;
                      SendStr('New path and name: ');
                      PrevRemCtrlBuf := RemCtrlBuf;
                      RemCtrlBuf := '';
-                  end
-                  else
-                  begin
+                  end else begin
                      State := msSC_0;
                      LogFmt(ltInfo, 'Remote Control: user canceled copying file %s', [remctrlbuf]);
                   end;
-            end
-            else
+            end else
                _read_in;
             Delete(SD.InB, 1, length(SD.InB));
          end;
       msSCCopyF_2:
          begin
             CRPOS := Pos(#13, SD.InB);
-            if CRPOS > 0 then
-            begin
+            if CRPOS > 0 then begin
                SendStr(CRLF);
                CmdAccepted := CopyFile(PChar(PrevRemCtrlBuf), PChar(RemCtrlBuf), true);
                if (not CmdAccepted) and (length(trim(RemCtrlBuf)) > 0) then
@@ -10800,8 +10787,7 @@ begin
                   else
                      LogFmt(ltInfo, 'Remote Control: user canceled copying file %s', [prevremctrlbuf]);
                State := msSC_0;
-            end
-            else
+            end else
                _read_in;
             Delete(SD.InB, 1, length(SD.InB));
          end;
@@ -10815,32 +10801,25 @@ begin
       msSCMoveF_1:
          begin
             CRPOS := Pos(#13, SD.InB);
-            if CRPOS > 0 then
-            begin
+            if CRPOS > 0 then begin
                CmdAccepted := fileexists(remctrlbuf);
 
                SendStr(CRLF + CRLF);
 
-               if (not CmdAccepted) and (length(trim(RemCtrlBuf)) > 0) then
-               begin
+               if (not CmdAccepted) and (length(trim(RemCtrlBuf)) > 0) then begin
                   SendStrLn(CRLF + 'Incorrect input');
                   State := msSC_0;
-               end
-               else
-                  if length(trim(RemCtrlBuf)) > 0 then
-                  begin
+               end else
+                  if length(trim(RemCtrlBuf)) > 0 then begin
                      State := msSCMoveF_2;
                      SendStr('New path and name: ');
                      PrevRemCtrlBuf := RemCtrlBuf;
                      RemCtrlBuf := '';
-                  end
-                  else
-                  begin
+                  end else begin
                      State := msSC_0;
                      LogFmt(ltInfo, 'Remote Control: user canceled moving file %s', [remctrlbuf]);
                   end;
-            end
-            else
+            end else
                _read_in;
             Delete(SD.InB, 1, length(SD.InB));
          end;
@@ -10848,8 +10827,7 @@ begin
       msSCMoveF_2:
          begin
             CRPOS := Pos(#13, SD.InB);
-            if CRPOS > 0 then
-            begin
+            if CRPOS > 0 then begin
                SendStr(CRLF);
                CmdAccepted := _MoveFile(PrevRemCtrlBuf, RemCtrlBuf);
                if (not CmdAccepted) and (length(trim(RemCtrlBuf)) > 0) then
@@ -10860,8 +10838,7 @@ begin
                   else
                      LogFmt(ltInfo, 'Remote Control: user canceled moving file %s', [prevremctrlbuf]);
                State := msSC_0;
-            end
-            else
+            end else
                _read_in;
             Delete(SD.InB, 1, length(SD.InB));
          end;
@@ -10875,8 +10852,7 @@ begin
       msSCNewD_1:
          begin
             CRPOS := Pos(#13, SD.InB);
-            if CRPOS > 0 then
-            begin
+            if CRPOS > 0 then begin
                CmdAccepted := False;
                SendStr(CRLF + CRLF);
                if not ExistDir(RemCtrlBuf) then
@@ -10888,8 +10864,7 @@ begin
                   end;
                if (not CmdAccepted) and (length(trim(RemCtrlBuf)) > 0) then SendStrLn(CRLF + 'Error creating directory');
                State := msSC_0;
-            end
-            else
+            end else
                _read_in;
             Delete(SD.InB, 1, length(SD.InB));
          end;
@@ -10903,21 +10878,18 @@ begin
       msSCRemD_1:
          begin
             CRPOS := Pos(#13, SD.InB);
-            if CRPOS > 0 then
-            begin
+            if CRPOS > 0 then begin
                CmdAccepted := False;
                SendStr(CRLF + CRLF);
                if ExistDir(RemCtrlBuf) then
-                  if RemoveDir(RemCtrlBuf) then
-                  begin
-                     CmdAccepted := True;
-                     LogFmt(ltInfo, 'Remote Control: user removed directory %s', [remctrlbuf]);
-                     State := msSC_0; // do we need this line?
-                  end;
+               if RemoveDir(RemCtrlBuf) then begin
+                  CmdAccepted := True;
+                  LogFmt(ltInfo, 'Remote Control: user removed directory %s', [remctrlbuf]);
+                  State := msSC_0; // do we need this line?
+               end;
                if (not CmdAccepted) and (length(trim(RemCtrlBuf)) > 0) then SendStrLn(CRLF + 'Error deleting directory (directory''s full or doesn''t exist)');
                State := msSC_0;
-            end
-            else
+            end else
                _read_in;
             Delete(SD.InB, 1, length(SD.InB));
          end;
@@ -10931,12 +10903,10 @@ begin
       msSCGotoD_1:
          begin
             CRPOS := Pos(#13, SD.InB);
-            if CRPOS > 0 then
-            begin
+            if CRPOS > 0 then begin
                CmdAccepted := False;
                SendStr(CRLF + CRLF);
-               if ExistDir(RemCtrlBuf) then
-               begin
+               if ExistDir(RemCtrlBuf) then begin
                   CmdAccepted := True;
                   SetCurrentDir(RemCtrlBuf);
                   LogFmt(ltInfo, 'Remote Control: user set current directory to %s', [remctrlbuf]);
@@ -10944,8 +10914,7 @@ begin
                end;
                if (not CmdAccepted) and (length(trim(RemCtrlBuf)) > 0) then SendStrLn(CRLF + 'Directory doesn''t exist');
                State := msSC_0;
-            end
-            else
+            end else
                _read_in;
             Delete(SD.InB, 1, length(SD.InB));
          end;
@@ -10959,12 +10928,10 @@ begin
       msSCDeleteF_1:
          begin
             CRPOS := Pos(#13, SD.InB);
-            if CRPOS > 0 then
-            begin
+            if CRPOS > 0 then begin
                CmdAccepted := False;
                SendStr(CRLF + CRLF);
-               if fileexists(remctrlbuf) then
-               begin
+               if fileexists(remctrlbuf) then begin
                   DeleteFile(RemCtrlBuf);
                   CmdAccepted := true;
                   LogFmt(ltInfo, 'Remote Control: user deleted file %s', [remctrlbuf]);
@@ -10972,8 +10939,7 @@ begin
                if (not CmdAccepted) and (length(trim(RemCtrlBuf)) > 0) then
                   SendStrLn(CRLF + 'File doesn''t exist or can''t be deleted');
                State := msSC_0;
-            end
-            else
+            end else
                _read_in;
             Delete(SD.InB, 1, length(SD.InB));
          end;
@@ -10987,35 +10953,19 @@ begin
       msSCCreateF_1:
          begin
             CRPOS := Pos(#13, SD.InB);
-            if CRPOS > 0 then
-            begin
-               {            CmdAccepted:=False;
-                           SendStr(CRLF+CRLF);
-                           if fileexists(remctrlbuf) then
-                           begin
-                             deletefile(RemCtrlBuf);
-                             CmdAccepted:=true;
-                             LogFmt(ltInfo,'Remote Control: user deleted file %s',[remctrlbuf]);
-                           end;
-                           if (not CmdAccepted) and (length(trim(RemCtrlBuf))>0) then
-                             SendStrLn(CRLF+'File doesn''t exist or can''t be deleted');
-               }
+            if CRPOS > 0 then begin
                remctrlbuf := ExpandFileName(remctrlbuf);
                cmdaccepted := SetFileFlag(remctrlbuf);
                SendStr(CRLF + CRLF);
-               if not cmdaccepted then
-               begin
+               if not cmdaccepted then begin
                   SetErrorMsg(remctrlbuf);
                   ChkErrMsg;
                   SendStrLn(CRLF + 'Can''t create flag');
-               end
-               else
-               begin
+               end else begin
                   LogFmt(ltInfo, 'Remote Control: user set file-flag %s', [remctrlbuf])
                end;
                State := msSC_0;
-            end
-            else
+            end else
                _read_in;
             Delete(SD.InB, 1, length(SD.InB));
          end;
@@ -14845,8 +14795,7 @@ procedure TCronThread.DoRecalc;
       CfgEnter;
       PerPolls := Pointer(Cfg.PerPolls.Copy);
       CfgLeave;
-      for i := 0 to CollMax(PerPolls) do
-      begin
+      for i := 0 to CollMax(PerPolls) do begin
          pp := PerPolls[i];
          pp.CronRec := ParseCronRec(pp.Cron, False, False, Err);
          if pp.CronRec = nil then GlobalFail('TCronThread.DoRecalc, ParseCronRec=nil; Error=%s', [Err]);
