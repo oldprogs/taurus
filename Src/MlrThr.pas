@@ -2530,7 +2530,7 @@ begin
       OldTyp := AP.Typ;
 //      NewTyp := TPollType(MaxD(DWORD(OldTyp), DWORD(ATyp)));
       NewTyp := ATyp;
-      if OldTyp <> NewTyp then begin
+      if (OldTyp <> NewTyp) and (OldTyp <> ptpManual) then begin
          FidoPollsLog(Format('*Poll/%s  %s  (%s)', [CTyp[NewTyp], Addr2Str(ANode.Addr), NodeDataStr(ANode, True)]));
          AP.Typ := NewTyp;
          AP.Reset;
@@ -5111,7 +5111,8 @@ begin
             for j := 0 to CollMax(n.Files) do begin
                o := n.Files[j];
                if (o.Name = f.Name) or
-                  (o.Name = f.Orig) then begin
+                  (o.Name = f.Orig) then
+               begin
                   n.Files.AtFree(j);
                   exit;
                end;
@@ -5787,8 +5788,7 @@ function TMailerThread.AcceptFile(P: TBaseProtocol): TTransferFileAction;
 
       if SD.SessionCore = scFTP then begin
          SD.WzRec := GetBWZ(P.R.D.FName, 0, 0, SD.rmtPrimaryAddr, SD.rmtAddrs);
-      end else
-      begin
+      end else begin
          SD.WzRec := GetBWZ(P.R.D.FName, P.R.D.FSize, P.R.D.FTime, SD.rmtPrimaryAddr, SD.rmtAddrs);
       end;
       if SD.WzRec <> nil then begin
@@ -5806,7 +5806,6 @@ function TMailerThread.AcceptFile(P: TBaseProtocol): TTransferFileAction;
                   ChkErrMsg;
                end else
                   if d = P.R.D.FSize then begin
-                     // got completely but can''t move it to inbound
                      Result := aaRefuse;
                      FreeObject(s);
                      SD.WzRec := nil;
@@ -9949,19 +9948,15 @@ begin
    Msg := '';
    BWZColl.Enter;
    BWZColl.Update;
-   if (not TimerInstalled(BWZColl.LastToss)) or (TimerExpired(BWZColl.LastToss)) or manual then
-   begin
+   if (not TimerInstalled(BWZColl.LastToss)) or (TimerExpired(BWZColl.LastToss)) or manual then begin
       Pending := 0;
-      for i := BWZColl.Count - 1 downto 0 do
-      begin
+      for i := BWZColl.Count - 1 downto 0 do begin
          r := BWZColl[i];
          if r.Locked or (r.FSize <> r.TmpSize) then Continue;
-         if TossSingleBWZ(r, s) then
-         begin
+         if TossSingleBWZ(r, s) then begin
             if L = nil then L := TColl.Create;
             AL := FindAddrStringColl(L, r.Addr);
-            if AL = nil then
-            begin
+            if AL = nil then begin
                AL := TAddrStringColl.Create;
                AL.Addr := r.Addr;
                L.Add(AL);
@@ -9970,15 +9965,12 @@ begin
             LogFmt(ltInfo, '[WZ] ''%s'' extracted from WaZoo queue', [s]);
             RunPostProcessorsSingle(s, AL.Addr, Logger);
             BWZColl.AtFree(i);
-         end
-         else
-         begin
+         end else begin
             if (not ChkErrMsg) and (FLog) then LogFmt(ltWarning, '%s is still pending', [s]);
             Inc(Pending)
          end;
       end;
-      if FLog then
-      begin
+      if FLog then begin
          i := BWZColl.Count - Pending;
          if (Pending <> 0) or (i <> 0) then Msg := Format('[WZ] pending: %d, incomplete: %d', [Pending, i]);
       end;
@@ -9988,8 +9980,7 @@ begin
    BWZColl.Leave;
    if Msg <> '' then Log(ltInfo, Msg);
    PurgeZombies;
-   for i := 0 to CollMax(L) do
-   begin
+   for i := 0 to CollMax(L) do begin
       AL := L[i];
       RunPostProcessorsEx(AL, AL.Addr, Logger, False);
    end;
@@ -10028,18 +10019,14 @@ var
 begin
    ss := AExtAppStr;
    Result := CheckExecPrefixes(ss, Priority, Detached, ShowMode, SetFlag);
-   if not Result then
-   begin
+   if not Result then begin
       ALogger.LogFmt(ltGlobalErr, 'DoCreateExtAppProcess(%s) failed', [AExtAppStr]);
       Exit;
    end;
-   if SetFlag then
-   begin
+   if SetFlag then begin
       ALogger.Log(ltGlobalErr, 'File-flags are not allower for Doors-ExtApps');
       Result := False;
-   end
-   else
-   begin
+   end else begin
       s := ss;
       GetWrd(s, dir, ' ');
       dir := ExtractFilePath(dir);
@@ -10094,8 +10081,7 @@ var
       _NAME := AName;
       Replace(' ', '_', _NAME);
 
-      if Mlr <> nil then
-      begin
+      if Mlr <> nil then begin
          _DCE := IntToStr(Mlr.SD.ConnectSpeed);
          if Mlr.CP = nil then
             _DTE := ''
@@ -10138,19 +10124,17 @@ var
          _SYSOP := ANode.Sysop;
          _SPEED := IntToStr(ANode.Speed);
          //    t:=Time;
-{$IFDEF WS}
+    {$IFDEF WS}
          if Mlr = nil then begin
             if (APoll <> nil) and (ANode.IpData <> nil) then begin
                ad := ANode.IpData[APoll.DataIdx];
                _PHONE := ad.IPAddr;
                _FLAGS := ad.Flags;
             end;
-         end
-         else
-{$ENDIF}
+         end else
+    {$ENDIF}
          begin
-            if (APoll <> nil) and (ANode.DialupData <> nil) then
-            begin
+            if (APoll <> nil) and (ANode.DialupData <> nil) then begin
                ad := ANode.DialupData[APoll.DataIdx];
                _PHONE := ad.Phone;
                _FLAGS := ad.Flags;
@@ -10162,8 +10146,9 @@ var
       _TIMEFOREND := inttostr(24 * 60 - (t.wHour * 60 + t.wMinute));
       p := Pointer(GetEnvironmentStrings);
       li := 0;
-      while (p^[li] <> 0) or (p^[li + 1] <> 0) do
+      while (p^[li] <> 0) or (p^[li + 1] <> 0) do begin
          Inc(li);
+      end;
       Inc(li);
       SetLength(EnvStr, li);
       Move(p^, EnvStr[1], li);
@@ -10178,8 +10163,7 @@ var
       if APassHandleSupported then Add('HANDLE', _HANDLE);
       Add('NUMBER', _NUMBER);
       Add('INDEX', _INDEX);
-      if ANode <> nil then
-      begin
+      if ANode <> nil then begin
          Add('NODE', _NODE);
          Add('STATION', _STATION);
          Add('LOCATION', __LOCATION);
@@ -10222,30 +10206,21 @@ begin
    Rpl('Y', _FLAGS);
    Rpl('W', _SPEED);
    Rpl('T', _TIMEFOREND);
-   if not APassHandleSupported then
-   begin
+   if not APassHandleSupported then begin
       InheritHandles := False;
-   end
-   else
-   begin
+   end else begin
       B := Rpl('Z', '');
-      if Mlr = nil then
-      begin
+      if Mlr = nil then begin
          InheritHandles := False;
-      end
-      else
-      begin
+      end else begin
          Mlr.SD.ExtAppCloseSerial := B;
 {$IFDEF WS}
          if not Mlr.DialupLine then Mlr.SD.ExtAppCloseSerial := False;
 {$ENDIF}
 
-         if Mlr.CP = nil then
-         begin
+         if Mlr.CP = nil then begin
             InheritHandles := False;
-         end
-         else
-         begin
+         end else begin
             if Mlr.SD.ExtAppCloseSerial then
                Mlr.FreeCP
             else
@@ -14537,8 +14512,7 @@ var
 begin
    try
       State := msStartIdle;
-      if NodelistCompilation then
-      begin
+      if NodelistCompilation then begin
          Log(ltInfo, 'Nodelist is compiling, poll calculation skipped'); // '-' - это по-русски
          ClearTmrPublic;
          ClearTimer(TmrNextDial);
@@ -14547,7 +14521,7 @@ begin
          Exit;
       end;
       SetStatusMsg(rsMMOutChk, '');
-      c := FidoOut.GetOutColl(False);
+      c := FidoOut.GetOutColl(False, False);
       ChkErrMsg;
       if c <> nil then begin
          RecreatePolls(c);
@@ -15344,31 +15318,24 @@ PubInst: Boolean;
   RR: TRestrictionData;
    s: string;
 begin
-   if not Again then
-   begin
+   if not Again then begin
       Again := True;
       Logger.Log(ltInfo, 'Begin v' + ProductVersion);
       Sleep(2000);
    end;
 
-   if NodelistCompilation then
-   begin
+   if NodelistCompilation then begin
       Logger.Log(ltInfo, 'Nodelist is compiling, poll calculation skipped'); // '-' - это по-русски
-   end
-   else
-   begin
-      c := FidoOut.GetOutColl(False);
-      if c <> nil then
-      begin
+   end else begin
+      c := FidoOut.GetOutColl(False, False);
+      if c <> nil then begin
          RecreatePolls(c);
          FreeObject(c);
       end;
       DaemonExtPollThreads.Enter;
-      for i := DaemonExtPollThreads.Count - 1 downto 0 do
-      begin
+      for i := DaemonExtPollThreads.Count - 1 downto 0 do begin
          tt := DaemonExtPollThreads[i];
-         if tt.Terminated then
-         begin
+         if tt.Terminated then begin
             tt.WaitFor;
             DaemonExtPollThreads.AtFree(i)
          end;
@@ -15377,19 +15344,15 @@ begin
       pc := 0;
       mpc := FidoPolls.Count * 2; // Trace no more than twice
       repeat
-         if pc = mpc then
-         begin
+         if pc = mpc then begin
             Break;
          end;
          Inc(pc);
          PubInst := False;
-         if (OutConnsAvail > 0) and (not Terminated) and (GetAvailPoll(OwnPolls, PubInst, PollOwnerDaemon, p, Logger)) then
-         begin
+         if (OutConnsAvail > 0) and (not Terminated) and (GetAvailPoll(OwnPolls, PubInst, PollOwnerDaemon, p, Logger)) then begin
             BurnOutLine(p);
             Continue;
-         end
-         else
-         begin
+         end else begin
             Break;
          end;
       until False;
@@ -15407,14 +15370,12 @@ begin
       FidoPolls.Leave;
       FreeObject(RR);
       MailerThreads.Enter;
-      for i := 0 to MailerThreads.Count - 1 do
-      begin
+      for i := 0 to MailerThreads.Count - 1 do begin
          m := MailerThreads[i];
          h := h or not m.DialupLine;
       end;
       MailerThreads.Leave;
-      if (not h) and RASprocess and RASHangup and RASThread.Connected then
-      begin
+      if (not h) and RASprocess and RASHangup and RASThread.Connected then begin
          RASProcess := False;
          sendmessage(MainWinHandle, WM_RASDISCONNECT, 0, 0);
          FidoPollsLog('RAS event finished (nothing to do)');
@@ -15675,7 +15636,7 @@ begin
       end;
       NetmailHolder.ScanMail;
    end;
-   NewNodes := FidoOut.GetOutColl(True);
+   NewNodes := FidoOut.GetOutColl(True, True);
    FileNames := TStringColl.Create;
    FileNames.IgnoreCase := True;
    FileInfos := TFileInfoColl.Create;

@@ -2748,16 +2748,14 @@ var
   D: TWin32FileAttributeData;
   Handle: DWORD;
 begin
-  if Win32Platform = VER_PLATFORM_WIN32_NT then
-  begin
+  if Win32Platform = VER_PLATFORM_WIN32_NT then begin
     Result := NTdyn_GetFileAttributesEx(PChar(FName), GetFileExInfoStandard, @D);
     if not Result then Exit;
     Info.Attr := D.dwFileAttributes;
     Info.Size := D.nFileSizeLow;
     Info.Time := uCvtGetFileTime(D.ftLastWriteTime.dwLowDateTime, D.ftLastWriteTime.dwHighDateTime);
     Result := True;
-  end else
-  begin
+  end else begin
     Result := False;
     Handle := _CreateFile(FName, [cRead, cShareAllowWrite]);
     if Handle = INVALID_HANDLE_VALUE then Exit;
@@ -2786,8 +2784,7 @@ end;
 
 function ClearHandle(var Handle: THandle): Boolean;
 begin
-  if Handle = INVALID_HANDLE_VALUE then Result := False else
-  begin
+  if Handle = INVALID_HANDLE_VALUE then Result := False else begin
     Result := ZeroHandle(Handle);
     Handle := INVALID_HANDLE_VALUE;
   end;
@@ -2831,8 +2828,7 @@ function GetResBitmap;
       B: Graphics.TBitmap;
 begin
   HB := LoadBitmap(HInstance, Name);
-  if HB <> 0 then
-    begin
+  if HB <> 0 then begin
       B := TBitmap.Create;
       B.Width := W;
       B.Height := H;
@@ -2868,8 +2864,11 @@ end;
 
 function _CreateFileSecurity;
 var
-  Access,Share,Disp,Flags{,ErrCode},trc: DWORD;
-
+  Access,
+  Share,
+  Disp,
+  Flags,
+  trc: DWORD;
 const
   NumDispModes = 5;
   DispArr : array[1..NumDispModes] of
@@ -2894,17 +2893,12 @@ begin
   Disp := 0;
   trc := 0;
 
-  if cFlag in Mode then
-  begin
+  if cFlag in Mode then begin
     Disp := CREATE_NEW;
     Flags := Flags or FILE_FLAG_DELETE_ON_CLOSE
-  end else
-  begin
-
+  end else begin
     if Mode * [cTruncate, cEnsureNew] <> [] then Mode := Mode + [cWrite];
-
-    if cExisting in Mode then Disp := OPEN_EXISTING else
-    begin
+    if cExisting in Mode then Disp := OPEN_EXISTING else begin
       if cWrite in Mode then Flags := FILE_ATTRIBUTE_ARCHIVE;
       repeat
         Inc(Disp); if Disp > NumDispModes then GlobalFail('_CreateFile: Invalid mode opening %s', [FName]);
@@ -2913,7 +2907,6 @@ begin
            (n = (cEnsureNew in Mode)) and
            (t = (cTruncate in Mode)) then begin Disp := d; Break end;
       until False;
-
     end;
 
     if cOverlapped in Mode then Flags := Flags or FILE_FLAG_OVERLAPPED;
@@ -2933,13 +2926,13 @@ begin
 
   Result := CreateFile(PChar(FName), Access, Share, lpSecurityAttributes, Disp, Flags, 0);
   if Result = INVALID_HANDLE_VALUE then begin
-    if not (cCanPending in Mode) then
-      while (GetLastError = ERROR_SHARING_VIOLATION) do begin
+     if not (cCanPending in Mode) then
+     while (GetLastError = ERROR_SHARING_VIOLATION) do begin
         inc(trc);
         sleep(100);
         Result := CreateFile(PChar(FName), Access, Share, lpSecurityAttributes, Disp, Flags, 0);
         if trc > 20 then break;
-      end
+     end;
   end;
 end;
 
@@ -2956,19 +2949,18 @@ end;
 
 function GetAPIDroppedFiles;
 var
-  I, J: Integer;
+  I,
+  J: Integer;
   N: Int64;
   S: string;
-  SL: Integer;
+ SL: Integer;
 begin
   Result := nil;
   N := DragQueryFile(H, $FFFFFFFF, nil, 0);
-  if (N <> 0) and (N <> INVALID_HANDLE_VALUE) then
-  begin
+  if (N <> 0) and (N <> INVALID_HANDLE_VALUE) then begin
     J := N;
     SL := -1;
-    for I := 0 to J - 1 do
-    begin
+    for I := 0 to J - 1 do begin
       N := DragQueryFile(H, I, nil, 0);
       if N >= SL then begin SL := N + 1; SetLength(S, SL) end;
       DragQueryFile(H, I, PChar(S), N + 1);
@@ -2997,16 +2989,14 @@ var
   SI: TStartupInfo;
   s, z: string;
 begin
-  if Args = '' then
-  begin
+  if Args = '' then begin
     Result := False;
-    _SetErrorMsg(CExecEmpty, 0);
+   _SetErrorMsg(CExecEmpty, 0);
     Exit;
   end;
   Clear(SI, SizeOf(TStartupInfo));
   SI.CB := SizeOf(SI);
-  if CreationFlags and DETACHED_PROCESS = 0 then
-  begin
+  if CreationFlags and DETACHED_PROCESS = 0 then begin
     SI.dwFlags := STARTF_USESHOWWINDOW;
     SI.wShowWindow := swh[ShowMode];
   end;
@@ -3022,31 +3012,24 @@ begin
     SI,                      // pointer to STARTUPINFO
     PI                       // pointer to PROCESS_INFORMATION
   );
-  if not Result then
-  begin
+  if not Result then begin
     s := Args;
     GetWrd(s, z, ' ');
     SetErrorMsg(z);
   end;
 end;
 
-////////////////////////////////////////////////////////////////////////
-//                                                                    //
-//                      Registry Routines                             //
-//                                                                    //
-////////////////////////////////////////////////////////////////////////
-
 function OpenRegKey(const AFName: string): HKEY;
 var
   R: HKEY;
 begin
   if RegOpenKeyEx(
-    HKEY_LOCAL_MACHINE,      // handle of an open key
-    PChar(AFName),           // subkey name
-    0,                       // Reserved
-    KEY_QUERY_VALUE,
-    R
-  ) = ERROR_SUCCESS then Result := R else Result := INVALID_HANDLE_VALUE;
+     HKEY_LOCAL_MACHINE,      // handle of an open key
+     PChar(AFName),           // subkey name
+     0,                       // Reserved
+     KEY_QUERY_VALUE,
+     R
+     ) = ERROR_SUCCESS then Result := R else Result := INVALID_HANDLE_VALUE;
 end;
 
 function CreateRegKey(const AFName: string): HKEY;
@@ -3101,151 +3084,47 @@ end;
 
 function ReadRegInt(Key: HKey; const AStrName: string): Integer;
 var
-  t, e, b, s: Integer;
+   t,
+   e,
+   b,
+   s: Integer;
 begin
-  t := REG_DWORD;;
-  s := SizeOf(b);
-  e := RegQueryValueEx(
-    Key,             // handle of key to query
-    PChar(AStrName), // value to query
-    nil,             // reserved
-    @t,              // value type
-    @b,              // data buffer
-    @s               // buffer size
-  );
-  if e <> ERROR_SUCCESS then Result := -1 else Result := b;
+   t := REG_DWORD;;
+   s := SizeOf(b);
+   e := RegQueryValueEx(
+        Key,             // handle of key to query
+        PChar(AStrName), // value to query
+        nil,             // reserved
+        @t,              // value type
+        @b,              // data buffer
+        @s               // buffer size
+        );
+   if e <> ERROR_SUCCESS then Result := -1 else Result := b;
 end;
 
 function WriteRegBin(Key: HKey; const rvn: string; Bin: Pointer; Sz: Integer): Boolean;
 begin
-  Result := RegSetValueEx(Key, PChar(rvn), 0, REG_BINARY, Bin, Sz) = ERROR_SUCCESS;
+   Result := RegSetValueEx(Key, PChar(rvn), 0, REG_BINARY, Bin, Sz) = ERROR_SUCCESS;
 end;
 
 function ReadRegBin(Key: HKey; const rvn: string; Bin: Pointer; Sz: Integer): Boolean;
 var
-  t, e, s: Integer;
+   t,
+   e,
+   s: Integer;
 begin
-  t := REG_BINARY;;
-  s := Sz;
-  e := RegQueryValueEx(
-    Key,             // handle of key to query
-    PChar(rvn),      // value to query
-    nil,             // reserved
-    @t,              // value type
-    Bin,             // data buffer
-    @s               // buffer size
-  );
-  Result := e = ERROR_SUCCESS;
+   t := REG_BINARY;;
+   s := Sz;
+   e := RegQueryValueEx(
+        Key,             // handle of key to query
+        PChar(rvn),      // value to query
+        nil,             // reserved
+        @t,              // value type
+        Bin,             // data buffer
+        @s               // buffer size
+        );
+   Result := e = ERROR_SUCCESS;
 end;
-
-////////////////////////////////////////////////////////////////////////
-//                                                                    //
-//                      ListBox Routines                              //
-//                                                                    //
-////////////////////////////////////////////////////////////////////////
-
-{function LB_FocusedIndex;
-begin
-  Result := SendMessage(L.Handle, LB_GETCARETINDEX, 0, 0);
-end;
-
-function  LB_HaveSelected(L: TListBox): Boolean;
-begin
-  case SendMessage(L.Handle, LB_GETSELCOUNT, 0, 0) of
-    0, LB_ERR: Result := False;
-    else Result := True
-  end;
-end;
-
-function  LB_HaveItems(L: TListBox): Boolean;
-begin
-  case SendMessage(L.Handle, LB_GETCOUNT, 0, 0) of
-    0, LB_ERR: Result := False;
-    else Result := True
-  end;
-end;
-
-function LB_Search(L: TListBox; const S: string): Integer;
-begin
-  Result := SendMessage(L.Handle, LB_FINDSTRINGEXACT, -1, Integer(@S[1]));
-end;
-
-function LB_Exist(L: TListBox; const S: string): Boolean;
-begin
-  Result := LB_Search(L, S) <> LB_ERR;
-end;
-
-function  LB_ExistBoth(Src, Dst: TListBox; SrcIdx: Integer): Boolean;
-begin
-  Result := LB_Exist(Dst, Src.Items[SrcIdx]);
-end;
-
-procedure LB_GetSelection(Handle: DWORD; var Buf: PIntArray; var Count: Integer);
-begin
-  Count := SendMessage(Handle, LB_GETSELCOUNT, 0, 0);
-  case Count of
-    0      : Exit;
-    LB_ERR : begin Count := 0; Exit end;
-  end;
-  GetMem(Buf, Count*SizeOf(Integer));
-  if SendMessage(Handle, LB_GETSELITEMS, Count, Integer(Buf)) <> Count then
-  begin
-    FreeMem(Buf, Count*SizeOf(Integer));
-    Count := 0;
-  end;
-end;
-
-procedure LB_CopySelected(Src, Dst: TListBox);
-var
-  I, sc: Integer;
-  PA: PIntArray;
-  s: string;
-begin
-  LB_GetSelection(Src.Handle, PA, sc);
-  if sc > 0 then
-  begin
-    for I := 0 to sc-1 do
-    begin
-      s := Src.Items[PA^[I]];
-      if not LB_Exist(Dst, s) then Dst.Items.Add(s);
-    end;
-    FreeMem(PA, sc*SizeOf(Integer));
-  end;
-end;
-
-procedure LB_DeleteAll(L: TListBox);
-begin
-  SendMessage(L.Handle, LB_RESETCONTENT, 0, 0);
-end;
-
-procedure LB_DeleteSelected(L: TListBox);
-var
-  i, sc: Integer;
-  PA: PIntArray;
-begin
-  LB_GetSelection(L.Handle, PA, sc);
-  if sc > 0 then
-  begin
-    for i := sc - 1 downto 0 do
-    begin
-      SendMessage(L.Handle, LB_DELETESTRING, PA^[i], 0);
-    end;
-    FreeMem(PA, sc*SizeOf(Integer));
-  end;
-end;
-
-procedure LB_CopyAll(Src, Dst: TListBox);
-var
-  i,c: Integer;
-  s: string;
-begin
-  c := Src.Items.Count;
-  for I := 0 to c-1 do
-  begin
-    s := Src.Items[i];
-    if not LB_Exist(Dst, s) then Dst.Items.Add(s);
-  end;
-end;}
 
 ////////////////////////////////////////////////////////////////////////
 //                                                                    //
@@ -3264,18 +3143,14 @@ var
   t: T_Thread;
 begin
   e := GetCurrentThreadId;
-  if e = MainThreadID then
-  begin
+  if e = MainThreadID then begin
      MainThreadMsg := S;
      MainThreadNum := N;
-  end else
-  begin
+  end else begin
     Thr_Coll.Enter;
-    for i := 0 to Thr_Coll.Count - 1 do
-    begin
+    for i := 0 to Thr_Coll.Count - 1 do begin
       t := Thr_Coll[i];
-      if t.ThreadID = e then
-      begin
+      if t.ThreadID = e then begin
         t.FThreadErrMsg := s;
         t.FThreadErrNum := n;
         Break;
@@ -3296,21 +3171,22 @@ var
   Buffer: array[0..255] of Char;
 begin
   Len := FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM or
-    FORMAT_MESSAGE_ARGUMENT_ARRAY, nil, ErrorCode, 0, Buffer,
-    SizeOf(Buffer), nil);
+         FORMAT_MESSAGE_ARGUMENT_ARRAY, nil, ErrorCode, 0, Buffer,
+         SizeOf(Buffer), nil);
   while (Len > 0) and (Buffer[Len - 1] in [#0..#32, '.']) do Dec(Len);
   SetString(Result, Buffer, Len);
 end;
 
 function FormatErrorMsg(const FName: string; e: Integer): string;
 begin
-  if FName = '' then Result := Format('SYS%.5d (%s)', [e, SysErrorMsg(e)])
-                else Result := Format('SYS%.5d ''%s'' (%s)', [e, Copy(FName, 1, MAX_PATH), SysErrorMsg(e)]);
-  Replace(#13#10, ' ', Result);
+   if FName = '' then Result := Format('SYS%.5d (%s)', [e, SysErrorMsg(e)])
+                 else Result := Format('SYS%.5d ''%s'' (%s)', [e, Copy(FName, 1, MAX_PATH), SysErrorMsg(e)]);
+   Replace(#13#10, ' ', Result);
 end;
 
 procedure SetErrorMsg(const FName: string);
-var e: longint;
+var
+   e: longint;
 begin
    e := GetLastError;
   _SetErrorMsg(FormatErrorMsg(FName, e), e);
@@ -3318,57 +3194,54 @@ end;
 
 function GetErrorMsg: string;
 var
-  i: Integer;
-  e: DWORD;
-  t: T_Thread;
+   i: Integer;
+   e: DWORD;
+   t: T_Thread;
 begin
-  Result := '';
-  e := GetCurrentThreadId;
-  if e = MainThreadId then Result := MainThreadMsg else begin
-    Thr_Coll.Enter;
-    for i := 0 to Thr_Coll.Count - 1 do begin
-      t := Thr_Coll[i];
-      if t.ThreadID = e then begin
-        Result := t.FThreadErrMsg;
-        t.FThreadErrMsg := '';
-        t.FThreadErrNum := 0;
-        Break;
+   Result := '';
+   e := GetCurrentThreadId;
+   if e = MainThreadId then Result := MainThreadMsg else begin
+      Thr_Coll.Enter;
+      for i := 0 to Thr_Coll.Count - 1 do begin
+         t := Thr_Coll[i];
+         if t.ThreadID = e then begin
+            Result := t.FThreadErrMsg;
+            t.FThreadErrMsg := '';
+            t.FThreadErrNum := 0;
+            Break;
+         end;
       end;
-    end;
-    Thr_Coll.Leave;
-  end;
+      Thr_Coll.Leave;
+   end;
 end;
 
 function GetErrorNum: longint;
 var
-  i: Integer;
-  e: DWORD;
-  t: T_Thread;
+   i: Integer;
+   e: DWORD;
+   t: T_Thread;
 begin
-  Result := 0;
-  e := GetCurrentThreadId;
-  if e = MainThreadId then Result := MainThreadNum else
-  begin
-    Thr_Coll.Enter;
-    for i := 0 to Thr_Coll.Count - 1 do
-    begin
-      t := Thr_Coll[i];
-      if t.ThreadID = e then
-      begin
-        Result := t.FThreadErrNum;
-        Break;
+   Result := 0;
+   e := GetCurrentThreadId;
+   if e = MainThreadId then Result := MainThreadNum else begin
+      Thr_Coll.Enter;
+      for i := 0 to Thr_Coll.Count - 1 do begin
+         t := Thr_Coll[i];
+         if t.ThreadID = e then begin
+            Result := t.FThreadErrNum;
+            Break;
+         end;
       end;
-    end;
-    Thr_Coll.Leave;
-  end;
+      Thr_Coll.Leave;
+   end;
 end;
 
 function ThreadProc(Thread: T_Thread): Integer;
 begin
-  Thread.FExecute;
-  Result := Thread.FThreadReturnValue;
-  Thread.FFinished := True;
-  EndThread(Result);
+   Thread.FExecute;
+   Result := Thread.FThreadReturnValue;
+   Thread.FFinished := True;
+   EndThread(Result);
 end;
 
 procedure T_Thread.InvokeDone;
@@ -3377,31 +3250,31 @@ end;
 
 constructor T_Thread.Create;
 begin
-  inherited Create;
-  if ThrTimesLog then RegisterSelf;
-  FSuspended := True;
-  FThreadHandle := BeginThread(nil, 0, @ThreadProc, Pointer(Self), CREATE_SUSPENDED, FThreadID);
-  if FThreadHandle = 0 then GlobalFail('T_Thread.Create BeginThread Error %d', [GetLastError]);
-  Thr_Coll.Enter;
-  Thr_Coll.Insert(Self);
-  Thr_Coll.Leave;
+   inherited Create;
+   if ThrTimesLog then RegisterSelf;
+   FSuspended := True;
+   FThreadHandle := BeginThread(nil, 0, @ThreadProc, Pointer(Self), CREATE_SUSPENDED, FThreadID);
+   if FThreadHandle = 0 then GlobalFail('T_Thread.Create BeginThread Error %d', [GetLastError]);
+   Thr_Coll.Enter;
+   Thr_Coll.Insert(Self);
+   Thr_Coll.Leave;
 end;
 
 destructor T_Thread.Destroy;
 begin
 //  if not FFinished then GlobalFail('Attemt to destroy thread %s which is not finished', [ClassName]);
-  FFinished := True;
-  Thr_Coll.Enter;
-  Thr_Coll.Delete(Self);
-  Thr_Coll.Leave;
-  if ThrTimesLog then __AddTimes;
-  ZeroHandle(FThreadHandle);
-  inherited Destroy;
+   FFinished := True;
+   Thr_Coll.Enter;
+   Thr_Coll.Delete(Self);
+   Thr_Coll.Leave;
+   if ThrTimesLog then __AddTimes;
+   ZeroHandle(FThreadHandle);
+   inherited Destroy;
 end;
 
 function T_Thread.GetThrErrorMsg: string;
 begin
-  Result := '???';
+   Result := '???';
 end;
 
 const
@@ -3412,23 +3285,25 @@ const
 
 function T_Thread.GetPriority: TThreadPriority;
 var
-  P: Integer;
-  I: TThreadPriority;
+   P: Integer;
+   I: TThreadPriority;
 begin
-  P := GetThreadPriority(FThreadHandle);
-                  Result := tpNormal;
-  for I := Low(TThreadPriority) to High(TThreadPriority) do
-    if Priorities[I] = P then Result := I;
+   P := GetThreadPriority(FThreadHandle);
+   Result := tpNormal;
+   for I := Low(TThreadPriority) to High(TThreadPriority) do begin
+      if Priorities[I] = P then Result := I;
+   end;
 end;
 
 procedure T_Thread.SetPriority(Value: TThreadPriority);
 begin
-  SetThreadPriority(FThreadHandle, Priorities[Value]);
+   SetThreadPriority(FThreadHandle, Priorities[Value]);
 end;
 
 {$IFDEF DEBUG_VERSION}
 function DebugInfo(const i: integer): string;
-var n: integer;
+var
+   n: integer;
 begin
    Result := '';
    for n := i downto 0 do begin
@@ -3466,7 +3341,7 @@ begin
          if (EntrLogFName <> '') and IniFile.SaveWaits then begin
             EnterList.SaveToFile(EntrLogFName);
          end;
-      end;   
+      end;
       EnterList.Leave;
    end;
 {$ENDIF}
@@ -3474,95 +3349,92 @@ end;
 
 procedure T_Thread.SetSuspended(Value: Boolean);
 begin
-  if Value <> FSuspended then
-    if Value then
-      Suspend else
-      Resume;
+   if Value <> FSuspended then
+   if Value then Suspend else Resume;
 end;
 
 procedure T_Thread.Suspend;
 begin
-  FSuspended := True;
-  SuspendThread(FThreadHandle);
+   FSuspended := True;
+   SuspendThread(FThreadHandle);
 end;
 
 procedure T_Thread.Resume;
 begin
-  if ResumeThread(FThreadHandle) = 1 then FSuspended := False;
+   if ResumeThread(FThreadHandle) = 1 then FSuspended := False;
 end;
 
 {$IFDEF DEBUG_VERSION}
 procedure AnyExceptionNotify(ExceptObj: TObject; ExceptAddr: Pointer; OSException: Boolean);
 var
-  sl: TStringList;
-  si: integer;
-  th: DWORD;
-  nm: string;
+   sl: TStringList;
+   si: integer;
+   th: DWORD;
+   nm: string;
 begin
-  TrapCatched := True;
-  th := 0;
-  EnterCS(TrapLogCS);
-  if ExceptObj <> nil then begin
-    nm := ExceptObj.ClassName;
-  end else begin
-    nm := 'nil';
-  end;
-  if _LogOK(TrapLogFName, th) then begin
-     _LogWriteStr('* ' + uFormat(uGetLocalTime) + ' v' + ProductVersion, th);
-     ZeroHandle(th);
-  end;
-  if _LogOK(TrapLogFName, th) then begin
-     _LogWriteStr('! ' + uFormat(uGetLocalTime) + ' obj: ' + nm +
-                                                  ' adr: ' + HexL(Integer(ExceptAddr)), th);
-     ZeroHandle(th);
-  end;
-  sl := TSTringList.Create;
-  sl.Add('');
-  JclLastExceptStackListToStrings(sl, True, True, True);
-  sl.Add('');
-  for si := 0 to sl.Count - 1 do begin
-     if _LogOK(TrapLogFName, th) then begin
-       _LogWriteStr('! ' + uFormat(uGetLocalTime) + ' ' + sl.Strings[si], th);
-        ZeroHandle(th);
-     end;
-  end;
-  sl.Free;
-  LeaveCS(TrapLogCS);
+   TrapCatched := True;
+   th := 0;
+   EnterCS(TrapLogCS);
+   if ExceptObj <> nil then begin
+      nm := ExceptObj.ClassName;
+   end else begin
+      nm := 'nil';
+   end;
+   if _LogOK(TrapLogFName, th) then begin
+      _LogWriteStr('* ' + uFormat(uGetLocalTime) + ' v' + ProductVersion, th);
+      ZeroHandle(th);
+   end;
+   if _LogOK(TrapLogFName, th) then begin
+      _LogWriteStr('! ' + uFormat(uGetLocalTime) + ' obj: ' + nm +
+                                                   ' adr: ' + HexL(Integer(ExceptAddr)), th);
+      ZeroHandle(th);
+   end;
+   sl := TSTringList.Create;
+   sl.Add('');
+   JclLastExceptStackListToStrings(sl, True, True, True);
+   sl.Add('');
+   for si := 0 to sl.Count - 1 do begin
+      if _LogOK(TrapLogFName, th) then begin
+         _LogWriteStr('! ' + uFormat(uGetLocalTime) + ' ' + sl.Strings[si], th);
+         ZeroHandle(th);
+      end;
+   end;
+   sl.Free;
+   LeaveCS(TrapLogCS);
 end;
 {$ENDIF}
 
 procedure ProcessTrap(const CMsg, CThreadName: string);
 var
-  TrapLogFHandle: DWORD;
-  PI: TProcessInformation;
+   TrapLogFHandle: DWORD;
+   PI: TProcessInformation;
 begin
-  PlaySnd('Trap', Inifile.PlaySounds);
+   PlaySnd('Trap', Inifile.PlaySounds);
 {$IFDEF DEBUG_VERSION}
-  if not TrapCatched then begin
-     AnyExceptionNotify(nil, nil, False);
-  end;
+   if not TrapCatched then begin
+      AnyExceptionNotify(nil, nil, False);
+   end;
 {$ENDIF}
-  TrapLogFHandle := 0;
-  EnterCS(TrapLogCS);
-  if _LogOK(TrapLogFName, TrapLogFHandle) then
-  begin
-    _LogWriteStr('! ' + uFormat(uGetLocalTime) + ' v' + ProductVersion + ' [' + CThreadName + '] ' + CMsg, TrapLogFHandle);
-    ZeroHandle(TrapLogFHandle);
-  end;
-  DoCreateProcess(ParamStr(0) + ' DELAY', PI, swMinimize);
-  ZeroHandle(hMutex);
-  ResumeThread(PI.hThread);
-  ExitProcess(1);
+   TrapLogFHandle := 0;
+   EnterCS(TrapLogCS);
+   if _LogOK(TrapLogFName, TrapLogFHandle) then begin
+      _LogWriteStr('! ' + uFormat(uGetLocalTime) + ' v' + ProductVersion + ' [' + CThreadName + '] ' + CMsg, TrapLogFHandle);
+      ZeroHandle(TrapLogFHandle);
+   end;
+   DoCreateProcess(ParamStr(0) + ' DELAY', PI, swMinimize);
+   ZeroHandle(hMutex);
+   ResumeThread(PI.hThread);
+   ExitProcess(1);
 end;
 
 procedure ShowExceptionCallback(Buffer, Title: PChar);
 var
-  s: string;
+   s: string;
 begin
-  s := Title + ' ' + Buffer;
-  Replace(#13, ' ', s);
-  Replace(#10, ' ', s);
-  ProcessTrap(s, 'Unhandled');
+   s := Title + ' ' + Buffer;
+   Replace(#13, ' ', s);
+   Replace(#10, ' ', s);
+   ProcessTrap(s, 'Unhandled');
 end;
 
 procedure AddLong(var A: TFileTime; const B: TFileTime); assembler;
@@ -3598,158 +3470,153 @@ type
 
 function TThrNfoColl.KeyOf(Item: Pointer): Pointer;
 begin
-  Result := @TThreadNfo(Item).Name;
+   Result := @TThreadNfo(Item).Name;
 end;
 
 function TThrNfoColl.Compare(Key1, Key2: Pointer): Integer;
 begin
-  Result := CompareStr(PString(Key1)^, PString(Key2)^);
+   Result := CompareStr(PString(Key1)^, PString(Key2)^);
 end;
 
 var
-  ThreadNfoColl: TThrNfoColl;
+   ThreadNfoColl: TThrNfoColl;
 
 procedure UpdateThreadsLog;
 var
-  TT: TThreadTimes;
-  i, j: Integer;
-  actually: DWORD;
-  c: TThrNfoColl;
-  t: T_Thread;
-  s {, z}: string;
-  n: TThreadNfo;
+   TT: TThreadTimes;
+   i,
+   j: Integer;
+   actually: DWORD;
+   c: TThrNfoColl;
+   t: T_Thread;
+   s {, z}: string;
+   n: TThreadNfo;
 
 procedure DoAdd(const KernelTime, UserTime, Invoked: TFileTime; const AName: string);
 begin
-  s := s + Format('%s%s%s %s'#13#10, [
-    AddLeftSpaces(IntToStr(FileTimeToMsecs(KernelTime)), 13),
-    AddLeftSpaces(IntToStr(FileTimeToMsecs(UserTime)), 13),
-    AddLeftSpaces(IntToStr(Invoked.dwLowDateTime), 11),
-    AName]);
+   s := s + Format('%s%s%s %s'#13#10, [
+     AddLeftSpaces(IntToStr(FileTimeToMsecs(KernelTime)), 13),
+     AddLeftSpaces(IntToStr(FileTimeToMsecs(UserTime)), 13),
+     AddLeftSpaces(IntToStr(Invoked.dwLowDateTime), 11),
+     AName]);
 end;
 
 begin
-  if ThreadsLogFHandle = 0 then
-  begin
-    if not _LogOK(ThreadsLogFName, ThreadsLogFHandle) then GlobalFail('Failed to create %s', [ThreadsLogFName]);
-  end;
+   if ThreadsLogFHandle = 0 then begin
+      if not _LogOK(ThreadsLogFName, ThreadsLogFHandle) then GlobalFail('Failed to create %s', [ThreadsLogFName]);
+   end;
 
-  c := TThrNfoColl.Create;
-  Thr_Coll.Enter;
-  ThreadNfoColl.Enter;
-  ThreadNfoColl.CopyItemsTo(c);
-  ThreadNfoColl.Leave;
-  for i := 0 to Thr_Coll.Count - 1 do
-  begin
-    t := Thr_Coll[i];
-    s := t.ThreadName;
-    if not c.Search(@s, j) then
-    GlobalFail('UpdateThreadsLog Item "%s" Not Found', [s]);
-    n := c[j];
-    t.GetTimesEx(TT);
-    AddLong(n.KernelTime, TT.KernelTime);
-    AddLong(n.UserTime, TT.UserTime);
-    AddLong(n.Invoked, t.FThreadInvoked);
-  end;
-  Thr_Coll.Leave;
-  s := '    Kernel(ms)     User(ms)   Invoked'#13#10;
+   c := TThrNfoColl.Create;
+   Thr_Coll.Enter;
+   ThreadNfoColl.Enter;
+   ThreadNfoColl.CopyItemsTo(c);
+   ThreadNfoColl.Leave;
+   for i := 0 to Thr_Coll.Count - 1 do begin
+      t := Thr_Coll[i];
+      s := t.ThreadName;
+      if not c.Search(@s, j) then
+      GlobalFail('UpdateThreadsLog Item "%s" Not Found', [s]);
+      n := c[j];
+      t.GetTimesEx(TT);
+      AddLong(n.KernelTime, TT.KernelTime);
+      AddLong(n.UserTime, TT.UserTime);
+      AddLong(n.Invoked, t.FThreadInvoked);
+   end;
+   Thr_Coll.Leave;
+   s := '    Kernel(ms)     User(ms)   Invoked'#13#10;
 
-  if not GetThreadTimes(CurrentThreadHandle, TT.CreationTime, TT.ExitTime, TT.KernelTime, TT.UserTime) then
-  begin
-    GlobalFail('GetThreadTimes("CurrentThreadHandle",...) Error %d', [GetLastError]);
-  end;
-  DoAdd(TT.KernelTime, TT.UserTime, AppThrInvoked, 'Application');
+   if not GetThreadTimes(CurrentThreadHandle, TT.CreationTime, TT.ExitTime, TT.KernelTime, TT.UserTime) then begin
+      GlobalFail('GetThreadTimes("CurrentThreadHandle",...) Error %d', [GetLastError]);
+   end;
+   DoAdd(TT.KernelTime, TT.UserTime, AppThrInvoked, 'Application');
 
-  for i := 0 to c.Count - 1 do
-  begin
-    n := c[i];
-    nnName := n.Name;
-    DoAdd(n.KernelTime, n.UserTime, n.Invoked, n.Name);
-  end;
-  FreeObject(c);
-  SetFilePointer(ThreadsLogFHandle, 0, nil, FILE_BEGIN);
-  WriteFile(ThreadsLogFHandle, s[1], Length(s), Actually, nil);
-  SetEndOfFile(ThreadsLogFHandle);
+   for i := 0 to c.Count - 1 do begin
+      n := c[i];
+      nnName := n.Name;
+      DoAdd(n.KernelTime, n.UserTime, n.Invoked, n.Name);
+   end;
+   FreeObject(c);
+   SetFilePointer(ThreadsLogFHandle, 0, nil, FILE_BEGIN);
+   WriteFile(ThreadsLogFHandle, s[1], Length(s), Actually, nil);
+   SetEndOfFile(ThreadsLogFHandle);
 end;
 
 function TThreadNfo.Copy: Pointer;
 var
-  r: TThreadNfo;
+   r: TThreadNfo;
 begin
-  r := TThreadNfo.Create;
-  r.Name := StrAsg(Name);
-  r.Invoked := Invoked;
-  r.KernelTime := KernelTime;
-  r.UserTime := UserTime;
-  Result := r;
+   r := TThreadNfo.Create;
+   r.Name := StrAsg(Name);
+   r.Invoked := Invoked;
+   r.KernelTime := KernelTime;
+   r.UserTime := UserTime;
+   Result := r;
 end;
 
 procedure T_Thread.RegisterSelf;
 var
-  Nfo: TThreadNfo;
-  i: Integer;
-  s: string;
+ Nfo: TThreadNfo;
+   i: Integer;
+   s: string;
 begin
-  s := StrAsg(ThreadName);
-  ThreadNfoColl.Enter;
-  if ThreadNfoColl.Search(@s, i) then Nfo := ThreadNfoColl[i] else
-  begin
-    Nfo := TThreadNfo.Create;
-    Nfo.Name := s;
-    ThreadNfoColl.AtInsert(i, Nfo);
-  end;
-  FPThreadNfo := Nfo;
-  ThreadNfoColl.Leave;
+   s := StrAsg(ThreadName);
+   ThreadNfoColl.Enter;
+   if ThreadNfoColl.Search(@s, i) then Nfo := ThreadNfoColl[i] else begin
+      Nfo := TThreadNfo.Create;
+      Nfo.Name := s;
+      ThreadNfoColl.AtInsert(i, Nfo);
+   end;
+   FPThreadNfo := Nfo;
+   ThreadNfoColl.Leave;
 end;
 
 procedure T_Thread.GetTimesEx(var T: TThreadTimes);
 begin
-  if not GetThreadTimes(FThreadHandle, T.CreationTime, T.ExitTime, T.KernelTime, T.UserTime) then
-  begin
-    GlobalFail('T_Thread.__FExecute GetThreadTimes("%s",...) Error %d', [ClassName, GetLastError]);
-  end;
+   if not GetThreadTimes(FThreadHandle, T.CreationTime, T.ExitTime, T.KernelTime, T.UserTime) then begin
+      GlobalFail('T_Thread.__FExecute GetThreadTimes("%s",...) Error %d', [ClassName, GetLastError]);
+   end;
 end;
 
 procedure T_Thread.__AddTimes;
 var
-  T: TThreadTimes;
+   T: TThreadTimes;
 begin
-  GetTimesEx(T);
-  SubLong(T.ExitTime, T.CreationTime);
-  Thr_Coll.Enter;
-  AddLong(FPThreadNfo.KernelTime, T.KernelTime);
-  AddLong(FPThreadNfo.UserTime, T.UserTime);
-  AddLong(FPThreadNfo.Invoked, FThreadInvoked);
-  Thr_Coll.Leave;
+   GetTimesEx(T);
+   SubLong(T.ExitTime, T.CreationTime);
+   Thr_Coll.Enter;
+   AddLong(FPThreadNfo.KernelTime, T.KernelTime);
+   AddLong(FPThreadNfo.UserTime, T.UserTime);
+   AddLong(FPThreadNfo.Invoked, FThreadInvoked);
+   Thr_Coll.Leave;
 end;
 
 procedure T_Thread.__FExecute;
 begin
-  repeat
-    IncLong(FThreadInvoked);
-    InvokeExec;
-  until Terminated;
-  InvokeDone;
+   repeat
+      IncLong(FThreadInvoked);
+      InvokeExec;
+   until Terminated;
+   InvokeDone;
 end;
 
 procedure T_Thread.FExecute;
 begin
-  try
+   try
     __FExecute;
-  except
-    on E: Exception do ProcessTrap(GetThrErrorMsg + ' "' + E.Message + '"', ClassName);
-  end;
+   except
+      on E: Exception do ProcessTrap(GetThrErrorMsg + ' "' + E.Message + '"', ClassName);
+   end;
 end;
 
 { TIndexSet }
 
 constructor TIndexSet.Create;
 begin
-  inherited Create;
-  Capacity := 0;
-  Allocated := 0;
-  fIndexes := nil;
-  GrowTo(10);
+   inherited Create;
+   Capacity := 0;
+   Allocated := 0;
+   fIndexes := nil;
+   GrowTo(10);
 end;
 
 destructor TIndexSet.Destroy;
@@ -3759,253 +3626,241 @@ begin
 end;
 
 procedure TIndexSet.GrowTo;
-  var P: PxByteArray;
-      A: DWORD;
+var
+   P: PxByteArray;
+   A: DWORD;
 begin
-  A := 1 + Index div 8; if A < Allocated then Exit;
-  P := AllocMem(A);
-  if P <> nil then
-    begin
+   A := 1 + Index div 8; if A < Allocated then Exit;
+   P := AllocMem(A);
+   if P <> nil then begin
       Clear(P^, A);
-      if fIndexes <> nil then
-        begin
-          Move(fIndexes^, P^, Allocated);
-          FreeMem(fIndexes, Allocated);
-        end;
+      if fIndexes <> nil then begin
+         Move(fIndexes^, P^, Allocated);
+         FreeMem(fIndexes, Allocated);
+      end;
       fIndexes := P;
       Allocated := A;
       Capacity := A * 8;
-    end;
+   end;
 end;
 
 function TIndexSet.GetIndex;
 begin
-  Result := False;
-  if Index >= Capacity then
-    begin
+   Result := False;
+   if Index >= Capacity then begin
       GrowTo(Index);
       if Index >= Capacity then Exit;
-    end;
-  Result := fIndexes^[Index div 8] and (1 shl (Index mod 8)) <> 0;
+   end;
+   Result := fIndexes^[Index div 8] and (1 shl (Index mod 8)) <> 0;
 end;
 
 procedure TIndexSet.SetIndex;
-  var A, B: Integer;
+var
+   A,
+   B: Integer;
 begin
-  if Index >= Capacity then
-    begin
+   if Index >= Capacity then begin
       GrowTo(Index);
       if Index >= Capacity then Exit;
-    end;
-  A := Index div 8; B := (1 shl (Index mod 8));
-  if OnOff then fIndexes^[A] := fIndexes^[A] or B
-           else fIndexes^[A] := fIndexes^[A] and not B;
+   end;
+   A := Index div 8; B := (1 shl (Index mod 8));
+   if OnOff then fIndexes^[A] := fIndexes^[A] or B
+            else fIndexes^[A] := fIndexes^[A] and not B;
 end;
 
 procedure TIndexSet.DeleteIndex;
-  var I,J: Integer;
-      B: Byte;
+var
+   I,
+   J: Integer;
+   B: Byte;
 begin
-  if Index >= Capacity then
-    begin
+   if Index >= Capacity then begin
       GrowTo(Index);
       if Index >= Capacity then Exit;
-    end;
-  J := Index div 8; I := Index mod 8;
-  if (J < Integer(Allocated) - 1) and (fIndexes^[J + 1] and 1 <> 0) then B := $80
-                                                       else B := 0;
-  fIndexes^[J] := B or fIndexes^[J] and ($FF shr (8 - I))
+   end;
+   J := Index div 8; I := Index mod 8;
+   if (J < Integer(Allocated) - 1) and (fIndexes^[J + 1] and 1 <> 0) then B := $80
+                                                                     else B := 0;
+   fIndexes^[J] := B or fIndexes^[J] and ($FF shr (8 - I))
                     or ((fIndexes^[J] and ($FF shl (I + 1))) shr 1);
-  for I := J + 1 to Integer(Allocated) - 1 do
-    begin
+   for I := J + 1 to Integer(Allocated) - 1 do begin
       if (I < Integer(Allocated) - 1) and (fIndexes^[I + 1] and 1 <> 0) then B := $80
-                                                           else B := 0;
+                                                                        else B := 0;
       fIndexes^[I] := (fIndexes^[I] shr 1) or B;
-    end;
+   end;
 end;
 
 function CreateDosStream(const FName: string; Mode: TCreateFileModeSet): TDosStream;
 var
-  h: DWORD;
+   h: DWORD;
 begin
-  ClearErrorMsg;
-  Result := nil;
-  h := _CreateFile(FName, Mode);
-  if h = INVALID_HANDLE_VALUE then begin SetErrorMsg(FName); Exit end;
-  Result := TDosStream.Create(h);
-  Result.OwnHandle := True;
+   ClearErrorMsg;
+   Result := nil;
+   h := _CreateFile(FName, Mode);
+   if h = INVALID_HANDLE_VALUE then begin SetErrorMsg(FName); Exit end;
+   Result := TDosStream.Create(h);
+   Result.OwnHandle := True;
 end;
 
 function CreateDosStreamDir(const FName: string; Mode: TCreateFileModeSet): TDosStream;
 begin
-  Result := CreateDosStream(FName, Mode);
-  if (Result = nil) then
-  begin
-    if GetLastError <> ERROR_PATH_NOT_FOUND then Exit else
-    begin
-      if not CreateDirInheritance(ExtractFilePath(FName)) then Exit;
-      Result := CreateDosStream(FName, Mode);
-    end;
-  end;
+   Result := CreateDosStream(FName, Mode);
+   if (Result = nil) then begin
+      if GetLastError <> ERROR_PATH_NOT_FOUND then Exit else begin
+         if not CreateDirInheritance(ExtractFilePath(FName)) then Exit;
+         Result := CreateDosStream(FName, Mode);
+      end;
+   end;
 end;
 
 function _CreateFileDir(const FName: string; Mode: TCreateFileModeSet): DWORD;
 begin
-  Result := _CreateFile(FName, Mode);
-  if (Result = INVALID_HANDLE_VALUE) then
-  begin
-    if GetLastError <> ERROR_PATH_NOT_FOUND then
-    begin
-      if pos('.BSY', UpperCase(FName)) = 0 then begin
-         SetErrorMsg(FName);
-      end;   
-      Exit;
-    end else
-    begin
-      if not CreateDirInheritance(ExtractFilePath(FName)) then Exit;
-      Result := _CreateFile(FName, Mode);
-      if Result = INVALID_HANDLE_VALUE then
-      begin
-        SetErrorMsg(FName);
-        Exit;
+   Result := _CreateFile(FName, Mode);
+   if (Result = INVALID_HANDLE_VALUE) then  begin
+      if GetLastError <> ERROR_PATH_NOT_FOUND then begin
+         if pos('.BSY', UpperCase(FName)) = 0 then begin
+            SetErrorMsg(FName);
+         end;
+         Exit;
+      end else begin
+         if not CreateDirInheritance(ExtractFilePath(FName)) then Exit;
+         Result := _CreateFile(FName, Mode);
+         if Result = INVALID_HANDLE_VALUE then begin
+            SetErrorMsg(FName);
+            Exit;
+         end;
       end;
-    end;
-  end;
+   end;
 end;
 
 function GetIoId(ATyp: TClass): Integer;
 var
-  i: Integer;
+   i: Integer;
 begin
-  Result := -1;
-  for i := 0 to ioRecColl.Count - 1 do
-  begin
-    if ATyp = TioRec(ioRecColl[i]).Typ then
-    begin
-      Result := TioRec(ioRecColl[i]).Id;
-      Exit;
-    end;
-  end;
+   Result := -1;
+   for i := 0 to ioRecColl.Count - 1 do begin
+      if ATyp = TioRec(ioRecColl[i]).Typ then begin
+         Result := TioRec(ioRecColl[i]).Id;
+         Exit;
+      end;
+   end;
 end;
 
 const
-  StreamKey = $33;
+   StreamKey = $33;
 
 constructor TDosStream.Create;
 begin
-  inherited Create;
-  Handle := AHandle;
+   inherited Create;
+   Handle := AHandle;
 end;
 
 function GetMemoryStream: TxMemoryStreamEx;
 begin
-  Result := TxMemoryStreamEx.Create;
+   Result := TxMemoryStreamEx.Create;
 end;
 
 destructor TDosStream.Destroy;
 begin
-  if OwnHandle then ZeroHandle(Handle);
-  inherited Destroy;
+   if OwnHandle then ZeroHandle(Handle);
+   inherited Destroy;
 end;
 
 function OpenRead(const FName: string): TDosStream;
 begin
-  Result := CreateDosStream(FName, [cRead, cShare]);
+   Result := CreateDosStream(FName, [cRead, cShare]);
 end;
 
 function SeekEof;
 begin
-  Result := SetFilePointer(Handle, 0, nil, File_End);
+   Result := SetFilePointer(Handle, 0, nil, File_End);
 end;
 
 function FilePos(Handle: DWORD): DWORD;
 begin
-  Result := SetFilePointer(Handle, 0, nil, File_Current);
+   Result := SetFilePointer(Handle, 0, nil, File_Current);
 end;
 
 function OpenAppend(const FName: string): TDosStream;
 begin
-  Result := CreateDosStream(FName, [cWrite]);
-  if Result <> nil then Result.Position := Result.Size;
+   Result := CreateDosStream(FName, [cWrite]);
+   if Result <> nil then Result.Position := Result.Size;
 end;
 
 function OpenWrite(const FName: string): TDosStream;
 begin
-  Result := CreateDosStream(FName, [cTruncate]);
+   Result := CreateDosStream(FName, [cTruncate]);
 end;
 
 function TDosStream.Seek(Offset: Longint; Origin: Word): DWORD;
 begin
-  Result := SetFilePointer(Handle, Offset, nil, Origin);
+   Result := SetFilePointer(Handle, Offset, nil, Origin);
 end;
 
 function  TDosStream.Truncate;
 begin
-  Result := SetEndOfFile(Handle);
+   Result := SetEndOfFile(Handle);
 end;
 
 function TDosStream.Read;
 begin
-  if not ReadFile(Handle, Buffer, Count, DWORD(Result), nil) then Result := 0;
+   if not ReadFile(Handle, Buffer, Count, DWORD(Result), nil) then Result := 0;
 end;
 
 function TDosStream.Write;
 begin
-  if not WriteFile(Handle, Buffer, Count, DWORD(Result), nil) then Result := 0;
+   if not WriteFile(Handle, Buffer, Count, DWORD(Result), nil) then Result := 0;
 end;
 
 constructor TCollError.Create(ACode, AInfo: Integer; const AClassName: string);
 begin
-  inherited Create(Format('Coll Error. Code = %d, Info = %d, Class = %s', [ACode, AInfo, AClassName]));
+   inherited Create(Format('Coll Error. Code = %d, Info = %d, Class = %s', [ACode, AInfo, AClassName]));
 end;
 
-procedure QuickSort(SortList: PItemList; L, R: Integer;
-  SCompare: TListSortCompare);
+procedure QuickSort(SortList: PItemList; L, R: Integer; SCompare: TListSortCompare);
 var
-  I, J: Integer;
-  P, T: Pointer;
+   I, J: Integer;
+   P, T: Pointer;
 begin
-  repeat
-    I := L;
-    J := R;
-    P := SortList^[(L + R) shr 1];
-    repeat
-      while SCompare(SortList^[I], P) < 0 do Inc(I);
-      while SCompare(SortList^[J], P) > 0 do Dec(J);
-      if I <= J then
-      begin
-        T := SortList^[I];
-        SortList^[I] := SortList^[J];
-        SortList^[J] := T;
-        Inc(I);
-        Dec(J);
-      end;
-    until I > J;
-    if L < J then QuickSort(SortList, L, J, SCompare);
-    L := I;
-  until I >= R;
+   repeat
+      I := L;
+      J := R;
+      P := SortList^[(L + R) shr 1];
+      repeat
+         while SCompare(SortList^[I], P) < 0 do Inc(I);
+         while SCompare(SortList^[J], P) > 0 do Dec(J);
+         if I <= J then begin
+            T := SortList^[I];
+            SortList^[I] := SortList^[J];
+            SortList^[J] := T;
+            Inc(I);
+            Dec(J);
+         end;
+      until I > J;
+      if L < J then QuickSort(SortList, L, J, SCompare);
+      L := I;
+   until I >= R;
 end;
 
 { ---- TColl ---- }
 
 procedure TColl.Sort(Compare: TListSortCompare);
 begin
-  if (FList <> nil) and (Count > 0) then
-    QuickSort(FList, 0, Count - 1, Compare);
+   if (FList <> nil) and (Count > 0) then QuickSort(FList, 0, Count - 1, Compare);
 end;
 
 function TColl.Copy;
 begin
-  Result := TColl.Create;
-  CopyItemsTo(TColl(Result));
+   Result := TColl.Create;
+   CopyItemsTo(TColl(Result));
 end;
 
 procedure TColl.CopyItemsTo;
 var
-  i: Integer;
+   i: Integer;
 begin
-  Coll.FreeAll;
-  for i := 0 to Count - 1 do Coll.AtInsert(Coll.Count, CopyItem(At(i)));
+   Coll.FreeAll;
+   for i := 0 to Count - 1 do Coll.AtInsert(Coll.Count, CopyItem(At(i)));
 end;
 
 function TColl.Name;
@@ -4015,19 +3870,19 @@ end;
 
 function TColl.CopyItem(AItem: Pointer): Pointer;
 begin
-  Result := TAdvCpObject(AItem).Copy;
+   Result := TAdvCpObject(AItem).Copy;
 end;
 
 procedure TColl.Concat(AColl: TColl);
 var
-  i: Integer;
+   i: Integer;
 begin
-  for i := 0 to AColl.Count - 1 do Insert(AColl[i]);
-  AColl.DeleteAll;
+   for i := 0 to AColl.Count - 1 do Insert(AColl[i]);
+   AColl.DeleteAll;
 end;
 
 var
-  CollCS: TRTLCriticalSection;
+   CollCS: TRTLCriticalSection;
 
 procedure TColl.Enter;
 var
@@ -4123,299 +3978,290 @@ end;
 
 procedure TColl.ForEach(Proc: TForEachProc);
 var
-  i: Integer;
+   i: Integer;
 begin
-  for i := 0 to Count - 1 do Proc(FList^[I]);
+   for i := 0 to Count - 1 do Proc(FList^[I]);
 end;
 
 function TColl.Crc32;
 var
-  i: Integer;
+   i: Integer;
 begin
-  Result := Init;
-  for i := 0 to Count - 1 do
-  begin
-    Result := Crc32Item(FList^[i], Result);
-  end;
+   Result := Init;
+   for i := 0 to Count - 1 do begin
+       Result := Crc32Item(FList^[i], Result);
+   end;
 end;
 
 function TColl.Crc32Item(Item: Pointer; Crc32: DWORD): DWORD;
 begin
-  Result := Crc32;
+   Result := Crc32;
 end;
 
 procedure TColl.PutItem;
 begin
-  Stream.Put(Item);
+   Stream.Put(Item);
 end;
 
 function TColl.GetItem;
 begin
-  Result := Pointer(Stream.Get);
+   Result := Pointer(Stream.Get);
 end;
 
 constructor TColl.Load;
 var
-  lDelta, lCount: Dword;
-  i: Integer;
-  P: Pointer;
+   lDelta,
+   lCount: Dword;
+   i: Integer;
+   P: Pointer;
 begin
 {$IFDEF DEBUG_VERSION}
-  if Debug = nil then Debug := TEnterList.Create;
-{$ENDIF}  
-  lDelta := Stream.ReadDword;
-  DoInit(lDelta * 2, lDelta);
-  lCount := Stream.ReadDWORD;
-  if lCount = 0 then Exit;
-  for i := 0 to lCount - 1 do
-  begin
-    P := GetItem(Stream);
-    if P <> nil then AtInsert(Count, P);
-  end;
+   if Debug = nil then Debug := TEnterList.Create;
+{$ENDIF}
+   lDelta := Stream.ReadDword;
+   DoInit(lDelta * 2, lDelta);
+   lCount := Stream.ReadDWORD;
+   if lCount = 0 then Exit;
+   for i := 0 to lCount - 1 do begin
+      P := GetItem(Stream);
+      if P <> nil then AtInsert(Count, P);
+   end;
 end;
 
 procedure TColl.Store;
 var
-  i: Integer;
+   i: Integer;
 begin
-  Stream.WriteDWORD(FDelta);
-  Stream.WriteDWORD(Count);
-  for i := 0 to Count - 1 do
-  begin
-    PutItem(Stream, At(i));
-  end;
+   Stream.WriteDWORD(FDelta);
+   Stream.WriteDWORD(Count);
+   for i := 0 to Count - 1 do begin
+      PutItem(Stream, At(i));
+   end;
 end;
 
 constructor TColl.Create;
 begin
-  inherited Create;
-  fName := ClassName;
+   inherited Create;
+   fName := ClassName;
 {$IFDEF DEBUG_VERSION}
-  Debug := TEnterList.Create;
+   Debug := TEnterList.Create;
 {$ENDIF}
-  DoInit(32, 64);
+   DoInit(32, 64);
 end;
 
 constructor TColl.Create(const n: string);
 begin
-  inherited Create;
-  fName := n;
+   inherited Create;
+   fName := n;
 {$IFDEF DEBUG_VERSION}
-  Debug := TEnterList.Create;
+   Debug := TEnterList.Create;
 {$ENDIF}
-  DoInit(32, 64);
+   DoInit(32, 64);
 end;
 
 procedure TColl.DoInit(ALimit, ADelta: Integer);
 begin
-  FList := nil;
-  FCount := 0;
-  FCapacity := 0;
-  FDelta := ADelta;
-  SetCapacity(ALimit);
+   FList := nil;
+   FCount := 0;
+   FCapacity := 0;
+   FDelta := ADelta;
+   SetCapacity(ALimit);
 end;
 
 destructor TColl.Destroy;
 begin
-  FreeAll;
-  SetCapacity(0);
+   FreeAll;
+   SetCapacity(0);
 {$IFDEF DEBUG_VERSION}
-  FreeObject(Debug);
+   FreeObject(Debug);
 {$ENDIF}
-  if Shared = 1 then PurgeCS(CS);
-  inherited Destroy;
+   if Shared = 1 then PurgeCS(CS);
+   inherited Destroy;
 end;
 
 function TColl.At(Index: Integer): Pointer;
 var
-  err: boolean;
+   err: boolean;
 begin
-  err := false;
-  try
-    if (Index < 0) or (Index >= FCount) then err := true;
-    Result := FList^[Index];
-  except
-    Result := nil
-  end;
-  if err then Error(coIndexError, Index);
+   err := false;
+   try
+      if (Index < 0) or (Index >= FCount) then err := true;
+      Result := FList^[Index];
+   except
+      Result := nil
+   end;
+   if err then Error(coIndexError, Index);
 end;
 
 procedure TColl.AtDelete(Index: Integer);
 begin
-  if (Index < 0) or (Index >= FCount) then Error(coIndexError, Index);
-  Dec(FCount);
-  if Index < FCount then
-    System.Move(FList^[Index + 1], FList^[Index],
-      (FCount - Index) * SizeOf(Pointer));
+   if (Index < 0) or (Index >= FCount) then Error(coIndexError, Index);
+   Dec(FCount);
+   if Index < FCount then System.Move(FList^[Index + 1], FList^[Index], (FCount - Index) * SizeOf(Pointer));
 end;
 
 procedure TColl.AtFree(Index: Integer);
 var
-  Item: Pointer;
+   Item: Pointer;
 begin
-  Item := At(Index);
-// visual - fix memory leaks.
-// Object was't free if call AtDelete() before FreeItem(). FreeItem() must be first
-  FreeItem(Item);
-  AtDelete(Index);
-//  FreeItem(Item);
+   Item := At(Index);
+   FreeItem(Item);
+   AtDelete(Index);
 end;
 
 procedure TColl.AtInsert(Index: Integer; Item: Pointer);
 begin
-  if (Index < 0) or (Index > FCount) then Error(coIndexError, Index);
-  if FCount = Integer(FCapacity) then SetCapacity(FCapacity + FDelta);
-  if Index < FCount then
-    System.Move(FList^[Index], FList^[Index + 1],
-      (FCount - Index) * SizeOf(Pointer));
-  FList^[Index] := Item;
-  Inc(FCount);
+   if (Index < 0) or (Index > FCount) then Error(coIndexError, Index);
+   if FCount = Integer(FCapacity) then SetCapacity(FCapacity + FDelta);
+   if Index < FCount then System.Move(FList^[Index], FList^[Index + 1], (FCount - Index) * SizeOf(Pointer));
+   FList^[Index] := Item;
+   Inc(FCount);
 end;
 
 procedure TColl.AtPut(Index: Integer; Item: Pointer);
 begin
-  if (Index < 0) or (Index >= FCount) then Error(coIndexError, Index);
-  FList^[Index] := Item;
+   if (Index < 0) or (Index >= FCount) then Error(coIndexError, Index);
+   FList^[Index] := Item;
 end;
 
 procedure TColl.Delete(Item: Pointer);
 begin
-  if IndexOf(Item) >= 0 then begin
-     AtDelete(IndexOf(Item));
-  end;   
+   if IndexOf(Item) >= 0 then begin
+      AtDelete(IndexOf(Item));
+   end;
 end;
 
 procedure TColl.DeleteAll;
 begin
-  FCount := 0;
+   FCount := 0;
 end;
 
 procedure TColl.Error(Code, Info: Integer);
 begin
-  asm nop end;
-    raise TCollError.Create(Code, Info, ClassName);
+   asm nop end;
+   raise TCollError.Create(Code, Info, ClassName);
 end;
 
 procedure TColl.FFree(Item: Pointer);
 begin
-  Delete(Item);
-  FreeItem(Item);
+   Delete(Item);
+   FreeItem(Item);
 end;
 
 procedure TColl.FreeAll;
 var
-  I: Integer;
+   I: Integer;
 begin
-  for I := 0 to FCount - 1 do FreeItem(At(I));
-  FCount := 0;
+   for I := 0 to FCount - 1 do FreeItem(At(I));
+   FCount := 0;
 end;
 
 procedure TColl.FreeItem(Item: Pointer);
 begin
-  TObject(Item).Free;
+   TObject(Item).Free;
 end;
 
 function TColl.IndexOf(Item: Pointer): Integer;
 begin
-  Result := 0;
-  while (Result < FCount) and (FList^[Result] <> Item) do Inc(Result);
-  if Result = FCount then Result := -1;
+   Result := 0;
+   while (Result < FCount) and (FList^[Result] <> Item) do Inc(Result);
+   if Result = FCount then Result := -1;
 end;
 
 procedure TColl.Insert(Item: Pointer);
 begin
-  AtInsert(FCount, Item);
+   AtInsert(FCount, Item);
 end;
 
 procedure TColl.Add(Item: Pointer);
 begin
-  AtInsert(FCount, Item);
+   AtInsert(FCount, Item);
 end;
 
 procedure TColl.Pack;
 var
-  I: Integer;
+   I: Integer;
 begin
-  for I := FCount - 1 downto 0 do if Items[I] = nil then AtDelete(I);
+   for I := FCount - 1 downto 0 do if Items[I] = nil then AtDelete(I);
 end;
 
 procedure TColl.SetCapacity;
 begin
-  if NewCapacity = 0 then begin FreeMem(FList,FCapacity); FList:=nil; exit; end;
-  if (Integer(NewCapacity) < FCount) or (NewCapacity > MaxCollSize) then Error(coOverflow, NewCapacity);
-  if NewCapacity <> FCapacity then
-  begin
-    ReallocMem(FList, NewCapacity * SizeOf(Pointer));
-    FCapacity := NewCapacity;
-  end;
+   if NewCapacity = 0 then begin FreeMem(FList,FCapacity); FList:=nil; exit; end;
+   if (Integer(NewCapacity) < FCount) or (NewCapacity > MaxCollSize) then Error(coOverflow, NewCapacity);
+   if NewCapacity <> FCapacity then begin
+      ReallocMem(FList, NewCapacity * SizeOf(Pointer));
+      FCapacity := NewCapacity;
+   end;
 end;
 
 procedure TColl.MoveTo(CurIndex, NewIndex: Integer);
 var
-  Item: Pointer;
+   Item: Pointer;
 begin
-  if CurIndex <> NewIndex then
-  begin
-    if (NewIndex < 0) or (NewIndex >= FCount) then Error(coIndexError, 0);
-    Item := FList^[CurIndex];
-    AtDelete(CurIndex);
-    AtInsert(NewIndex, Item);
-  end;
+   if CurIndex <> NewIndex then begin
+      if (NewIndex < 0) or (NewIndex >= FCount) then Error(coIndexError, 0);
+      Item := FList^[CurIndex];
+      AtDelete(CurIndex);
+      AtInsert(NewIndex, Item);
+   end;
 end;
 
 { TSortedColl }
 
 function TSortedColl.IndexOf(Item: Pointer): Integer;
 var
-  I: Integer;
+   I: Integer;
 begin
-  IndexOf := -1;
-  if Search(KeyOf(Item), I) then
-  begin
-    if Duplicates then
+   IndexOf := -1;
+   if Search(KeyOf(Item), I) then begin
+      if Duplicates then
       while (I < Count) and {(Item <> FList^[I])} (Compare(Item, FList^[I]) <> 0) do Inc(I);
-    if I < Count then IndexOf := I;
-  end;
+      if I < Count then IndexOf := I;
+   end;
 end;
 
 procedure TSortedColl.Insert(Item: Pointer);
 var
-  I: Integer;
+   I: Integer;
 begin
-  if not Search(KeyOf(Item), I) or Duplicates then AtInsert(I, Item);
+   if not Search(KeyOf(Item), I) or Duplicates then AtInsert(I, Item);
 end;
 
 function TSortedColl.Search(Key: Pointer; var Index: Integer): Boolean;
 var
-  L, H, I, C: Integer;
+   L,
+   H,
+   I,
+   C: Integer;
 begin
-  Search := False;
-  L := 0;
-  H := Count - 1;
-  while L <= H do begin
-    I := (L + H) shr 1;
-    C := Compare(KeyOf(FList^[I]), Key);
-    if C < 0 then L := I + 1 else begin
-      H := I - 1;
-      if C = 0 then begin
-        Search := True;
-        if not Duplicates then L := I;
+   Search := False;
+   L := 0;
+   H := Count - 1;
+   while L <= H do begin
+      I := (L + H) shr 1;
+      C := Compare(KeyOf(FList^[I]), Key);
+      if C < 0 then L := I + 1 else begin
+         H := I - 1;
+         if C = 0 then begin
+            Search := True;
+            if not Duplicates then L := I;
+         end;
       end;
-    end;
-  end;
-  Index := L;
+   end;
+   Index := L;
 end;
 
 { TioRecColl }
 
 function TioRecColl.KeyOf(Item: Pointer): Pointer;
 begin
-  KeyOf := @TioRec(Item).Id;
+   KeyOf := @TioRec(Item).Id;
 end;
 
 function TioRecColl.Compare(Key1, Key2: Pointer): Integer;
 begin
-  Result := Integer(Key1^) - Integer(Key2^);
+   Result := Integer(Key1^) - Integer(Key2^);
 end;
 
 { TStringColl }
@@ -4440,51 +4286,50 @@ end;
 
 function TStringColl.LongString: string;
 var
-  i: Integer;
+   i: Integer;
 begin
-  Result := '';
-  for i := 0 to Count - 1 do Result := Result + Strings[i] + #13#10;
+   Result := '';
+   for i := 0 to Count - 1 do Result := Result + Strings[i] + #13#10;
 end;
 
 function TStringColl.LongStringD(c: char): string;
 var
-  i: Integer;
+   i: Integer;
 begin
-  Result := '';
-  for i := 0 to Count - 2 do Result := Result + Strings[i] + c;
-  for i := MaxI(0, Count - 1) to Count - 1 do Result := Result + Strings[i];
+   Result := '';
+   for i := 0 to Count - 2 do Result := Result + Strings[i] + c;
+   for i := MaxI(0, Count - 1) to Count - 1 do Result := Result + Strings[i];
 end;
 
 function TStringColl.LongStringS(const s: string): string;
 var
-  i: Integer;
+   i: Integer;
 begin
-  Result := '';
-  for i := 0 to Count - 2 do Result := Result + Strings[i] + s;
-  for i := MaxI(0, Count - 1) to Count - 1 do Result := Result + Strings[i];
+   Result := '';
+   for i := 0 to Count - 2 do Result := Result + Strings[i] + s;
+   for i := MaxI(0, Count - 1) to Count - 1 do Result := Result + Strings[i];
 end;
 
 procedure TStringColl.FillEnum(Str: string; Delim: Char; Sorted: Boolean);
 var
-  Z: string;
+   Z: string;
 begin
-  while Str <> '' do
-  begin
-    GetWrd(Str, Z, Delim);
-    if Sorted then InsD(Z) else Add(Z);
-  end;
+   while Str <> '' do begin
+      GetWrd(Str, Z, Delim);
+      if Sorted then InsD(Z) else Add(Z);
+   end;
 end;
 
 function TStringColl.Found(const Str: string): Boolean;
 var
-  i: Integer;
+   i: Integer;
 begin
    Result := Search(@Str, I);
 end;
 
 function TStringColl.Matched(const Str: string): Integer;
 var
-  i: Integer;
+   i: Integer;
 begin
    Result := -1;
    for i := 0 to Count - 1 do begin
@@ -4497,158 +4342,157 @@ end;
 
 function TStringColl.FoundU(const Str: string): Boolean;
 var
-  i: Integer;
+   i: Integer;
 begin
-  Result := False;
-  for i := 0 to Count - 1 do if Str = Strings[i] then begin Result := True; Exit end;
+   Result := False;
+   for i := 0 to Count - 1 do if Str = Strings[i] then begin Result := True; Exit end;
 end;
 
 function TStringColl.IdxOfUC(const Str: string): Integer;
 var
   us: string;
-  i: Integer;
+   i: Integer;
 begin
-  us := UpperCase(Str);
-  Result := -1;
-  for i := 0 to Count - 1 do if us = UpperCase(Strings[i]) then begin Result := i; Exit end;
+   us := UpperCase(Str);
+   Result := -1;
+   for i := 0 to Count - 1 do if us = UpperCase(Strings[i]) then begin Result := i; Exit end;
 end;
 
 function TStringColl.FoundUC(const Str: string): Boolean;
 begin
-  Result := IdxOfUC(Str) <> -1;
+   Result := IdxOfUC(Str) <> -1;
 end;
 
 function TStringColl.LoadFromFile(const FName: string): Boolean;
 var
-  T: TTextReader;
+   T: TTextReader;
 begin
-  Result := False;
-  T := CreateTextReader(FName);
-  if T = nil then Exit;
-  Result := LoadFromTextReader(T);
-  FreeObject(T);
+   Result := False;
+   T := CreateTextReader(FName);
+   if T = nil then Exit;
+   Result := LoadFromTextReader(T);
+   FreeObject(T);
 end;
 
 function TStringColl.LoadFromStream(Stream: TxStream): Boolean;
 var
-  T: TTextReader;
+   T: TTextReader;
 begin
-  Result := False;
-  T := CreateTextReaderByStream(Stream);
-  if T = nil then Exit;
-  Result := LoadFromTextReader(T);
-  FreeObject(T);
+   Result := False;
+   T := CreateTextReaderByStream(Stream);
+   if T = nil then Exit;
+   Result := LoadFromTextReader(T);
+   FreeObject(T);
 end;
 
 function TStringColl.LoadFromString(const s: string): Boolean;
 var
-  M: TxMemoryStream;
+   M: TxMemoryStream;
 begin
-  M := TxMemoryStream.Create;
-  M.FSize := Length(s);
-  M.FMemory := @s[1];
-  Result := LoadFromStream(M);
-  M.FMemory := nil;
-  M.FSize := 0;
-  FreeObject(M);
+   M := TxMemoryStream.Create;
+   M.FSize := Length(s);
+   M.FMemory := @s[1];
+   Result := LoadFromStream(M);
+   M.FMemory := nil;
+   M.FSize := 0;
+   FreeObject(M);
 end;
 
 function TStringColl.LoadFromTextReader;
 begin
-  if not KeepOnLoad then FreeAll;
-  while not T.EOF do Add(T.GetStr);
-  Result := True;
+   if not KeepOnLoad then FreeAll;
+   while not T.EOF do Add(T.GetStr);
+   Result := True;
 end;
 
 function TStringColl.Copy;
 begin
-  Result := TStringColl.Create;
-  CopyItemsTo(TColl(Result));
+   Result := TStringColl.Create;
+   CopyItemsTo(TColl(Result));
 end;
 
 function TStringColl.CopyItem(AItem: Pointer): Pointer;
 begin
-  Result := NewStr(StrAsg(PString(AItem)^));
+   Result := NewStr(StrAsg(PString(AItem)^));
 end;
 
 function TStringColl.Crc32Item(Item: Pointer; Crc32: DWORD): DWORD;
 begin
-  Result := Crc32Str(PString(Item)^, Crc32);
+   Result := Crc32Str(PString(Item)^, Crc32);
 end;
 
 procedure TStringColl.PutItem;
 begin
-  Stream.WriteStr(Pstring(Item)^);
+   Stream.WriteStr(Pstring(Item)^);
 end;
 
 function TStringColl.GetItem;
 begin
-  Result := NewStr(Stream.ReadStr);
+   Result := NewStr(Stream.ReadStr);
 end;
 
 function TStringColl.KeyOf(Item: Pointer): Pointer;
 begin
-  KeyOf := Item;
+   KeyOf := Item;
 end;
 
 procedure TStringColl.Concat(AColl: TStringColl);
 var
-  i: Integer;
+   i: Integer;
 begin
-  for i := 0 to AColl.Count - 1 do AtInsert(Count, AColl.At(I));
-  AColl.DeleteAll;
+   for i := 0 to AColl.Count - 1 do AtInsert(Count, AColl.At(I));
+   AColl.DeleteAll;
 end;
 
 procedure TStringColl.AppendTo(AColl: TStringColl);
 var
-  i: Integer;
+   i: Integer;
 begin
-  for i := 0 to Count - 1 do AColl.Add(StrAsg(Strings[i]));
+   for i := 0 to Count - 1 do AColl.Add(StrAsg(Strings[i]));
 end;
 
 procedure TStringColl.Fill(const AStrs: array of string);
 var
-  i: Integer;
+   i: Integer;
 begin
-  FreeAll;
-  for i := Low(AStrs) to High(AStrs) do Add(AStrs[i]);
+   FreeAll;
+   for i := Low(AStrs) to High(AStrs) do Add(AStrs[i]);
 end;
 
 procedure TStringColl.AddStrings(Strings: TStringColl; Sort: Boolean);
 var
-  i: Integer;
+   i: Integer;
 begin
-  for i := 0 to Strings.Count - 1 do
-    if Sort then Ins(Strings[i]) else Add(Strings[i]);
+   for i := 0 to Strings.Count - 1 do
+   if Sort then Ins(Strings[i]) else Add(Strings[i]);
 end;
 
 function TStringColl.IdxOf(const Item: string): Integer;
 begin
-  Result := IndexOf(@Item);
+   Result := IndexOf(@Item);
 end;
 
 function TStringColl.SaveToStream;
 var
-  i: Integer;
+   i: Integer;
 begin
-  Result := False;
-  for i := 0 to FCount - 1 do
-  begin
-    if not Stream.WriteLn(Strings[i]) then Exit;
-  end;
-  Result := True;
+   Result := False;
+   for i := 0 to FCount - 1 do begin
+      if not Stream.WriteLn(Strings[i]) then Exit;
+   end;
+   Result := True;
 end;
 
 function TStringColl.SaveToFile(const FileName: string): Boolean;
 var
-  T: TDosStream;
+   T: TDosStream;
 begin
-  Result := False;
-  T := OpenWrite(FileName);
-  if T = nil then Exit;
-  T.Truncate;
-  Result := SaveToStream(T);
-  FreeObject(T);
+   Result := False;
+   T := OpenWrite(FileName);
+   if T = nil then Exit;
+   T.Truncate;
+   Result := SaveToStream(T);
+   FreeObject(T);
 end;
 
 procedure TStringColl.AlignObjects;
@@ -4658,13 +4502,13 @@ end;
 
 procedure TStringColl.SetString(Index: Integer; const Value: string);
 begin
-  FreeItem(At(Index));
-  AtPut(Index, NewStr(StrAsg(Value)));
+   FreeItem(At(Index));
+   AtPut(Index, NewStr(StrAsg(Value)));
 end;
 
 function TStringColl.GetString(Index: Integer): string;
 begin
-  Result := PString(At(Index))^;
+   Result := PString(At(Index))^;
 end;
 
 procedure TStringColl.SetObject(Index: Integer; const Value: pointer);
@@ -4681,166 +4525,158 @@ end;
 
 function TStringColl.Compare(Key1, Key2: Pointer): Integer;
 begin
-  if IgnoreCase then
-  Result := CompareText(PString(Key1)^, PString(Key2)^) else
-  Result := CompareStr(PString(Key1)^, PString(Key2)^);
+   if IgnoreCase then
+   Result := CompareText(PString(Key1)^, PString(Key2)^) else
+   Result := CompareStr(PString(Key1)^, PString(Key2)^);
 end;
 
 procedure TStringColl.FreeItem(Item: Pointer);
 begin
-  DisposeStr(Item);
+   DisposeStr(Item);
 end;
 
 procedure TStringColl.AtIns(Index: Integer; const Item: string);
 begin
-  AtInsert(Index, NewStr(StrAsg(Item)));
+   AtInsert(Index, NewStr(StrAsg(Item)));
 end;
 
 procedure TStringColl.Add(const S: string);
 begin
-  AtInsert(Count, NewStr(StrAsg(S)));
+   AtInsert(Count, NewStr(StrAsg(S)));
 end;
 
 procedure TStringColl.Ins0(const S: string);
 begin
-  AtInsert(0, NewStr(StrAsg(S)));
+   AtInsert(0, NewStr(StrAsg(S)));
 end;
 
 procedure TStringColl.Ins(const S: string);
 begin
-  Insert(NewStr(StrAsg(S)));
+   Insert(NewStr(StrAsg(S)));
 end;
 
 procedure TStringColl.InsD(const S: string);
 var
-  I: Integer;
+   I: Integer;
 begin
-  if Duplicates then Ins(S) else
-  begin
-    if not Search(@S, I) then AtInsert(I, NewStr(StrAsg(s)));
-  end;
+   if Duplicates then Ins(S) else begin
+      if not Search(@S, I) then AtInsert(I, NewStr(StrAsg(s)));
+   end;
 end;
 
 { --- TextReader }
 
 function CreateTextReader(const FName: string): TTextReader;
 begin
-  Result := CreateTextReaderByStream(OpenRead(FName));
-  if Result <> nil then Result.OwesStream := True;
+   Result := CreateTextReaderByStream(OpenRead(FName));
+   if Result <> nil then Result.OwesStream := True;
 end;
 
 function CreateTextReaderByStream(Stream: TxStream): TTextReader;
 var
-  FileSz: Integer;
+   FileSz: Integer;
 begin
-  Result := nil;
-  if Stream = nil then Exit;
-  FileSz := Stream.Size;
-  if FileSz = -1 then Exit;
-  Result := TTextReader.Create;
-  Result.FileSz := FileSz;
-  Result.Stream := Stream;
-  if FileSz = 0 then Result.Eof := True else
-  begin
-    Result.BufSz := MinD(FileSz, TextReaderBufSize);
-    if Stream.Read(Result.Buf, Result.BufSz) <> Result.BufSz then FreeObject(Result);
-  end;
+   Result := nil;
+   if Stream = nil then Exit;
+   FileSz := Stream.Size;
+   if FileSz = -1 then Exit;
+   Result := TTextReader.Create;
+   Result.FileSz := FileSz;
+   Result.Stream := Stream;
+   if FileSz = 0 then Result.Eof := True else begin
+      Result.BufSz := MinD(FileSz, TextReaderBufSize);
+      if Stream.Read(Result.Buf, Result.BufSz) <> Result.BufSz then FreeObject(Result);
+   end;
 end;
 
 function TTextReader.GetStr: string;
 var
-  CurLen,
-  BufBeg: DWORD;
-  Was: Boolean;
+   CurLen,
+   BufBeg: DWORD;
+   Was: Boolean;
 
 procedure DoAddStr(var s: string; DoDec: Boolean);
 var
-  Grow: DWORD;
+   Grow: DWORD;
 begin
-  Grow := (BufPos - BufBeg) - Byte(Was);
-  if DoDec then Dec(Grow);
-  if Grow > 0 then
-  begin
-    SetLength(s, CurLen+Grow);
-    Move(Buf[BufBeg], s[CurLen + 1], Grow);
-    Inc(CurLen, Grow);
-  end;
+   Grow := (BufPos - BufBeg) - Byte(Was);
+   if DoDec then Dec(Grow);
+   if Grow > 0 then begin
+      SetLength(s, CurLen + Grow);
+      Move(Buf[BufBeg], s[CurLen + 1], Grow);
+      Inc(CurLen, Grow);
+   end;
 end;
 
 var
-  PrevC, C: Char;
+  PrevC,
+  C: Char;
 
 begin
-  Result := ''; if Eof then Exit; PrevC := #0;
-  CurLen := 0; BufBeg := BufPos; Was := False;
-  repeat
-    if BufPos = BufSz then
-    begin
-      DoAddStr(Result, False);
-      BufSz := Stream.Read(Buf, TextReaderBufSize);
-      if BufSz <= 0 then
-      begin
-        Eof := True;
-        Break;
-      end;
-      BufPos := 0;
-      BufBeg := 0;
-      if Was then begin Skip1 := True; Break end;
-    end;
-    C := Buf[BufPos]; Inc(BufPos); Inc(FilePos);
-    case C of
-      #10, #13 :
-        begin
-          if Skip1 then
-          begin
-            BufBeg := BufPos;
-            Skip1 := False; Continue;
-          end;
-          if Was then
-          begin
-            DoAddStr(Result, True);
-            Dec(BufPos, Integer(PrevC = C));
-            Dec(FilePos, Integer(PrevC = C));
+   Result := ''; if Eof then Exit; PrevC := #0;
+   CurLen := 0; BufBeg := BufPos; Was := False;
+   repeat
+      if BufPos = BufSz then begin
+         DoAddStr(Result, False);
+         BufSz := Stream.Read(Buf, TextReaderBufSize);
+         if BufSz <= 0 then begin
+            Eof := True;
             Break;
-          end else Was := True;
-          PrevC := C;
-        end;
-      else
-      begin
-        if Was then
-        begin
-          DoAddStr(Result, True);
-          Dec(BufPos);
-          Dec(FilePos);
-          Break;
-        end;
-        Skip1 := False
+         end;
+         BufPos := 0;
+         BufBeg := 0;
+         if Was then begin Skip1 := True; Break end;
       end;
-    end;
-  until False;
-  if FilePos >= FileSz then Eof := True;
+      C := Buf[BufPos]; Inc(BufPos); Inc(FilePos);
+      case C of
+      #10, #13 :
+         begin
+            if Skip1 then begin
+               BufBeg := BufPos;
+               Skip1 := False; Continue;
+            end;
+            if Was then begin
+               DoAddStr(Result, True);
+               Dec(BufPos, Integer(PrevC = C));
+               Dec(FilePos, Integer(PrevC = C));
+               Break;
+            end else Was := True;
+            PrevC := C;
+         end;
+      else begin
+         if Was then begin
+            DoAddStr(Result, True);
+            Dec(BufPos);
+            Dec(FilePos);
+            Break;
+         end;
+         Skip1 := False
+      end;
+   end;
+   until False;
+   if FilePos >= FileSz then Eof := True;
 end;
 
 destructor TTextReader.Destroy;
 begin
-  if OwesStream then FreeObject(Stream);
-  inherited Destroy;
+   if OwesStream then FreeObject(Stream);
+   inherited Destroy;
 end;
 
 procedure FreeObject(var O);
 var
-  OO: TObject absolute O;
-  XX: TObject;
+   OO: TObject absolute O;
+   XX: TObject;
 begin
-  if TObject(O) <> nil then begin
-     if TObject(O) is TColl then begin
+   if TObject(O) <> nil then begin
+      if TObject(O) is TColl then begin
         (TObject(O) as TColl).Enter;
         (TObject(O) as TColl).Leave;
-     end;
-  end;
-  XX := nil;
-  XChg(Integer(OO), Integer(XX));
-  TObject(XX).Free;
+      end;
+   end;
+   XX := nil;
+   XChg(Integer(OO), Integer(XX));
+   TObject(XX).Free;
 end;
 
 ////////////////////////////////////////////////////////////////////////
@@ -4851,31 +4687,31 @@ end;
 
 function _InflateRect;
 begin
-  Result.Left   := R.Left   + X;
-  Result.Right  := R.Right  - X;
-  Result.Top    := R.Top    + Y;
-  Result.Bottom := R.Bottom - Y;
+   Result.Left   := R.Left   + X;
+   Result.Right  := R.Right  - X;
+   Result.Top    := R.Top    + Y;
+   Result.Bottom := R.Bottom - Y;
 end;
 
 function _ValidRect;
 begin
-  Result.Left := MinI(R.Left, R.Right);
-  Result.Right := MaxI(R.Left, R.Right);
-  Result.Top := MinI(R.Top, R.Bottom);
-  Result.Bottom := MaxI(R.Top, R.Bottom);
+   Result.Left := MinI(R.Left, R.Right);
+   Result.Right := MaxI(R.Left, R.Right);
+   Result.Top := MinI(R.Top, R.Bottom);
+   Result.Bottom := MaxI(R.Top, R.Bottom);
 end;
 
 function _EmptyRect(const R: TRect): Boolean;
 begin
-  Result := (R.Left = 0) and (R.Right = 0) and (R.Top = 0) and (R.Bottom = 0);
+   Result := (R.Left = 0) and (R.Right = 0) and (R.Top = 0) and (R.Bottom = 0);
 end;
 
 function _OffsetRect(const R: TRect; X, Y: Integer): TRect;
 begin
-  Result.Left   := R.Left   + X;
-  Result.Right  := R.Right  + X;
-  Result.Top    := R.Top    + Y;
-  Result.Bottom := R.Bottom + Y;
+   Result.Left   := R.Left   + X;
+   Result.Right  := R.Right  + X;
+   Result.Top    := R.Top    + Y;
+   Result.Bottom := R.Bottom + Y;
 end;
 
 ////////////////////////////////////////////////////////////////////////
@@ -4890,147 +4726,144 @@ begin
 end;
 
 var
-  MsgFrm: TForm;
-  MsgPan: TPanel;
-  CaptionPan: TPanel;
-  MsgLabel: TLabel;
-  Timer: TTimer;
-  Text: string;
-  prevwndproc: pointer;
-  c: integer;
-  idt: integer;
+   MsgFrm: TForm;
+   MsgPan: TPanel;
+   CaptionPan: TPanel;
+   MsgLabel: TLabel;
+   Timer: TTimer;
+   Text: string;
+   prevwndproc: pointer;
+   c: integer;
+   idt: integer;
 
 procedure WinDlgT;
 var
-  n2: TNotifyEvent;
-  n3: TKeyPressEvent;
+   n2: TNotifyEvent;
+   n3: TKeyPressEvent;
 
-  procedure msgpanonClick(Sender: TObject);
-  begin
-    killtimer(0,idt);
-    MsgFrm.Close;
-    MsgFrm.ModalResult := mrOK;
-  end;
+   procedure msgpanonClick(Sender: TObject);
+   begin
+      killtimer(0,idt);
+      MsgFrm.Close;
+      MsgFrm.ModalResult := mrOK;
+   end;
 
-  procedure timerontimer(Sender: TObject);
-  begin
-    dec(c);
-    if c <= 0 then
-    begin
-      if (timer <> nil) then Timer.Enabled := false;
-      if (MsgFrm <> nil) then
-      begin
-        MsgFrm.Release;
-        MsgFrm.ModalResult := mrOK;
+   procedure timerontimer(Sender: TObject);
+   begin
+      dec(c);
+      if c <= 0 then begin
+         if (timer <> nil) then Timer.Enabled := false;
+         if (MsgFrm <> nil) then begin
+            MsgFrm.Release;
+            MsgFrm.ModalResult := mrOK;
+         end;
+         exit;
       end;
-      exit;
-    end;
-    try
-      if (MsgFrm <> nil) and (MsgLabel <> nil) then
-        MsgLabel.Caption := Format('%s [%d]', [text, c]);
-    except
-      if (timer <> nil) then Timer.Enabled := false;
-    end;
-  end;
+      try
+         if (MsgFrm <> nil) and (MsgLabel <> nil) then
+         MsgLabel.Caption := Format('%s [%d]', [text, c]);
+      except
+         if (timer <> nil) then Timer.Enabled := false;
+      end;
+   end;
 
-  procedure msgpanonKeyPress(Sender: TObject; var Key: Char);
-  begin
-    msgpanonclick(sender);
-  end;
+   procedure msgpanonKeyPress(Sender: TObject; var Key: Char);
+   begin
+      msgpanonclick(sender);
+   end;
 
 begin
-  MsgFrm := TForm.Create(Application);
-  text := s;
-  MsgFrm.Width := Length(S) * 6;
-  MsgFrm.Height := 100;
-  MsgFrm.Position := poScreenCenter;
-  MsgFrm.BorderStyle := bsNone;
-  n3 := nil;
-  @n3 := @msgpanonKeyPress;
-  MsgFrm.OnKeyPress := n3;
-  c := SendMessage(MainWinHandle, WM_GETWINDLGT, 0, 0);
+   MsgFrm := TForm.Create(Application);
+   text := s;
+   MsgFrm.Width := Length(S) * 6;
+   MsgFrm.Height := 100;
+   MsgFrm.Position := poScreenCenter;
+   MsgFrm.BorderStyle := bsNone;
+   n3 := nil;
+   @n3 := @msgpanonKeyPress;
+   MsgFrm.OnKeyPress := n3;
+   c := SendMessage(MainWinHandle, WM_GETWINDLGT, 0, 0);
 
-  n2 := nil;
+   n2 := nil;
 
-  CaptionPan := TPanel.Create(MsgFrm);
+   CaptionPan := TPanel.Create(MsgFrm);
 //  CaptionPan.AutoSize := true;
-  CaptionPan.BevelInner := bvRaised;
-  CaptionPan.BevelOuter := bvLowered;
-  @n2 := @msgpanonClick;
-  CaptionPan.OnClick := n2;
-  CaptionPan.Parent := MsgFrm;
-  CaptionPan.Width := MsgFrm.Width - 1;
-  CaptionPan.Height := 20;
-  CaptionPan.Align := alTop;
-  CaptionPan.Caption := 'Message';
-  CaptionPan.ParentBackground := false;
-  CaptionPan.Color := clNavy;
-  CaptionPan.Font.Color := clWhite;
+   CaptionPan.BevelInner := bvRaised;
+   CaptionPan.BevelOuter := bvLowered;
+   @n2 := @msgpanonClick;
+   CaptionPan.OnClick := n2;
+   CaptionPan.Parent := MsgFrm;
+   CaptionPan.Width := MsgFrm.Width - 1;
+   CaptionPan.Height := 20;
+   CaptionPan.Align := alTop;
+   CaptionPan.Caption := 'Message';
+   CaptionPan.ParentBackground := false;
+   CaptionPan.Color := clNavy;
+   CaptionPan.Font.Color := clWhite;
 
-  n2 := nil;
+   n2 := nil;
 
-  MsgPan := TPanel.Create(MsgFrm);
-  MsgPan.AutoSize := true;
-  MsgPan.BevelInner := bvRaised;
-  MsgPan.BevelOuter := bvLowered;
-  @n2 := @msgpanonClick;
-  MsgPan.OnClick := n2;
-  MsgPan.Parent := MsgFrm;
-  MsgPan.Width := MsgFrm.Width - 1;
-  MsgPan.Height := MsgFrm.Height - 1;
-  MsgPan.Align := alClient;
+   MsgPan := TPanel.Create(MsgFrm);
+   MsgPan.AutoSize := true;
+   MsgPan.BevelInner := bvRaised;
+   MsgPan.BevelOuter := bvLowered;
+   @n2 := @msgpanonClick;
+   MsgPan.OnClick := n2;
+   MsgPan.Parent := MsgFrm;
+   MsgPan.Width := MsgFrm.Width - 1;
+   MsgPan.Height := MsgFrm.Height - 1;
+   MsgPan.Align := alClient;
 
-  Timer := TTimer.Create(MsgFrm);
-  @n2 := @timerontimer;
-  Timer.OnTimer := n2;
-  Timer.Interval := 1000;
+   Timer := TTimer.Create(MsgFrm);
+   @n2 := @timerontimer;
+   Timer.OnTimer := n2;
+   Timer.Interval := 1000;
 
-  MsgLabel := TLabel.Create(MsgPan);
-  @n2 := @msgpanonClick;
-  MsgLabel.OnClick := n2;
-  MsgLabel.AutoSize := true;
-  MsgLabel.Caption := Format('%s [%d]', [text, c]);
-  MsgFrm.Width := MsgLabel.Width + 20;
-  MsgFrm.Height := MsgLabel.Height + 50 + 20;
+   MsgLabel := TLabel.Create(MsgPan);
+   @n2 := @msgpanonClick;
+   MsgLabel.OnClick := n2;
+   MsgLabel.AutoSize := true;
+   MsgLabel.Caption := Format('%s [%d]', [text, c]);
+   MsgFrm.Width := MsgLabel.Width + 20;
+   MsgFrm.Height := MsgLabel.Height + 50 + 20;
 
-  MsgLabel.Parent := MsgPan;
-  MsgLabel.Left := MsgFrm.Width div 2 - MsgLabel.Width div 2;
+   MsgLabel.Parent := MsgPan;
+   MsgLabel.Left := MsgFrm.Width div 2 - MsgLabel.Width div 2;
 //  MsgLabel.Top := MsgPan.Height div 2 - MsgLabel.Height div 2 - 20;
-  MsgLabel.Top := MsgFrm.Height div 2 - MsgLabel.Height div 2 - 10;
-  MsgLabel.Alignment := taCenter;
+   MsgLabel.Top := MsgFrm.Height div 2 - MsgLabel.Height div 2 - 10;
+   MsgLabel.Alignment := taCenter;
 
 //  idt:=SetTimer(0, GetTickCount, 1000, @TimerProc);
-  MsgFrm.ShowModal;
-  if (MsgLabel <> nil) then MsgLabel.Free;
-  if (timer <> nil) then Timer.Free;
-  if (MsgPan <> nil) then MsgPan.Free;
-  if (CaptionPan <> nil) then CaptionPan.Free;
-  if (MsgFrm <> nil) then MsgFrm.Release;
+   MsgFrm.ShowModal;
+   if (MsgLabel <> nil) then MsgLabel.Free;
+   if (timer <> nil) then Timer.Free;
+   if (MsgPan <> nil) then MsgPan.Free;
+   if (CaptionPan <> nil) then CaptionPan.Free;
+   if (MsgFrm <> nil) then MsgFrm.Release;
 end;
 
 function WinDlgCapHlp;
 var
-  p: TMSGBOXPARAMS;
+   p: TMSGBOXPARAMS;
 begin
-  Clear(p, SizeOf(p));
-  p.cbSize := SizeOf(p);
-  p.hwndOwner := AHandle;
-  p.hInstance := hInstance;
-  p.lpszText := PChar(S);
-  p.lpszCaption := PChar(Caption);
-  p.dwStyle := MB_SETFOREGROUND or MB_TASKMODAL or Flags;
-  if (Application = nil) or (AHelpCtx = 0) then p.dwStyle := p.dwStyle or MB_TOPMOST else
-  begin
-    p.dwContextHelpId := AHelpCtx;
-    p.lpfnMsgBoxCallback := @MsgBoxCallback;
-  end;
-  p.dwLanguageId := HelpLanguageId;
-  Result := Integer(Windows.MessageBoxIndirect(p));
+   Clear(p, SizeOf(p));
+   p.cbSize := SizeOf(p);
+   p.hwndOwner := AHandle;
+   p.hInstance := hInstance;
+   p.lpszText := PChar(S);
+   p.lpszCaption := PChar(Caption);
+   p.dwStyle := MB_SETFOREGROUND or MB_TASKMODAL or Flags;
+   if (Application = nil) or (AHelpCtx = 0) then p.dwStyle := p.dwStyle or MB_TOPMOST else begin
+      p.dwContextHelpId := AHelpCtx;
+      p.lpfnMsgBoxCallback := @MsgBoxCallback;
+   end;
+   p.dwLanguageId := HelpLanguageId;
+   Result := Integer(Windows.MessageBoxIndirect(p));
 end;
 
 function WinDlgCap;
 begin
-  Result := WinDlgCapHlp(S, Flags, AHandle, Caption, 0);
+   Result := WinDlgCapHlp(S, Flags, AHandle, Caption, 0);
 end;
 
 function WinDlg;
@@ -5972,71 +5805,71 @@ function TxCustomMemoryStream.SaveToFile(const FileName: string): Boolean;
 
 function DoSave: Boolean;
 var
-  Stream: TDosStream;
+   Stream: TDosStream;
 begin
-  Result := False;
-  Stream := OpenWrite(FileName);
-  if Stream = nil then Exit;
-  Stream.Truncate;
-  Result := SaveToStream(Stream);
-  FreeObject(Stream);
+   Result := False;
+   Stream := OpenWrite(FileName);
+   if Stream = nil then Exit;
+   Stream.Truncate;
+   Result := SaveToStream(Stream);
+   FreeObject(Stream);
 end;
 
 begin
-  ClearErrorMsg;
-  Result := DoSave;
-  if not Result then SetErrorMsg(FileName);
+   ClearErrorMsg;
+   Result := DoSave;
+   if not Result then SetErrorMsg(FileName);
 end;
 
 { TxMemoryStream }
 
 const
-  MemoryDelta = $2000; { Must be a power of 2 }
+   MemoryDelta = $2000; { Must be a power of 2 }
 
 destructor TxMemoryStream.Destroy;
 begin
-  Clear;
-  inherited Destroy;
+   Clear;
+   inherited Destroy;
 end;
 
 procedure TxMemoryStream.Clear;
 begin
-  SetCapacity(0);
-  FSize := 0;
-  FPosition := 0;
+   SetCapacity(0);
+   FSize := 0;
+   FPosition := 0;
 end;
 
 procedure TxMemoryStream.LoadFromStream(Stream: TxStream);
 var
-  Count: Integer;
+   Count: Integer;
 begin
-  Stream.Position := 0;
-  Count := Stream.Size;
-  SetSize(Count);
-  if Count <> 0 then Stream.Read(FMemory^, Count);
+   Stream.Position := 0;
+   Count := Stream.Size;
+   SetSize(Count);
+   if Count <> 0 then Stream.Read(FMemory^, Count);
 end;
 
 procedure TxMemoryStream.LoadFromFile(const FileName: string);
 var
-  Stream: TxStream;
+   Stream: TxStream;
 begin
-  Stream := OpenRead(FileName);
-  if Stream = nil then Exit;
-  LoadFromStream(Stream);
-  Stream.Free;
+   Stream := OpenRead(FileName);
+   if Stream = nil then Exit;
+   LoadFromStream(Stream);
+   Stream.Free;
 end;
 
 procedure TxMemoryStream.SetCapacity(NewCapacity: DWORD);
 begin
-  SetPointer(Realloc(NewCapacity), FSize);
-  FCapacity := NewCapacity;
+   SetPointer(Realloc(NewCapacity), FSize);
+   FCapacity := NewCapacity;
 end;
 
 procedure TxMemoryStream.SetSize(NewSize: DWORD);
 begin
-  Clear;
-  SetCapacity(NewSize);
-  FSize := NewSize;
+   Clear;
+   SetCapacity(NewSize);
+   FSize := NewSize;
 end;
 
 function TxMemoryStream.Realloc(var NewCapacity: DWORD): Pointer;
@@ -6044,14 +5877,11 @@ begin
   if NewCapacity > 0 then
     NewCapacity := (NewCapacity + (MemoryDelta - 1)) and not (MemoryDelta - 1);
   Result := FMemory;
-  if NewCapacity <> FCapacity then
-  begin
-    if NewCapacity = 0 then
-    begin
+  if NewCapacity <> FCapacity then begin
+    if NewCapacity = 0 then begin
       GlobalFreePtr(FMemory);
       Result := nil;
-    end else
-    begin
+    end else begin
 {$Warnings off}
       if Capacity = 0 then
         Result := GlobalAllocPtr(HeapAllocFlags, NewCapacity)
@@ -6064,23 +5894,20 @@ end;
 
 function TxMemoryStream.Write(const Buffer; Count: DWORD): DWORD;
 var
-  Pos: DWORD;
+   Pos: DWORD;
 begin
-  Pos := FPosition + Count;
-  if Pos > 0 then
-  begin
-    if Pos > FSize then
-    begin
-      if Pos > FCapacity then
-        SetCapacity(Pos);
-      FSize := Pos;
-    end;
-    System.Move(Buffer, Pointer(DWORD(FMemory) + FPosition)^, Count);
-    FPosition := Pos;
-    Result := Count;
-    Exit;
-  end;
-  Result := 0;
+   Pos := FPosition + Count;
+   if Pos > 0 then begin
+      if Pos > FSize then begin
+         if Pos > FCapacity then SetCapacity(Pos);
+         FSize := Pos;
+      end;
+      System.Move(Buffer, Pointer(DWORD(FMemory) + FPosition)^, Count);
+      FPosition := Pos;
+      Result := Count;
+      Exit;
+   end;
+   Result := 0;
 end;
 
 constructor TxMemoryStreamEx.Create;
@@ -6097,7 +5924,8 @@ begin
 end;
 
 procedure TxMemoryStreamEx.LoadFromFile;
-var b: byte;
+var
+   b: byte;
 begin
    inherited;
    Addition.LoadFromFile(ChangeFileExt(FileName, '.add'));
@@ -6110,148 +5938,149 @@ begin
 end;
 
 function TxMemoryStreamEx.SaveToFile;
-var b: byte;
+var
+   b: byte;
 begin
-  result := false;
-  if inherited SaveTofile(FileName) then begin
-     b := $FF;
-     Addition.WriteByte(b);
-     Addition.WriteByte(nVersion);
-     b := 0;
-     Addition.WriteByte(b);
-     Result := Addition.SaveToFile(ChangeFileExt(FileName, '.add'));
-  end;
+   result := false;
+   if inherited SaveTofile(FileName) then begin
+      b := $FF;
+      Addition.WriteByte(b);
+      Addition.WriteByte(nVersion);
+      b := 0;
+      Addition.WriteByte(b);
+      Result := Addition.SaveToFile(ChangeFileExt(FileName, '.add'));
+   end;
 end;
 
 procedure TxStream.WriteDWORD(I: DWORD);
 var
-  j, nb: Integer;
-  b: Byte;
+   j,
+  nb: Integer;
+   b: Byte;
 begin
-  nb := NumBits(I);
-  for j := (nb - 1) div 7 downto 1 do
-  begin
-    b := ((i shr (j * 7)) and $7F) or $80;
-    Write(b, 1);
-  end;
-  b := I and $7F;
-  Write(b, 1);
+   nb := NumBits(I);
+   for j := (nb - 1) div 7 downto 1 do begin
+      b := ((i shr (j * 7)) and $7F) or $80;
+      Write(b, 1);
+   end;
+   b := I and $7F;
+   Write(b, 1);
 end;
 
 function TxStream.ReadDWORD: DWORD;
 var
-  b: Byte;
+   b: Byte;
 begin
-  Result := 0; // 5 times
-  Read(b, 1); Result := (Result shl 7) or (b and $7F); if b < $80 then Exit;
-  Read(b, 1); Result := (Result shl 7) or (b and $7F); if b < $80 then Exit;
-  Read(b, 1); Result := (Result shl 7) or (b and $7F); if b < $80 then Exit;
-  Read(b, 1); Result := (Result shl 7) or (b and $7F); if b < $80 then Exit;
-  Read(b, 1); Result := (Result shl 7) or (b and $7F); if b < $80 then Exit;
+   Result := 0; // 5 times
+   Read(b, 1); Result := (Result shl 7) or (b and $7F); if b < $80 then Exit;
+   Read(b, 1); Result := (Result shl 7) or (b and $7F); if b < $80 then Exit;
+   Read(b, 1); Result := (Result shl 7) or (b and $7F); if b < $80 then Exit;
+   Read(b, 1); Result := (Result shl 7) or (b and $7F); if b < $80 then Exit;
+   Read(b, 1); Result := (Result shl 7) or (b and $7F); if b < $80 then Exit;
 end;
 
 procedure TxStream.WriteInteger(I: Integer);
 begin
-  WriteDword(DWORD(i));
+   WriteDword(DWORD(i));
 end;
 
 function TxStream.ReadInteger: Integer;
 begin
-  Result := Integer(ReadDword);
+   Result := Integer(ReadDword);
 end;
 
 procedure TxStream.WriteByte(B: Byte);
 begin
-  Write(B, 1);
+   Write(B, 1);
 end;
 
 function TxStream.ReadByte: Byte;
 begin
-  Read(Result, 1);
+   Read(Result, 1);
 end;
 
 procedure TxStream.WriteBool(B: Boolean);
 begin
-  Write(B, 1);
+   Write(B, 1);
 end;
 
 function TxStream.ReadBool: Boolean;
 begin
-  Read(Result, 1);
+   Read(Result, 1);
 end;
 
 function TxStream.ReadStr;
 var
-  I: DWORD;
+   I: DWORD;
 begin
-  I := ReadDword;
-  SetLength(Result, I);
-  if I > 0 then Read(Result[1], I);
+   I := ReadDword;
+   SetLength(Result, I);
+   if I > 0 then Read(Result[1], I);
 end;
 
 procedure TxStream.WriteStr;
 var
-  I: DWORD;
+   I: DWORD;
 begin
-  I := Length(s);
-  WriteDword(I);
-  if I > 0 then Write(s[1], I);
+   I := Length(s);
+   WriteDword(I);
+   if I > 0 then Write(s[1], I);
 end;
 
 function TxStream.WriteLn;
 var
-  i: DWORD;
+   i: DWORD;
 begin
-  s := s + #13#10; i := Length(s);
-  Result := Write(s[1], i) = i;
+   s := s + #13#10; i := Length(s);
+   Result := Write(s[1], i) = i;
 end;
 
 procedure TxStream.Put(AObject: TAdvObject);
 var
-  L: Integer;
-  P, NewP: Dword;
+   L: Integer;
+   P,
+   NewP: Dword;
 begin
-  L := GetIoId(AObject.ClassType);
-  if L = -1 then GlobalFail('Writing unregistered class %s', [AOBject.ClassName]);
-  WriteDword(L);
-  WriteDword(L xor StreamKey);
-  P := Position;
-  Write(L, 4);
-  AObject.Store(Self);
-  NewP := Position;
-  L := NewP - (P + 4);
-  Position := P;
-  Write(L, 4);
-  Position := NewP;
+   L := GetIoId(AObject.ClassType);
+   if L = -1 then GlobalFail('Writing unregistered class %s', [AOBject.ClassName]);
+   WriteDword(L);
+   WriteDword(L xor StreamKey);
+   P := Position;
+   Write(L, 4);
+   AObject.Store(Self);
+   NewP := Position;
+   L := NewP - (P + 4);
+   Position := P;
+   Write(L, 4);
+   Position := NewP;
 end;
 
 function TxStream.Get: Pointer;
 var
-  id, dlen, curpos: Dword;
-  i: Integer;
-  o: TAdvClass;
-  b: Boolean;
+   id,
+   dlen,
+   curpos: Dword;
+   i: Integer;
+   o: TAdvClass;
+   b: Boolean;
 begin
-  Result := nil;
-  id := ReadDword;
-  if ReadDword <> id xor StreamKey then Exit;
-  Read(dlen, 4);
-  curpos := Position;
-  b := ioRecColl.Search(@id, i);
-  if b then
-  begin
-    o := TIoRec(ioRecColl[i]).Typ;
-    Result := o.Load(Self);
-    if Position <> curpos + dlen then GlobalFail('Error loading %s', [o.ClassName]);
-  end else
-  begin
-    Position := curpos + dlen;
-  end;
-  if FreeLastLoaded then
-  begin
-    FreeLastLoaded := False;
-    FreeObject(Result);
-  end;
+   Result := nil;
+   id := ReadDword;
+   if ReadDword <> id xor StreamKey then Exit;
+   Read(dlen, 4);
+   curpos := Position;
+   b := ioRecColl.Search(@id, i);
+   if b then begin
+      o := TIoRec(ioRecColl[i]).Typ;
+      Result := o.Load(Self);
+      if Position <> curpos + dlen then GlobalFail('Error loading %s', [o.ClassName]);
+   end else begin
+      Position := curpos + dlen;
+   end;
+   if FreeLastLoaded then begin
+      FreeLastLoaded := False;
+      FreeObject(Result);
+   end;
 end;
 
 function NumBits(I: DWORD): DWORD; assembler;
@@ -6317,227 +6146,230 @@ end;
 
 function StrBegs(const Substr, S: string): Boolean;
 begin
-  Result := Copy(S, 1, Length(SubStr)) = Substr;
+   Result := Copy(S, 1, Length(SubStr)) = Substr;
 end;
 
 function StrBegsU(const Substr, S: string): Boolean;
 begin
-  Result := UpperCase(Copy(S, 1, Length(SubStr))) = Substr;
+   Result := UpperCase(Copy(S, 1, Length(SubStr))) = Substr;
 end;
 
 function StrBegsF(const Substr: string; SubstrLen: Integer; const S: string; SLen: Integer): Boolean;
 begin
-  Result := (SLen >= SubstrLen) and MemEqu(Substr[1], S[1], SubstrLen);
+   Result := (SLen >= SubstrLen) and MemEqu(Substr[1], S[1], SubstrLen);
 end;
 
 function UnpackStrEx(var s: string; QuoteChar: string): Boolean;
 var
-  r: string;
-  c: char;
-  i, h, l, sl: Integer;
+   r: string;
+   c: char;
+   i,
+   h,
+   l,
+  sl: Integer;
 begin
-  Result := False;
-  i := 0;
-  if Length(QuoteChar) > 1 then
-  begin
-    Replace(QuoteChar, '%', s);
-    QuoteChar := '%';
-  end;
-  sl := Length(s);
-  while i < sl do
-  begin
-    Inc(i);
-    c := s[i];
-    if c = QuoteChar then
-    begin
-      if i > sl - 2 then Exit;
-      if (length(QuoteChar) = 2) and (UpCase(s[i + 1]) = UpCase(QuoteChar[2])) then inc(i);
-      l := Pos(UpCase(s[i + 2]), rrHiHexChar) - 1;
-      h := Pos(UpCase(s[i + 1]), rrHiHexChar) - 1;
-      if (h = -1) or (l = -1) then Exit;
-      r := r + Chr(h shl 4 or l);
-      Inc(i, 2);
-      Continue;
-    end;
-    r := r + c;
-  end;
-  s := r;
-  Result := True;
+   Result := False;
+   i := 0;
+   if Length(QuoteChar) > 1 then begin
+      Replace(QuoteChar, '%', s);
+      QuoteChar := '%';
+   end;
+   sl := Length(s);
+   while i < sl do begin
+      Inc(i);
+      c := s[i];
+      if c = QuoteChar then begin
+         if i > sl - 2 then Exit;
+         if (length(QuoteChar) = 2) and (UpCase(s[i + 1]) = UpCase(QuoteChar[2])) then inc(i);
+         l := Pos(UpCase(s[i + 2]), rrHiHexChar) - 1;
+         h := Pos(UpCase(s[i + 1]), rrHiHexChar) - 1;
+         if (h = -1) or (l = -1) then Exit;
+         r := r + Chr(h shl 4 or l);
+         Inc(i, 2);
+         Continue;
+      end;
+      r := r + c;
+   end;
+   s := r;
+   Result := True;
 end;
 
 function UnpackRFC1945(var s: string): Boolean;
 begin
-  Result := UnpackStrEx(s, '%');
+   Result := UnpackStrEx(s, '%');
 end;
 
 function StrDeQuote(var s: string): Boolean;
 begin
-  Result := UnpackStrEx(s, '\x');
+   Result := UnpackStrEx(s, '\x');
 end;
 
 function PackStrEx(const s: string; Chars: TCharSet; const QuoteChar: string): string;
 var
-  r: string;
-  c: Char;
-  i: Integer;
+   r: string;
+   c: Char;
+   i: Integer;
 begin
-  r := '';
-  for i := 1 to Length(s) do
-  begin
-    c := s[i];
-    if (c < ' ') or (c in Chars) or (c = QuoteChar[1]) then R := R + QuoteChar + Hex2(Byte(c))
-    else R := R + c;
-  end;
-  Result := r;
+   r := '';
+   for i := 1 to Length(s) do begin
+      c := s[i];
+      if (c < ' ') or (c in Chars) or (c = QuoteChar[1]) then R := R + QuoteChar + Hex2(Byte(c))
+      else R := R + c;
+   end;
+   Result := r;
 end;
 
 function PackRFC1945(const s: string; Chars: TCharSet): string;
 begin
-  Result := PackStrEx(s, Chars, '%');
+   Result := PackStrEx(s, Chars, '%');
 end;
 
 function StrQuote(const s: string): string;
 begin
-  Result := PackStrEx(s, [#0..#255] - charset, '\x');
+   Result := PackStrEx(s, [#0..#255] - charset, '\x');
 end;
 
 function TDblStringColl.Compare(Key1, Key2: Pointer): Integer;
 begin
-  if IgnoreCase then
-  Result := CompareText(PString(Key1)^, PString(Key2)^) else
-  Result := CompareStr(PString(Key1)^, PString(Key2)^);
+   if IgnoreCase then Result := CompareText(PString(Key1)^, PString(Key2)^)
+                 else Result := CompareStr (PString(Key1)^, PString(Key2)^);
 end;
 
 function TDblStringColl.KeyOf(Item: Pointer): Pointer;
 begin
-  Result := @TDblString(Item).Key;
+   Result := @TDblString(Item).Key;
 end;
 
 function FormatBinkPMsg(Id: Byte; const Msg: string): string;
 var
-  Len: Word;
+   Len: Word;
 begin
-  Len := (Length(Msg) + 2) or bdK32;
-  Result := Char(Hi(Len)) + Char(Lo(Len)) + Char(Id) + Msg + #0;
+   Len := (Length(Msg) + 2) or bdK32;
+   Result := Char(Hi(Len)) + Char(Lo(Len)) + Char(Id) + Msg + #0;
 end;
 
 function Vl10z2(const s: string): DWORD;
 var
-  a, b, i: DWORD;
-  c: Char;
+   a,
+   b,
+   i: DWORD;
+   c: Char;
 const
-  ti: array[1..10] of DWORD = (
-  1000000000,
-  100000000,
-  10000000,
-  1000000,
-  100000,
-  10000,
-  1000,
-  100,
-  10,
-  1);
+   ti: array[1..10] of DWORD = (
+   1000000000,
+   100000000,
+   10000000,
+   1000000,
+   100000,
+   10000,
+   1000,
+   100,
+   10,
+   1);
 begin
-  Result := INVALID_VALUE;
-  a := 0;
-  for i := 10 downto 1 do
-  begin
-    C := s[i];
-    if (C < '0') or (C > '9') then Exit; // wrong digit
-    b := DWORD((DWORD(Ord(C)) - DWORD(Ord('0')))) * ti[i];
-    if High(Result) - a < b then Exit; // overflow
-    Inc(a, b);
-  end;
-  Result := a;
+   Result := INVALID_VALUE;
+   a := 0;
+   for i := 10 downto 1 do begin
+      C := s[i];
+      if (C < '0') or (C > '9') then Exit; // wrong digit
+      b := DWORD((DWORD(Ord(C)) - DWORD(Ord('0')))) * ti[i];
+      if High(Result) - a < b then Exit; // overflow
+      Inc(a, b);
+   end;
+   Result := a;
 end;
 
 function Vl(const s: string): DWORD;
 var
-  a, i, l: DWORD;
-  c: Char;
+   a,
+   i,
+   l: DWORD;
+   c: Char;
 begin
-  Result := INVALID_VALUE;
-  l := Length(s);
-  case l of
+   Result := INVALID_VALUE;
+   l := Length(s);
+   case l of
     0 : Exit;
     1 : case s[1] of
-          '0'..'9': begin Result := Ord(s[1]) - Ord('0'); Exit end;
-          else Exit;
+        '0'..'9': begin Result := Ord(s[1]) - Ord('0'); Exit end;
+        else Exit;
         end;
     2..9 : ;
-    10 : case s[1] of
-           '0'..'1': ;
-           '2': begin Result := Vl10z2(s); Exit end;
-           else Exit;
-         end;
-  end;
-  a := 0;
-  for i := 1 to l do
-  begin
-    C := s[i];
-    if (C < '0') or (C > '9') then Exit;
-    a := a * 10 + Ord(C) - Ord('0');
-  end;
-  Result := a;
+   10 : case s[1] of
+          '0'..'1': ;
+          '2': begin Result := Vl10z2(s); Exit end;
+        else Exit;
+        end;
+   end;
+   a := 0;
+   for i := 1 to l do begin
+      C := s[i];
+      if (C < '0') or (C > '9') then Exit;
+      a := a * 10 + Ord(C) - Ord('0');
+   end;
+   Result := a;
 end;
 
 function VlH(const s: string): DWORD;
 var
-  a, i, L, start: DWORD;
-  c: Char;
+   a,
+   i,
+   L,
+   start: DWORD;
+   c: Char;
 begin
-  Result := INVALID_VALUE;
-  L := Length(s);
-  start := 0;
-  if (L = 0) then Exit;
-  while (start < L - 1) and (s[start + 1] = '0') do Inc(start);
-  if (L - start > 8) then Exit;
-  a := 0;
-  for i := 1 + start to L do
-  begin
-    C := s[i];
-    a := a shl 4;
-    case C of
+   Result := INVALID_VALUE;
+   L := Length(s);
+   start := 0;
+   if (L = 0) then Exit;
+   while (start < L - 1) and (s[start + 1] = '0') do Inc(start);
+   if (L - start > 8) then Exit;
+   a := 0;
+   for i := 1 + start to L do begin
+      C := s[i];
+      a := a shl 4;
+      case C of
       '0'..'9' : Inc(a, Ord(C) - Ord('0'));
       'A'..'F' : Inc(a, Ord(C) - Ord('A') + 10);
       'a'..'f' : Inc(a, Ord(C) - Ord('a') + 10);
       else Exit;
-    end;
-  end;
-  Result := a;
+      end;
+   end;
+   Result := a;
 end;
 
 function VlX(const s: string): DWORD;
 var
-  a, i, l: DWORD;
-  c: Char;
+   a,
+   i,
+   l: DWORD;
+   c: Char;
 begin
-  Result := INVALID_VALUE;
-  l := Length(s);
-  if (l = 0) or (l > 8) then Exit;
-  a := 0;
-  for i := 1 to l do
-  begin
-    C := s[i];
-    a := a shl 5;
-    case C of
+   Result := INVALID_VALUE;
+   l := Length(s);
+   if (l = 0) or (l > 8) then Exit;
+   a := 0;
+   for i := 1 to l do begin
+      C := s[i];
+      a := a shl 5;
+      case C of
       '0'..'9' : Inc(a, Ord(C) - Ord('0'));
       'A'..'V' : Inc(a, Ord(C) - Ord('A') + 10);
       'a'..'v' : Inc(a, Ord(C) - Ord('a') + 10);
       else Exit;
-    end;
-  end;
-  Result := a;
+      end;
+   end;
+   Result := a;
 end;
 
 procedure SetEvt(oEvt: THandle);
 begin
-  if not SetEvent(oEvt) then GlobalFail('SetEvent(%d) Error %d', [oEvt, GetLastError]);
+   if not SetEvent(oEvt) then GlobalFail('SetEvent(%d) Error %d', [oEvt, GetLastError]);
 end;
 
 procedure ResetEvt(oEvt: THandle);
 begin
-  if not ResetEvent(oEvt) then GlobalFail('ResetEvent(%d) Error %d', [oEvt, GetLastError]);
+   if not ResetEvent(oEvt) then GlobalFail('ResetEvent(%d) Error %d', [oEvt, GetLastError]);
 end;
 
 {procedure PurgeThrZombies;
@@ -6549,138 +6381,137 @@ end;}
 
 function _GetComputerName: string;
 var
-  b: array[0..MAX_COMPUTERNAME_LENGTH + 1] of Char;
-  s: string;
-  i: DWORD;
+   b: array[0..MAX_COMPUTERNAME_LENGTH + 1] of Char;
+   s: string;
+   i: DWORD;
 begin
-  Result := '';
-  i := MAX_COMPUTERNAME_LENGTH;
-  if not GetComputerName(@b, i) then Exit;
-  SetString(s, b, i);
-  Result := s;
+   Result := '';
+   i := MAX_COMPUTERNAME_LENGTH;
+   if not GetComputerName(@b, i) then Exit;
+   SetString(s, b, i);
+   Result := s;
 end;
 
 procedure BlockRBO(var Buf; Count: Integer);
 var
-  p: PxByteArray;
-  i: Integer;
+   p: PxByteArray;
+   i: Integer;
 begin
-  p := @Buf;
-  for i := 0 to Count - 1 do p^[i] := RBOTable[p^[i]];
+   p := @Buf;
+   for i := 0 to Count - 1 do p^[i] := RBOTable[p^[i]];
 end;
 
 var
-  FWheelScrollLines: DWORD;
-  FWheelScrollLinesGot: Boolean;
+   FWheelScrollLines: DWORD;
+   FWheelScrollLinesGot: Boolean;
 
 function WheelScrollLines: Integer;
 begin
-  if not FWheelScrollLinesGot then
-  begin
-    FWheelScrollLinesGot := True;
-    if not SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, @FWheelScrollLines, 0) then FWheelScrollLines := WHEEL_PAGESCROLL;
-  end;
-  Result := FWheelScrollLines;
+   if not FWheelScrollLinesGot then begin
+     FWheelScrollLinesGot := True;
+     if not SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, @FWheelScrollLines, 0) then FWheelScrollLines := WHEEL_PAGESCROLL;
+   end;
+   Result := FWheelScrollLines;
 end;
 
 procedure GetWheelCommands(ADelta: Integer; var ScrollCode, Count: Integer);
 const
-  CCode: array[Boolean] of array[Boolean] of Integer = ((SB_LINEDOWN, SB_LINEUP), (SB_PAGEDOWN, SB_PAGEUP));
+   CCode: array[Boolean] of array[Boolean] of Integer = ((SB_LINEDOWN, SB_LINEUP), (SB_PAGEDOWN, SB_PAGEUP));
 var
-  dir, page: Boolean;
-  lines: DWORD;
+   dir,
+   page: Boolean;
+   lines: DWORD;
 begin
-  dir := ADelta > 0;
-  if not dir then ADelta := -ADelta;
-  lines := WheelScrollLines;
-  page := lines = WHEEL_PAGESCROLL;
-  if page then lines := 1;
-  ScrollCode := CCode[page, dir];
-  Count := (ADelta * Integer(lines)) div WHEEL_DELTA;
+   dir := ADelta > 0;
+   if not dir then ADelta := -ADelta;
+   lines := WheelScrollLines;
+   page := lines = WHEEL_PAGESCROLL;
+   if page then lines := 1;
+   ScrollCode := CCode[page, dir];
+   Count := (ADelta * Integer(lines)) div WHEEL_DELTA;
 end;
 
 function StrAsg(const Src: string): string;
 begin
-  if Src = '' then Result := '' else
-  begin
-    SetLength(Result, Length(Src));
-    Move(Src[1], Result[1], Length(Src));
-  end;
+   if Src = '' then Result := '' else begin
+      SetLength(Result, Length(Src));
+      Move(Src[1], Result[1], Length(Src));
+   end;
 end;
 
 function ItoS(I: DWORD): string;
 begin
-  Str(I, Result);
+   Str(I, Result);
 end;
 
 function ItoSz(I: DWORD; Width: Integer): string;
 begin
-  Result := ItoS(I);
-  while Length(Result) < Width do Result := '0' + Result;
-  Result := Copy(Result, 1, Width);
+   Result := ItoS(I);
+   while Length(Result) < Width do Result := '0' + Result;
+   Result := Copy(Result, 1, Width);
 end;
 
 function RFCDateStr(const D: TSystemTime): string;
 var
-  s: string;
+   s: string;
 begin
-  GetBias;
-  s := Format('%4.4d', [-TimeZoneBias div 36]);
-  if Length(s) = 4 then s := '+' + s;
-  Result :=
-  DowE(D.wDayOfWeek) + ', ' +
-  ItoSz(D.wDay, 2) + ' ' +
-  MonthE(D.wMonth) + ' ' +
-  ItoS(D.wYear) + ' ' +
-  ItoSz(D.wHour, 2) + ':' +
-  ItoSz(D.wMinute, 2) + ':' +
+   GetBias;
+   s := Format('%4.4d', [-TimeZoneBias div 36]);
+   if Length(s) = 4 then s := '+' + s;
+   Result :=
+   DowE(D.wDayOfWeek) + ', ' +
+   ItoSz(D.wDay, 2) + ' ' +
+   MonthE(D.wMonth) + ' ' +
+   ItoS(D.wYear) + ' ' +
+   ItoSz(D.wHour, 2) + ':' +
+   ItoSz(D.wMinute, 2) + ':' +
 //  ItoSz(D.wSecond, 2) + ' UTC ' + s;
-  ItoSz(D.wSecond, 2) + ' '{UTC'} + s; //according to RFC 2822
+   ItoSz(D.wSecond, 2) + ' '{UTC'} + s; //according to RFC 2822
 end;
 
 function RFCDateStr: string;
 var
-  D: TSystemTime;
+   D: TSystemTime;
 begin
-  GetLocalTime(D);
-  Result := RFCDateStr(D);
+   GetLocalTime(D);
+   Result := RFCDateStr(D);
 end;
 
 function RFCDateUTC: string;
 var
-  D: TSystemTime;
+   D: TSystemTime;
 begin
-  GetSystemTime(D);
-  Result := RFCDateStr(D);
+   GetSystemTime(D);
+   Result := RFCDateStr(D);
 end;
 
 function RFCDateStr(const D: DWORD): string;
 var
-  S: TSystemTime;
-  T: TDateTime;
+   S: TSystemTime;
+   T: TDateTime;
 begin
-  T := FileDateToDateTime(D);
-  DateTimeToSystemTime(T, S);
-  Result := RFCDateStr(S);
+   T := FileDateToDateTime(D);
+   DateTimeToSystemTime(T, S);
+   Result := RFCDateStr(S);
 end;
 
 type
-  TRegExpColl = class(TSortedColl)
-    function KeyOf(Item: Pointer): Pointer; override;
-    function Compare(Key1, Key2: Pointer): Integer; override;
-  end;
+   TRegExpColl = class(TSortedColl)
+      function KeyOf(Item: Pointer): Pointer; override;
+      function Compare(Key1, Key2: Pointer): Integer; override;
+   end;
 
 var
-  RegExpList: TRegExpColl;
+   RegExpList: TRegExpColl;
 
 function TRegExpColl.KeyOf(Item: Pointer): Pointer;
 begin
-  KeyOf := @(TPCRE(Item).FPatt);
+   KeyOf := @(TPCRE(Item).FPatt);
 end;
 
 function TRegExpColl.Compare(Key1, Key2: Pointer): Integer;
 begin
-  Result := CompareStr(PString(Key1)^, PString(Key2)^);
+   Result := CompareStr(PString(Key1)^, PString(Key2)^);
 end;
 
 procedure FreeRegExprList;

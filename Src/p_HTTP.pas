@@ -372,7 +372,7 @@ begin
             fBody := fBody +
                   '<tr><td><a href=' + t + '><strong>' + t + '</strong></td><td width="30"></td>' +
                   '<td align=right>' + Size2KB(GetFileSize(OutPaths[i])) + '</td><td width="30"></td>' +
-                  '<td>' + RFCDateStr(GetFileTime(OutPaths[i])) + '</td><td width="30"></td>' +
+                  '<td>' + RFCDateStr(FileAge(OutPaths[i])) + '</td><td width="30"></td>' +
                   '<td><a href=delete?' + t + '>delete</td>';
             IF IsNetMailExt(ExtractFileExt(t)) then begin
                fBody := fBody +

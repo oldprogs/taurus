@@ -105,13 +105,13 @@ type
        private
          FFileBoxes: Pointer;
          CacheCS: TRTLCriticalSection;
-         OutCache: TOutNodeColl;
          fOutboundSize: DWORD;
          function _GetOutColl: TOutNodeColl;
-         function _GetOutCollP(Single, AFull: Boolean; const Addr: TFidoAddress): TOutNodeColl;
+         function _GetOutCollP(const Single, AFull, Scan: Boolean; const Addr: TFidoAddress): TOutNodeColl;
          function  GetOutboundSize: longint;
        public
          BusyFlags: TColl;
+         OutCache: TOutNodeColl;
          ForcedRescan: Boolean;
          constructor Create;
          function AttachFiles(const Address: TFidoAddress; Files: TStringColl; Status: TOutStatus; KillAction: TKillAction): Boolean;
@@ -128,8 +128,8 @@ type
          function Paused(const Address: TFidoAddress):boolean;
          procedure Unlock(const Address: TFidoAddress; const Status: TOutStatus);
          destructor Destroy; override;
-         function GetOutColl(AFull: Boolean): TOutNodeColl;
-         function GetOutNode(const Addr: TFidoAddress): TOutNode;
+         function GetOutColl(AFull, Scan: Boolean): TOutNodeColl;
+         function GetOutNode(const Addr: TFidoAddress; Scan: boolean): TOutNode;
          procedure AddOutbound(const Addr: TFidoAddress; const Name: string; const Stat: TOutstatus; Kill: TKillAction);
          property OutboundSize: longint read GetOutboundSize;
      end;
@@ -143,7 +143,6 @@ function DeleteOutFile(const FName: string): Boolean;
 function TruncOutFile(const FName: string): Boolean;
 
 var FidoOut: TOutbound;
-    LastRescan: EventTimer;
 
 const
     SKillActionA : array[TKillAction] of string = ('', '^', '#', '', '');
@@ -2088,12 +2087,12 @@ begin
   Result := n;
 end;
 
-function TOutbound.GetOutNode(const Addr: TFidoAddress): TOutNode;
+function TOutbound.GetOutNode(const Addr: TFidoAddress; Scan: boolean): TOutNode;
 var
   n: TOutNodeColl;
 begin
   Result := nil;
-  n := _GetOutCollP(True, False, Addr);
+  n := _GetOutCollP(True, False, Scan, Addr);
   if n <> nil then
   begin
     if n.Count <> 1 then GlobalFail('TOutbound.GetOutNode(%s) n.Count=%d', [Addr2Str(Addr), n.Count]);
@@ -2144,94 +2143,92 @@ end;
 
 function TOutbound.GetOutColl;
 begin
-  Result := _GetOutCollP(False, AFull, FidoAddress(-1, 0, 0, 0, ''));
+  Result := _GetOutCollP(False, AFull, Scan, FidoAddress(-1, 0, 0, 0, ''));
 end;
 
-function TOutbound._GetOutCollP(Single, AFull: Boolean; const Addr: TFidoAddress): TOutNodeColl;
+function TOutbound._GetOutCollP(const Single, AFull, Scan: Boolean; const Addr: TFidoAddress): TOutNodeColl;
 
-  function GetIt: TOutNodeColl;
-  var
-    i: Integer;
-    n: TOutNode;
-  begin
-    if OutCache = nil then Result := nil else begin
-      if AFull then Result := OutCache.Copy else begin
-        Result := TOutNodeColl.Create;
-        for i := 0 to OutCache.Count - 1 do begin
-          n := OutCache[i];
-          if Single and (CompareAddrs(Addr, n.Address) <> 0) then Continue;
-          if n.FStatus <> [osNone] then begin
-             Result.Insert(n.Copy);
-          end;
-        end;
+   function GetIt: TOutNodeColl;
+   var
+      i: Integer;
+      n: TOutNode;
+   begin
+      if OutCache = nil then Result := nil else begin
+         if AFull then Result := OutCache.Copy else begin
+            Result := TOutNodeColl.Create;
+            for i := 0 to OutCache.Count - 1 do begin
+               n := OutCache[i];
+               if Single and (CompareAddrs(Addr, n.Address) <> 0) then Continue;
+               if n.FStatus <> [osNone] then begin
+                  Result.Insert(n.Copy);
+               end;
+            end;
+         end;
       end;
-    end;
-  end;
+   end;
 
 begin
-  CfgEnter;
-  if not Cfg.FileBoxes.Copied then begin
-    FreeObject(FFileBoxes);
-    FFileBoxes := Cfg.FileBoxes.Copy;
-  end;
-  CfgLeave;
-  EnterCS(CacheCS);
-  if (not ForcedRescan) and (TimerInstalled(LastRescan)) and (not TimerExpired(LastRescan)) then begin
-    Result := GetIt;
-  end else begin
-    ForcedRescan := False;
-    FreeObject(OutCache);
-    OutCache := _GetOutColl;
-    Result := GetIt;
-    NewTimerSecs(LastRescan, 20);
-  end;
-  LeaveCS(CacheCS);
+   CfgEnter;
+   if not Cfg.FileBoxes.Copied then begin
+      FreeObject(FFileBoxes);
+      FFileBoxes := Cfg.FileBoxes.Copy;
+   end;
+   CfgLeave;
+   EnterCS(CacheCS);
+   if not Scan then begin
+      Result := GetIt;
+   end else begin
+      ForcedRescan := False;
+      FreeObject(OutCache);
+      OutCache := _GetOutColl;
+      Result := GetIt;
+   end;
+   LeaveCS(CacheCS);
 end;
 
 function TOutFile.OutAttType: TOutAttType;
 begin
-  Result := GetOutAttTypeByKillAction(KillAction);
+   Result := GetOutAttTypeByKillAction(KillAction);
 end;
 
 function TOutFile.Copy: Pointer;
 var
-  f: TOutFile;
+   f: TOutFile;
 begin
-  f := TOutFile.Create;
-  f.Error := Error;
-  f.Orig := StrAsg(Orig);
-  f.Link := StrAsg(Link);
-  f.Name := StrAsg(Name);
-  f.MoveTo := StrAsg(MoveTo);
-  f.Nfo.Size := Nfo.Size;
-  f.Nfo.Time := Nfo.Time;
-  f.KillAction := KillAction;
-  f.FStatus := FStatus;
-  f.Address := Address;
-  Result := f;
+   f := TOutFile.Create;
+   f.Error := Error;
+   f.Orig := StrAsg(Orig);
+   f.Link := StrAsg(Link);
+   f.Name := StrAsg(Name);
+   f.MoveTo := StrAsg(MoveTo);
+   f.Nfo.Size := Nfo.Size;
+   f.Nfo.Time := Nfo.Time;
+   f.KillAction := KillAction;
+   f.FStatus := FStatus;
+   f.Address := Address;
+   Result := f;
 end;
 
 function TOutNode.Status: TOutStatus;
 begin
-  GlobalFail('OutNode %s Status', [Name]);
-  Result := osNone;
+   GlobalFail('OutNode %s Status', [Name]);
+   Result := osNone;
 end;
 
 function TOutNode.StatusSet: TOutStatusset;
 begin
-  Result := FStatus;
+   Result := FStatus;
 end;
 
 function TOutNode.StatusString: string;
 var
-  a: string;
-  s: TOutStatus;
+   a: string;
+   s: TOutStatus;
 begin
-  SetLength(a, 9); FillChar(a[1], 9, '.');
-  for s := Low(s) to High(s) do
-  begin
-    if s in FStatus then
-    case s of
+   SetLength(a, 9); FillChar(a[1], 9, '.');
+   for s := Low(s) to High(s) do begin
+      if s in FStatus then
+      case s of
       osError                : a[1] := 'E';
       osBusy                 : a[2] := 'B';
       osBusyEx               : a[2] := '*';
@@ -2243,140 +2240,141 @@ begin
       osHoldMail,   osHold   : a[7] := 'H';
       osRequest              : a[8] := 'R';
       osPause                : a[9] := 'P';
-    end;
-  end;
-//  Result := DelRight(a);
-  Result := a;
+      end;
+   end;
+   Result := a;
 end;
 
 function GetAge(Time: DWORD): string;
 var
-  SysTime, Age: DWORD;
+   SysTime,
+   Age: DWORD;
 begin
-  if Time = 0 then begin
-    Result := '';
-    Exit;
-  end;
-  SysTime := uGetSystemTime;
-  if SysTime >= Time then begin
-    Age := SysTime - Time;
-    if Age > 2 * day then Result := Format('%d days', [Age div (day)]) else begin
-      Age := Age div 60;
-      Result := Format('%2.2d:%2.2d', [Age div 60, Age mod 60]);
-    end;
-  end else Result := '?';
+   if Time = 0 then begin
+      Result := '';
+      Exit;
+   end;
+   SysTime := uGetSystemTime;
+   if SysTime >= Time then begin
+      Age := SysTime - Time;
+      if Age > 2 * day then Result := Format('%d days', [Age div (day)]) else begin
+         Age := Age div 60;
+         Result := Format('%2.2d:%2.2d', [Age div 60, Age mod 60]);
+      end;
+   end else Result := '?';
 end;
 
 function OutAttachWeight(S: TOutStatusSet): Integer;
 var
-  A: Integer;
+   A: Integer;
 begin
-  A := 0;
-  if osPause       in S then A := A or $10200;
-  if osError       in S then A := A or $10000;
-  if osBusy        in S then A := A or $08000;
-  if osBusyEx      in S then A := A or $08000;
-  if osImmedMail   in S then A := A or $04000;
-  if osImmed       in S then A := A or $02000;
-  if osCrashMail   in S then A := A or $01000;
-  if osCrash       in S then A := A or $00800;
-  if osDirectMail  in S then A := A or $00400;
-  if osDirect      in S then A := A or $00200;
-  if osRequest     in S then A := A or $00100;
-  if osCallback    in S then A := A or $00100;
-  if osNormalMail  in S then A := A or $00080;
-  if osNormal      in S then A := A or $00040;
-  if osHReq        in S then A := A or $00020;
-  if osHoldMail    in S then A := A or $00010;
-  if osHold        in S then A := A or $00001;
-  Result := A;
+   A := 0;
+   if osPause       in S then A := A or $10200;
+   if osError       in S then A := A or $10000;
+   if osBusy        in S then A := A or $08000;
+   if osBusyEx      in S then A := A or $08000;
+   if osImmedMail   in S then A := A or $04000;
+   if osImmed       in S then A := A or $02000;
+   if osCrashMail   in S then A := A or $01000;
+   if osCrash       in S then A := A or $00800;
+   if osDirectMail  in S then A := A or $00400;
+   if osDirect      in S then A := A or $00200;
+   if osRequest     in S then A := A or $00100;
+   if osCallback    in S then A := A or $00100;
+   if osNormalMail  in S then A := A or $00080;
+   if osNormal      in S then A := A or $00040;
+   if osHReq        in S then A := A or $00020;
+   if osHoldMail    in S then A := A or $00010;
+   if osHold        in S then A := A or $00001;
+   Result := A;
 end;
 
 procedure TOutNode.PrepareNfo;
 var
-  i: Integer;
-  Time, Size: DWORD;
-  f: TOutFile;
-  s: TOutStatusSet;
-  os: TOutStatus;
+   i: Integer;
+   Time,
+   Size: DWORD;
+   f: TOutFile;
+   s: TOutStatusSet;
+   os: TOutStatus;
 begin
-  s := [];
-  Time := Nfo.Time;
-  Size := 0;
-  for i := 0 to CollMax(Files) do
-  begin
-    f := Files[i];
-    Include(s, f.FStatus);
-    if f.Error <> 0 then Include(FStatus, osError) else
-    begin
-      if f.KillAction <> kaBsoNothingAfter then Time := MinD(Time, f.Nfo.Time);
-      Inc(Size, f.Nfo.Size);
-    end;
-  end;
+   s := [];
+   Time := Nfo.Time;
+   Size := 0;
+   for i := 0 to CollMax(Files) do begin
+      f := Files[i];
+      Include(s, f.FStatus);
+      if f.Error <> 0 then Include(FStatus, osError) else begin
+         if f.KillAction <> kaBsoNothingAfter then Time := MinD(Time, f.Nfo.Time);
+         Inc(Size, f.Nfo.Size);
+      end;
+   end;
 
-  for os := Low(TOutStatus) to High(TOutStatus) do begin
-    if (os in FStatus) and (not (os in s)) then
-    case os of
+   for os := Low(TOutStatus) to High(TOutStatus) do begin
+      if (os in FStatus) and (not (os in s)) then
+      case os of
       osPause,
       osBusy,
       osBusyEx,
       osError : ;
       else
-        if not (osBusy in FStatus) and
-           not (osBusyEx in FStatus) then
-        begin
-          f := TOutFile.Create;
-          f.Address := Address;
-          f.FStatus := os;
-          if Files = nil then Files := TOutFileColl.Create;
-          Files.Add(f);
-        end;
-     end;
-  end;
-  Nfo.Time := Time;
-  Nfo.Size := Size;
-  Nfo.Attr := OutAttachWeight(FStatus);
+         if not (osBusy in FStatus) and
+            not (osBusyEx in FStatus) then
+         begin
+            f := TOutFile.Create;
+            f.Address := Address;
+            f.FStatus := os;
+            if Files = nil then Files := TOutFileColl.Create;
+            Files.Add(f);
+         end;
+      end;
+   end;
+   Nfo.Time := Time;
+   Nfo.Size := Size;
+   Nfo.Attr := OutAttachWeight(FStatus);
 end;
 
 function TOutNode.ActionString: string;
 begin
-  Result := '';
+   Result := '';
 end;
 
 function TOutFile.Status: TOutStatus;
 begin
-  Result := FStatus;
+   Result := FStatus;
 end;
 
 function TOutFile.StatusSet: TOutStatusset;
 begin
-  GlobalFail('OutFile %s StatusSet', [Name]);
-  result := [];
+   GlobalFail('OutFile %s StatusSet', [Name]);
+   result := [];
 end;
 
 function TOutFile.StatusString: string;
 begin
-  case FStatus of
+   case FStatus of
     osImmedMail,  osImmed  : Result := 'Immediate';
     osCrashMail,  osCrash  : Result := 'Crash';
     osDirectMail, osDirect : Result := 'Direct';
     osNormalMail, osNormal : Result := 'Normal';
     osHoldMail,   osHold   : Result := 'Hold';
     osPause                : Result := 'Pause';
-    else Result := '';
-  end;
+   else
+      Result := '';
+   end;
 end;
 
 function TOutFile.ActionString: string;
 begin
-  case KillAction of
+   case KillAction of
     kaBsoNothingAfter  : Result := '';
     kaBsoKillAfter     : Result := 'O/Kill';
     kaBsoTruncateAfter : Result := 'O/Trunc';
     kaFbKillAfter      : Result := 'F/Kill';
     kaFbMoveAfter      : Result := 'F/Move';
-    else Result := '';
-  end;
+   else
+      Result := '';
+   end;
 end;
 
 procedure TOutFile.PrepareNfo;
@@ -2386,34 +2384,33 @@ end;
 
 destructor TOutFile.Destroy;
 begin
-  inherited destroy;
+   inherited destroy;
 end;
 
 function TOutItem.AgeString: string;
 begin
-  Result := GetAge(Nfo.Time);
+   Result := GetAge(Nfo.Time);
 end;
 
 function DeleteOutFile;
 var
-  s: string;
+   s: string;
 begin
-  s := dOutbound;
-  Result := DelFile('DeleteOutFile', FName);
-  if not Result then Exit;
-  if StrBegsU(s, UpperCase(FName)) then
-  begin
-    DeleteEmptyDirInheritance(ExtractFileDir(FName), s);
-  end;
+   s := dOutbound;
+   Result := DelFile('DeleteOutFile', FName);
+   if not Result then Exit;
+   if StrBegsU(s, UpperCase(FName)) then begin
+      DeleteEmptyDirInheritance(ExtractFileDir(FName), s);
+   end;
 end;
 
 function TruncOutFile;
-var s: TxStream;
+var
+   s: TxStream;
 begin
    Result := False;
    s := CreateDosStream(fname, [cTruncate]);
-   if s = nil then
-   begin
+   if s = nil then begin
       SetErrorMsg(fname);
       Exit;
    end;

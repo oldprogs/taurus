@@ -72,9 +72,8 @@ begin
   end
 end;
 
-procedure TNodeListCfgForm.FormClose(Sender: TObject;
-  var Action: TCloseAction);
-  var i: integer;
+procedure TNodeListCfgForm.FormClose(Sender: TObject; var Action: TCloseAction);
+var i: integer;
       s: string;
 begin
   if ModalResult <> mrOK then Exit;
@@ -86,15 +85,14 @@ begin
      if (length(s) > 0) and (s[1] = '@') then delete(s, 1, 1);
      gNL.Cells[2, i] := s;
   end;
-  with Cfg.Nodelist do
-  begin
-    CfgEnter;
-    AltCfgEnter;
-    gNL.GetData([Files, AltCfg.NodelistDataDomain]);
-    AltCfgLeave;
-    gPhn.GetData([SrcPfx, DstPfx]);
-    CfgLeave;
-    if Crc32 = Files.Crc32(AltCfg.NodelistDataDomain.Crc32(SrcPfx.Crc32(DstPfx.Crc32(CRC32_INIT)))) then Exit;
+  with Cfg.Nodelist do begin
+     CfgEnter;
+     AltCfgEnter;
+     gNL.GetData([Files, AltCfg.NodelistDataDomain]);
+     AltCfgLeave;
+     gPhn.GetData([SrcPfx, DstPfx]);
+     CfgLeave;
+     if Crc32 = Files.Crc32(AltCfg.NodelistDataDomain.Crc32(SrcPfx.Crc32(DstPfx.Crc32(CRC32_INIT)))) then Exit;
   end;
   StoreConfig(Handle);
   AltStoreConfig(Handle);
