@@ -95,7 +95,9 @@ uses
 {$R *.Res}
 
 initialization
-  Screen.Cursors[crHand] := LoadCursor(hInstance, 'JV_HANDCUR');
-  Screen.Cursors[crDragHand] := LoadCursor(hInstance, 'JV_DRAGCUR');
+  if Screen <> nil then begin
+     Screen.Cursors[crHand] := LoadCursor(hInstance, 'JV_HANDCUR');
+     Screen.Cursors[crDragHand] := LoadCursor(hInstance, 'JV_DRAGCUR');
+  end;
 
 end.

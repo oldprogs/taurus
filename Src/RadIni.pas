@@ -412,7 +412,7 @@ begin
       Cronapps_log := ReadString(LogNames, 'cronapps.log', 'cronapps.log');
       IPDaemon_log := ReadString(LogNames, 'ipdaemon.log', 'ipdaemon.log');
       ras_log := ReadString(LogNames, 'ras.log', 'ras.log');
-      net_log := ReadString(LogNames, 'netmail.log', 'netmail.log');
+      net_log := ReadString(LogNames, 'netmail.log', 'netml.log');
 
       CPS_MinBytes := ReadInteger(main, 'CPS_MinBytes', $100);
       CPS_MinSecs := ReadInteger(main, 'CPS_MinSecs', 10);

@@ -5,8 +5,9 @@ unit mGrids;
 
 interface
 
-uses SysUtils, Messages, Windows, Classes, Graphics, Menus, Controls, Forms,
-     StdCtrls, ComCtrls, Mask, Wizard, xBase, ShellAPI;
+uses 
+   SysUtils, Messages, Windows, Classes, Graphics, Menus, Controls, 
+   Forms, StdCtrls, ComCtrls, Mask, Wizard, xBase, ShellAPI;
 
 const
   xMaxCustomExtents = MaxListSize;
@@ -695,74 +696,71 @@ uses Dialogs, Consts, LngTools, RadSav, PathNmEx;
 
 procedure Register;
 begin
-  RegisterComponents('Argus', [TAdvGrid, TAdvListView]);
+   RegisterComponents('Argus', [TAdvGrid, TAdvListView]);
 end;
 
 type
-  PIntArray = ^TIntArray;
-  TIntArray = array[0..xMaxCustomExtents] of Integer;
+   PIntArray = ^TIntArray;
+   TIntArray = array[0..xMaxCustomExtents] of Integer;
 
 procedure InvalidOp(id: Integer);
 begin
-  raise ExInvalidGridOperation.CreateRes(id);
+   raise ExInvalidGridOperation.CreateRes(id);
 end;
 
 function IMin(A, B: Integer): Integer;
 begin
-  Result := B;
-  if A < B then Result := A;
+   Result := B;
+   if A < B then Result := A;
 end;
 
 function IMax(A, B: Integer): Integer;
 begin
-  Result := B;
-  if A > B then Result := A;
+   Result := B;
+   if A > B then Result := A;
 end;
 
 function CoordInRect(const ACoord: TxGridCoord; const ARect: TxGridRect): Boolean;
 begin
-  with ACoord, ARect do
-    Result := (X >= Left) and (X <= Right) and (Y >= Top) and (Y <= Bottom);
+   with ACoord, ARect do
+      Result := (X >= Left) and (X <= Right) and (Y >= Top) and (Y <= Bottom);
 end;
 
 function GridRect(const Coord1, Coord2: TxGridCoord): TxGridRect;
 begin
-  with Result do
-  begin
-    Left := Coord2.X;
-    if Coord1.X < Coord2.X then Left := Coord1.X;
-    Right := Coord1.X;
-    if Coord1.X < Coord2.X then Right := Coord2.X;
-    Top := Coord2.Y;
-    if Coord1.Y < Coord2.Y then Top := Coord1.Y;
-    Bottom := Coord1.Y;
-    if Coord1.Y < Coord2.Y then Bottom := Coord2.Y;
-  end;
+   with Result do begin
+      Left := Coord2.X;
+      if Coord1.X < Coord2.X then Left := Coord1.X;
+      Right := Coord1.X;
+      if Coord1.X < Coord2.X then Right := Coord2.X;
+      Top := Coord2.Y;
+      if Coord1.Y < Coord2.Y then Top := Coord1.Y;
+      Bottom := Coord1.Y;
+      if Coord1.Y < Coord2.Y then Bottom := Coord2.Y;
+   end;
 end;
 
 function GridRectUnion(const ARect1, ARect2: TxGridRect): TxGridRect;
 begin
-  with Result do
-  begin
-    Left := ARect1.Left;
-    if ARect1.Left > ARect2.Left then Left := ARect2.Left;
-    Right := ARect1.Right;
-    if ARect1.Right < ARect2.Right then Right := ARect2.Right;
-    Top := ARect1.Top;
-    if ARect1.Top > ARect2.Top then Top := ARect2.Top;
-    Bottom := ARect1.Bottom;
-    if ARect1.Bottom < ARect2.Bottom then Bottom := ARect2.Bottom;
-  end;
+   with Result do begin
+      Left := ARect1.Left;
+      if ARect1.Left > ARect2.Left then Left := ARect2.Left;
+      Right := ARect1.Right;
+      if ARect1.Right < ARect2.Right then Right := ARect2.Right;
+      Top := ARect1.Top;
+      if ARect1.Top > ARect2.Top then Top := ARect2.Top;
+      Bottom := ARect1.Bottom;
+      if ARect1.Bottom < ARect2.Bottom then Bottom := ARect2.Bottom;
+   end;
 end;
 
 function PointInGridRect(Col, Row: Longint; const Rect: TxGridRect): Boolean;
 begin
-  Result := (Col >= Rect.Left) and (Col <= Rect.Right) and (Row >= Rect.Top)
-    and (Row <= Rect.Bottom);
+   Result := (Col >= Rect.Left) and (Col <= Rect.Right) and (Row >= Rect.Top) and (Row <= Rect.Bottom);
 end;
 
 type
-  TXorRects = array[0..3] of TRect;
+   TXorRects = array[0..3] of TRect;
 
 procedure XorRects(const R1, R2: TRect; var XorRects: TXorRects);
 var
@@ -776,8 +774,7 @@ var
 
   function Includes(const P1: TPoint; var P2: TPoint): Boolean;
   begin
-    with P1 do
-    begin
+    with P1 do begin
       Result := PtInRect(X, Y, R1) or PtInRect(X, Y, R2);
       if Result then P2 := P1;
     end;
@@ -787,8 +784,7 @@ var
   begin
     Build := True;
     with R do
-      if Includes(P1, TopLeft) then
-      begin
+      if Includes(P1, TopLeft) then begin
         if not Includes(P3, BottomRight) then BottomRight := P2;
       end
       else if Includes(P2, TopLeft) then BottomRight := P3
@@ -802,9 +798,7 @@ begin
     { Don't intersect so its simple }
     XorRects[0] := R1;
     XorRects[1] := R2;
-  end
-  else
-  begin
+  end else begin
     UnionRect(Union, R1, R2);
     if Build(XorRects[0],
       Point(Union.Left, Union.Top),
@@ -1260,38 +1254,40 @@ end;
 
 procedure TAdvCustomGrid.Loaded;
 var
-  s: string;
-  i: integer;
-  w: integer;
-  n: TWinControl;
+   s: string;
+   i: integer;
+   w: integer;
+   n: TWinControl;
 begin
-  inherited;
-  if not (csDesigning in ComponentState) then begin
-    n := Parent;
-    while (n <> nil) do begin
-      FParentName := N.Name;
-      if N is TCustomForm then break;
-      N := N.Parent;
-    end;
-    s := SavFile.ReadString('ColWidths', FParentName + '_' + Name, '');
-    for i := 0 to WordCount(s, [',']) - 1 do begin
-       if (i = 0) and (goDigitalRows in Options) then begin
-          ColWidths[i] := 33;
-       end else begin
-          ColWidths[i] := strtoint(extractword(i + 1, s, [',']));
-       end;   
-    end;
-    if FixedRows = 0 then begin
-       w := 0;
-       for i := 0 to ColCount - 2 do begin
-          w := w + ColWidths[i] + 1;
-       end;
-       ColWidths[ColCount - 1] := Width - w;
-    end;
-    Font.Name := 'FixedSys';
-    Font.Size := SavFile.ReadInteger('interface', 'formsfontsize', 8);
-    FixedFont.Size := Font.Size;
-  end;
+   inherited;
+   if not (csDesigning in ComponentState) then begin
+      n := Parent;
+      while (n <> nil) do begin
+         FParentName := N.Name;
+         if N is TCustomForm then break;
+         N := N.Parent;
+      end;
+      if SavFile <> nil then begin
+         s := SavFile.ReadString('ColWidths', FParentName + '_' + Name, '');
+         for i := 0 to WordCount(s, [',']) - 1 do begin
+            if (i = 0) and (goDigitalRows in Options) then begin
+               ColWidths[i] := 33;
+            end else begin
+               ColWidths[i] := strtoint(extractword(i + 1, s, [',']));
+            end;
+         end;
+      end;
+      if FixedRows = 0 then begin
+         w := 0;
+         for i := 0 to ColCount - 2 do begin
+            w := w + ColWidths[i] + 1;
+         end;
+         ColWidths[ColCount - 1] := Width - w;
+      end;
+      Font.Name := 'FixedSys';
+      Font.Size := SavFile.ReadInteger('interface', 'formsfontsize', 8);
+      FixedFont.Size := Font.Size;
+   end;
 end;
 
 destructor TAdvCustomGrid.Destroy;
@@ -4095,132 +4091,127 @@ const
 
 { Expand Section Directory to cover at least `newSlots' slots. Returns: Possibly
   updated pointer to the Section Directory. }
-function  ExpandDir(secDir: PSecDir; var slotsInDir: Word;
-  newSlots: Word): PSecDir;
+function  ExpandDir(secDir: PSecDir; var slotsInDir: Word; newSlots: Word): PSecDir;
 begin
-  Result := secDir;
-  ReallocMem(Result, newSlots * SizeOf(Pointer));
-  FillChar(Result^[slotsInDir], (newSlots - slotsInDir) * SizeOf(Pointer), 0);
-  slotsInDir := newSlots;
+   Result := secDir;
+   ReallocMem(Result, newSlots * SizeOf(Pointer));
+   FillChar(Result^[slotsInDir], (newSlots - slotsInDir) * SizeOf(Pointer), 0);
+   slotsInDir := newSlots;
 end;
 
 { Allocate a section and set all its items to nil. Returns: Pointer to start of
   section. }
 function  MakeSec(SecIndex: Integer; SectionSize: Word): Pointer;
 var
-  SecP: Pointer;
-  Size: Word;
+   SecP: Pointer;
+   Size: Word;
 begin
-  Size := SectionSize * SizeOf(Pointer);
-  GetMem(secP, size);
-  FillChar(secP^, size, 0);
-  MakeSec := SecP
+   Size := SectionSize * SizeOf(Pointer);
+   GetMem(secP, size);
+   FillChar(secP^, size, 0);
+   MakeSec := SecP
 end;
 
 constructor TSparsePointerArray.Create(Quantum: TSPAQuantum);
 begin
-  SecDir := nil;
-  SlotsInDir := 0;
-  FHighBound := -1;
-  FSectionSize := Word(SPAIndexMask[Quantum]) + 1;
-  IndexMask := Word(SPAIndexMask[Quantum]);
-  SecShift := Word(SPASecShift[Quantum]);
-  CachedIndex := -1
+   SecDir := nil;
+   SlotsInDir := 0;
+   FHighBound := -1;
+   FSectionSize := Word(SPAIndexMask[Quantum]) + 1;
+   IndexMask := Word(SPAIndexMask[Quantum]);
+   SecShift := Word(SPASecShift[Quantum]);
+   CachedIndex := -1
 end;
 
 destructor TSparsePointerArray.Destroy;
 var
-  i:  Integer;
-  size: Word;
+   i:  Integer;
+   size: Word;
 begin
   { Scan section directory and free each section that exists. }
-  i := 0;
-  size := FSectionSize * SizeOf(Pointer);
-  while i < slotsInDir do begin
-    if secDir^[i] <> nil then
-      FreeMem(secDir^[i], size);
-    Inc(i)
-  end;
+   i := 0;
+   size := FSectionSize * SizeOf(Pointer);
+   while i < slotsInDir do begin
+      if secDir^[i] <> nil then FreeMem(secDir^[i], size);
+      Inc(i)
+   end;
 
   { Free section directory. }
-  if secDir <> nil then
-    FreeMem(secDir, slotsInDir * SizeOf(Pointer));
+   if secDir <> nil then FreeMem(secDir, slotsInDir * SizeOf(Pointer));
 end;
 
 function  TSparsePointerArray.GetAt(Index: Integer): Pointer;
 var
-  byteP: PChar;
-  secIndex: Cardinal;
+   byteP: PChar;
+   secIndex: Cardinal;
 begin
   { Index into Section Directory using high order part of
     index.  Get pointer to Section. If not null, index into
     Section using low order part of index. }
-  if Index = cachedIndex then
-    Result := cachedPointer
-  else begin
-    secIndex := Index shr secShift;
-    if secIndex >= slotsInDir then
-      byteP := nil
-    else begin
-      byteP := secDir^[secIndex];
-      if byteP <> nil then begin
-        Inc(byteP, (Index and indexMask) * SizeOf(Pointer));
-      end
-    end;
-    if byteP = nil then Result := nil else Result := PPointer(byteP)^;
-    cachedIndex := Index;
-    cachedPointer := Result
-  end
+   if Index = cachedIndex then
+      Result := cachedPointer
+   else begin
+      secIndex := Index shr secShift;
+      if secIndex >= slotsInDir then
+         byteP := nil
+      else begin
+         byteP := secDir^[secIndex];
+         if byteP <> nil then begin
+            Inc(byteP, (Index and indexMask) * SizeOf(Pointer));
+         end
+      end;
+      if byteP = nil then Result := nil else Result := PPointer(byteP)^;
+      cachedIndex := Index;
+      cachedPointer := Result
+   end
 end;
 
 function  TSparsePointerArray.MakeAt(Index: Integer): PPointer;
 var
-  dirP: PSecDir;
-  p: Pointer;
-  byteP: PChar;
-  secIndex: Word;
+   dirP: PSecDir;
+   p: Pointer;
+   byteP: PChar;
+   secIndex: Word;
 begin
   { Expand Section Directory if necessary. }
-  secIndex := Index shr secShift;       { Unsigned shift }
-  if secIndex >= slotsInDir then
-    dirP := expandDir(secDir, slotsInDir, secIndex + 1)
-  else
-    dirP := secDir;
+   secIndex := Index shr secShift;       { Unsigned shift }
+   if secIndex >= slotsInDir then
+      dirP := expandDir(secDir, slotsInDir, secIndex + 1)
+   else
+      dirP := secDir;
 
   { Index into Section Directory using high order part of
     index.  Get pointer to Section. If null, create new
     Section.  Index into Section using low order part of index. }
-  secDir := dirP;
-  p := dirP^[secIndex];
-  if p = nil then begin
-    p := makeSec(secIndex, FSectionSize);
-    dirP^[secIndex] := p
-  end;
-  byteP := p;
-  Inc(byteP, (Index and indexMask) * SizeOf(Pointer));
-  if Index > FHighBound then
-    FHighBound := Index;
-  Result := PPointer(byteP);
-  cachedIndex := -1
+   secDir := dirP;
+   p := dirP^[secIndex];
+   if p = nil then begin
+      p := makeSec(secIndex, FSectionSize);
+      dirP^[secIndex] := p
+   end;
+   byteP := p;
+   Inc(byteP, (Index and indexMask) * SizeOf(Pointer));
+   if Index > FHighBound then FHighBound := Index;
+   Result := PPointer(byteP);
+   cachedIndex := -1
 end;
 
 procedure TSparsePointerArray.PutAt(Index: Integer; Item: Pointer);
 begin
-  if (Item <> nil) or (GetAt(Index) <> nil) then
-  begin
-    MakeAt(Index)^ := Item;
-    if Item = nil then
-      ResetHighBound
-  end
+   if (Item <> nil) or (GetAt(Index) <> nil) then begin
+      MakeAt(Index)^ := Item;
+      if Item = nil then ResetHighBound
+   end
 end;
 
-function  TSparsePointerArray.ForAll(ApplyFunction: Pointer {TSPAApply}):
-  Integer;
+function  TSparsePointerArray.ForAll(ApplyFunction: Pointer {TSPAApply}): Integer;
 var
-  itemP: PChar;                         { Pointer to item in section }
-  item: Pointer;
-  i, callerBP: Cardinal;
-  j, index: Integer;
+   itemP: PChar;                         { Pointer to item in section }
+   item: Pointer;
+   i,
+   callerBP: Cardinal;
+   j,
+   Index: Integer;
 begin
   { Scan section directory and scan each section that exists,
     calling the apply function for each non-nil item.
@@ -4229,113 +4220,111 @@ begin
     frame (taken from TurboVision's TCollection.ForEach) allows the
     apply function access to P's arguments and local variables and,
     if P is a method, the instance variables and methods of P's class }
-  Result := 0;
-  i := 0;
-  asm
-    mov   eax,[ebp]                     { Set up stack frame for local }
-    mov   callerBP,eax
-  end;
-  while (i < slotsInDir) and (Result = 0) do begin
-    itemP := secDir^[i];
-    if itemP <> nil then begin
-      j := 0;
-      index := i shl SecShift;
-      while (j < FSectionSize) and (Result = 0) do begin
-        item := PPointer(itemP)^;
-        if item <> nil then
+   Result := 0;
+   i := 0;
+   asm
+      mov   eax,[ebp]                     { Set up stack frame for local }
+      mov   callerBP,eax
+   end;
+   while (i < slotsInDir) and (Result = 0) do begin
+      itemP := secDir^[i];
+      if itemP <> nil then begin
+         j := 0;
+         index := i shl SecShift;
+         while (j < FSectionSize) and (Result = 0) do begin
+            item := PPointer(itemP)^;
+            if item <> nil then
           { ret := ApplyFunction(index, item.Ptr); }
-          asm
-            mov   eax,index
-            mov   edx,item
-            push  callerBP
-            call  ApplyFunction
-            pop   ecx
-            mov   @Result,eax
-          end;
-        Inc(itemP, SizeOf(Pointer));
-        Inc(j);
-        Inc(index)
-      end
-    end;
-    Inc(i)
-  end;
+            asm
+               mov   eax,index
+               mov   edx,item
+               push  callerBP
+               call  ApplyFunction
+               pop   ecx
+               mov   @Result,eax
+            end;
+            Inc(itemP, SizeOf(Pointer));
+            Inc(j);
+            Inc(index)
+         end
+      end;
+      Inc(i)
+   end;
 end;
 
 procedure TSparsePointerArray.ResetHighBound;
 var
-  NewHighBound: Integer;
+   NewHighBound: Integer;
 
-  function  Detector(TheIndex: Integer; TheItem: Pointer): Integer; far;
-  begin
-    if TheIndex > FHighBound then
-      Result := 1
-    else
-    begin
-      Result := 0;
-      if TheItem <> nil then NewHighBound := TheIndex
-    end
-  end;
+   function  Detector(TheIndex: Integer; TheItem: Pointer): Integer; far;
+   begin
+      if TheIndex > FHighBound then
+         Result := 1
+      else begin
+         Result := 0;
+         if TheItem <> nil then NewHighBound := TheIndex
+      end
+   end;
 
 begin
-  NewHighBound := -1;
-  ForAll(@Detector);
-  FHighBound := NewHighBound
+   NewHighBound := -1;
+   ForAll(@Detector);
+   FHighBound := NewHighBound
 end;
 
 { TSparseList }
 
 constructor TSparseList.Create(Quantum: TSPAQuantum);
 begin
-  NewList(Quantum)
+   NewList(Quantum)
 end;
 
 destructor TSparseList.Destroy;
 begin
-  if FList <> nil then FList.Free // !!!
+   if FList <> nil then FList.Free // !!!
 end;
 
 function  TSparseList.Add(Item: Pointer): Integer;
 begin
-  Result := FCount;
-  FList[Result] := Item;
-  Inc(FCount)
+   Result := FCount;
+   FList[Result] := Item;
+   Inc(FCount)
 end;
 
 procedure TSparseList.Clear;
 begin
-  FList.Free; // !!!
-  NewList(FQuantum);
-  FCount := 0
+   FList.Free; // !!!
+   NewList(FQuantum);
+   FCount := 0
 end;
 
 procedure TSparseList.Delete(Index: Integer);
 var
-  I: Integer;
+   I: Integer;
 begin
-  if (Index < 0) or (Index >= FCount) then Exit;
-  for I := Index to FCount - 1 do
-    FList[I] := FList[I + 1];
-  FList[FCount] := nil;
-  Dec(FCount);
+   if (Index < 0) or (Index >= FCount) then Exit;
+   for I := Index to FCount - 1 do FList[I] := FList[I + 1];
+   FList[FCount] := nil;
+   Dec(FCount);
 end;
 
 procedure TSparseList.Error;
 begin
-  GlobalFail('%s', ['Grid SparseList InvalidOp (SListIndexError)']);
+   GlobalFail('%s', ['Grid SparseList InvalidOp (SListIndexError)']);
 end;
 
 procedure TSparseList.Exchange(Index1, Index2: Integer);
 var
-  temp: Pointer;
+   temp: Pointer;
 begin
-  temp := Get(Index1);
-  Put(Index1, Get(Index2));
-  Put(Index2, temp);
+   temp := Get(Index1);
+   Put(Index1, Get(Index2));
+   Put(Index2, temp);
 end;
 
 function  TSparseList.First: Pointer;
 begin
-  Result := Get(0)
+   Result := Get(0)
 end;
 
 { Jump to TSparsePointerArray.ForAll so that it looks like it was called
@@ -4343,124 +4332,123 @@ end;
 
 function TSparseList.ForAll(ApplyFunction: Pointer {TSPAApply}): Integer; assembler;
 asm
-        MOV     EAX,[EAX].TSparseList.FList
-        JMP     TSparsePointerArray.ForAll
+   MOV     EAX,[EAX].TSparseList.FList
+   JMP     TSparsePointerArray.ForAll
 end;
 
 function  TSparseList.Get(Index: Integer): Pointer;
 begin
-  if Index < 0 then Error;
-  Result := FList[Index]
+   if Index < 0 then Error;
+   Result := FList[Index]
 end;
 
 function  TSparseList.IndexOf(Item: Pointer): Integer;
 var
-  MaxIndex, Index: Integer;
+   MaxIndex,
+   Index: Integer;
 
-  function  IsTheItem(TheIndex: Integer; TheItem: Pointer): Integer; far;
-  begin
-    if TheIndex > MaxIndex then
-      Result := -1                      { Bail out }
-    else if TheItem <> Item then
-      Result := 0
-    else begin
-      Result := 1;                      { Found it, stop traversal }
-      Index := TheIndex
-    end
-  end;
+   function  IsTheItem(TheIndex: Integer; TheItem: Pointer): Integer; far;
+   begin
+      if TheIndex > MaxIndex then
+         Result := -1                      { Bail out }
+      else if TheItem <> Item then
+         Result := 0
+      else begin
+         Result := 1;                      { Found it, stop traversal }
+         Index := TheIndex
+      end
+   end;
 
 begin
-  Index := -1;
-  MaxIndex := FList.HighBound;
-  FList.ForAll(@IsTheItem);
-  Result := Index
+   Index := -1;
+   MaxIndex := FList.HighBound;
+   FList.ForAll(@IsTheItem);
+   Result := Index
 end;
 
 procedure TSparseList.Insert(Index: Integer; Item: Pointer);
 var
-  i: Integer;
+   i: Integer;
 begin
-  if Index < 0 then Error;
-  I := FCount;
-  while I > Index do
-  begin
-    FList[i] := FList[i - 1];
-    Dec(i)
-  end;
-  FList[Index] := Item;
-  if Index > FCount then FCount := Index;
-  Inc(FCount)
+   if Index < 0 then Error;
+   I := FCount;
+   while I > Index do begin
+      FList[i] := FList[i - 1];
+      Dec(i)
+   end;
+   FList[Index] := Item;
+   if Index > FCount then FCount := Index;
+   Inc(FCount)
 end;
 
 function  TSparseList.Last: Pointer;
 begin
-  Result := Get(FCount - 1);
+   Result := Get(FCount - 1);
 end;
 
 procedure TSparseList.Move(CurIndex, NewIndex: Integer);
 var
-  Item: Pointer;
+   Item: Pointer;
 begin
-  if CurIndex <> NewIndex then
-  begin
-    Item := Get(CurIndex);
-    Delete(CurIndex);
-    Insert(NewIndex, Item);
-  end;
+   if CurIndex <> NewIndex then begin
+      Item := Get(CurIndex);
+      Delete(CurIndex);
+      Insert(NewIndex, Item);
+   end;
 end;
 
 procedure TSparseList.NewList(Quantum: TSPAQuantum);
 begin
-  FQuantum := Quantum;
-  FList := TSparsePointerArray.Create(Quantum)
+   FQuantum := Quantum;
+   FList := TSparsePointerArray.Create(Quantum)
 end;
 
 procedure TSparseList.Pack;
 var
-  i: Integer;
+   i: Integer;
 begin
-  for i := FCount - 1 downto 0 do if Items[i] = nil then Delete(i)
+   for i := FCount - 1 downto 0 do if Items[i] = nil then Delete(i)
 end;
 
 procedure TSparseList.Put(Index: Integer; Item: Pointer);
 begin
-  if Index < 0 then Error;
-  FList[Index] := Item;
-  FCount := FList.HighBound + 1
+   if Index < 0 then Error;
+   FList[Index] := Item;
+   FCount := FList.HighBound + 1
 end;
 
 function  TSparseList.Remove(Item: Pointer): Integer;
 begin
-  Result := IndexOf(Item);
-  if Result <> -1 then Delete(Result)
+   Result := IndexOf(Item);
+   if Result <> -1 then Delete(Result)
 end;
 
 { TStringSparseList }
 
 constructor TStringSparseList.Create(Quantum: TSPAQuantum);
 begin
-  FList := TSparseList.Create(Quantum)
+   FList := TSparseList.Create(Quantum)
 end;
 
 destructor  TStringSparseList.Destroy;
 begin
-  if FList <> nil then begin
-    Clear;
-    FList.Free; // !!!
-  end
+   if FList <> nil then begin
+      Clear;
+      FList.Free; // !!!
+   end
 end;
 
 procedure TStringSparseList.ReadData(Reader: TReader);
 var
-  i: Integer;
+   i: Integer;
 begin
-  with Reader do begin
-    i := Integer(ReadInteger);
-    while i > 0 do begin
-      InsertObject(Integer(ReadInteger), ReadString, nil);
-      Dec(i)
-    end
-  end
+   with Reader do begin
+      i := Integer(ReadInteger);
+      while i > 0 do begin
+         InsertObject(Integer(ReadInteger), ReadString, nil);
+         Dec(i)
+      end
+   end
 end;
 
 procedure TStringSparseList.WriteData(Writer: TWriter);
@@ -4469,123 +4457,121 @@ var
 
   function  CountItem(TheIndex: Integer; TheItem: Pointer): Integer; far;
   begin
-    Inc(itemCount);
-    Result := 0
+     Inc(itemCount);
+     Result := 0
   end;
 
   function  StoreItem(TheIndex: Integer; TheItem: Pointer): Integer; far;
   begin
-    with Writer do
-    begin
-      WriteInteger(TheIndex);           { Item index }
-      WriteString(PStrItem(TheItem)^.FString);
-    end;
-    Result := 0
+     with Writer do begin
+        WriteInteger(TheIndex);           { Item index }
+        WriteString(PStrItem(TheItem)^.FString);
+     end;
+     Result := 0
   end;
 
 begin
-  with Writer do
-  begin
-    itemCount := 0;
-    FList.ForAll(@CountItem);
-    WriteInteger(itemCount);
-    FList.ForAll(@StoreItem);
-  end
+   with Writer do begin
+      itemCount := 0;
+      FList.ForAll(@CountItem);
+      WriteInteger(itemCount);
+      FList.ForAll(@StoreItem);
+   end
 end;
 
 procedure TStringSparseList.DefineProperties(Filer: TFiler);
 begin
-  Filer.DefineProperty('List', ReadData, WriteData, True);
+   Filer.DefineProperty('List', ReadData, WriteData, True);
 end;
 
 function  TStringSparseList.Get(Index: Integer): String;
 var
-  p: PStrItem;
+   p: PStrItem;
 begin
-  p := PStrItem(FList[Index]);
-  if p = nil then Result := '' else Result := p^.FString
+   p := PStrItem(FList[Index]);
+   if p = nil then Result := '' else Result := p^.FString
 end;
 
 function  TStringSparseList.GetCount: Integer;
 begin
-  Result := FList.Count
+   Result := FList.Count
 end;
 
 function  TStringSparseList.GetObject(Index: Integer): TObject;
 var
-  p: PStrItem;
+   p: PStrItem;
 begin
-  p := PStrItem(FList[Index]);
-  if p = nil then Result := nil else Result := p^.FObject
+   p := PStrItem(FList[Index]);
+   if p = nil then Result := nil else Result := p^.FObject
 end;
 
 procedure TStringSparseList.Put(Index: Integer; const S: String);
 var
-  p: PStrItem;
-  obj: TObject;
+   p: PStrItem;
+   obj: TObject;
 begin
-  p := PStrItem(FList[Index]);
-  if p = nil then obj := nil else obj := p^.FObject;
-  if S = '' then                        { Null string blanks data and object }
-    FList[Index] := nil
-  else
-    FList[Index] := NewStrItem(S, obj);
-  if p <> nil then DisposeStrItem(p);
-  Changed
+   p := PStrItem(FList[Index]);
+   if p = nil then obj := nil else obj := p^.FObject;
+   if S = '' then                        { Null string blanks data and object }
+      FList[Index] := nil
+   else
+      FList[Index] := NewStrItem(S, obj);
+   if p <> nil then DisposeStrItem(p);
+   Changed
 end;
 
 procedure TStringSparseList.PutObject(Index: Integer; AObject: TObject);
 var
-  p: PStrItem;
+   p: PStrItem;
 begin
-  p := PStrItem(FList[Index]);
-  if p <> nil then p^.FObject := AObject else if AObject <> nil then Error;
-  Changed
+   p := PStrItem(FList[Index]);
+   if p <> nil then p^.FObject := AObject else if AObject <> nil then Error;
+   Changed
 end;
 
 procedure TStringSparseList.Changed;
 begin
-  if Assigned(FOnChange) then FOnChange(Self)
+   if Assigned(FOnChange) then FOnChange(Self)
 end;
 
 procedure TStringSparseList.Error;
 begin
-  GlobalFail('%s', ['Grid StringSparseList InvalidOp (SPutObjectError)']);
+   GlobalFail('%s', ['Grid StringSparseList InvalidOp (SPutObjectError)']);
 end;
 
 procedure TStringSparseList.Delete(Index: Integer);
 var
-  p: PStrItem;
+   p: PStrItem;
 begin
-  p := PStrItem(FList[Index]);
-  if p <> nil then DisposeStrItem(p);
-  FList.Delete(Index);
-  Changed
+   p := PStrItem(FList[Index]);
+   if p <> nil then DisposeStrItem(p);
+   FList.Delete(Index);
+   Changed
 end;
 
 procedure TStringSparseList.Exchange(Index1, Index2: Integer);
 begin
-  FList.Exchange(Index1, Index2);
+   FList.Exchange(Index1, Index2);
 end;
 
 procedure TStringSparseList.Insert(Index: Integer; const S: String);
 begin
-  FList.Insert(Index, NewStrItem(S, nil));
-  Changed
+   FList.Insert(Index, NewStrItem(S, nil));
+   Changed
 end;
 
 procedure TStringSparseList.Clear;
 
   function  ClearItem(TheIndex: Integer; TheItem: Pointer): Integer; far;
   begin
-    DisposeStrItem(PStrItem(TheItem));    { Item guaranteed non-nil }
-    Result := 0
+     DisposeStrItem(PStrItem(TheItem));    { Item guaranteed non-nil }
+     Result := 0
   end;
 
 begin
-  FList.ForAll(@ClearItem);
-  FList.Clear;
-  Changed
+   FList.ForAll(@ClearItem);
+   FList.Clear;
+   Changed
 end;
 
 { TxStringGridStrings }
@@ -4596,238 +4582,233 @@ end;
 
 constructor TxStringGridStrings.Create(AGrid: TAdvGrid; AIndex: Longint);
 begin
-  inherited Create;
-  FGrid := AGrid;
-  FIndex := AIndex;
+   inherited Create;
+   FGrid := AGrid;
+   FIndex := AIndex;
 end;
 
 procedure TxStringGridStrings.Assign(Source: TPersistent);
 var
-  I, Max: Integer;
+   I,
+   Max: Integer;
 begin
-  if Source is TStrings then
-  begin
-    BeginUpdate;
-    Max := TStrings(Source).Count - 1;
-    if Max >= Count then Max := Count - 1;
-    try
-      for I := 0 to Max do
-      begin
-        Put(I, TStrings(Source).Strings[I]);
-        PutObject(I, TStrings(Source).Objects[I]);
+   if Source is TStrings then begin
+      BeginUpdate;
+      Max := TStrings(Source).Count - 1;
+      if Max >= Count then Max := Count - 1;
+      try
+         for I := 0 to Max do begin
+            Put(I, TStrings(Source).Strings[I]);
+            PutObject(I, TStrings(Source).Objects[I]);
+         end;
+      finally
+         EndUpdate;
       end;
-    finally
-      EndUpdate;
-    end;
-    Exit;
-  end;
-  inherited Assign(Source);
+      Exit;
+   end;
+   inherited Assign(Source);
 end;
 
 procedure TxStringGridStrings.CalcXY(Index: Integer; var X, Y: Integer);
 begin
-  if FIndex = 0 then
-  begin
-    X := -1; Y := -1;
-  end else if FIndex > 0 then
-  begin
-    X := Index;
-    Y := FIndex - 1;
-  end else
-  begin
-    X := -FIndex - 1;
-    Y := Index;
-  end;
+   if FIndex = 0 then begin
+      X := -1; Y := -1;
+   end else if FIndex > 0 then begin
+      X := Index;
+      Y := FIndex - 1;
+   end else begin
+      X := -FIndex - 1;
+      Y := Index;
+   end;
 end;
 
 { Changes the meaning of Add to mean copy to the first empty string }
 function TxStringGridStrings.Add(const S: string): Integer;
 var
-  I: Integer;
+   I: Integer;
 begin
-  for I := 0 to Count - 1 do
-    if Strings[I] = '' then
-    begin
+   for I := 0 to Count - 1 do
+   if Strings[I] = '' then begin
       Strings[I] := S;
       Result := I;
       Exit;
-    end;
-  Result := -1;
+   end;
+   Result := -1;
 end;
 
 procedure TxStringGridStrings.Clear;
 var
-  SSList: TStringSparseList;
-  I: Integer;
+   SSList: TStringSparseList;
+   I: Integer;
 
-  function BlankStr(TheIndex: Integer; TheItem: Pointer): Integer; far;
-  begin
-    Strings[TheIndex] := '';
-    Result := 0;
-  end;
+   function BlankStr(TheIndex: Integer; TheItem: Pointer): Integer; far;
+   begin
+      Strings[TheIndex] := '';
+      Result := 0;
+   end;
 
 begin
-  if FIndex > 0 then
-  begin
-    SSList := TStringSparseList(TSparseList(FGrid.FData)[FIndex - 1]);
-    if SSList <> nil then SSList.List.ForAll(@BlankStr);
-  end
-  else if FIndex < 0 then
-    for I := Count - 1 downto 0 do Strings[I] := '';
+   if FIndex > 0 then begin
+      SSList := TStringSparseList(TSparseList(FGrid.FData)[FIndex - 1]);
+      if SSList <> nil then SSList.List.ForAll(@BlankStr);
+   end else if FIndex < 0 then
+   for I := Count - 1 downto 0 do Strings[I] := '';
 end;
 
 function TxStringGridStrings.Get(Index: Integer): string;
 var
-  X, Y: Integer;
+   X,
+   Y: Integer;
 begin
-  CalcXY(Index, X, Y);
-  if X < 0 then Result := '' else Result := FGrid.Cells[X, Y];
+   CalcXY(Index, X, Y);
+   if X < 0 then Result := '' else Result := FGrid.Cells[X, Y];
 end;
 
 function TxStringGridStrings.GetCount: Integer;
 begin
   { Count of a row is the column count, and vice versa }
-  if FIndex = 0 then Result := 0
-  else if FIndex > 0 then Result := Integer(FGrid.ColCount)
-  else Result := Integer(FGrid.RowCount);
+   if FIndex = 0 then Result := 0
+   else if FIndex > 0 then Result := Integer(FGrid.ColCount)
+   else Result := Integer(FGrid.RowCount);
 end;
 
 function TxStringGridStrings.GetObject(Index: Integer): TObject;
 var
-  X, Y: Integer;
+   X,
+   Y: Integer;
 begin
-  CalcXY(Index, X, Y);
-  if X < 0 then Result := nil else Result := FGrid.Objects[X, Y];
+   CalcXY(Index, X, Y);
+   if X < 0 then Result := nil else Result := FGrid.Objects[X, Y];
 end;
 
 procedure TxStringGridStrings.Put(Index: Integer; const S: string);
 var
-  X, Y: Integer;
+   X,
+   Y: Integer;
 begin
-  CalcXY(Index, X, Y);
-  FGrid.Cells[X, Y] := S;
+   CalcXY(Index, X, Y);
+   FGrid.Cells[X, Y] := S;
 end;
 
 procedure TxStringGridStrings.PutObject(Index: Integer; AObject: TObject);
 var
-  X, Y: Integer;
+   X,
+   Y: Integer;
 begin
-  CalcXY(Index, X, Y);
-  FGrid.Objects[X, Y] := AObject;
+   CalcXY(Index, X, Y);
+   FGrid.Objects[X, Y] := AObject;
 end;
 
 procedure TxStringGridStrings.Insert(Index: Integer; const S: string);
 begin
-  GlobalFail('%s', ['TxStringGridStrings.Insert']);
+   GlobalFail('%s', ['TxStringGridStrings.Insert']);
 end;
 
 procedure TxStringGridStrings.Delete(Index: Integer);
 begin
-  GlobalFail('%s', ['TxStringGridStrings.Delete']);
+   GlobalFail('%s', ['TxStringGridStrings.Delete']);
 end;
 
 procedure TxStringGridStrings.SetUpdateState(Updating: Boolean);
 begin
-  FGrid.SetUpdateState(Updating);
+   FGrid.SetUpdateState(Updating);
 end;
 
 { TAdvGrid }
 
 procedure TAdvGrid.GetData(const Colls: array of TStringColl);
 var
-  x,y: Integer;
+   x,
+   y: Integer;
 begin
-  for x := Low(Colls) to High(Colls) do
-  begin
-    Colls[x].FreeAll;
-    for y := FixedRows to RowCount - 1 do
-    begin
-      if CheckBoxes and (x = 0) then begin
-         Colls[x].Add(Trim(Cells[x + FixedCols, y]) + #0 + Chr(integer(RowChecked[y]) + 1));
-      end else begin
-         Colls[x].Add(Trim(Cells[x + FixedCols, y]));
+   for x := Low(Colls) to High(Colls) do begin
+      Colls[x].FreeAll;
+      for y := FixedRows to RowCount - 1 do begin
+         if CheckBoxes and (x = 0) then begin
+            Colls[x].Add(Trim(Cells[x + FixedCols, y]) + #0 + Chr(integer(RowChecked[y]) + 1));
+         end else begin
+            Colls[x].Add(Trim(Cells[x + FixedCols, y]));
+         end;
       end;
-    end;
-  end;
-  if goFixedNumCols in FOptions then Exit;
-  for y := Colls[0].Count - 1 downto 0 do
-  begin
-    for x := Low(Colls) to High(Colls) do if Trim(Colls[x][y]) <> '' then Exit;
-    for x := Low(Colls) to High(Colls) do Colls[x].AtFree(y);
-  end;
+   end;
+   if goFixedNumCols in FOptions then Exit;
+   for y := Colls[0].Count - 1 downto 0 do begin
+      for x := Low(Colls) to High(Colls) do if Trim(Colls[x][y]) <> '' then Exit;
+      for x := Low(Colls) to High(Colls) do Colls[x].AtFree(y);
+   end;
 end;
 
 procedure TAdvGrid.SetData(const Colls: array of TStringColl);
 var
-  x,
-  y,
- yy: Integer;
-  s: string;
-  z: string;
+   x,
+   y,
+  yy: Integer;
+   s: string;
+   z: string;
 begin
-  for x := Low(Colls) to High(Colls) do
-  begin
-    for y := 0 to Colls[x].Count - 1 do
-    begin
-      yy := y + FixedRows;
-      if RowCount <= yy then RowCount := yy + 1;
-      if CheckBoxes and (x = 0) then begin
-         s := Colls[x][y];
-         GetWrd(s, z, #0);
-         Cells[x + FixedCols, yy] := Trim(z);
-         Cells[0, yy] := 'blank';
-         RowChecked[yy] := RowChecked[yy] or (s <> #1);
-      end else begin
-         Cells[x + FixedCols, yy] := Trim(Colls[x][y]);
+   for x := Low(Colls) to High(Colls) do begin
+      for y := 0 to Colls[x].Count - 1 do begin
+         yy := y + FixedRows;
+         if RowCount <= yy then RowCount := yy + 1;
+         if CheckBoxes and (x = 0) then begin
+            s := Colls[x][y];
+            GetWrd(s, z, #0);
+            Cells[x + FixedCols, yy] := Trim(z);
+            Cells[0, yy] := 'blank';
+            RowChecked[yy] := RowChecked[yy] or (s <> #1);
+         end else begin
+            Cells[x + FixedCols, yy] := Trim(Colls[x][y]);
+         end;
       end;
-    end;
-  end;
-  if goDigitalRows in Options then RenumberRows;
+   end;
+   if goDigitalRows in Options then RenumberRows;
 end;
 
 procedure TAdvGrid.PM_EditCell(Sender: TObject);
 var
-  Key: Word;
+   Key: Word;
 begin
-  Key := VK_F2;
-  KeyDown(Key, []);
+   Key := VK_F2;
+   KeyDown(Key, []);
 end;
 
 procedure TAdvGrid.PM_AddRow(Sender: TObject);
 begin
-  AddLine;
+   AddLine;
 end;
 
 procedure TAdvGrid.PM_InsertRow(Sender: TObject);
 begin
-  InsLine;
+   InsLine;
 end;
 
 procedure TAdvGrid.PM_DuplicateRow(Sender: TObject);
 var
-  i, j, k: Integer;
+   i,
+   j,
+   k: Integer;
 begin
-  InsLine;
-  j := Row; k := Row + 1;
-  for i := FixedCols to ColCount - 1 do Cells[i, j] := Cells[i, k];
+   InsLine;
+   j := Row; k := Row + 1;
+   for i := FixedCols to ColCount - 1 do Cells[i, j] := Cells[i, k];
 end;
 
 
 procedure TAdvGrid.PM_DeleteRow(Sender: TObject);
 begin
-  DelLine;
+   DelLine;
 end;
 
 procedure TAdvGrid.DeleteAllRows;
 begin
-  if not YesNoConfirmLng(rsMgDelAllR, TForm(Owner).Handle) then Exit;
-  RowCount := FixedRows + 1;
-  DelLine;
+   if not YesNoConfirmLng(rsMgDelAllR, TForm(Owner).Handle) then Exit;
+   RowCount := FixedRows + 1;
+   DelLine;
 end;
 
 procedure TAdvGrid.PM_DeleteAllRows(Sender: TObject);
 begin
-  DeleteAllRows;
+   DeleteAllRows;
 end;
 
 procedure TAdvGrid.MouseDown;
@@ -4861,175 +4842,161 @@ end;
 
 procedure TAdvGrid.ImportTable(const FileName: string;divider: char);
 var
-  s,z: string;
-  T: TTextReader;
-  mx, cc, rc: Integer;
-  cd: Boolean;
+   s,
+   z: string;
+   T: TTextReader;
+   mx,
+   cc,
+   rc: Integer;
+   cd: Boolean;
 begin
-  s := FileName;
-  T := CreateTextReader(s);
-  if T = nil then Exit;
-  if goFixedNumCols in Options then
-  begin
-    rc := FixedRows;
-    mx := RowCount;
-  end else
-  begin
-    rc := RowCount;
-    mx := MaxInt;
-  end;
-  while not T.EOF do
-  begin
-    s := T.GetStr;
-    if not (goFixedNumCols in Options) then begin RowCount := rc+1 end;
-    cc := FixedCols;
-    while s <> '' do
-    begin
-      if cc = ColCount then Break;
-      GetWrd(s, z, divider);
-      if not UnpackRFC1945(z) then Break;
-      Cells[cc, rc] := z;
-      Inc(cc);
-    end;
-    Inc(rc);
-    if rc=mx then Break;
-  end;
-  FreeObject(T);
-  if goFixedNumCols in Options then
-  begin
-    while rc < mx do
-    begin
-      ClearRow(rc);
-      Inc(rc);
-    end;
-  end else
-  begin
-    cd := True;
-    for cc := FixedCols to ColCount-1 do
-    begin
-      if Trim(Cells[cc, Row]) <> '' then
-      begin
-        cd := False;
-        Break;
+   s := FileName;
+   T := CreateTextReader(s);
+   if T = nil then Exit;
+   if goFixedNumCols in Options then begin
+      rc := FixedRows;
+      mx := RowCount;
+   end else begin
+      rc := RowCount;
+      mx := MaxInt;
+   end;
+   while not T.EOF do begin
+      s := T.GetStr;
+      if not (goFixedNumCols in Options) then begin RowCount := rc+1 end;
+      cc := FixedCols;
+      while s <> '' do begin
+         if cc = ColCount then Break;
+         GetWrd(s, z, divider);
+         if not UnpackRFC1945(z) then Break;
+         Cells[cc, rc] := z;
+         Inc(cc);
       end;
-    end;
-    if cd then DelLine;
-  end;
-  if goDigitalRows in Options then RenumberRows;
+      Inc(rc);
+      if rc=mx then Break;
+   end;
+   FreeObject(T);
+   if goFixedNumCols in Options then begin
+      while rc < mx do begin
+         ClearRow(rc);
+         Inc(rc);
+      end;
+   end else begin
+      cd := True;
+      for cc := FixedCols to ColCount-1 do begin
+         if Trim(Cells[cc, Row]) <> '' then begin
+            cd := False;
+            Break;
+         end;
+      end;
+      if cd then DelLine;
+   end;
+   if goDigitalRows in Options then RenumberRows;
 end;
 
 
 procedure TAdvGrid.PM_ImportTable(Sender: TObject);
 var
-  OD: TOpenDialog;
-  OK: Boolean;
-  s,z: string;
-  T: TTextReader;
-  mx, cc, rc: Integer;
-  cd: Boolean;
+   OD: TOpenDialog;
+   OK: Boolean;
+   s,
+   z: string;
+   T: TTextReader;
+   mx,
+   cc,
+   rc: Integer;
+   cd: Boolean;
 begin
-  OD := TOpenDialog.Create(Application);
-  OD.Title := LngStr(rsSgImport);
-  OD.Options := [ofHideReadOnly];
-  OD.Filter := LngStr(rsTextFileMask);
-  OK := OD.Execute;
-  s := OD.FileName;
-  FreeObject(OD);
-  if not OK then Exit;
-  T := CreateTextReader(s);
-  if T = nil then Exit;
-  if goFixedNumCols in Options then
-  begin
-    rc := FixedRows;
-    mx := RowCount;
-  end else
-  begin
-    rc := RowCount;
-    cd := True;
-    for cc := FixedCols to ColCount - 1 do
-    begin
-      if Trim(Cells[cc, rc - 1]) <> '' then
-      begin
-        cd := False;
-        Break;
+   OD := TOpenDialog.Create(Application);
+   OD.Title := LngStr(rsSgImport);
+   OD.Options := [ofHideReadOnly];
+   OD.Filter := LngStr(rsTextFileMask);
+   OK := OD.Execute;
+   s := OD.FileName;
+   FreeObject(OD);
+   if not OK then Exit;
+   T := CreateTextReader(s);
+   if T = nil then Exit;
+   if goFixedNumCols in Options then begin
+      rc := FixedRows;
+      mx := RowCount;
+   end else begin
+      rc := RowCount;
+      cd := True;
+      for cc := FixedCols to ColCount - 1 do begin
+         if Trim(Cells[cc, rc - 1]) <> '' then begin
+            cd := False;
+            Break;
+         end;
       end;
-    end;
-    if cd then rc := FixedRows;
-    mx := MaxInt;
-  end;
-  while not T.EOF do
-  begin
-    s := T.GetStr;
-    if not (goFixedNumCols in Options) then begin RowCount := rc + 1 end;
-    cc := FixedCols;
-    while s <> '' do
-    begin
-      if cc = ColCount then Break;
-      GetWrd(s, z, '|');
-      if not UnpackRFC1945(z) then Break;
-      Cells[cc, rc] := z;
-      Inc(cc);
-    end;
-    Inc(rc);
-    if rc = mx then Break;
-  end;
-  FreeObject(T);
-  if goFixedNumCols in Options then
-  begin
-    while rc < mx do
-    begin
-      ClearRow(rc);
+      if cd then rc := FixedRows;
+      mx := MaxInt;
+   end;
+   while not T.EOF do begin
+      s := T.GetStr;
+      if not (goFixedNumCols in Options) then begin RowCount := rc + 1 end;
+      cc := FixedCols;
+      while s <> '' do begin
+         if cc = ColCount then Break;
+         GetWrd(s, z, '|');
+         if not UnpackRFC1945(z) then Break;
+         Cells[cc, rc] := z;
+         Inc(cc);
+      end;
       Inc(rc);
-    end;
-  end else
-  begin
-    cd := True;
-    for cc := FixedCols to ColCount - 1 do
-    begin
-      if Trim(Cells[cc, Row]) <> '' then
-      begin
-        cd := False;
-        Break;
+      if rc = mx then Break;
+   end;
+   FreeObject(T);
+   if goFixedNumCols in Options then begin
+      while rc < mx do begin
+         ClearRow(rc);
+         Inc(rc);
       end;
-    end;
-    if cd then DelLine;
-  end;
-  if goDigitalRows in Options then RenumberRows;
+   end else begin
+      cd := True;
+      for cc := FixedCols to ColCount - 1 do begin
+         if Trim(Cells[cc, Row]) <> '' then begin
+            cd := False;
+            Break;
+         end;
+      end;
+      if cd then DelLine;
+   end;
+   if goDigitalRows in Options then RenumberRows;
 end;
 
 procedure TAdvGrid.PM_ExportTable(Sender: TObject);
 var
-  SD: TSaveDialog;
-  OK: Boolean;
-  s: string;
-  i,j: Integer;
-  Handle,Actually: DWORD;
+   SD: TSaveDialog;
+   OK: Boolean;
+   s: string;
+   i,
+   j: Integer;
+   Handle,
+   Actually: DWORD;
 begin
-  SD := TSaveDialog.Create(Application);
-  SD.Title := LngStr(rsSgExport);
-  SD.Options := [ofHideReadOnly];
-  SD.Filter := LngStr(rsTextFileMask);
-  SD.DefaultExt := 'txt';
-  OK := SD.Execute;
-  s := SD.FileName;
-  FreeObject(SD);
-  if not OK then Exit;
-  Handle := _CreateFile(s, [cTruncate]);
-  if Handle = INVALID_HANDLE_VALUE then
-  begin
-    DisplayError(SysErrorMessage(GetLastError)+#13#10#13#10+s, TForm(Owner).Handle);
-    Exit;
-  end;
-  SetEndOfFile(Handle);
-  for i := FixedRows to RowCount-1 do
-  begin
-    s := '';
-    for j := FixedCols to ColCount-1 do s := s + '|' + PackRFC1945(Cells[j,i], ['|']);
-    DelFC(s);
-    s := s+#13#10;
-    WriteFile(Handle, S[1], Length(S), Actually, nil);
-  end;
-  ZeroHandle(Handle);
+   SD := TSaveDialog.Create(Application);
+   SD.Title := LngStr(rsSgExport);
+   SD.Options := [ofHideReadOnly];
+   SD.Filter := LngStr(rsTextFileMask);
+   SD.DefaultExt := 'txt';
+   OK := SD.Execute;
+   s := SD.FileName;
+   FreeObject(SD);
+   if not OK then Exit;
+   Handle := _CreateFile(s, [cTruncate]);
+   if Handle = INVALID_HANDLE_VALUE then begin
+      DisplayError(SysErrorMessage(GetLastError)+#13#10#13#10+s, TForm(Owner).Handle);
+      Exit;
+   end;
+   SetEndOfFile(Handle);
+   for i := FixedRows to RowCount-1 do begin
+      s := '';
+      for j := FixedCols to ColCount-1 do s := s + '|' + PackRFC1945(Cells[j,i], ['|']);
+      DelFC(s);
+      s := s+#13#10;
+      WriteFile(Handle, S[1], Length(S), Actually, nil);
+   end;
+   ZeroHandle(Handle);
 end;
 
 procedure TAdvGrid.PM_HelpOnGrid(Sender: TObject);
@@ -5053,111 +5020,108 @@ end;
 
 constructor TAdvGrid.Create(AOwner: TComponent);
 var
-  b: TBitmap;
+   b: TBitmap;
 begin
-  inherited Create(AOwner);
-  PasswordCol := -1;
-  FileNameCol := -1;
-  FRightMargin := xDefRightMargin;
-  Initialize;
-  fCheckl := TImageList.CreateSize(16, 16);
-  b := TBitmap.Create;
-  b.LoadFromResourceName(hInstance, 'CHECK');
-  fCheckl.AddMasked(b, $FFFFFF);
-  b.Free;
+   inherited Create(AOwner);
+   PasswordCol := -1;
+   FileNameCol := -1;
+   FRightMargin := xDefRightMargin;
+   Initialize;
+   fCheckl := TImageList.CreateSize(16, 16);
+   b := TBitmap.Create;
+   b.LoadFromResourceName(hInstance, 'CHECK');
+   fCheckl.AddMasked(b, $FFFFFF);
+   b.Free;
 end;
 
 procedure TAdvGrid.CreatePopupMenu;
 var
-  ss: string;
-  md: boolean;
+   ss: string;
+   md: boolean;
 
-  procedure AddItem(OC: TNotifyEvent; const sc: string);
-  var
-    i: TMenuItem;
-    z: string;
-  begin
-    i := TMenuItem.Create(PopupMenu);
-    GetWrd(ss, z, '|');
-    i.Caption := z;
-    if Assigned(OC) then begin
-      i.OnClick := OC;
-      i.Enabled := not md;
-    end;
-    if sc <> '' then i.ShortCut := TextToShortcut(sc);
-    if Assigned(OC) then i.OnClick := OC;
-    PopupMenu.Items.Add(i);
-  end;
+   procedure AddItem(OC: TNotifyEvent; const sc: string);
+   var
+      i: TMenuItem;
+      z: string;
+   begin
+      i := TMenuItem.Create(PopupMenu);
+      GetWrd(ss, z, '|');
+      i.Caption := z;
+      if Assigned(OC) then begin
+         i.OnClick := OC;
+         i.Enabled := not md;
+      end;
+      if sc <> '' then i.ShortCut := TextToShortcut(sc);
+      if Assigned(OC) then i.OnClick := OC;
+      PopupMenu.Items.Add(i);
+   end;
 
 begin
-  PopupMenu := TPopupMenu.Create(Self);
+   PopupMenu := TPopupMenu.Create(Self);
 //  PopupMenu.OnPopup := PM_Popup;
-  ss := LngStr(rsSgPopup);
-  md := MenuDisabled;
-  AddItem(PM_EditCell, 'F2');
-  AddItem(nil, '');
-  AddItem(PM_AddRow, 'F5');
-  AddItem(PM_InsertRow, 'Alt+Ins');
-  AddItem(PM_DuplicateRow, 'F6');
-  md := not (goRowMoving in Options);
-  AddItem(PM_DeleteRow, 'Ctrl+Del');
-  AddItem(PM_DeleteAllRows, 'Ctrl+Shift+Del');
-  md := MenuDisabled;
-  AddItem(nil, '');
-  AddItem(PM_ExportTable, 'F3');
-  AddItem(PM_ImportTable, 'F4');
-  AddItem(nil, '');
-  AddItem(PM_HelpOnGrid, 'Alt+F1');
-  SetOptions(Options);
+   ss := LngStr(rsSgPopup);
+   md := MenuDisabled;
+   AddItem(PM_EditCell, 'F2');
+   AddItem(nil, '');
+   AddItem(PM_AddRow, 'F5');
+   AddItem(PM_InsertRow, 'Alt+Ins');
+   AddItem(PM_DuplicateRow, 'F6');
+   md := not (goRowMoving in Options);
+   AddItem(PM_DeleteRow, 'Ctrl+Del');
+   AddItem(PM_DeleteAllRows, 'Ctrl+Shift+Del');
+   md := MenuDisabled;
+   AddItem(nil, '');
+   AddItem(PM_ExportTable, 'F3');
+   AddItem(PM_ImportTable, 'F4');
+   AddItem(nil, '');
+   AddItem(PM_HelpOnGrid, 'Alt+F1');
+   SetOptions(Options);
 end;
 
 destructor TAdvGrid.Destroy;
 
-  function FreeItem(TheIndex: Integer; TheItem: Pointer): Integer; far;
-  begin
-    TObject(TheItem).Free;
-    Result := 0;
-  end;
+   function FreeItem(TheIndex: Integer; TheItem: Pointer): Integer; far;
+   begin
+      TObject(TheItem).Free;
+      Result := 0;
+   end;
 
 begin
-  fCheckl.Free;
-  if FRows <> nil then
-  begin
-    TSparseList(FRows).ForAll(@FreeItem);
-    TSparseList(FRows).Free;
-  end;
-  if FCols <> nil then
-  begin
-    TSparseList(FCols).ForAll(@FreeItem);
-    TSparseList(FCols).Free;
-  end;
-  if FData <> nil then
-  begin
-    TSparseList(FData).ForAll(@FreeItem);
-    TSparseList(FData).Free;
-  end;
-  inherited Destroy;
+   fCheckl.Free;
+   if FRows <> nil then begin
+      TSparseList(FRows).ForAll(@FreeItem);
+      TSparseList(FRows).Free;
+   end;
+   if FCols <> nil then begin
+      TSparseList(FCols).ForAll(@FreeItem);
+      TSparseList(FCols).Free;
+   end;
+   if FData <> nil then begin
+      TSparseList(FData).ForAll(@FreeItem);
+      TSparseList(FData).Free;
+   end;
+   inherited Destroy;
 end;
 
 procedure TAdvGrid.ColumnMoved(FromIndex, ToIndex: Longint);
 
-  procedure MoveColData(Index: Integer; ARow: TStringSparseList); far;
-  begin
-    ARow.Move(FromIndex, ToIndex);
-  end;
+   procedure MoveColData(Index: Integer; ARow: TStringSparseList); far;
+   begin
+      ARow.Move(FromIndex, ToIndex);
+   end;
 
 begin
-  TSparseList(FData).ForAll(@MoveColData);
-  Invalidate;
-  inherited ColumnMoved(FromIndex, ToIndex);
+   TSparseList(FData).ForAll(@MoveColData);
+   Invalidate;
+   inherited ColumnMoved(FromIndex, ToIndex);
 end;
 
 procedure TAdvGrid.RowMoved(FromIndex, ToIndex: Longint);
 begin
-  TSparseList(FData).Move(FromIndex, ToIndex);
-  Invalidate;
-  inherited RowMoved(FromIndex, ToIndex);
-  if goDigitalRows in Options then RenumberRows;
+   TSparseList(FData).Move(FromIndex, ToIndex);
+   Invalidate;
+   inherited RowMoved(FromIndex, ToIndex);
+   if goDigitalRows in Options then RenumberRows;
 end;
 
 procedure TAdvGrid.SetCheckBoxes;
@@ -5185,19 +5149,19 @@ end;
 
 function TAdvGrid.GetEditText(ACol, ARow: Longint): string;
 begin
-  Result := Cells[ACol, ARow];
-  if Assigned(FOnGetEditText) then FOnGetEditText(Self, ACol, ARow, Result);
+   Result := Cells[ACol, ARow];
+   if Assigned(FOnGetEditText) then FOnGetEditText(Self, ACol, ARow, Result);
 end;
 
 procedure TAdvGrid.SetEditText(ACol, ARow: Longint; const Value: string);
 begin
-  DisableEditUpdate;
-  try
-    if Value <> Cells[ACol, ARow] then Cells[ACol, ARow] := Value;
-  finally
-    EnableEditUpdate;
-  end;
-  inherited SetEditText(ACol, ARow, Value);
+   DisableEditUpdate;
+   try
+      if Value <> Cells[ACol, ARow] then Cells[ACol, ARow] := Value;
+   finally
+      EnableEditUpdate;
+   end;
+   inherited SetEditText(ACol, ARow, Value);
 end;
 
 function TAdvCustomGrid.DrawButton;
@@ -5224,55 +5188,54 @@ begin
    Result := R;
 end;
 
-procedure TAdvGrid.DrawCell(ACol, ARow: Longint; ARect: TRect;
-  AState: TxGridDrawState);
+procedure TAdvGrid.DrawCell(ACol, ARow: Longint; ARect: TRect; AState: TxGridDrawState);
 
   procedure DrawCellText;
   var
-    S: string;
-    L: integer;
-    R: TRect;
+     S: string;
+     L: integer;
+     R: TRect;
   begin
-    Canvas.Font := GetFontAt(ACol, ARow);
-    S := Cells[ACol, ARow];
-    if (PasswordCol = ACol) and
-       (ARow >= FixedRows) and
-       (S <> '') then FillChar(S[1], Length(S), '*');
-    L := ARect.Left + 2;
-    R := ARect;
-    if fCheckBoxes and (ACol = 0) then begin
-       if ARow >= FixedRows then begin
-          if RowChecked[ARow] then begin
-             fCheckl.Draw(Canvas, L, ARect.Top + 1, 2);
-          end else begin
-             fCheckl.Draw(Canvas, L, ARect.Top + 1, 1);
-          end;
-       end;
-       L := ARect.Left + 20;
-    end;
-    if (FileNameCol = ACol) and (ARow >= FixedRows) then begin
-       Dec(R.Right, Canvas.TextWidth('...'));
-    end;
-    ExtTextOut(Canvas.Handle, L, ARect.Top + 1, ETO_CLIPPED {or
+     Canvas.Font := GetFontAt(ACol, ARow);
+     S := Cells[ACol, ARow];
+     if (PasswordCol = ACol) and
+        (ARow >= FixedRows) and
+        (S <> '') then FillChar(S[1], Length(S), '*');
+     L := ARect.Left + 2;
+     R := ARect;
+     if fCheckBoxes and (ACol = 0) then begin
+        if ARow >= FixedRows then begin
+           if RowChecked[ARow] then begin
+              fCheckl.Draw(Canvas, L, ARect.Top + 1, 2);
+           end else begin
+              fCheckl.Draw(Canvas, L, ARect.Top + 1, 1);
+           end;
+        end;
+        L := ARect.Left + 20;
+     end;
+     if (FileNameCol = ACol) and (ARow >= FixedRows) then begin
+        Dec(R.Right, Canvas.TextWidth('...'));
+     end;
+     ExtTextOut(Canvas.Handle, L, ARect.Top + 1, ETO_CLIPPED {or
       ETO_OPAQUE}, @R, PChar(S), Length(S), nil);
-    if (FileNameCol = ACol) and (ARow >= FixedRows) then begin
-       DrawButton(ACol, ARow, False);
-    end;
+     if (FileNameCol = ACol) and (ARow >= FixedRows) then begin
+        DrawButton(ACol, ARow, False);
+     end;
   end;
 
 begin
-  if DefaultDrawing then DrawCellText;
-  inherited DrawCell(ACol, ARow, ARect, AState);
+   if DefaultDrawing then DrawCellText;
+   inherited DrawCell(ACol, ARow, ARect, AState);
 end;
 
 procedure TAdvGrid.DisableEditUpdate;
 begin
-  Inc(FEditUpdate);
+   Inc(FEditUpdate);
 end;
 
 procedure TAdvGrid.EnableEditUpdate;
 begin
-  Dec(FEditUpdate);
+   Dec(FEditUpdate);
 end;
 
 procedure TAdvGrid.Initialize;
@@ -5290,94 +5253,89 @@ end;
 
 procedure TAdvGrid.SetUpdateState(Updating: Boolean);
 begin
-  FUpdating := Updating;
-  if not Updating and FNeedsUpdating then
-  begin
-    InvalidateGrid;
-    FNeedsUpdating := False;
-  end;
+   FUpdating := Updating;
+   if not Updating and FNeedsUpdating then begin
+      InvalidateGrid;
+      FNeedsUpdating := False;
+   end;
 end;
 
 procedure TAdvGrid._Update(ACol, ARow: Integer);
 begin
-  if not FUpdating then InvalidateCell(ACol, ARow)
-  else FNeedsUpdating := True;
-  if (ACol = Col) and (ARow = Row) and (FEditUpdate = 0) then InvalidateEditor;
+   if not FUpdating then InvalidateCell(ACol, ARow) else FNeedsUpdating := True;
+   if (ACol = Col) and (ARow = Row) and (FEditUpdate = 0) then InvalidateEditor;
 end;
 
-function  TAdvGrid.EnsureColRow(Index: Integer; IsCol: Boolean):
-  TxStringGridStrings;
+function  TAdvGrid.EnsureColRow(Index: Integer; IsCol: Boolean): TxStringGridStrings;
 var
-  RCIndex: Integer;
-  PList: ^TSparseList;
+   RCIndex: Integer;
+   PList: ^TSparseList;
 begin
-  if IsCol then PList := @FCols else PList := @FRows;
-  Result := TxStringGridStrings(PList^[Index]);
-  if Result = nil then
-  begin
-    if IsCol then RCIndex := -Index - 1 else RCIndex := Index + 1;
-    Result := TxStringGridStrings.Create(Self, RCIndex);
-    PList^[Index] := Result;
-  end;
+   if IsCol then PList := @FCols else PList := @FRows;
+   Result := TxStringGridStrings(PList^[Index]);
+   if Result = nil then begin
+      if IsCol then RCIndex := -Index - 1 else RCIndex := Index + 1;
+      Result := TxStringGridStrings.Create(Self, RCIndex);
+      PList^[Index] := Result;
+   end;
 end;
 
 function  TAdvGrid.EnsureDataRow(ARow: Integer): Pointer;
 var
-  quantum: TSPAQuantum;
+   quantum: TSPAQuantum;
 begin
-  Result := TStringSparseList(TSparseList(FData)[ARow]);
-  if Result = nil then
-  begin
-    if ColCount > 512 then quantum := SPALarge else quantum := SPASmall;
-    Result := TStringSparseList.Create(quantum);
-    TSparseList(FData)[ARow] := Result;
-  end;
+   Result := TStringSparseList(TSparseList(FData)[ARow]);
+   if Result = nil then begin
+      if ColCount > 512 then quantum := SPALarge else quantum := SPASmall;
+      Result := TStringSparseList.Create(quantum);
+      TSparseList(FData)[ARow] := Result;
+   end;
 end;
 
 function TAdvGrid.GetCells(ACol, ARow: Integer): string;
 var
-  ssl: TStringSparseList;
+   ssl: TStringSparseList;
 begin
-  ssl := TStringSparseList(TSparseList(FData)[ARow]);
-  if ssl = nil then Result := '' else Result := ssl[ACol];
+   ssl := TStringSparseList(TSparseList(FData)[ARow]);
+   if ssl = nil then Result := '' else Result := ssl[ACol];
 end;
 
 function TAdvGrid.GetCols(Index: Integer): TStrings;
 begin
-  Result := EnsureColRow(Index, True);
+   Result := EnsureColRow(Index, True);
 end;
 
 function TAdvGrid.GetObjects(ACol, ARow: Integer): TObject;
 var
-  ssl: TStringSparseList;
+   ssl: TStringSparseList;
 begin
-  ssl := TStringSparseList(TSparseList(FData)[ARow]);
-  if ssl = nil then Result := nil else Result := ssl.Objects[ACol];
+   ssl := TStringSparseList(TSparseList(FData)[ARow]);
+   if ssl = nil then Result := nil else Result := ssl.Objects[ACol];
 end;
 
 function TAdvGrid.GetRows(Index: Integer): TStrings;
 begin
-  Result := EnsureColRow(Index, False);
+   Result := EnsureColRow(Index, False);
 end;
 
 procedure TAdvGrid.SetCells(ACol, ARow: Integer; const Value: string);
 begin
-  TxStringGridStrings(EnsureDataRow(ARow))[ACol] := Value;
-  EnsureColRow(ACol, True);
-  EnsureColRow(ARow, False);
+   TxStringGridStrings(EnsureDataRow(ARow))[ACol] := Value;
+   EnsureColRow(ACol, True);
+   EnsureColRow(ARow, False);
   _Update(ACol, ARow);
 end;
 
 procedure TAdvGrid.SetCols(Index: Integer; Value: TStrings);
 begin
-  EnsureColRow(Index, True).Assign(Value);
+   EnsureColRow(Index, True).Assign(Value);
 end;
 
 procedure TAdvGrid.SetObjects(ACol, ARow: Integer; Value: TObject);
 begin
-  TxStringGridStrings(EnsureDataRow(ARow)).Objects[ACol] := Value;
-  EnsureColRow(ACol, True);
-  EnsureColRow(ARow, False);
+   TxStringGridStrings(EnsureDataRow(ARow)).Objects[ACol] := Value;
+   EnsureColRow(ACol, True);
+   EnsureColRow(ARow, False);
   _Update(ACol, ARow);
 end;
 
@@ -5403,8 +5361,8 @@ begin
                  VK_F10    : if Shift = [ssAlt] then
                    begin
                      p.x := 16;
-                     for i := 0 to Col-1 do Inc(p.x, ColWidths[i]);
-                     p.y := (Row-TopRow+2)*(DefaultRowHeight+1)+4;
+                     for i := 0 to Col - 1 do Inc(p.x, ColWidths[i]);
+                     p.y := (Row - TopRow + 2) * (DefaultRowHeight + 1) + 4;
                      p := ClientToScreen(p);
                      PopupMenu.Popup(p.x, p.y);
                    end;
@@ -5470,8 +5428,7 @@ procedure TAdvGrid.RenumberRows;
 var
   I: Integer;
 begin
-  for I := FixedRows to RowCount-1 do
-  begin
+  for I := FixedRows to RowCount - 1 do begin
     Cells[0, I] := RightJust(IntToStr(I), 0);
   end;
 end;
@@ -5494,7 +5451,7 @@ function TAdvGrid.Fmt(const S: String; X, Y: LongInt):string;
 
 function StrBody: String;
 begin
-  StrBody := Copy(S, 2, Length(S)-1);
+  StrBody := Copy(S, 2, Length(S) - 1);
 end;
 
 begin
@@ -5548,10 +5505,10 @@ end;
 
 procedure TAdvListView.WMDropFiles;
 begin
-  DragQueryPoint(Msg.wParam, DropPoint);
-  DroppedFiles := GetAPIDroppedFiles(Msg.wParam);
-  OnApiDropFiles(Self);
-  Msg.Result := 0;
+   DragQueryPoint(Msg.wParam, DropPoint);
+   DroppedFiles := GetAPIDroppedFiles(Msg.wParam);
+   OnApiDropFiles(Self);
+   Msg.Result := 0;
 end;
 
 procedure TAdvCustomGrid.SetFileNameCol;
