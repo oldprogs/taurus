@@ -1,6 +1,6 @@
 object NodelistCompiler: TNodelistCompiler
-  Left = 206
-  Top = 172
+  Left = 212
+  Top = 177
   BorderIcons = [biSystemMenu]
   BorderStyle = bsDialog
   Caption = 'Compiling The Nodelist'

@@ -109,7 +109,7 @@ type
   end;
 
 
-function InvokeNodeWizzard: Boolean;
+function InvokeNodeWizzard(const a: string): Boolean;
 
 implementation uses
 
@@ -122,50 +122,35 @@ implementation uses
 
 {$R *.DFM}
 
-function InvokeNodeWizzard: Boolean;
+function InvokeNodeWizzard(const a: string): Boolean;
 var
-  NodeWizzardForm: TNodeWizzardForm;
+   NodeWizzardForm: TNodeWizzardForm;
 begin
-  NodeWizzardForm := TNodeWizzardForm.Create(Application);
-  {$IFNDEF WS}
-  with NodeWizzardForm do
-  begin
-    lIpOvr.Visible:=false;
-    eIpOvr.Visible:=false;
-    bEditIpOvr.Visible:=false;
-    lIpAKA.Visible:=false;
-    bEditIpAka.Visible:=false;
-    lbIpAKA.Visible:=false;
-    lIpRest.Visible:=false;
-    bEditIpRest.Visible:=false;
-    lbIpRest.Visible:=false;
-  end;
-  {$ENDIF}
-  NodeWizzardForm.SetData;
-  Result := NodeWizzardForm.ShowModal = mrOK;
-  FreeObject(NodeWizzardForm);
-  if Result then PostMsg(WM_SETUPOK);
+   NodeWizzardForm := TNodeWizzardForm.Create(Application);
+   NodeWizzardForm.SetData;
+   NodeWizzardForm.cbCurNode.ItemIndex := NodeWizzardForm.cbCurNode.Items.IndexOf(a);
+   Result := NodeWizzardForm.ShowModal = mrOK;
+   FreeObject(NodeWizzardForm);
+   if Result then PostMsg(WM_SETUPOK);
 end;
 
 procedure TNodeWizzardForm.SetData;
 var
   wc: TNodeWizzardColl;
-  i: Integer;
-  r: TNodeWizzardRec;
+   i: Integer;
+   r: TNodeWizzardRec;
 begin
-  wc := TNodeWizzardColl.Create('');
-  BuildNodeWizzardColl(wc, True);
-  Fwc := wc;
-  for i := 0 to wc.Count-1 do
-  begin
-    r := wc[i];
-    cbCurNode.Items.Add(Addr2Str(r.A));
-  end;
-  if cbCurNode.Items.Count > 0 then
-  begin
-    cbCurNode.ItemIndex := 0;
-    cbCurNode.OnClick(Self);
-  end;
+   wc := TNodeWizzardColl.Create;
+   BuildNodeWizzardColl(wc, True);
+   Fwc := wc;
+   for i := 0 to wc.Count - 1 do begin
+      r := wc[i];
+      cbCurNode.Items.Add(Addr2Str(r.A));
+   end;
+   if cbCurNode.Items.Count > 0 then begin
+      cbCurNode.ItemIndex := 0;
+      cbCurNode.OnClick(Self);
+   end;
 end;
 
 

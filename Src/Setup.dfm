@@ -1,10 +1,10 @@
 object SetupForm: TSetupForm
-  Left = 357
-  Top = 181
+  Left = 194
+  Top = 138
   HelpContext = 11000
   BorderStyle = bsDialog
   Caption = 'Taurus Setup'
-  ClientHeight = 450
+  ClientHeight = 414
   ClientWidth = 569
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -19,7 +19,7 @@ object SetupForm: TSetupForm
   OnCreate = FormCreate
   DesignSize = (
     569
-    450)
+    414)
   PixelsPerInch = 96
   TextHeight = 15
   object imgHeader: TImage
@@ -101,7 +101,7 @@ object SetupForm: TSetupForm
     Left = 5
     Top = 5
     Width = 130
-    Height = 440
+    Height = 404
     Anchors = [akLeft, akTop, akBottom]
     BorderWidth = 1
     HideSelection = False
@@ -132,9 +132,9 @@ object SetupForm: TSetupForm
     Left = 144
     Top = 29
     Width = 418
-    Height = 373
+    Height = 337
     Anchors = [akLeft, akTop, akRight, akBottom]
-    PageIndex = 12
+    PageIndex = 9
     TabOrder = 1
     object TPage
       Left = 0
@@ -1767,7 +1767,7 @@ object SetupForm: TSetupForm
         Width = 215
         Height = 23
         Style = csDropDownList
-        ItemHeight = 15
+        ItemHeight = 0
         TabOrder = 0
       end
       object btnReloadRASEntries: TButton
@@ -2016,9 +2016,9 @@ object SetupForm: TSetupForm
       Caption = 'Netmail'
       object gNetmail: TAdvGrid
         Left = 0
-        Top = 112
+        Top = 120
         Width = 418
-        Height = 261
+        Height = 217
         FixedFont.Charset = DEFAULT_CHARSET
         FixedFont.Color = clWindowText
         FixedFont.Height = -12
@@ -2041,7 +2041,7 @@ object SetupForm: TSetupForm
       end
       object cbDynamicRouting: TCheckBox
         Left = 8
-        Top = 4
+        Top = 7
         Width = 191
         Height = 17
         Caption = 'Use Dynamic Routing'
@@ -2049,7 +2049,7 @@ object SetupForm: TSetupForm
       end
       object cbScanMSG: TCheckBox
         Left = 206
-        Top = 4
+        Top = 7
         Width = 189
         Height = 17
         Caption = 'Scan MSG area'
@@ -2058,7 +2058,7 @@ object SetupForm: TSetupForm
       end
       object cbUnpackPKT: TCheckBox
         Left = 206
-        Top = 22
+        Top = 25
         Width = 203
         Height = 17
         Caption = 'Unpack arrived PKTs'
@@ -2067,9 +2067,9 @@ object SetupForm: TSetupForm
       end
       object gNetPath: TAdvGrid
         Left = 0
-        Top = 42
+        Top = 48
         Width = 418
-        Height = 70
+        Height = 72
         FileNameCol = 1
         FileNameDir = True
         FixedFont.Charset = DEFAULT_CHARSET
@@ -2818,7 +2818,7 @@ object SetupForm: TSetupForm
   end
   object btnHelp: TButton
     Left = 477
-    Top = 415
+    Top = 379
     Width = 85
     Height = 25
     Anchors = [akRight, akBottom]
@@ -2828,7 +2828,7 @@ object SetupForm: TSetupForm
   end
   object btnApply: TButton
     Left = 386
-    Top = 415
+    Top = 379
     Width = 85
     Height = 25
     Anchors = [akRight, akBottom]
@@ -2838,7 +2838,7 @@ object SetupForm: TSetupForm
   end
   object btnCancel: TButton
     Left = 294
-    Top = 415
+    Top = 379
     Width = 86
     Height = 25
     Anchors = [akRight, akBottom]
@@ -2849,7 +2849,7 @@ object SetupForm: TSetupForm
   end
   object btnOK: TButton
     Left = 202
-    Top = 415
+    Top = 379
     Width = 86
     Height = 25
     Anchors = [akRight, akBottom]

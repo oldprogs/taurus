@@ -191,6 +191,7 @@ LANGUAGE LANG_RUSSIAN,0
         "mpReset|Сбросить\n"\
         "mpTrace|Информация\n"\
         "mpDeleteAll|Удалить все\n"\
+        "mpProperties|Свойства\n"\
         "mTool|Инструмент\n"\
         "mtCompileNodelist|Компилировать список узлов\n"\
         "mtCompileNodelistInv|Компилировать список узлов\n"\
@@ -234,6 +235,7 @@ LANGUAGE LANG_RUSSIAN,0
         "ppResetPoll|Сбросить\n"\
         "ppDeletePoll|Удалить\n"\
         "ppDeleteAllPolls|Удалить все\n"\
+        "ppProperties|Свойства\n"\
         "ompRescan|Пересканировать\n"\
         "ompCfCrash|Crash\n"\
         "ompCfDirect|Direct\n"\

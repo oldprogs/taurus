@@ -1021,6 +1021,7 @@ type
     NiagaraSession : Boolean;
     AckReceived: boolean;
     SessionCore: TSessionCore;
+    Rec, Snd: longint;
     destructor Destroy; override;
   end;
 
@@ -2537,7 +2538,7 @@ begin
    LeaveFidoPolls;
 end;
 
-function OutDial(A: TOutStatusSet; DirAsNormal: Boolean): Boolean;
+function OutDial(A: TOutStatusSet; DirAsNormal, NormAsCrash: Boolean): Boolean;
 begin
    Result := (osImmed in A) or
              (osImmedMail in A) or
@@ -2547,6 +2548,9 @@ begin
    if (not Result) and (not DirAsNormal) then
       Result := (osDirect in A) or
                 (osDirectMail in A);
+   if (not Result) and (NormAsCrash) then
+      Result := (osNormal in A) or
+                (osNormalMail in A);                 
 end;
 
 procedure RecreatePolls(c: TOutNodeColl);
@@ -2566,10 +2570,12 @@ var
 
 var
    DirAsNormal: Boolean;
+   NormAsCrash: Boolean;
    CurrentTime: dword;
 begin
    EnterFidoPolls;
    DirAsNormal := IniFile.DirectAsNormal;
+   NormAsCrash := IniFile.NormalAsCrash;
    for i := CollMax(FidoPolls) downto 0 do begin
       p := FidoPolls[i];
       p.Keep := False;
@@ -2591,7 +2597,7 @@ begin
                p.Typ := ptpOutb;
             end;
             if ((p.Typ = ptpOutb) or (p.Typ = ptpNetm)) and
-                (not OutDial(n.FStatus, DirAsNormal)) then
+                (not OutDial(n.FStatus, DirAsNormal, NormAsCrash)) then
             begin
                 FreePoll_I_P;
             end;
@@ -2604,7 +2610,7 @@ begin
    LeaveFidoPolls;
    for i := 0 to CollMax(c) do begin
       n := c[i];
-      if ExistFile(n.Name) and OutDial(n.FStatus, DirAsNormal) then begin
+      if ExistFile(n.Name) and OutDial(n.FStatus, DirAsNormal, NormAsCrash) then begin
          an := FindNode(n.Address);
          if (an = nil) or ((an.DialupData = nil) and (an.IPData = nil)) then begin
             FreeObject(an);
@@ -5283,8 +5289,10 @@ begin
 
    EnterCS(DisplayDataCS);
 //   SD.txMail := SD.txTran;
-   SD.txMail := 0;
-   SD.txFiles := 0;
+//   SD.txMail := 0;
+   txMl := 0;
+//   SD.txFiles := 0;
+   txFl := 0;
    SD.OutFiles.FreeAll;
 
    SD.rmtAddrs.Enter;
@@ -5308,7 +5316,7 @@ begin
          osCrashMail,
          osDirectMail,
          osNormalMail,
-         osHoldMail: PI := @SD.TxMail;
+         osHoldMail: PI := @txMl;
          osRequest,
          osCallback:
             begin
@@ -5316,7 +5324,7 @@ begin
             end;
          else
             begin
-               PI := @SD.TxFiles;
+               PI := @txFl;
             end;
          end;
          for M := L downto J do begin
@@ -5477,16 +5485,16 @@ begin
 
    if not SD.WeHaveReported then begin
       SD.WeHaveReported := True;
-      if (SD.txMail + SD.txFiles = 0) then
+      if (txMl + txFl = 0) then
          Log(ltInfo, 'Nothing for them')
       else begin
-         LogFmt(ltInfo, 'We have %sb of mail and %sb of files for them', [Int2Str(SD.txMail), Int2Str(SD.txFiles)]);
+         LogFmt(ltInfo, 'We have %sb of mail and %sb of files for them', [Int2Str(txMl), Int2Str(txFl)]);
       end;
-      if ProtCore in [ptBinkP, ptPOP3, ptGATE] then SD.Prot.ReportTraf(SD.txMail, SD.txFiles);
+      if ProtCore in [ptBinkP, ptPOP3, ptGATE] then SD.Prot.ReportTraf(txMl, txFl);
    end;
    Ok := True;
    SD.OutFiles.Enter;
-   SD.OutFiles.PurgeDuplicates(SD.TxMail, SD.TxFiles);
+   SD.OutFiles.PurgeDuplicates(txMl, txFl);
    while Ok do begin
       Ok := False;
       for i := 1 to SD.OutFiles.Count - 1 do begin
@@ -5508,11 +5516,13 @@ begin
    SD.SentFiles.Enter;
    for i := 0 to CollMax(SD.SentFiles) do begin
       tof := SD.SentFiles[i];
-      SD.txFiles := SD.txFiles + tof.Nfo.Size;
+      txFl := txFl + tof.Nfo.Size;
    end;
    SD.SentFiles.Leave;
    LeaveCS(DisplayDataCS);
    IgnoreNextEvent := False;
+   SD.txMail  := txMl;
+   SD.txFiles := txFl;
 end;
 
 function TMailerThread.AcceptFile(P: TBaseProtocol): TTransferFileAction;
@@ -9177,12 +9187,19 @@ begin
          ScanCounter := 1;
          CommonStatx;
          SaveTarifLog(self); // visual
-         if SD.SessionCore <> scEmsiWz then LogEMSIData;
          PostMsgP(WM_CLEARTERMS, Self);
+         if SD.SessionCore <> scEmsiWz then LogEMSIData;
          if (not SD.SessionOK) and (SD.Prot <> nil) then Log(ltInfo, SProtocolError[SD.Prot.ProtocolError]);
-         Enter;
-         FreeObject(SD.Prot);
-         Leave;
+         if (SD.Prot <> nil) and (SD.Prot.CP <> nil) then begin
+            Enter;
+            SD.Rec := SD.Prot.CP.Rec;
+            SD.Snd := SD.Prot.CP.Snd;
+            FreeObject(SD.Prot);
+            Leave;
+         end else begin
+            SD.Rec := 0;
+            SD.Snd := 0;
+         end;
          if DialupLine then
             Priority := tpLower;
          if SD.SessionOK then
@@ -11991,16 +12008,18 @@ begin
                if copy(w, 1, 8) = 'TAPI OFF' then begin
                   Result := mrpTapi;
                end;
-              if IniFile.PlaySounds then begin
-                if (Result = mrpRing) or (Result = mrpTapi) then begin
-                  PlaySnd('Ring', SoundsON);
-                end else begin
-                  if (Result = mrpConnect) then begin
-                     PlaySnd('Connect', SoundsON);
-                     PostMsgP(WM_CONNECT, Self);
+               if IniFile.PlaySounds then begin
+                  if (Result = mrpRing) or (Result = mrpTapi) then begin
+                     PlaySnd('Ring', SoundsON);
+                  end else begin
+                     if (Result = mrpConnect) then begin
+                        PlaySnd('Connect', SoundsON);
+                        PostMsgP(WM_CONNECT, Self);
+                        CP.Rec := 0;
+                        CP.Snd := 0;
+                     end;
                   end;
-                end;
-              end;
+               end;
                Exit;
             end;
          end else begin
@@ -12652,6 +12671,14 @@ var
    R, TD: DWORD;
    c: integer;
    s: string;
+
+   procedure CloseSession;
+   begin
+      c := uGetSystemTime - SD.SessionStart;
+      Log(ltInfo, 'Session traf: ' + Format('in: %d (%sb) out: %d (%sb) [%db/%db]', [SD.FilesReceived, Int2Str(SD.cRxBytes), SD.FilesSent, Int2Str(SD.cTxBytes), SD.Rec, SD.Snd]));
+      Log(ltInfo, 'Session time: ' + Format('%.2d:%.2d:%.2d', [c div 3600, (c mod 3600) div 60, c mod 60]));
+   end;
+
 begin
    UpdateModem;
    case State of
@@ -13259,17 +13286,15 @@ begin
       msSE_OKc:
          begin
             Log(ltWarning, 'Session completed successfully');
-            c := uGetSystemTime - SD.SessionStart;
-            Log(ltInfo, 'Session time: ' + Format('%.2d:%.2d:%.2d', [c div 3600, (c mod 3600) div 60, c mod 60]));
-            if IniFile.SessionOKFlag then CreateFlag('session.ok' {+Name}); //bug report by Anton Ikonen
+            CloseSession;
+            if IniFile.SessionOKFlag then CreateFlag('session.ok');
             State := msInit;
             PlaySnd('Session', SoundsON);
          end;
       msSE_SessionAborted:
          begin
             Log(ltWarning, 'Session aborted');
-            c := uGetSystemTime - SD.SessionStart;
-            Log(ltInfo, 'Session time: ' + Format('%.2d:%.2d:%.2d', [c div 3600, (c mod 3600) div 60, c mod 60]));
+            CloseSession;
             if IniFile.SessionAbortedFlag then CreateFlag('session.fail');
             DoSE_SessionAborted;
             State := msInit;
@@ -13728,25 +13753,23 @@ begin
    case State of
  msIdle,
  msIdleA,
- msWaitNextRing: PublicD.CanAnswer := True;
+ msWaitNextRing,
+ msIdle_TAPI,
+ msStartIdle_TAPI: PublicD.CanAnswer := True;
    else
       PublicD.CanAnswer := False;
    end;
-   if CP = nil then
-   begin
+   if CP = nil then begin
       PublicD.NoCP := True;
       PublicD.CPOutUsed := 0;
-   end
-   else
-   begin
+   end else begin
       PublicD.NoCP := False;
       PublicD.CPOutUsed := CP.OutUsed;
    end;
    PublicD.txTot := SD.txMail + SD.TxFiles;
    FreeObject(PubBatchT);
    FreeObject(PubBatchR);
-   if SD.Prot <> nil then
-   begin
+   if SD.Prot <> nil then begin
       PublicD.ProtTotalErrors := SD.Prot.TotalErrors;
       PublicDS.ProtName := SD.Prot.Name;
       if SD.Prot.T <> nil then PubBatchT := SD.Prot.T.Copy;

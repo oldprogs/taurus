@@ -500,6 +500,7 @@ end;
 
 procedure TTapiPort.StorLine;
 begin
+   if Messages = nil then exit;
    Messages.Enter;
    Messages.Add(s);
    if Messages.Count > 20 then Messages.AtFree(0);

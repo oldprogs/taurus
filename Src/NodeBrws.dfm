@@ -1,8 +1,8 @@
 object NodelistBrowser: TNodelistBrowser
-  Left = 213
-  Top = 117
-  Width = 645
-  Height = 504
+  Left = 4
+  Top = 4
+  Width = 638
+  Height = 448
   HelpContext = 1970
   BorderIcons = [biSystemMenu, biMaximize]
   BorderWidth = 6
@@ -26,8 +26,8 @@ object NodelistBrowser: TNodelistBrowser
   object Tree: TTreeView
     Left = 0
     Top = 0
-    Width = 625
-    Height = 270
+    Width = 618
+    Height = 210
     Align = alClient
     ChangeDelay = 50
     HideSelection = False
@@ -44,14 +44,14 @@ object NodelistBrowser: TNodelistBrowser
   end
   object pnInfo: TTransPan
     Left = 0
-    Top = 280
-    Width = 625
+    Top = 220
+    Width = 618
     Height = 182
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 0
     object bvlInfo: TBevel
-      Left = 508
+      Left = 501
       Top = 0
       Width = 3
       Height = 182
@@ -61,7 +61,7 @@ object NodelistBrowser: TNodelistBrowser
     object pnAddrInfo: TTransPan
       Left = 0
       Top = 0
-      Width = 508
+      Width = 501
       Height = 182
       Align = alClient
       BevelOuter = bvNone
@@ -69,7 +69,7 @@ object NodelistBrowser: TNodelistBrowser
       TabOrder = 1
       EraseBackGround = True
       DesignSize = (
-        508
+        501
         182)
       object llWrkTimeLocal: TLabel
         Left = 26
@@ -164,7 +164,7 @@ object NodelistBrowser: TNodelistBrowser
       object lAddress: TTransEdit
         Left = 95
         Top = 2
-        Width = 308
+        Width = 301
         Height = 18
         TabStop = False
         Anchors = [akLeft, akRight]
@@ -187,7 +187,7 @@ object NodelistBrowser: TNodelistBrowser
       object lStation: TTransEdit
         Left = 95
         Top = 20
-        Width = 408
+        Width = 401
         Height = 18
         TabStop = False
         Anchors = [akLeft, akRight]
@@ -208,7 +208,7 @@ object NodelistBrowser: TNodelistBrowser
       object lSysop: TTransEdit
         Left = 95
         Top = 38
-        Width = 408
+        Width = 401
         Height = 18
         TabStop = False
         Anchors = [akLeft, akRight]
@@ -231,7 +231,7 @@ object NodelistBrowser: TNodelistBrowser
       object lLocation: TTransEdit
         Left = 95
         Top = 56
-        Width = 408
+        Width = 401
         Height = 18
         TabStop = False
         Anchors = [akLeft, akRight]
@@ -254,7 +254,7 @@ object NodelistBrowser: TNodelistBrowser
       object lPhone: TTransEdit
         Left = 95
         Top = 74
-        Width = 408
+        Width = 401
         Height = 18
         TabStop = False
         Anchors = [akLeft, akRight]
@@ -277,7 +277,7 @@ object NodelistBrowser: TNodelistBrowser
       object lSpeed: TTransEdit
         Left = 95
         Top = 92
-        Width = 408
+        Width = 401
         Height = 18
         TabStop = False
         Anchors = [akLeft, akRight]
@@ -300,7 +300,7 @@ object NodelistBrowser: TNodelistBrowser
       object lFlags: TTransEdit
         Left = 95
         Top = 110
-        Width = 408
+        Width = 401
         Height = 18
         TabStop = False
         Anchors = [akLeft, akRight]
@@ -323,7 +323,7 @@ object NodelistBrowser: TNodelistBrowser
       object lWrkTimeUTC: TTransEdit
         Left = 95
         Top = 146
-        Width = 408
+        Width = 401
         Height = 18
         TabStop = False
         Anchors = [akLeft, akRight]
@@ -346,7 +346,7 @@ object NodelistBrowser: TNodelistBrowser
       object lWrkTimeLocal: TTransEdit
         Left = 95
         Top = 164
-        Width = 408
+        Width = 401
         Height = 18
         TabStop = False
         Anchors = [akLeft, akRight]
@@ -367,7 +367,7 @@ object NodelistBrowser: TNodelistBrowser
         EraseBackGround = True
       end
       object lStatus: TTransEdit
-        Left = 419
+        Left = 412
         Top = 2
         Width = 79
         Height = 13
@@ -392,7 +392,7 @@ object NodelistBrowser: TNodelistBrowser
       object lFlagsIp: TTransEdit
         Left = 95
         Top = 128
-        Width = 408
+        Width = 401
         Height = 18
         TabStop = False
         Anchors = [akLeft, akRight]
@@ -414,7 +414,7 @@ object NodelistBrowser: TNodelistBrowser
       end
     end
     object pnAddrSearch: TTransPan
-      Left = 511
+      Left = 504
       Top = 0
       Width = 114
       Height = 182
@@ -481,8 +481,8 @@ object NodelistBrowser: TNodelistBrowser
   end
   object pnDivider: TPanel
     Left = 0
-    Top = 270
-    Width = 625
+    Top = 210
+    Width = 618
     Height = 10
     Align = alBottom
     BevelOuter = bvNone

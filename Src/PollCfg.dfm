@@ -5,7 +5,7 @@ object PollSetupForm: TPollSetupForm
   BorderStyle = bsDialog
   BorderWidth = 6
   Caption = 'Polls Set-up'
-  ClientHeight = 275
+  ClientHeight = 300
   ClientWidth = 561
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -22,14 +22,14 @@ object PollSetupForm: TPollSetupForm
   OnDestroy = FormDestroy
   DesignSize = (
     561
-    275)
+    300)
   PixelsPerInch = 96
   TextHeight = 14
   object PageControl: TPageControl
     Left = 0
     Top = 0
     Width = 561
-    Height = 237
+    Height = 262
     ActivePage = tsPeriodical
     Align = alTop
     Anchors = [akLeft, akTop, akRight, akBottom]
@@ -49,7 +49,7 @@ object PollSetupForm: TPollSetupForm
         Left = 0
         Top = 0
         Width = 541
-        Height = 194
+        Height = 219
         FixedFont.Charset = DEFAULT_CHARSET
         FixedFont.Color = clWindowText
         FixedFont.Height = -12
@@ -286,6 +286,14 @@ object PollSetupForm: TPollSetupForm
         TabOrder = 4
         Value = 30
       end
+      object cbNormalAsCrash: TCheckBox
+        Left = 12
+        Top = 204
+        Width = 249
+        Height = 17
+        Caption = 'Force '#39'Normal to initiate a poll'
+        TabOrder = 5
+      end
     end
     object tsExternal: TTabSheet
       BorderWidth = 6
@@ -294,7 +302,7 @@ object PollSetupForm: TPollSetupForm
         Left = 0
         Top = 0
         Width = 541
-        Height = 194
+        Height = 219
         FileNameCol = 3
         FixedFont.Charset = DEFAULT_CHARSET
         FixedFont.Color = clWindowText
@@ -360,7 +368,7 @@ object PollSetupForm: TPollSetupForm
   end
   object bOK: TButton
     Left = 301
-    Top = 247
+    Top = 272
     Width = 75
     Height = 23
     Anchors = [akRight, akBottom]
@@ -371,7 +379,7 @@ object PollSetupForm: TPollSetupForm
   end
   object bCancel: TButton
     Left = 381
-    Top = 247
+    Top = 272
     Width = 75
     Height = 23
     Anchors = [akRight, akBottom]
@@ -382,7 +390,7 @@ object PollSetupForm: TPollSetupForm
   end
   object bHelp: TButton
     Left = 461
-    Top = 247
+    Top = 272
     Width = 75
     Height = 23
     Anchors = [akRight, akBottom]

@@ -671,6 +671,8 @@ type
      function  GetDTE: Integer;                      virtual; abstract;
   public
      Msg: string;
+     Rec,
+     Snd: longint;
    // mapped routines
      procedure SetDeltaDCDNotify(h: DWORD);          virtual; abstract;
      procedure SetCommErrorNotify(h: DWORD);         virtual; abstract;
@@ -1685,6 +1687,7 @@ procedure TDevicePort.PutChar(C: Byte);
 begin
   OutChars[SzOutChars] := C;
   Inc(SzOutChars);
+  Inc(Snd);
   if SzOutChars = PortChrBufSize then Flsh;
 end;
 
@@ -1725,6 +1728,7 @@ begin
     end;
     Move(Buf, WriteBuf[SzWrite], Result);
     Inc(SzWrite, Result);
+    Inc(Snd, Result);
   end;
   LeaveWriteCS;
   if SetNewData then SetEvt(oNewOutData);
@@ -1871,6 +1875,7 @@ begin
     if SzReadA = 0 then Result := False else begin
       Result := True;
       C := ReadA[PtrReadA]; Inc(PtrReadA);
+      Inc(Rec);
     end;
   end;
 end;
@@ -2476,33 +2481,32 @@ end;
 function TSerialOutThread.Write(const Buf; Size: DWORD): DWORD;
 var
   OL : POverlapped;
-  r: Boolean;
+   r: Boolean;
 begin
-  OL := @TSerialPort(CP).WriteOL;
-  r := WriteFile(CP.FHandle, Buf, Size, Result, OL);
-  if not r then
-  begin
-    case GetLastError of
+   OL := @TSerialPort(CP).WriteOL;
+   r := WriteFile(CP.FHandle, Buf, Size, Result, OL);
+   if not r then begin
+      case GetLastError of
       ERROR_IO_PENDING :
-        if GetOverLappedResult(CP.FHandle, OL^, Result, True) <> TRUE then
-        begin
-          case GetLastError of
-            ERROR_INVALID_HANDLE,
-            ERROR_INVALID_PARAMETER:;
-            ERROR_NOACCESS,
-            ERROR_OPERATION_ABORTED :TSerialPort(CP).ChkAbort;
-          else
-            GlobalFail('TSerialOutThread.Write GetOverLappedResult Error %d', [GetLastError]);
-          end;
-        end;
+        if GetOverLappedResult(CP.FHandle, OL^, Result, True) <> TRUE then begin
+           case GetLastError of
+           ERROR_INVALID_HANDLE,
+           ERROR_GEN_FAILURE,
+           ERROR_INVALID_PARAMETER:;
+           ERROR_NOACCESS,
+           ERROR_OPERATION_ABORTED :TSerialPort(CP).ChkAbort;
+           else
+              GlobalFail('TSerialOutThread.Write GetOverLappedResult Error %d', [GetLastError]);
+         end;
+      end;
       ERROR_INVALID_HANDLE,
       ERROR_INVALID_PARAMETER:;
       ERROR_NOACCESS,
       ERROR_OPERATION_ABORTED: TSerialPort(CP).ChkAbort;
       else
-      GlobalFail('TSerialOutThread.Write WriteFile Error %d', [GetLastError]);
-    end;
-  end;
+         GlobalFail('TSerialOutThread.Write WriteFile Error %d', [GetLastError]);
+      end;
+   end;
 end;
 
 class function TSerialOutThread.ThreadName;

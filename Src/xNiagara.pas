@@ -527,6 +527,7 @@ begin
   begin
     Move(Buf, OutQueueBuf[OutQueueLen], Result);
     Inc(OutQueueLen, Result);
+    Inc(Snd, Result);
   end;
   ForcedLifeCycle;
 end;
@@ -538,6 +539,7 @@ begin
   begin
     C := InQueueBuf[InQueuePos];
     Inc(InQueuePos);
+    Inc(Rec);
   end;
 end;
 
@@ -556,6 +558,7 @@ begin
   if OutQueueLen >= cNiagaraOutQueueSize then GlobalFail('TNiagaraPort.PutChar(%d) OutQueueLen(%d) >= cNiagaraOutQueueSize(%d)', [C, OutQueueLen, cNiagaraOutQueueSize]);
   OutQueueBuf[OutQueueLen] := Byte(C);
   Inc(OutQueueLen);
+  Inc(Snd);
 end;
 
 procedure TNiagaraPort.Flsh;

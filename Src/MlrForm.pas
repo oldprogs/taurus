@@ -41,6 +41,8 @@ type
       wcb_mpTrace,
       wcb_bTracePoll,
       wcb_ppTracePoll,
+      wcb_mpProperties,
+      wcb_ppProperties,
 
       // visual {
       wcb_lFileSndTime,
@@ -477,6 +479,10 @@ type
     pobLeft: TTransPan;
     pobCenter: TTransPan;
     Label1: TLabel;
+    N30: TMenuItem;
+    ppProperties: TMenuItem;
+    N31: TMenuItem;
+    mpProperties: TMenuItem;
     procedure MainTabControlChange(Sender: TObject);
     procedure bAbortClick(Sender: TObject);
     procedure bStartClick(Sender: TObject);
@@ -610,6 +616,7 @@ type
       Data: Integer; var Compare: Integer);
     procedure New1Click(Sender: TObject);
     procedure stListViewApiDropFiles(Sender: TObject);
+    procedure ppPropertiesClick(Sender: TObject);
   private
     OutBSize: int64;
     aOutbound: TAnimate;
@@ -1460,7 +1467,7 @@ var
                         WinExec(PChar(e), SW_SHOWMINNOACTIVE)
                      end;
                   end
-            else begin
+               else begin
                   if _FileExists(s) then begin
                      FidoPolls.Log.LogSelf(Format('Detected %s - forced executing %s', [s, altcfg.FlagsCollB.Strings[I]]));
                      WinExec(PChar(e), SW_SHOWMINNOACTIVE);
@@ -1704,10 +1711,14 @@ begin
             1:
                begin
                   if MlrT.State in [__FirstMisc..__LastMisc] then begin
-                     MlrT.SD.AnswerRequest := True;
-                     MlrT.State := msWaitNextRing;
-                     SetEvt(MlrT.oEvt);
-                     Msg.Result := 1;
+                     if MlrT.SD <> nil then begin
+                        MlrT.SD.AnswerRequest := True;
+                        MlrT.State := msWaitNextRing;
+                        SetEvt(MlrT.oEvt);
+                        Msg.Result := 1;
+                     end else begin
+                        Msg.Result := 0;
+                     end;
                   end else begin
                      Msg.Result := 0;
                   end;
@@ -3532,6 +3543,8 @@ procedure TMailerForm.UpdateView(fromcc: boolean);
       SetEnabledO(mpTrace, wcb_mpTrace, Z);
       SetEnabledO(bTracePoll, wcb_bTracePoll, Z);
       SetEnabledO(ppTracePoll, wcb_ppTracePoll, Z);
+      SetEnabledO(mpProperties, wcb_mpProperties, Z);
+      SetEnabledO(ppProperties, wcb_ppProperties, Z);
 
       if Z then begin
          ParseAddress(PollsListView.ItemFocused.Caption, A);
@@ -3932,7 +3945,9 @@ begin
    for i := FidoPolls.Count - 1 downto 0 do begin
       p := FidoPolls[i];
       if All or (p.Owner = PollOwnerExtApp) or (p.Owner = nil) then begin
-         if (p.Owner is TMailerThread) then begin
+         if (dword(p.Owner) > dword(nil)) and
+            (dword(p.Owner) < $FFFFFFF0) then
+         begin
             p.Owner.Enter;
             if (p.Owner.SD <> nil) and (p.Owner.SD.ActivePoll <> nil) then begin
                p.Owner.InsertEvt(TMlrEvtChStatus.Create(msCancel));
@@ -4306,35 +4321,37 @@ end;
 procedure TMailerForm.bDeletePollClick(Sender: TObject);
 var
    p: TFidoPoll;
-   li: TListItem;
+  li: TListItem;
    i: Integer;
-   CantDelete: Boolean;
    s: string;
    a: TFidoAddress;
 begin
-   CantDelete := False;
    li := PollsListView.ItemFocused;
    if li <> nil then begin
       s := li.Caption;
       if not ParseAddress(s, a) then GlobalFail('TMailerForm.bDeletePollClick, failed to parse "%s"', [s]);
       EnterFidoPolls;
-      for i := 0 to FidoPolls.Count - 1 do begin
+      for i := 0 to CollMax(FidoPolls) do begin
          p := FidoPolls[i];
          if CompareAddrs(a, p.Node.Addr) = 0 then begin
-            if True or (p.Owner = PollOwnerExtApp) or (p.Owner = nil) then begin
-               p.Done := pdnDeleted;
-               FidoPolls.AtFree(i);
-            end else begin
-               CantDelete := True;
-               s := FormatLng(rsMMCDBP, [PollOwnerName(p)]);
+            if (dword(p.Owner) > dword(nil)) and
+               (dword(p.Owner) < $FFFFFFF0) then
+            begin
+               p.Owner.Enter;
+               if (p.Owner.SD <> nil) and (p.Owner.SD.ActivePoll <> nil) then begin
+                  p.Owner.InsertEvt(TMlrEvtChStatus.Create(msCancel));
+                  p.Owner.SD.ActivePoll := nil;
+               end;
+               p.Owner.Leave;
             end;
+            p.Done := pdnDeleted;
+            FidoPolls.AtFree(i);
             Break;
          end;
       end;
       LeaveFidoPolls;
    end;
    PostMsg(WM_UPDATEVIEW);
-   if CantDelete then DisplayError(s, Handle);
 end;
 
 procedure TMailerForm.bResetPollClick(Sender: TObject);
@@ -6534,7 +6551,7 @@ end;
 
 procedure TMailerForm.maNodesClick(Sender: TObject);
 begin
-   InvokeNodeWizzard;
+   InvokeNodeWizzard('');
 end;
 
 procedure TMailerForm.ompHelpClick(Sender: TObject);
@@ -7032,6 +7049,20 @@ begin
       end;   
    end;
    FreeObject(stListView.DroppedFiles);
+end;
+
+procedure TMailerForm.ppPropertiesClick(Sender: TObject);
+var
+  li: TListItem;
+   s: string;
+   a: TFidoAddress;
+begin
+   li := PollsListView.ItemFocused;
+   if li <> nil then begin
+      s := li.Caption;
+      if not ParseAddress(s, a) then GlobalFail('TMailerForm.bTracePollClick, failed to parse "%s"', [s]);
+      InvokeNodeWizzard(s);
+   end;
 end;
 
 end.

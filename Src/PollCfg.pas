@@ -44,6 +44,7 @@ type
     cbBusy: TCheckBox;
     cbNoc: TCheckBox;
     cbFail: TCheckBox;
+    cbNormalAsCrash: TCheckBox;
     procedure FormActivate(Sender: TObject);
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
@@ -141,6 +142,7 @@ begin
     cbTransmitHold.Checked := IniFile.TransmitHold;
 //    pofHold in Flags;
     cbDirectAsNormal.Checked := IniFile.DirectAsNormal;
+    cbNormalAsCrash.Checked := IniFile.NormalAsCrash;
 //    pofDirAsNormal in Flags;
 //  end;
 //  FreeObject(r);
@@ -342,6 +344,7 @@ begin
 {    Flags.Free;}
     IniFile.TransmitHold := cbTransmitHold.Checked;
     IniFile.DirectAsNormal := cbDirectAsNormal.Checked;
+    IniFile.NormalAsCrash := cbNormalAsCrash.Checked;
     SetLength(s, 4);
     s := format('%d%d%d%d',[ord(cbAskBeforeReject.Checked),
                           ord(cbAskBeforeSkip.Checked),

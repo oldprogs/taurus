@@ -191,6 +191,7 @@ LANGUAGE LANG_ENGLISH,0
         "mpReset|&Reset\n"\
         "mpTrace|&Info\n"\
         "mpDeleteAll|Delete &All\n"\
+        "mpProperties|Properties\n"\
         "mTool|&Tool\n"\
         "mtCompileNodelist|&Compile Nodelist\n"\
         "mtCompileNodelistInv|&Compile Nodelist\n"\
@@ -234,6 +235,7 @@ LANGUAGE LANG_ENGLISH,0
         "ppResetPoll|&Reset\n"\
         "ppDeletePoll|&Delete\n"\
         "ppDeleteAllPolls|Delete &All\n"\
+        "ppProperties|Properties\n"\
         "ompRescan|Rescan Outbound\n"\
         "ompCfCrash|Crash\n"\
         "ompCfDirect|Direct\n"\

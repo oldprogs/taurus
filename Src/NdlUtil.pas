@@ -399,10 +399,14 @@ function TNodeController.GetNetIdx(Zone, Net: Integer; const Domain: string): In
 var
    z: TFidoZoneData;
 begin
+   Result := -1;
+   if Table = nil then exit;
    z.Zone := Zone;
    z.Net := Net;
    z.Domain := LowerCase(Domain);
+   Table.Enter;
    if not Table.Search(@z, Result) then Result := -1;
+   Table.Leave;
 end;
 
 function TNodeController.SearchNode;
@@ -1575,8 +1579,7 @@ begin
       if (not inifile.UseNodelistData) and (IpData = nil) then
          IpData := FindDom(Addr, ',CM,IBN', DialupData <> nil);
    end else
-   if DaemonStarted then begin // ≈сли в оверрайде указано несколько протоколов -
-                               // формируем из них очередь.
+   if DaemonStarted then begin
       TmpData := nil;
       for i := 0 to CollMax(IpData) do begin
          an := IpData[i];
@@ -1587,7 +1590,10 @@ begin
       FreeObject(IpData);
       IpData := TmpData;
    end;
-   if (DialupData = nil) and (IPData = nil) then Exit;
+   if (DialupData = nil) and (IPData = nil) then begin
+      FreeObject(n);
+      Exit;
+   end;
    Result := TAdvNode.Create;
    if n <> nil then begin
       if not over then f := n.PrefixFlag;

@@ -794,14 +794,14 @@ begin
       end;
       GetWrd(s, z, ' ');
       z := UpperCase(z);
-      if (z = 'GET') or (z = 'OPTIONS') then begin
+      if (z = 'GET') or (z = 'OPTIONS') or (z = 'HEAD') or (z = 'SEARCH') then begin
          fMeth := mGet;
          fHTML := ExtractWord(1, s, [' ']);
          replace('+', ' ', fHTML);
          UnpackRFC1945(fHTML);
          fUser := '';
          fPass := '';
-         DbgLog('GET ' + fHTML);
+         DbgLog(z + ' ' + fHTML);
       end else
       if z = 'PUT' then begin
          fMeth := mPost;

@@ -1,8 +1,8 @@
 object MailerForm: TMailerForm
-  Left = 204
-  Top = 126
-  Width = 742
-  Height = 577
+  Left = 198
+  Top = 135
+  Width = 638
+  Height = 448
   HelpContext = 1500
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -27,8 +27,8 @@ object MailerForm: TMailerForm
   object MainTabControl: TTabControl
     Left = 0
     Top = 0
-    Width = 734
-    Height = 522
+    Width = 630
+    Height = 393
     Align = alClient
     HotTrack = True
     TabOrder = 0
@@ -38,11 +38,11 @@ object MailerForm: TMailerForm
     TabIndex = 0
     OnChange = MainTabControlChange
     DesignSize = (
-      734
-      522)
+      630
+      393)
     object lTime0: TLabel
-      Left = 508
-      Top = 5
+      Left = 430
+      Top = 2
       Width = 90
       Height = 16
       Alignment = taRightJustify
@@ -51,8 +51,8 @@ object MailerForm: TMailerForm
       Layout = tlCenter
     end
     object lTime1: TLabel
-      Left = 617
-      Top = 5
+      Left = 522
+      Top = 2
       Width = 108
       Height = 16
       Alignment = taRightJustify
@@ -69,8 +69,8 @@ object MailerForm: TMailerForm
     object MainPanel: TTransPan
       Left = 4
       Top = 27
-      Width = 726
-      Height = 491
+      Width = 622
+      Height = 362
       Align = alClient
       BevelOuter = bvNone
       BorderStyle = bsSingle
@@ -80,7 +80,7 @@ object MailerForm: TMailerForm
       object LogBox: TLogger
         Left = 0
         Top = 329
-        Width = 722
+        Width = 618
         Height = 118
         Cursor = crHandPoint
         Align = alClient
@@ -99,7 +99,7 @@ object MailerForm: TMailerForm
       object ChatPan: TTransPan
         Left = 0
         Top = 329
-        Width = 722
+        Width = 618
         Height = 118
         Align = alClient
         BevelOuter = bvNone
@@ -116,18 +116,18 @@ object MailerForm: TMailerForm
         object Panel13: TTransPan
           Left = 0
           Top = 87
-          Width = 722
+          Width = 618
           Height = 31
           Align = alBottom
           BevelOuter = bvNone
           TabOrder = 0
           DesignSize = (
-            722
+            618
             31)
           object eType: TEdit
             Left = 1
             Top = 4
-            Width = 868
+            Width = 764
             Height = 24
             Anchors = [akLeft, akTop, akRight, akBottom]
             TabOrder = 0
@@ -137,19 +137,19 @@ object MailerForm: TMailerForm
         object ChatCaptionPan: TTransPan
           Left = 0
           Top = 0
-          Width = 722
+          Width = 618
           Height = 23
           Align = alTop
           TabOrder = 2
           OnConstrainedResize = ChatCaptionPanConstrainedResize
           EraseBackGround = True
           DesignSize = (
-            722
+            618
             23)
           object imgHeader: TImage
             Left = 1
             Top = 1
-            Width = 720
+            Width = 616
             Height = 21
             Align = alClient
             Picture.Data = {
@@ -201,7 +201,7 @@ object MailerForm: TMailerForm
             Stretch = True
           end
           object sbCloseChat: TSpeedButton
-            Left = 647
+            Left = 543
             Top = 2
             Width = 18
             Height = 18
@@ -239,7 +239,7 @@ object MailerForm: TMailerForm
         object Panel15: TTransPan
           Left = 0
           Top = 23
-          Width = 722
+          Width = 618
           Height = 64
           Align = alClient
           BevelOuter = bvNone
@@ -248,7 +248,7 @@ object MailerForm: TMailerForm
           object ChatMemo1: TMemo
             Left = 0
             Top = 0
-            Width = 722
+            Width = 618
             Height = 191
             TabStop = False
             Align = alTop
@@ -261,7 +261,7 @@ object MailerForm: TMailerForm
           object ChatMemo2: TMemo
             Left = 0
             Top = 191
-            Width = 722
+            Width = 618
             Height = 198
             TabStop = False
             Align = alClient
@@ -275,8 +275,8 @@ object MailerForm: TMailerForm
       end
       object BottomPanel: TTransPan
         Left = 0
-        Top = 447
-        Width = 722
+        Top = 318
+        Width = 618
         Height = 40
         Align = alBottom
         BevelOuter = bvNone
@@ -286,7 +286,7 @@ object MailerForm: TMailerForm
         object PollBtnPanel: TTransPan
           Left = 0
           Top = 0
-          Width = 722
+          Width = 618
           Height = 40
           Align = alClient
           BevelOuter = bvNone
@@ -511,7 +511,7 @@ object MailerForm: TMailerForm
             OnClick = mpPauseClick
           end
           object lInfo1: TLabel
-            Left = 362
+            Left = 258
             Top = 0
             Width = 360
             Height = 40
@@ -529,7 +529,7 @@ object MailerForm: TMailerForm
         object DaemonBtnPanel: TTransPan
           Left = 0
           Top = 0
-          Width = 722
+          Width = 618
           Height = 40
           Align = alClient
           BevelOuter = bvNone
@@ -539,14 +539,14 @@ object MailerForm: TMailerForm
           object RasLabelPan: TTransPan
             Left = 0
             Top = 0
-            Width = 510
+            Width = 406
             Height = 40
             Align = alClient
             BevelOuter = bvNone
             ParentBackground = False
             TabOrder = 1
             DesignSize = (
-              510
+              406
               40)
             object lStatus2: TLabel
               Left = 33
@@ -556,7 +556,7 @@ object MailerForm: TMailerForm
               Caption = 'Connected to Corex VPN'
             end
             object lTimeCon: TLabel
-              Left = 496
+              Left = 392
               Top = 14
               Width = 57
               Height = 16
@@ -571,7 +571,7 @@ object MailerForm: TMailerForm
             end
           end
           object RasBtnPan: TTransPan
-            Left = 510
+            Left = 406
             Top = 0
             Width = 212
             Height = 40
@@ -604,7 +604,7 @@ object MailerForm: TMailerForm
         object SystemBtnPanel: TTransPan
           Left = 0
           Top = 0
-          Width = 722
+          Width = 618
           Height = 40
           Align = alClient
           BevelOuter = bvNone
@@ -637,7 +637,7 @@ object MailerForm: TMailerForm
             OnClick = bbDeleteClick
           end
           object lInfo2: TLabel
-            Left = 362
+            Left = 258
             Top = 0
             Width = 360
             Height = 40
@@ -656,7 +656,7 @@ object MailerForm: TMailerForm
         object MailerBtnPanel: TTransPan
           Left = 0
           Top = 0
-          Width = 722
+          Width = 618
           Height = 40
           Align = alClient
           BevelOuter = bvNone
@@ -856,7 +856,7 @@ object MailerForm: TMailerForm
             OnClick = bChatClick
           end
           object LampsPanelCarrier: TTransPan
-            Left = 557
+            Left = 453
             Top = 0
             Width = 165
             Height = 40
@@ -972,7 +972,7 @@ object MailerForm: TMailerForm
             end
           end
           object lClock: TTransPan
-            Left = 457
+            Left = 353
             Top = 0
             Width = 100
             Height = 40
@@ -1001,7 +1001,7 @@ object MailerForm: TMailerForm
         object OutMgrBtnPanel: TTransPan
           Left = 0
           Top = 0
-          Width = 722
+          Width = 618
           Height = 40
           Align = alClient
           BevelOuter = bvNone
@@ -1010,7 +1010,7 @@ object MailerForm: TMailerForm
           TabOrder = 3
           Visible = False
           object Clock2: TJvxClock
-            Left = 625
+            Left = 521
             Top = 3
             Width = 94
             Height = 34
@@ -1133,7 +1133,7 @@ object MailerForm: TMailerForm
           object pobRight: TTransPan
             Left = 501
             Top = 3
-            Width = 124
+            Width = 20
             Height = 34
             Align = alClient
             BevelOuter = bvNone
@@ -1144,7 +1144,7 @@ object MailerForm: TMailerForm
       object TopNotebookPanel: TTransPan
         Left = 0
         Top = 0
-        Width = 722
+        Width = 618
         Height = 329
         Align = alTop
         BevelOuter = bvNone
@@ -1154,7 +1154,7 @@ object MailerForm: TMailerForm
         object MailerAPanel: TTransPan
           Left = 0
           Top = 0
-          Width = 722
+          Width = 618
           Height = 329
           Align = alClient
           BevelOuter = bvNone
@@ -1164,7 +1164,7 @@ object MailerForm: TMailerForm
           TabOrder = 1
           Visible = False
           object SplitterAPanel: TSplitter
-            Left = 398
+            Left = 294
             Top = 0
             Width = 4
             Height = 329
@@ -1174,7 +1174,7 @@ object MailerForm: TMailerForm
             OnMoved = SplitterAPanelMoved
           end
           object TermsPanel: TTransPan
-            Left = 402
+            Left = 298
             Top = 0
             Width = 320
             Height = 329
@@ -1199,7 +1199,7 @@ object MailerForm: TMailerForm
           object DialupInfoPanel: TTransPan
             Left = 0
             Top = 0
-            Width = 398
+            Width = 294
             Height = 329
             Align = alClient
             BevelOuter = bvNone
@@ -1211,7 +1211,7 @@ object MailerForm: TMailerForm
             object StatusCarrier: TTransPan
               Left = 9
               Top = 9
-              Width = 380
+              Width = 276
               Height = 60
               Align = alTop
               BevelOuter = bvNone
@@ -1222,7 +1222,7 @@ object MailerForm: TMailerForm
               object StatusBox: TGroupBox
                 Left = 0
                 Top = 0
-                Width = 380
+                Width = 276
                 Height = 60
                 Align = alClient
                 Caption = ' Status '
@@ -1238,7 +1238,7 @@ object MailerForm: TMailerForm
                   Layout = tlCenter
                 end
                 object TimeoutBox: TTransPan
-                  Left = 265
+                  Left = 161
                   Top = 18
                   Width = 113
                   Height = 40
@@ -1299,7 +1299,7 @@ object MailerForm: TMailerForm
             object StatusLine: TTransPan
               Left = 9
               Top = 78
-              Width = 380
+              Width = 276
               Height = 242
               Align = alClient
               BevelOuter = bvNone
@@ -1311,14 +1311,14 @@ object MailerForm: TMailerForm
               object GroupLine: TGroupBox
                 Left = 0
                 Top = 0
-                Width = 380
+                Width = 276
                 Height = 242
                 Align = alClient
                 TabOrder = 0
                 object TransPan2: TTransPan
                   Left = 2
                   Top = 18
-                  Width = 376
+                  Width = 272
                   Height = 222
                   Align = alClient
                   BevelOuter = bvNone
@@ -1329,7 +1329,7 @@ object MailerForm: TMailerForm
                   object Clock: TJvAnalogClock
                     Left = 20
                     Top = 20
-                    Width = 336
+                    Width = 232
                     Height = 182
                     Date = True
                     SpiderClock = True
@@ -1345,7 +1345,7 @@ object MailerForm: TMailerForm
               object evListView: TListView
                 Left = 0
                 Top = 0
-                Width = 380
+                Width = 276
                 Height = 242
                 Align = alClient
                 Columns = <
@@ -1383,7 +1383,7 @@ object MailerForm: TMailerForm
             object TransPan1: TTransPan
               Left = 9
               Top = 69
-              Width = 380
+              Width = 276
               Height = 9
               Align = alTop
               BevelOuter = bvNone
@@ -1395,7 +1395,7 @@ object MailerForm: TMailerForm
         object PollsListPanel: TTransPan
           Left = 0
           Top = 0
-          Width = 722
+          Width = 618
           Height = 329
           Align = alClient
           BevelOuter = bvNone
@@ -1406,7 +1406,7 @@ object MailerForm: TMailerForm
           object PollsListView: TAdvListView
             Left = 0
             Top = 0
-            Width = 722
+            Width = 618
             Height = 329
             Align = alClient
             AllocBy = 128
@@ -1459,7 +1459,7 @@ object MailerForm: TMailerForm
         object DaemonPanel: TTransPan
           Left = 0
           Top = 0
-          Width = 722
+          Width = 618
           Height = 329
           Align = alClient
           BevelOuter = bvNone
@@ -1470,7 +1470,7 @@ object MailerForm: TMailerForm
           object MainDaemonPanel: TTransPan
             Left = 10
             Top = 0
-            Width = 702
+            Width = 598
             Height = 315
             Align = alClient
             BevelOuter = bvNone
@@ -1479,7 +1479,7 @@ object MailerForm: TMailerForm
             object Panel7: TTransPan
               Left = 0
               Top = 158
-              Width = 702
+              Width = 598
               Height = 157
               Align = alBottom
               BevelOuter = bvNone
@@ -1528,7 +1528,7 @@ object MailerForm: TMailerForm
               object Panel12: TTransPan
                 Left = 112
                 Top = 0
-                Width = 590
+                Width = 486
                 Height = 157
                 Align = alClient
                 BevelOuter = bvNone
@@ -1538,7 +1538,7 @@ object MailerForm: TMailerForm
                 object DaemonPIH: TTransPan
                   Left = 8
                   Top = 8
-                  Width = 574
+                  Width = 470
                   Height = 20
                   Align = alTop
                   Alignment = taLeftJustify
@@ -1550,7 +1550,7 @@ object MailerForm: TMailerForm
                 object Panel18: TTransPan
                   Left = 8
                   Top = 28
-                  Width = 574
+                  Width = 470
                   Height = 121
                   Align = alClient
                   BorderWidth = 1
@@ -1559,7 +1559,7 @@ object MailerForm: TMailerForm
                   object gInputGraph: TNavyGraph
                     Left = 2
                     Top = 2
-                    Width = 570
+                    Width = 466
                     Height = 117
                     Align = alClient
                     EraseBackGround = True
@@ -1570,7 +1570,7 @@ object MailerForm: TMailerForm
             object Panel6: TTransPan
               Left = 0
               Top = 0
-              Width = 702
+              Width = 598
               Height = 158
               Align = alClient
               BevelOuter = bvNone
@@ -1619,7 +1619,7 @@ object MailerForm: TMailerForm
               object Panel10: TTransPan
                 Left = 112
                 Top = 0
-                Width = 590
+                Width = 486
                 Height = 158
                 Align = alClient
                 BevelOuter = bvNone
@@ -1629,7 +1629,7 @@ object MailerForm: TMailerForm
                 object DaemonPOH: TTransPan
                   Left = 8
                   Top = 8
-                  Width = 574
+                  Width = 470
                   Height = 20
                   Align = alTop
                   Alignment = taLeftJustify
@@ -1641,7 +1641,7 @@ object MailerForm: TMailerForm
                 object Panel17: TTransPan
                   Left = 8
                   Top = 28
-                  Width = 574
+                  Width = 470
                   Height = 122
                   Align = alClient
                   BorderWidth = 1
@@ -1650,7 +1650,7 @@ object MailerForm: TMailerForm
                   object gOutputGraph: TNavyGraph
                     Left = 2
                     Top = 2
-                    Width = 570
+                    Width = 466
                     Height = 118
                     Align = alClient
                     EraseBackGround = True
@@ -1662,7 +1662,7 @@ object MailerForm: TMailerForm
           object Panel19: TTransPan
             Left = 0
             Top = 315
-            Width = 722
+            Width = 618
             Height = 14
             Align = alBottom
             BevelOuter = bvNone
@@ -1671,7 +1671,7 @@ object MailerForm: TMailerForm
             EraseBackGround = True
           end
           object Panel20: TTransPan
-            Left = 712
+            Left = 608
             Top = 0
             Width = 10
             Height = 315
@@ -1697,7 +1697,7 @@ object MailerForm: TMailerForm
         object MailerBPanel: TTransPan
           Left = 0
           Top = 0
-          Width = 722
+          Width = 618
           Height = 329
           Align = alClient
           BevelOuter = bvNone
@@ -2095,7 +2095,7 @@ object MailerForm: TMailerForm
           object Panel3: TTransPan
             Left = 379
             Top = 0
-            Width = 343
+            Width = 239
             Height = 329
             Align = alClient
             BevelOuter = bvNone
@@ -2106,7 +2106,7 @@ object MailerForm: TMailerForm
             object SessionHist: TTransPan
               Left = 12
               Top = 222
-              Width = 319
+              Width = 215
               Height = 95
               Align = alBottom
               ParentBackground = False
@@ -2115,7 +2115,7 @@ object MailerForm: TMailerForm
               object MHistO: TNavyGraph
                 Left = 1
                 Top = 1
-                Width = 317
+                Width = 213
                 Height = 46
                 Align = alTop
                 EraseBackGround = True
@@ -2123,7 +2123,7 @@ object MailerForm: TMailerForm
               object MHistI: TNavyGraph
                 Left = 1
                 Top = 48
-                Width = 317
+                Width = 213
                 Height = 46
                 Align = alBottom
                 EraseBackGround = True
@@ -2132,7 +2132,7 @@ object MailerForm: TMailerForm
             object SessionNfoPnl: TTransPan
               Left = 12
               Top = 12
-              Width = 319
+              Width = 215
               Height = 207
               Align = alTop
               BevelOuter = bvNone
@@ -2141,7 +2141,7 @@ object MailerForm: TMailerForm
               object gTabCnt: TTabControl
                 Left = 0
                 Top = 0
-                Width = 319
+                Width = 215
                 Height = 207
                 Align = alClient
                 TabOrder = 0
@@ -2175,7 +2175,7 @@ object MailerForm: TMailerForm
                 object gNfo: TAdvGrid
                   Left = 109
                   Top = 27
-                  Width = 206
+                  Width = 102
                   Height = 176
                   FixedFont.Charset = DEFAULT_CHARSET
                   FixedFont.Color = clWindowText
@@ -2661,6 +2661,14 @@ object MailerForm: TMailerForm
         ShortCut = 24692
         OnClick = bDeleteAllPollsClick
       end
+      object N31: TMenuItem
+        Caption = '-'
+      end
+      object mpProperties: TMenuItem
+        Caption = 'Properties'
+        Enabled = False
+        OnClick = ppPropertiesClick
+      end
     end
     object mConfig: TMenuItem
       Caption = '&Config'
@@ -2953,6 +2961,14 @@ object MailerForm: TMailerForm
       ImageIndex = 19
       ShortCut = 24692
       OnClick = bDeleteAllPollsClick
+    end
+    object N30: TMenuItem
+      Caption = '-'
+    end
+    object ppProperties: TMenuItem
+      Caption = 'Properties'
+      Enabled = False
+      OnClick = ppPropertiesClick
     end
   end
   object OutMgrPopup: TPopupMenu

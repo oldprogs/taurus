@@ -84,6 +84,7 @@ type
             DoubleClick: boolean;
             TransmitHold: Boolean;
             DirectAsNormal: Boolean;
+            NormalAsCrash: Boolean;
             PollAddFlags: string;
             NoHTML: boolean;
             GridInBWZ: boolean;
@@ -485,6 +486,7 @@ begin
 
       TransmitHold := ReadBool(polls, 'TransmitHold', true);
       DirectAsNormal := ReadBool(polls, 'DirectAsNormal', true);
+      NormalAsCrash := ReadBool(polls, 'NormalAsCrash', False);
       PollAddFlags := ReadString(polls, 'Flags', '1011');
       if length(PollAddFlags)<4 then PollAddFlags := PadCh(PollAddFlags, '0', 4 - length(PollAddFlags));
 
@@ -696,6 +698,7 @@ begin
 
      WriteBool(polls, 'TransmitHold', TransmitHold);
      WriteBool(polls, 'DirectAsNormal', DirectAsNormal);
+     WriteBool(polls, 'NormalAsCrash', NormalAsCrash);
      WriteString(polls, 'Flags', PollAddFlags);
 
      WriteBool(_Interface, 'ShowBalloon', ShowBalloon);

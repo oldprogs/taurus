@@ -2109,7 +2109,7 @@ begin
       if uFindFirst(MakeNormName(fbdr.Path, '*.*'), SR) then begin
          repeat
             if SR.Info.Attr and FAttachDisallowedAttr = 0 then begin
-               AddAddrOutNode(fbdr.Addr, fbdr.Status, OutColl, SR.Info.Size, SR.Info.Time, DR, SR.FName);
+               AddAddrOutNode(fbdr.Addr, fbdr.Status, OutColl, SR.Info.Size, SR.Info.Time, fbdr.Path{DR}, SR.FName);
                fOutboundSize := fOutboundSize + SR.Info.Size;
             end;
          until not uFindNext(SR);
@@ -2296,7 +2296,7 @@ function TOutbound._GetOutCollP(const Single, AFull, Scan: Boolean; const Addr: 
          end else begin
             Result := TOutNodeColl.Create;
             EnterCS(CacheCS);
-            for i := 0 to OutCache.Count - 1 do begin
+            for i := 0 to CollMax(OutCache) do begin
                n := OutCache[i];
                if Single and (CompareAddrs(Addr, n.Address) <> 0) then Continue;
                if (n.FStatus <> [osNone]) and ExistFile(n.Name) then begin
