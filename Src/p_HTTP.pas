@@ -628,7 +628,7 @@ var
    z: string;
 begin
    fillchar(h, sizeof(h), 0);
-   h.OrigNode  := aFrom.Node;
+   h.OrigNode  := aDest.Node;
    h.DestNode  := inifile.MainAddr.Node;
    h.Year      := CurrentYear;
    h.Month     := MonthOf(Date);
@@ -638,13 +638,13 @@ begin
    h.Second    := SecondOf(Time);
    h.Baud      := 300;
    h.PktType   := 2;
-   h.OrigNet   := aFrom.Net;
+   h.OrigNet   := aDest.Net;
    h.DestNet   := inifile.MainAddr.Net;
    h.ProdCode  := $FF;
    h.SerialNo  := $FF;
-   h.OrigZone  := aFrom.Zone;
+   h.OrigZone  := aDest.Zone;
    h.DestZone  := inifile.MainAddr.Zone;
-   h.OrigPoint := aFrom.Point;
+   h.OrigPoint := aDest.Point;
    h.DestPoint := inifile.MainAddr.Point;
    if fPass <> '' then begin
       move(fPass[1], h.Password, Length(fPass));

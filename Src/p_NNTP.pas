@@ -336,7 +336,7 @@ begin
                            if m.Echo = Group then begin
                               inc(c);
                               if c = i then begin
-                                 PutString(IntToStr(i) + #9 + Dos2Win(m.Subj) + #9 + m.Frnm + #9 + m.Date + #9 + m.MsId + #9 + m.Frnm + #9 + IntToStr(m.Size) + #9'100');
+                                 PutString(IntToStr(i) + #9 + Dos2Win(m.Subj) + #9 + m.Frnm + #9 + m.Date + #9 + m.MsId + #9 + m.Frnm + #9 + IntToStr(m.Size) + #9 + IntToStr(m.Line));
                                  break;
                               end;
                            end;
@@ -366,7 +366,7 @@ begin
                         if (t.d.FName <> '') and (T.Stream <> nil) then begin
                            PutString('220 ' + s + ' <' + m.MsId + '>');
                            PutString('From: ' + m.Frnm + ' <' + Addr2Str(m.From) + '>');
-                           PutString('Reply-To: ' + m.Frnm + ' <' + Addr2Str(m.From) + '>');
+//                           PutString('Reply-To: ' + m.Frnm + ' <' + Addr2Str(m.From) + '>');
                            PutString('NewsGroups: ' + Group);
                            PutString('Subject: ' + m.Subj);
                            PutString('Date: ' + m.Date);

@@ -1001,6 +1001,7 @@ type
     FilesSent,
     rmtTRX,
     RingCount,
+    txTran,
     txMail,
     txFiles,
     ConnectStart,
@@ -5281,7 +5282,6 @@ var
    //visual x}
 
 begin
-   IgnoreNextEvent := True;
    if (SD.rmtAddrs = nil) and (SD.ActivePoll <> nil) then begin
       SD.rmtAddrs := TFidoAddrColl.Create;
       SD.rmtAddrs.Add(SD.ActivePoll.Node.Addr);
@@ -5329,7 +5329,7 @@ begin
       //Don't use dynamic routing in case of unsecure _incoming_ session!
       if (IniFile.DynamicRouting) and
          (SD.PasswordProtected or (SD.ActivePoll <> nil)) and
-         (NetmailHolder <> nil) then NetmailHolder.Route(SD.rmtAddrs[n], Log);
+         (NetmailHolder <> nil) and not (SD.SessionCore in [scNNTP]) then NetmailHolder.Route(SD.rmtAddrs[n], Log);
    end;
    CfgLeave;
    N := 0;
@@ -5387,14 +5387,15 @@ begin
    end;
 
    EnterCS(DisplayDataCS);
-   SD.txMail := 0;
+   SD.txMail := SD.txTran;
    SD.txFiles := 0;
    SD.OutFiles.FreeAll;
 
    SD.rmtAddrs.Enter;
    for I := 0 to CollMax(SD.rmtAddrs) do
    begin
-      if     IniFile.DynamicOutbound then
+      IgnoreNextEvent := True;
+      if IniFile.DynamicOutbound then
       if not FidoOut.Lock(SD.rmtAddrs[i], osBusy, True) then continue;
       for K := 1 to N do
       begin
@@ -5587,6 +5588,7 @@ begin
          end;
          SD.OutFiles.Leave;
       end;
+      IgnoreNextEvent := True;
       if Inifile.DynamicOutbound then FidoOut.UnLock(SD.rmtAddrs[i], osBusy);
    end;
    SD.rmtAddrs.Leave;
@@ -6677,12 +6679,15 @@ end;
 
 procedure TMailerThread.FinishSend(P: TBaseProtocol; Action: TTransferFileAction);
 var
-   r: TOutFile;
-   sss, MoveTo, CPS: string;
-   i: Integer;
+    r: TOutFile;
+  sss,
+  MoveTo,
+  CPS: string;
+    i: Integer;
    ii: longint;
    OK, Overwritten: Boolean;
    st: TOutStatus;
+   OA: boolean;
 
 const
    KAS: array[TKillAction] of string = ('', ' deleted', ' truncated', '/delete', '/move');
@@ -6699,6 +6704,8 @@ begin
       SetErrorMsg(P.T.D.FName);
       ChkErrMsg;
    end;
+
+   OA := False;
 
    CPS := GetCPS(P.T.D.Start, P.T.D.FPos - P.T.D.FOfs);
    DisplayData;
@@ -6762,6 +6769,7 @@ begin
                         P.T.Stream.Seek(0, FILE_BEGIN);
                         SetEndOfFile(TDosStream(P.T.Stream).Handle);
                         FreeObject(P.T.Stream);
+                        OA := True;
                      end;
                   kaFbKillAfter:
                      begin
@@ -6769,6 +6777,8 @@ begin
                         if not DelFile('FinishSend', PChar(r.Name)) then
                         begin
                            LogFmt(ltWarning, 'Cannot delete %s (%s)', [r.Name, SysErrorMessage(GetLastError)]);
+                        end else begin
+                           OA := True;
                         end;
                      end;
                   kaFbMoveAfter:
@@ -6787,9 +6797,9 @@ begin
                            if Overwritten then LogOverwritten(sss);
                            if not ok then
                               ChkErrMsg
-                           else
-                           begin
+                           else begin
                               if not Overwritten then LogMoved(sss);
+                              OA := True;
                            end
                         end;
                      end;
@@ -6913,7 +6923,7 @@ begin
    Inc(D.txBytes, P.T.D.FSize);
    Inc(SD.cTxBytes, P.T.D.FPos - P.T.D.FOfs);
    P.T.ClearFileInfo;
-   if (Application <> nil) and (Application.MainForm <> nil) then
+   if OA and (Application <> nil) and (Application.MainForm <> nil) then
    begin
       SendMessage(Application.MainForm.Handle, WM_OUTBOUNDALERT, 0, 0);
    end;
@@ -7008,11 +7018,13 @@ begin
             end;
          end;
       end;
-      for i := SD.OutFiles.Count - 1 downto 0 do
-      begin
-         f := SD.OutFiles[i];
-         if SD.SentFiles.Found(f) then begin
-            SD.OutFiles.AtFree(i);
+      if CollMax(SD.SentFiles) > -1 then begin
+         for i := SD.OutFiles.Count - 1 downto 0 do
+         begin
+            f := SD.OutFiles[i];
+            if SD.SentFiles.Found(f) then begin
+               SD.OutFiles.AtFree(i);
+            end;
          end;
       end;
       if (SD.OutFiles.Count = 0) and not P.SendFTPFile then
@@ -7108,6 +7120,7 @@ begin
          Continue;
       end;
 
+      SD.txTran := 0;
       ss := ExtractFileName(f.Name);
       PTDFName := ss;
       case f.FStatus of
@@ -7130,6 +7143,7 @@ begin
                   f.Name[length(f.Name)] := '~';
                   FidoOut.Lock(f.Address, osBusy, True);
                   RenameFile(f.Orig, f.Name);
+                  SD.txTran := f.Nfo.Size;
                   FidoOut.Unlock(f.Address, osBusy);
                end;
             end;

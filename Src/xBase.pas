@@ -4148,7 +4148,7 @@ procedure PurgeCS;
 begin
    if CS.DebugInfo = nil then exit;
    if CS.LockCount > -1 then begin
-      GlobalFail('CS section is not finished properly: %d', [CS.LockCount]);
+//      GlobalFail('CS section is not finished properly: %d', [CS.LockCount]);
       while CS.LockCount > -1 do
          LeaveCS(CS);
       end;

@@ -23,6 +23,7 @@ type
       bOff: int64;
       Head: PackedMsgHeaderRec;
       Size: int64;
+      Line: integer;
       Addy: integer;
       Body: Pointer;
       Dele: boolean;
@@ -168,6 +169,7 @@ begin
    s.Write(Head, SizeOf(Head));
    s.Write(Size, SizeOf(Size));
    s.Write(Addy, SizeOf(Addy));
+   s.Write(Line, SizeOf(Line));
 end;
 
 procedure TNetmailMSG.Get;
@@ -194,6 +196,7 @@ begin
    s.Read(Head, SizeOf(Head));
    s.Read(Size, SizeOf(Size));
    s.Read(Addy, SizeOf(Addy));
+   s.Read(Line, SizeOf(Line));
 end;
 
 function TPktColl.FindName;
@@ -378,6 +381,7 @@ var
    e: integer;
    s: int64;
    g: TNetmailMSG;
+   d: integer;
 
    procedure SetValue(var a: integer; const b: integer);
    begin
@@ -413,6 +417,7 @@ begin
          i := 0;
          a := 0;
          e := 0;
+         d := 0;
          repeat
             t := '';
             repeat
@@ -456,7 +461,10 @@ begin
                      z := ExtractWord(1, ExtractWord(WordCount(t, ['(']), t, ['(']), [')']);
                      ParseAddress(z, l.From);
                   end;
-                  if b = 13 then t := '';
+                  if b = 13 then begin
+                     t := '';
+                     inc(d);
+                  end;
                end;
             until (b = 0) or (i >= s);
             if c = 0 then begin
@@ -493,6 +501,7 @@ begin
          l.Lock.Domain := FindFTNDOM(l.Lock);
          l.Pack        := pack;
          l.Size        := i;
+         l.Line        := d;
          if not EchoMail then begin
             GetMem(l.Body, l.Size);
             move(p^, l.Body^, l.Size);
@@ -721,10 +730,10 @@ var
    j: integer;
 begin
    if CompareAddrs(a, fAddres) <> 0 then begin
-      fBackup := False;
+      fAddres := a;
       n := GetOutFileName(a, osNone) + '.idx';
       if ExistFile(n) then begin
-         fAddres := a;
+         fBackup := False;
          NetColl.Enter;
          NetColl.FreeAll;
          FilColl.Clear;
@@ -767,11 +776,13 @@ var
    i: TFileStream;
 begin
    if fBackup then begin
+      NetColl.Enter;
       i := TFileStream.Create(GetOutFileName(Address, osNone) + '.idx', fmCreate);
       for n := 0 to CollMax(NetColl) do begin
          NetColl[n].Put(i);
       end;
       i.Free;
+      NetColl.Enter;
    end;
 end;
 
