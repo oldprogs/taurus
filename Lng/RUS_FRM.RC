@@ -1,0 +1,685 @@
+STRINGTABLE
+LANGUAGE LANG_RUSSIAN,0
+{
+
+ LngBaseRussian+rsImportForm "\n"\
+        "rbBinkD|BinkD (C) Dima Maloff\n"\
+        "rbBinkPlus|Bink/+ (C) serge terekhov\n"\
+        "rbTMail|T-Mail (C) Andy Elkin\n"\
+        "rbXenia|Xenia (C) Arjen G. Lentz\n"\
+        "bOK|OK\n"\
+        "bCancel|Отмена\n"\
+        "bHelp|Справка\n"\
+        "rbFrontDoor|FrontDoor 2.12 (C) Joaquim Homrighausen (только пароли)\n"\
+        "rbMainDoor|MainDoor 1.10 (C) Francisco Sedano Crippa (только пароли)\n"
+
+ LngBaseRussian+rsAtomEditorForm "Редактирование атома\n"\
+        "llTyp|Тип\n"\
+        "bOK|OK\n"\
+        "bCancel|Отмена\n"\
+        "bHelp|Справка\n"
+
+ LngBaseRussian+rsMailerLineCfgForm "Конфигурация модемной линии\n"\
+        "bOK|OK\n"\
+        "bCancel|Отмена\n"\
+        "bHelp|Справка\n"\
+        "PageControl|Свойства|События\n"\
+        "llStation|Станция\n"\
+        "llName|Имя линии\n"\
+        "llPort|Порт\n"\
+        "llModem|Модем\n"\
+        "llRestr|Ограничения\n"\
+        "llLog|Хронология\n"\
+        "llFaxIn|Каталог факсов\n"\
+        "labelAvl|Свободные\n"\
+        "labelLinked|Привязанные\n"
+
+ LngBaseRussian+rsFreqCfgForm "Конфигурация файловых запросов\n"\
+        "bOK|OK\n"\
+        "bCancel|Отмена\n"\
+        "bHelp|Справка\n"\
+        "PageControl|Свойства|Псевдонимы\n"\
+        "llSRIF|Внешний обработчик файловых запросов (SRIF)\n"\
+        "llGrid|Каталоги\n"\
+        "cbRecursive|Рекурсивный поиск\n"\
+        "cbMasks|Разрешить маски\n"\
+        "cbDisable|Запретить запросы\n"\
+        "cbSRIF|SRIF\n"\
+        "llAls|Псевдонимы\n"
+
+ LngBaseRussian+rsDeviceConfig "Конфигурация порта\n"\
+        "lComPort|COM-порт\n"\
+        "lRate|Скорость (BPS)\n"\
+        "llBits|Биты:\n"\
+        "lBits|8N1\n"\
+        "gFlow|Контроль потока\n"\
+        "cbCTS_RTS|CTS/&RTS\n"\
+        "cbXon_Xoff|XOn/&XOff\n"\
+        "bBits|&Изменить...\n"\
+        "bOK|OK\n"\
+        "bCancel|Отмена\n"\
+        "bHelp|Справка\n"
+
+ LngBaseRussian+rsFidoAddressInput "Ввод адреса\n"\
+        "bOK|OK\n"\
+        "bCancel|Отмена\n"\
+        "AddressBox|Адрес\n"\
+        "bBrowse|Обзор\n"
+
+ LngBaseRussian+rsNodelistCompiler "Компиляция списка узлов\n"\
+        "llStatus|Статус:\n"\
+        "llNodes|Узлов:\n"\
+        "llNets|Сетей:\n"\
+        "llPoints|Пойнтов:\n"\
+        "llCurFile|Файл:\n"\
+        "bStop|Стоп\n"
+
+ LngBaseRussian+rsLineBitsEditor "Конфигурация битов\n"\
+        "cData|Бит данных|&8|&7|&6|&5\n"\
+        "cParity|Четность|&None|&Odd|&Even|&Mark|&Space\n"\
+        "cStop|Стоп-бит|&1|1.5|&2\n"\
+        "bOK|OK\n"\
+        "bCancel|Отмена\n"\
+        "bHelp|Справка\n"
+
+ LngBaseRussian+rsModemEditor "Конфигурация модема\n"\
+        "bOK|OK\n"\
+        "bCancel|Отмена\n"\
+        "bHelp|Справка\n"\
+        "pg|Свойства|Ответы|Флаги|Факс\n"\
+        "llName|Имя\n"\
+        "llCmds|Команды\n"\
+        "gbIntFax|Свойства внутреннего приемщика\n"\
+        "cbDTE|Переключать DTE на 19.2 Kbps\n"\
+        "gbExt|Свойства внешнего приемщика\n"\
+        "lExtR|Командная строка\n"\
+        "rgExt|Приемщик факсов|Внешний|Внутренний\n"
+
+ LngBaseRussian+rsPathNamesForm "Конфигурация каталогов\n"\
+        "llSpecial|Специальные каталоги\n"\
+        "llDefZone|Основной адрес\n"\
+        "gbHomeDir|Домашний каталог\n"\
+        "bChangeHomeDir|Сменить...\n"\
+        "bBrowse|Обзор...\n"\
+        "bOK|OK\n"\
+        "bCancel|Отмена\n"\
+        "bHelp|Справка\n"
+
+ LngBaseRussian+rsNodeListCfgForm "Конфигурация списка узлов\n"\
+        "bOK|OK\n"\
+        "bCancel|Отмена\n"\
+        "bHelp|Справка\n"\
+        "pg|Файлы|Префиксы\n"
+
+ LngBaseRussian+rsPwdForm "Пароли узлов\n"\
+        "lAuxPwds|Файл дополнительных паролей\n"\
+        "bOK|OK\n"\
+        "bCancel|Отмена\n"\
+        "bHelp|Справка\n"\
+        "bImportPwd|Импорт...\n"\
+        "bSort|Сортировка\n"
+
+ LngBaseRussian+rsRestrictCfgForm "Схемы ограничения прозвонок\n"\
+        "llName|Имя схемы\n"\
+        "bOK|OK\n"\
+        "bCancel|Отмена\n"\
+        "bHelp|Справка\n"\
+        "p|Необходимые|Запрещенные\n"\
+        "bExplain|Объяснить...\n"
+
+ LngBaseRussian+rsMailerForm "\n"\
+        "lRXD|RXD\n"\
+        "lTXD|TXD\n"\
+        "lCTS|CTS\n"\
+        "lDSR|DSR\n"\
+        "lDCD|DCD\n"\
+        "DaemonPI| Вход\n"\
+        "DaemonPIH| История активности входного канала\n"\
+        "DaemonPO| Выход\n"\
+        "DaemonPOH| История активности выходного канала\n"\
+        "SndBox|Передача\n"\
+        "llSndCPS|CPS\n"\
+        "llSndSize|Размер:\n"\
+        "llFileSndTime|Время файла:\n"\
+        "llTotalSndTime|Общее время:\n"\
+        "RcvBox|Прием\n"\
+        "llRcvCPS|CPS\n"\
+        "llRcvSize|Размер:\n"\
+        "PollsListView|Узел|Номера|Владелец|Статус|Занят|Не с.|Сбой|Тип\n"\
+        "BWListView|Имя файла|Получено|Всего|С узла|Последняя запись\n"\
+        "StatusBox| Состояние \n"\
+        "GroupBox3| Статус \n"\
+        "CancelButton|Отмена\n"\
+        "ConnectButton|Подключить\n"\
+        "OutMgrHeader|Буфер|Имя сисопа|Размер|Тип|По завершению|Возраст\n"\
+        "mSystem|Система\n"\
+        "tExternal|Внешние утилиты\n"\
+        "msOpenDialup|Модемные линии\n"\
+        "mfRunIPDaemon|TCP/IP Daemon\n"\
+        "mnuTerminal|Терминал\n"\
+        "msInterfaceLanguage|Язык интерфейса\n"\
+        "ilRomanian|Румынский\n"\
+        "ilRussian|Русский\n"\
+        "ilMitky|Русский (Митьки)\n"\
+        "ilEnglishUK|Английский (Великобритания)\n"\
+        "ilGerman|Немецкий\n"\
+        "ilDutch|Голландский\n"\
+        "ilSpanish|Испанский\n"\
+        "mwCreateMirror|Зеркало\n"\
+        "mwClose|Закрыть окно\n"\
+        "mfExit|Выход\n"\
+        "mLine|Линия\n"\
+        "mlAbortOperation|Сбросить\n"\
+        "mlAnswer|Ответить\n"\
+        "mlSendMdmCmds|Послать команду модему\n"\
+        "mlResetTimeout|Сбросить тайм-аут\n"\
+        "mlIncTimeout|Увеличить тайм-аут\n"\
+        "mlSkip|Отложить файл (принять впоследствии)\n"\
+        "mlRefuse|Отказаться от файла\n"\
+        "mlChat|Открыть окно чата\n"\
+        "mlClose|Закрыть\n"\
+        "mPoll|Прозвонка\n"\
+        "mpCreate|Создать крэш-полл\n"\
+        "mpNormalPoll|Создать нормальную прозвонку\n"\
+        "mpDelete|Удалить\n"\
+        "mpReset|Сбросить\n"\
+        "mpTrace|Информация\n"\
+        "mpDeleteAll|Удалить все\n"\
+        "mTool|Инструмент\n"\
+        "mtCompileNodelist|Компилировать список узлов\n"\
+        "mtCompileNodelistInv|Компилировать список узлов\n"\
+        "mtBrowseNodelist|Обзор списка узлов\n"\
+        "mtBrowseNodelistAt|Обзор списка узлов с...\n"\
+        "mtEditFileRequest|Редактировать файловый запрос...\n"\
+        "mtAttachFiles|Присоединить файл...\n"\
+        "mtCreateFlag|Создать флаг...\n"\
+        "mtOutSmartMenu|Меню отправки\n"\
+        "mConfig|Конфигурация\n"\
+        "mcMasterPassword|Главный пароль\n"\
+        "mcMasterPwdCreate|Установить...\n"\
+        "mcMasterPwdChange|Сменить...\n"\
+        "mcMasterPwdRemove|Удалить...\n"\
+        "mcStartup|Загрузка\n"\
+        "mcPathnames|Пути\n"\
+        "mcNodelist|Списки узлов\n"\
+        "mcPasswords|Пароли\n"\
+        "mcDialup|Модемные соединения\n"\
+        "mcDaemon|&TCP/IP соединения\n"\
+        "mcFileBoxes|Файл-боксы\n"\
+        "mcPolls|Прозвонки\n"\
+        "maFileRequests|Файловые запросы\n"\
+        "maExternals|Внешние приложения\n"\
+        "maEvents|События\n"\
+        "maEncryptedLinks|Шифрованные узлы\n"\
+        "maNodes|Инспектор узлов\n"\
+        "mHelp|&?\n"\
+        "mhContents|Справка\n"\
+        "mhLanguage|Язык справки\n"\
+        "hlRomainian|Румынский\n"\
+        "hlRussian|Русский\n"\
+        "hlMitky|Русский (Митьки)\n"\
+        "hlEnglish|Английский (Великобритания)\n"\
+        "hlGerman|Немецкий\n"\
+        "hlDutch|Голландский\n"\
+        "hlSpanish|Испанский\n"\
+        "mhHelp|Как пользоваться справкой\n"\
+        "mnuWebSites|Argus-related Web Sites\n"\
+        "mhWebSite|WWW-узел поддержки Argus\n"\
+        "mnuRadiusOnWeb|Radius Web Site\n"\
+        "mnuArgusClone|Клоны Аргуса\n"\
+        "mhLicence|Лицензия\n"\
+        "mhAbout|О программе\n"\
+        "mhHowReg|Как зарегистрироваться\n"\
+        "mRegistration|Ввод регистрационного кода...\n"\
+        "ppCreatePoll|Создать\n"\
+        "ppTracePoll|Информация\n"\
+        "ppResetPoll|Сбросить\n"\
+        "ppDeletePoll|Удалить\n"\
+        "ppDeleteAllPolls|Удалить все\n"\
+        "ompRescan|Пересканировать\n"\
+        "ompCfCrash|Crash\n"\
+        "ompCfDirect|Direct\n"\
+        "ompCfNormal|Normal\n"\
+        "ompCfHold|Hold\n"\
+        "opmReaddress|Переадресовать\n"\
+        "opmFinalize|Завершить\n"\
+        "opmCrash|Сменить на Crash\n"\
+        "opmDirect|Сменить на Direct\n"\
+        "opmNormal|Сменить на Normal\n"\
+        "opmHold|Сменить на Hold\n"\
+        "opmUnlink|Отвязать\n"\
+        "opmPurge|Очистить\n"\
+        "tpRestore|Восстановить\n"\
+        "tpMinimize|Свернуть\n"\
+        "tpCreatePoll|Создать крэш-полл\n"\
+        "tpCreateNormalPoll|Создать нормальную прозвонку\n"\
+        "tpEditFileRequest|Редактировать файловый запрос\n"\
+        "tpBrowseNodelist|Обзор списка узлов\n"\
+        "tpExit|Выход\n"\
+        "tpCancel|Отмена\n"\
+        "mpPause|Пауза\n"\
+        "ppPause|Пауза\n"\
+        "mfRestart|Перезапустить Радиус\n"\
+        "llSessionCost|Стоимость:\n"\
+        "llSessionTime|Прошло времени\n"\
+        "llTotalAtInbound|Всего в инбоксе:\n"\
+        "llAvaibleAtInbound|Доступно в инбоксе:\n"\
+        "llOutboundSize|Размер буфера:\n"\
+        "SessionBox|Сессия\n"\
+        "mnuDelBWZ|Удалить %s из BadWazoo\n"\
+        "mnuTossBwz|Убрать pending-файлы из BadWazoo\n"\
+        "mnuPrefEx|Настройки...\n"
+
+
+ LngBaseRussian+rsAttachStatusForm "Статус\n"\
+        "bAttach|Статус|&Hold|&Normal|&Direct|&Crash|Crash && Прозвонка\n"\
+        "bOK|OK\n"\
+        "bCancel|Отмена\n"\
+        "bHelp|Справка\n"\
+        "bOnSent|При завершении|Ничего|Удалить|Урезать\n"
+
+ LngBaseRussian+rsMainConfigForm "Конфигурация модемных соединений\n"\
+        "pg|Линии|Станции|Порты|Модемы|Ограничения|Узлы\n"\
+        "lLines|Имя линии|Шаблон станции|Порт|Модем\n"\
+        "lStation|Имя шаблона|Имя станции|Список адресов\n"\
+        "lPorts|COM-порт|BPS|Контроль потока|Биты линии\n"\
+        "lModems|Имя модема\n"\
+        "lRestrictions|Имя схемы|Необходимые|Запрещенные\n"\
+        "lAuxNodes|Файл доп. пер.\n"\
+        "bNew|Новый\n"\
+        "bEdit|Редактор\n"\
+        "bCopy|Копия\n"\
+        "bDelete|Удалить\n"\
+        "bUndelete|Отменить\n"\
+        "bDefault|Умолч.\n"\
+        "bOK|OK\n"\
+        "bCancel|Отмена\n"\
+        "bHelp|Справка\n"\
+        "bImport|Импорт...\n"\
+        "bSort|Сортировка\n"\
+        "bEditNode|Редактор\n"\
+        "ppNew|Новый\n"\
+        "ppEdit|Редактор\n"\
+        "ppCopy|&Копия\n"\
+        "ppDelete|Удалить\n"\
+        "ppUndelete|Отменить\n"\
+        "ppDefault|Умолчание\n"
+
+ LngBaseRussian+rsStartupConfigForm "Конфигурация запуска\n"\
+        "gbLines|Открытие модемных линий\n"\
+        "llManual|Вручную\n"\
+        "llAuto|Автоматически\n"\
+        "cbDaemon|Запускать &TCP/IP Daemon\n"\
+        "bOK|OK\n"\
+        "bCancel|Отмена\n"\
+        "bHelp|Справка\n"\
+        "cbFastLog|Быстрое протоколирование\n"\
+        "cbLogWZ|Протоколировать &WZ pending/incomplete\n"\
+        "cbODBCLog|Вести лог ODBC\n"
+
+
+ LngBaseRussian+rsExternalsForm "Конфигурация внешних приложений\n"\
+        "bOK|OK\n"\
+        "bCancel|Отмена\n"\
+        "Label1|Нажми кнопку 'Запустить', чтобы проверить запуск приложения\n"\
+        "btRunNow|Запустить\n"\
+        "bHelp|Справка\n"\
+        "bImportPwd|Импорт...\n"\
+        "PageControl|Пост-процессоры|Флаги|Сервисы|Периодические|Внешние утилиты\n"
+
+
+ LngBaseRussian+rsEventsForm "Конфигурация событий\n"\
+        "lv|Имя|Период|Длительность|Атомы\n"\
+        "bNew|Новое\n"\
+        "bEdit|Редактор\n"\
+        "bCopy|Копия\n"\
+        "bDelete|Удалить\n"\
+        "bOK|OK\n"\
+        "bCancel|Отмена\n"\
+        "bHelp|Справка\n"\
+        "ppNew|Новое\n"\
+        "ppEdit|Редактор\n"\
+        "ppCopy|Копия\n"\
+        "ppDelete|Удалить\n"
+
+ LngBaseRussian+rsEvtEditForm "Редактирование события\n"\
+        "llName|Имя\n"\
+        "llCron|Период (cron)\n"\
+        "llAtoms|Атомы\n"\
+        "llL|Длительность\n"\
+        "llD|Дней\n"\
+        "llH|Часов\n"\
+        "llM|Минут\n"\
+        "bOK|OK\n"\
+        "bCancel|Отмена\n"\
+        "bHelp|Справка\n"\
+        "bAddAtom|Добавить\n"\
+        "bDelete|Удалить\n"\
+        "bEdit|Редактор\n"\
+        "lb|Тип|Параметры\n"\
+        "cbPermanent|Постоянное\n"
+
+ LngBaseRussian+rsNodelistBrowser "Обзор списка узлов\n"\
+        "llAddr|Адрес:\n"\
+        "llStat|Станция:\n"\
+        "llSysop|Оператор:\n"\
+        "llSite|Место:\n"\
+        "llPhn|Номер:\n"\
+        "llSpd|Скорость:\n"\
+        "llFlags|Флаги (PSTN):\n"\
+        "llFlagsIP|Флаги (IP):\n"\
+        "llWrkTimeUTC|Время (UTC):\n"\
+        "llWrkTimeLocal|Время (LOC):\n"\
+        "llAddrSearch|Поиск по адресу:\n"\
+        "bOK|OK\n"\
+        "bCancel|Отмена\n"\
+        "bHelp|Справка\n"
+
+ LngBaseRussian+rsDisplayInfoForm "\n"\
+        "bOK|OK\n"
+
+ LngBaseRussian+rsEncryptedLinksForm "Конфигурация шифрованных узлов\n"\
+        "bAdd|Добавить\n"\
+        "bRemove|Удалить\n"\
+        "bChange|Изменить\n"\
+        "bClose|Закрыть\n"\
+        "bHelp|Справка\n"\
+        "bSort|Сортировка\n"
+
+ LngBaseRussian+rsFidoTemplateEditor "Редактирование шаблона станции\n"\
+        "lTplName|Имя шаблона\n"\
+        "bOK|OK\n"\
+        "bCancel|Отмена\n"\
+        "bHelp|Справка\n"\
+        "PageControl|EMSI|Приглашение|AKA\n"
+        "cbGetFromFile|Взять из файла\n"
+
+ LngBaseRussian+rsFileBoxesForm "Конфигурация файл-боксов\n"\
+        "PageControl|Узлы|Переопределения\n"\
+        "lRoot|Корневой каталог\n"\
+        "bOK|OK\n"\
+        "bCancel|Отмена\n"\
+        "bHelp|Справка\n"
+
+ LngBaseRussian+rsFReqDlg "Создание/редактирование файлового запроса\n"\
+        "bOK|OK\n"\
+        "bCancel|Отмена\n"\
+        "bHelp|Справка\n"
+
+ LngBaseRussian+rsModemCmdForm "Посылка команд модему\n"\
+        "lModemCommand|Команда модему\n"\
+        "bSend|Послать\n"\
+        "bClose|Закрыть\n"
+
+ LngBaseRussian+rsNewPwdInputForm "\n"\
+        "lNew|Новый пароль\n"\
+        "lCfm|Подтверждение\n"\
+        "bOK|OK\n"\
+        "bCancel|Отмена\n"\
+        "bHelp|Справка\n"
+
+ LngBaseRussian+rsNodeWizzardForm "Инспектор узлов\n"\
+        "bEditFileBox|Ред.\n"
+        "lPsw|Пароль\n"\
+        "lPostProc|Пост-п.\n"\
+        "gbNodelist|Информация из списка узлов\n"\
+        "llStat|Станция:\n"\
+        "llSysop|Оператор:\n"\
+        "llSite|Место:\n"\
+        "llPhn|Номер:\n"\
+        "llSpd|Скорость:\n"\
+        "llFlags|Флаги:\n"\
+        "llWrkTime|Время:\n"\
+        "gbNodeOvr|Переопределения\n"\
+        "lDupOvr|Модем.\n"\
+        "lIpOvr|TCP/IP\n"\
+        "bEditDupOvr|Ред.\n"\
+        "bEditIpOvr|Ред.\n"\
+        "gbRest|Есть в ограничениях\n"\
+        "lIpRest|TCP/IP\n"\
+        "lDialRest|Модемные\n"\
+        "bEditDialRest|Ред.\n"\
+        "bEditIpRest|Ред.\n"\
+        "gbEncLink|Шифров.\n"\
+        "bElSet|Устан.\n"\
+        "bElChange|Сменить\n"\
+        "bElRemove|Удалить\n"\
+        "gbAkas|Есть в AKA\n"\
+        "lIpAKA|TCP/IP\n"\
+        "lDialAKA|Модемные\n"\
+        "bEditDialAKA|Ред.\n"\
+        "bEditIpAka|Ред.\n"\
+        "gbFbox|Файл-бокс\n"\
+        "lFboxIn|Вх.\n"\
+        "lFboxOut|Вых.\n"\
+        "gbPoll|Прозвонка\n"\
+        "lPollPer|Период.\n"\
+        "lPollExt|Внешн.\n"\
+        "gbCurNode|Текущий узел\n"\
+        "bNewNode|Новый\n"\
+        "bDeleteNode|Удалить\n"\
+        "gbAtoms|Есть в атомах\n"\
+        "lAtoms|События\n"\
+        "bEditEvents|Ред.\n"\
+        "bOK|OK\n"\
+        "bCancel|Отмена\n"\
+        "bHelp|Справка\n"
+
+ LngBaseRussian+rsOvrExplainForm "\n"\
+        "bOK|OK\n"\
+        "bCancel|Cancel\n"\
+        "bHelp|Help\n"
+
+ LngBaseRussian+rsPollSetupForm "Конфигурация прозвонок\n"\
+        "PageControl|Периодические|Свойства|Внешние|Доп. параметры\n"\
+        "gbTry|Счетчики попыток\n"\
+        "lBusy|Занят\n"\
+        "lNoC|Не соед.\n"\
+        "lFail|Сбой\n"\
+        "gbTO|Тайм-ауты\n"\
+        "lRetry|Секунд между попытками\n"\
+        "lStandOff|Отбой, минут\n"\
+        "lPriority|Приоритет процесса\n"\
+        "cbTransmitHold|Передавать 'hold' на исходящих\n"\
+        "cbDirectAsNormal|Не создавать прозвонку по флагу 'Direct'\n"\
+        "bOK|OK\n"\
+        "bCancel|Отмена\n"\
+        "bHelp|Справка\n"\
+        "cbAskBeforeReject|Спрашивать перед отказом от файла\n"\
+        "cbAskBeforeSkip|Спрашивать перед пропуском файла\n"\
+        "cbRejectNextTic|Отказаться от тика после отказа от файла\n"\
+        "cbSkipNextTic|Пропустить тик после пропуска файла\n"
+
+
+ LngBaseRussian+rsSinglePasswordForm "Введите главный пароль\n"\
+        "bLogon|Вход\n"\
+        "bCancel|Выход\n"
+
+ LngBaseRussian+rsStartWizzardForm "\n"\
+        "Pages|Тип транспорта|Свойства\n"\
+        "gbConn|Какой тип соединения используется?\n"\
+        "cbDUP|Модем для прямых FTS/FSC-соедниений с узлами назначения\n"\
+        "cbIP|TCP/IP для соединений с узлами назначения\n"\
+        "gbDialProps|Свойства\n"\
+        "lAreaCode|Код области\n"\
+        "lLocalPrefix|Префикс для локальных звонков\n"\
+        "lLongDistPrefix|Префикс для междугородних звонков\n"\
+        "lComPort|COM-порт\n"\
+        "rgTonePulse|Тип набора|Тоновый|Импульсный\n"\
+        "cbSetRestrict|Установить схему ограничения для предотвращения случайной междугородней прозвонки\n"\
+        "bPrev|<<  Назад\n"\
+        "bNext|Вперед  >>\n"\
+        "bCancel|Отмена\n"
+
+ LngBaseRussian+rsIPcfgForm "Конфигурация TCP/IP Daemon \n"\
+        "bOK|OK\n"\
+        "bCancel|Отмена\n"\
+        "bHelp|Справка\n"\
+        "tb|Свойства|Станция|AKA|Приглаш.|Огранич.|События|DNS|Узлы|POP3|SMTP|NNTP\n"\
+        "llInPorts|Входящие порты\n"\
+        "llAssumeSpeed|Скорость\n"\
+        "llSocksAddr|Адрес\n"\
+        "llSocksPort|Порт\n"\
+        "llLimit|Лимит соединения\n"\
+        "rgProxyType|Тип прокси\n"\
+        "llSocksAddr|Адрес\n"\
+        "llSocksPort|Порт\n"\
+        "llPassword|Пароль\n"\
+        "llUserName|Имя\n"\
+        "cbAuth|Аутентификация\n"\
+        "cbAllViaProxy|Все через прокси\n"\
+        "cbEncryptPassword|Шифровать пароль в конфиге\n"\
+        "llCin|Вход\n"\
+        "llCout|Выход\n"\
+        "cbSOCKS|Использовать &SOCKS4-прокси для исходящих соединений\n"\
+        "p|Необходимые|Запрещенные\n"\
+        "labelAvl|Свободные\n"\
+        "labelLinked|Привязанные\n"\
+        "lAuxNodes|Файл доп. узлов\n"\
+        "bImport|Импорт...\n"\
+        "bSort|Сортировка\n"\
+        "bEditNode|Редактор\n"\
+        "bExplain|Объяснить...\n"
+
+ LngBaseRussian+rsSetupForm "Настройка Taurus\n"\
+        "lblPageTitle|?\n"\
+        "lOtherOptions| Другие настройки \n"\
+        "lCloseBtnActn|Действие кнопки 'Закрыть':\n"\
+        "lMinFreeSpace|Мин. свободное место:\n"\
+        "lChat| Диалог \n"\
+        "lOther| Другое \n"\
+        "lOutboundOptions| Буфер отправки \n"\
+        "cbSessionOK|Создавать SESSION.OK\n"\
+        "cbCreateSessionFail|Создавать SESSION.FAIL\n"\
+        "cbUseSPACE|'Пробел' для сброса\n"\
+        "cbPlaySounds|Озвучивать события\n"\
+        "cbFixedRetryTimeout|Фиксированный таймаут\n"\
+        "cbDynamicOutbound|Динамич. буфер отправки\n"\
+        "cbCloseBtnAction||Закрыть|Запросить|Свернуть\n"\
+        "cbChatEnabled|Диалог разрешен\n"\
+        "cbChatBell|Сигнал чата:\n"\
+        "cbD5Out|Буфер 5D\n"\
+        "cbDynamicRouting|Динамич. роутинг\n"\
+        "cbIgnoreCD|Игнорировать CD\n"\
+        "cbLamps|Лампочки в трее\n"\
+        "lAddressOptions| Установки адреса \n"\
+        "lSynchClock|Синхронизировать с:\n"\
+        "lMainAKA|Основной адрес:\n"\
+        "lSessionOptions| Настройки сессии \n"\
+        "lSynchShift|Synch time shift:\n"\
+        "lCPSMinBytes|CPS min bytes:\n"\
+        "lCPSMinSecs|CPS min secs:\n"\
+        "lPeriods| Периоды и таймауты \n"\
+        "lMsgsAutoClose|Msgs autoclose:\n"\
+        "lOutbRescan|Outb. rescan:\n"\
+        "lMaxBWZAge|Max BWZ age:\n"\
+        "lMaxUDLAge|Max UDL age:\n"\
+        "lMaxBsyAge|Max BSY age:\n"\
+        "lSystemOptions| Системные установки \n"\
+        "lMutexName|Mutex name:\n"\
+        "lActivateEventName|Activate Event Name:\n"\
+        "lEMSICR|EMSI CR:\n"\
+        "lWinSockVersion|Версия Winsock:\n"\
+        "lWatcherEventName|Directory Watcher Event Name:\n"\
+        "cbSimpleBSY|Простые BSY\n"\
+        "cbCloseBWZ|Закрывать BWZ\n"\
+        "cbIncrementArcmail|Increment arcmail\n"\
+        "cbForceFAXPage|Force fax page\n"\
+        "cbIgnoreEndSession|Игнор. окончание сессии\n"\
+        "cbUseNodelistData|Использ. инфо из нодлиста\n"\
+        "cbCompileNodelist|Автокомпиляция ноделистов\n"\
+        "cbWinsockVersion||Winsock auto|Winsock v1|Winsock v2\n"\
+        "cbDisableWinsockTraps|Игнор. ошибки Winsock\n"\
+        "lLanguage| Язык \n"\
+        "lHelpLanguage|Справка\n"\
+        "lInterfaceLanguage|Интерфейс:\n"\
+        "lGrid| Сетка \n"\
+        "lForms| Формы \n"\
+        "lLogger| Хронология \n"\
+        "lOtherInterface| Другое \n"\
+        "cbHelpLanguage||English|Русский\n"\
+        "cbInterfaceLanguage||English|Русский\n"\
+        "cbGridBWZ|Сетка в просмотре BadWaZoo\n"\
+        "cbGridPV|Сетка в просмотре прозвонок\n"\
+        "cbUseHTMLHelp|Использовать HTML-Help\n"\
+        "bFormsFont|Свойства шрифта...\n"\
+        "bLoggerFont|Свойства шрифта...\n"\
+        "cbShowIcons|Показывать иконки в меню (требует перезапуска)\n"\
+        "lGaugeFore|Счетчик шрифт\n"\
+        "lColors| Цвета \n"\
+        "lGaugeBack|Счетчик фон\n"\
+        "lLoggerFore|Хронология шрифт\n"\
+        "lLoggerBack|Хронология фон\n"\
+        "lBadWazooFore|BadWaZoo шрифт\n"\
+        "lBadWazooBack|BadWaZoo фон\n"\
+        "lMail7Fore|Почта 7 дней шрифт\n"\
+        "lMail7Back|Почта 7 дней фон\n"\
+        "lMail14Back|Почта 14 дней фон\n"\
+        "lMail14Fore|Почта 14 дней шрифт\n"\
+        "lMail21Back|Почта 21 день фон\n"\
+        "lMail21Fore|Почта 21 день шрифт\n"\
+        "lMail28Back|Почта 28 дней фон\n"\
+        "lMail28Fore|Почта 28 дней шрифт\n"\
+        "lTrayOptions| Настройки \n"\
+        "lPopup|HotKey для возврата из скрытого режима\n"\
+        "lBalloon| Balloon \n"\
+        "cbAlwaysInTray|Всегда в трее\n"\
+        "cbStealth|Невидимый режим\n"\
+        "cbBalloon|Всплывающее инфо в трее\n"\
+        "cbBalloonMin|Всплывающее инфо в трее в свернутом состоянии\n"\
+        "lTariffOptions| Настройки \n"\
+        "lLogFNames| Имена файлов \n"\
+        "laccess_log|access_log:\n"\
+        "lagent_log|agent_log:\n"\
+        "lbinary_log|binary_log:\n"\
+        "lpolls_log|polls.log:\n"\
+        "lcronapps_log|cronapps.log:\n"\
+        "ltariff_log|tariff.log:\n"\
+        "lipdaemon_log|ipdaemon.log:\n"\
+        "lras_log|ras.log:\n"\
+        "cbTariff|Использовать тарификационный лог\n"\
+        "cbODBCLogging|Запись в лог ODBC\n"\
+        "cbLogThreadTimes|Log thread times\n"\
+        "lRCC| Настройки \n"\
+        "lRCCPwd| Пароль: \n"\
+        "cbEnableRCC|Использовать консоль удаленного управления\n"\
+        "cbCryptRCCPwd|Шифровать пароль в конфиге\n"\
+        "lRasOptions| Настройки \n"\
+        "lEntryList|Список соединений:\n"\
+        "cbEntryList||\n"\
+        "btnReloadRASEntries|Обновить список\n"\
+        "cbRASEnabled|Включить RAS\n"\
+        "lTxWindow|TxWindow:\n"\
+        "lHydra| Hydra \n"\
+        "lBinkP| BinkP \n"\
+        "lRxWindow|RxWindow:\n"\
+        "cbShortName|Короткое и длинное имя\n"\
+        "cbOEMCharset|OEM кодировка\n"\
+        "cbDebug|Отладочный лог\n"\
+        "cbRequestCrypt|Запрос шифрования\n"\
+        "cbIBNRequestList|Запрос списка файлов\n"\
+        "cbHydRequestList|Запрос списка файлов\n"\
+        "lHome|Home:\n"\
+        "lPathTo| Пути \n"\
+        "lConfigs|Конфиги:\n"\
+        "lFlags|Флаги:\n"\
+        "lTempInbound|Врем. вход:\n"\
+        "lSecureInbound|Парольный вход:\n"\
+        "lInbound|Вход:\n"\
+        "lOutbound|Выход:\n"\
+        "lLogs|Хронология:\n"\
+        "lDynamicRoutingTable|Таблица динамического роутинга:\n"\
+        "btnHome|. . .\n"\
+        "btnConfigs|. . .\n"\
+        "btnFileFlags|. . .\n"\
+        "btnTempInbound|. . .\n"\
+        "btnSecureInbound|. . .\n"\
+        "btnInbound|. . .\n"\
+        "btnOutbound|. . .\n"\
+        "btnLogs|. . .\n"\
+        "btnHelp|Справка\n"\
+        "btnApply|Применить\n"\
+        "btnCancel|Отмена\n"\
+        "btnOK|OK\n"
+
+}
