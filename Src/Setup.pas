@@ -321,6 +321,8 @@ type
     cbScanMSG: TCheckBox;
     cbUnpackPKT: TCheckBox;
     gNetPath: TAdvGrid;
+    lnet_log: TLabel;
+    enet_log: TEdit;
     procedure tvPagesChange(Sender: TObject; Node: TTreeNode);
     procedure FormCreate(Sender: TObject);
     procedure btnReloadRASEntriesClick(Sender: TObject);
@@ -381,25 +383,15 @@ var
 function SetPrefEx(const Remote: boolean): Boolean;
 begin
   SetupForm := TSetupForm.Create(Application);
-{$IFNDEF WS}
-  SetupForm.lipdaemon_log.Free;
-  SetupForm.eipdaemon_log.Free;
-{$ENDIF}
-{$IFNDEF RASDIAL}
-  SetupForm.lras_log.Free;
-  SetupForm.eras_log.Free;
-{$ENDIF}
   i := GetRegInterfaceLng;
   SetupForm.SetData(i);
   SetupForm.sbMainPrev.Font.Style := [fsBold];
   SetupForm.sbMainNext.Font.Style := [fsBold];
   SetupForm.sbMainPrev.Font.Color := clBlue;
   SetupForm.sbMainNext.Font.Color := clBlue;
-  {$IFDEF EXTREME}
   if Remote then begin
      TreatForm(SetupForm);
   end;
-  {$ENDIF}
   SetupForm.cbScanMSGClick(nil);
   Result := SetupForm.ShowModal = mrOK;
   if result and SetupForm.btnApply.Enabled then begin
@@ -501,6 +493,7 @@ begin
   IniFile.tariff_log := etariff_log.Text;
   IniFile.IPDaemon_log := eipdaemon_log.Text;
   IniFile.ras_log := eras_log.Text;
+  IniFile.net_log := enet_log.Text;
 //logs end;
 
 //Remote tab
@@ -804,6 +797,7 @@ begin
   etariff_log.Text := IniFile.tariff_log;
   eipdaemon_log.Text := IniFile.IPDaemon_log;
   eras_log.Text := IniFile.ras_log;
+  enet_log.Text := IniFile.net_log;
 //logs end
 
 //RCC tab
@@ -857,7 +851,7 @@ begin
   FillNetmailGrid;
 
   if IniFile.NetmailDir <> '' then begin
-     gNetPath.Cells[0, 1] := IniFile.NetmailDir;
+     gNetPath.Cells[1, 1] := IniFile.NetmailDir;
   end else begin
      IniFile.LoadGrid(gNetPath);
   end;
@@ -1152,7 +1146,7 @@ begin
    fdForms.Font.Assign(Font);
    if fdForms.Execute then begin
       Font.Assign(fdForms.Font);
-      lFormsFont.Caption := Format('%s (%d Pts)',[Font.Name, Font.Size]);
+      lFormsFont.Caption := Format('%s (%d Pts)', [Font.Name, Font.Size]);
    end;
 end;
 
@@ -1161,7 +1155,7 @@ begin
    fdLogger.Font.Color := cbLoggerFore.Selected;
    if fdLogger.Execute then begin
       cbLoggerFore.Selected := fdLogger.Font.Color;
-      lLoggerFont.Caption := Format('%s (%d Pts)',[fdLogger.Font.Name, fdLogger.Font.Size]);
+      lLoggerFont.Caption := Format('%s (%d Pts)', [fdLogger.Font.Name, fdLogger.Font.Size]);
    end;
 end;
 

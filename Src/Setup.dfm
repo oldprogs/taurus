@@ -134,7 +134,7 @@ object SetupForm: TSetupForm
     Width = 418
     Height = 373
     Anchors = [akLeft, akTop, akRight, akBottom]
-    PageIndex = 9
+    PageIndex = 5
     TabOrder = 1
     object TPage
       Left = 0
@@ -1574,6 +1574,13 @@ object SetupForm: TSetupForm
         Height = 15
         Caption = 'ras.log:'
       end
+      object lnet_log: TLabel
+        Left = 24
+        Top = 312
+        Width = 61
+        Height = 15
+        Caption = 'netmail.log'
+      end
       object cbTariff: TCheckBox
         Left = 30
         Top = 30
@@ -1653,6 +1660,13 @@ object SetupForm: TSetupForm
         Width = 255
         Height = 23
         TabOrder = 10
+      end
+      object enet_log: TEdit
+        Left = 145
+        Top = 305
+        Width = 255
+        Height = 23
+        TabOrder = 11
       end
     end
     object TPage
@@ -1753,7 +1767,7 @@ object SetupForm: TSetupForm
         Width = 215
         Height = 23
         Style = csDropDownList
-        ItemHeight = 0
+        ItemHeight = 15
         TabOrder = 0
       end
       object btnReloadRASEntries: TButton
@@ -2056,21 +2070,23 @@ object SetupForm: TSetupForm
         Top = 42
         Width = 418
         Height = 70
-        FileNameCol = 0
+        FileNameCol = 1
+        FileNameDir = True
         FixedFont.Charset = DEFAULT_CHARSET
         FixedFont.Color = clWindowText
         FixedFont.Height = -11
         FixedFont.Name = 'MS Sans Serif'
         FixedFont.Style = []
         Align = alBottom
-        ColCount = 1
+        ColCount = 2
         DefaultRowHeight = 17
-        FixedCols = 0
         RowCount = 2
+        Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goRowMoving, goEditing, goDigitalRows]
         TabOrder = 4
         CheckBoxes = False
         ColWidths = (
-          411)
+          31
+          380)
       end
     end
     object TPage
