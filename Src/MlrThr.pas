@@ -4066,13 +4066,14 @@ begin
    FidoPollsLog(Format('-Poll/%s  %s', [Msg[Done], Addr2Str(Node.Addr)]));
    if Done = pdnOK then begin
       EnterCS(OutMgrThread.NodesCS);
-      EnterCS(FidoOut.CacheCS);
       for i := CollMax(OutMgrThread.Nodes) downto 0 do begin
          n := OutMgrThread.Nodes[i];
          if CompareAddrs(n.Address, Node.Addr) = 0 then begin
             OutMgrThread.Nodes.AtFree(i);
          end;
       end;
+      LeaveCS(OutMgrThread.NodesCS);
+      EnterCS(FidoOut.CacheCS);
       for i := CollMax(FidoOut.OutCache) downto 0 do begin
          n := FidoOut.OutCache[i];
          if CompareAddrs(n.Address, Node.Addr) = 0 then begin
@@ -4080,16 +4081,15 @@ begin
          end;
       end;
       LeaveCS(FidoOut.CacheCS);
-      LeaveCS(OutMgrThread.NodesCS);
    end;
    MailerThreads.Enter;
    for i := 0 to MailerThreads.Count - 1 do begin
       FreeOwnPoll(TMailerThread(MailerThreads[I]).OwnPolls, Self);
    end;
+   MailerThreads.Leave;
 {$IFDEF WS}
    if IPPolls <> nil then FreeOwnPoll(IPPolls.OwnPolls, Self);
 {$ENDIF}
-   MailerThreads.Leave;
    Release;
    FreeObject(Node);
    inherited Destroy;
@@ -4753,8 +4753,7 @@ var
 begin
    Result := True;
    ra := TFidoAddrColl.Create;
-   for i := 0 to CollMax(SD.rmtAddrs) do
-   begin
+   for i := 0 to CollMax(SD.rmtAddrs) do begin
       a := SD.rmtAddrs[i];
       if CompareAddrs(a, SD.SessionKeyAddr) = 0 then Continue;
       New(pa);
@@ -4762,12 +4761,10 @@ begin
       ra.Insert(pa);
    end;
    CfgEnter;
-   for i := 0 to Cfg.EncryptedNodes.Count - 1 do
-   begin
+   for i := 0 to Cfg.EncryptedNodes.Count - 1 do begin
       e := Cfg.EncryptedNodes[i];
       a := e.Addr;
-      if ra.Search(@a, j) then
-      begin
+      if ra.Search(@a, j) then begin
          Result := False;
          Break;
       end;
@@ -6610,9 +6607,9 @@ begin
 
    CPS := GetCPS(P.T.D.Start, P.T.D.FPos - P.T.D.FOfs);
    DisplayData;
-   if P.T.Stream is TxMemoryStream then
+   if P.T.Stream is TxMemoryStream then begin
       r := nil
-   else begin
+   end else begin
       r := nil;
       if P.SendFTPFile then begin
          for i := 0 to SD.OutFiles.Count - 1 do begin
@@ -6740,10 +6737,14 @@ begin
                   sss := r.Name;
                   if r.Orig <> '' then sss := r.Orig;
                end;
-               if r = nil then
+               if r = nil then begin
                   i := P.T.D.FSize
-               else
+               end else begin
                   i := r.Nfo.Size;
+                  if r.Netm <> '' then begin
+                     ClearAttach(r.Netm, r.Name);
+                  end;
+               end;
                CommonLog.Add(SD.rmtPrimaryAddr, sss, True, i, DS.rmtSoft);
             end;
          aaRefuse:
@@ -7290,8 +7291,7 @@ var
 begin
    Result := False;
    RmtPwd := SD.rmtPassword;
-   if (RmtPwd = cBadPwd) or (RmtPwd = cNoPwd) then
-   begin
+   if (RmtPwd = cBadPwd) or (RmtPwd = cNoPwd) then begin
       if SD.ActivePoll = nil then
          LogFmt(ltWarning, 'Remote presented reserved word "%s"', [RmtPwd])
       else
@@ -7299,22 +7299,17 @@ begin
       Exit;
    end;
    RmtPwdU := UpperCase(rmtPwd);
-   for i := 0 to CollMax(SD.rmtAddrs) do
-   begin
+   for i := 0 to CollMax(SD.rmtAddrs) do begin
       a := SD.rmtAddrs[I];
       s := GetPassword(a, EP);
       if s = '' then Continue;
       SD.locPassword := s;
-      if UpperCase(s) = RmtPwdU then
-      begin
-         if not SD.rmtPwdAddrSet then
-         begin
+      if UpperCase(s) = RmtPwdU then begin
+         if not SD.rmtPwdAddrSet then begin
             SD.rmtPwdAddrSet := True;
             SD.rmtPwdAddr := a;
          end;
-      end
-      else
-      begin
+      end else begin
          if RmtPwdU = '' then
             Log(ltWarning, Format('Remote presented no password when "%s" required for %s', [SD.locPassword, Addr2Str(a)]))
          else
@@ -7323,34 +7318,27 @@ begin
       end;
    end;
    if SD.rmtPwdAddrSet then SD.rmtPrimaryAddr := SD.rmtPwdAddr;
-   if SD.SessionKey <> 0 then
-   begin
+   if SD.SessionKey <> 0 then begin
       LogFmt(ltInfo, 'Encrypted (%s) session', [Addr2Str(SD.SessionKeyAddr)]);
       SD.PasswordProtected := True;
-   end
-   else
-      if SD.locPassword <> '' then
-      begin
-         if SD.CramMD5 then
-            Log(ltInfo, 'Password-protected session (auth=CRAM-MD5)')
-         else
-            Log(ltInfo, 'Password-protected session (auth=plain)');
-         SD.PasswordProtected := True;
-      end
+   end else
+   if SD.locPassword <> '' then  begin
+      if SD.CramMD5 then
+         Log(ltInfo, 'Password-protected session (auth=CRAM-MD5)')
       else
-      begin
-         if RmtPwd <> '' then Log(ltWarning, Format('Remote proposes password "%s"', [RmtPwd]));
-         Log(ltInfo, 'Non-password session');
-      end;
+         Log(ltInfo, 'Password-protected session (auth=plain)');
+      SD.PasswordProtected := True;
+   end else begin
+      if RmtPwd <> '' then Log(ltWarning, Format('Remote proposes password "%s"', [RmtPwd]));
+      Log(ltInfo, 'Non-password session');
+   end;
 
-   if (SD.ActivePoll = nil) and (not SD.PasswordProtected) and (EP.BoolValueD(eiAccProtected, False)) then
-   begin
+   if (SD.ActivePoll = nil) and (not SD.PasswordProtected) and (EP.BoolValueD(eiAccProtected, False)) then begin
       Log(ltWarning, 'Incoming non-password sessions are forbidden by atom "Accept Nodes Only Pwd-Prot"');
       Exit;
    end;
 
-   if (SD.ActivePoll = nil) and (not RemoteListed) and (EP.BoolValueD(eiAccListed, False)) then
-   begin
+   if (SD.ActivePoll = nil) and (not RemoteListed) and (EP.BoolValueD(eiAccListed, False)) then begin
       Log(ltWarning, 'Incoming sessions with unlisted nodes are forbidden by atom "Accept Nodes Only Listed"');
       Exit;
    end;
@@ -15773,7 +15761,7 @@ begin
    ChangeFlag := OldC <> NewC;
 
    if ChangeFlag then begin
-//     _RecalcPolls(False);
+     _RecalcPolls(False);
       if Application.MainForm <> nil then begin
          PostMessage(Application.MainForm.Handle, WM_OUTBOUNDALERT, 2, 0);
       end;

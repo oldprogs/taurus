@@ -1293,7 +1293,9 @@ begin
     bdtxSendSecondEOB:
       begin
          if RemoteCanTRS and (TRSList.Count > 0) then begin
-            //
+            if CP.Carrier <> CP.DCD then begin
+               TRSList.FreeAll;
+            end;
          end else
          if rx in [bdrxGot_M_EOB, bdrxWaitEOB, bdrxDone] then begin
             SendId(M_EOB);

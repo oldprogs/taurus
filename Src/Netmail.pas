@@ -97,6 +97,7 @@ type
    end;
 
 procedure FreeNetmailHolder;
+procedure ClearAttach(m, a: string);
 
 var
    NetmailHolder: TNetmail;
@@ -111,6 +112,59 @@ uses
 procedure FreeNetmailHolder;
 begin
    FreeObject(NetmailHolder);
+end;
+
+procedure ClearAttach;
+var
+   n: TMemoryStream;
+   h: _fidomsgtype;
+   s: string;
+   z: string;
+   t: string;
+   b: boolean;
+begin
+   if not ExistFile(m) then exit;
+   n := TMemoryStream.Create;
+   if n <> nil then begin
+      try
+         n.LoadFromFile(m);
+      except
+         n.Free;
+         exit;
+      end;
+      n.Read(h, sizeof(h));
+      if h.attr and Fileattached = 0 then begin
+         n.Free;
+         exit;
+      end;
+      s := h.subject;
+      t := '';
+      b := False;
+      while s <> '' do begin
+         GetWrd(s, z, ' ');
+         if z = a then begin
+            b := True;
+         end else begin
+            if ExistFile(z) then begin
+               t := t + z + ' ';
+            end else begin
+               b := True;
+            end;
+         end;
+      end;
+      if b then begin
+         if t = '' then begin
+            DelFile('ClearAttach', m);
+         end else begin
+            FillChar(h.subject, SizeOf(h.subject), #0);
+            move(t[1], h.subject, Length(t));
+            n.Position := 0;
+            n.Write(h, SizeOf(h));
+            n.SaveToFile(m);
+         end;
+      end;
+      n.Free;
+   end;
 end;
 
 function TNetmailMsg.IChr;
@@ -581,8 +635,16 @@ begin
       i := i + length(u) - 1;
       l.Addy := length(u) - 1;
    end;
+   SetValue(l.Addr.Zone, IniFile.MainAddr.Zone);
+   SetValue(l.From.Zone, IniFile.MainAddr.Zone);
+   SetValue(l.Addr.Net, l.Head.DestNet);
+   SetValue(l.From.Net, l.Head.OrigNet);
+   SetValue(l.Addr.Node, l.Head.DestNode);
+   SetValue(l.From.Node, l.Head.OrigNode);
    SetValue(l.From.Point, e);
    SetValue(l.Addr.Point, a);
+   l.Addr.Domain := FindFTNDOM(l.Addr);
+   l.From.Domain := FindFTNDOM(l.From);
    l.Size        := i;
    l.Line        := d;
    if l.MsId = '' then begin
@@ -593,9 +655,13 @@ begin
       move(p^, l.Body^, l.Size);
    end;
    g := FindMessage(l.MsId);
-   if g = nil then begin
-      NetColl.Add(l);
-      fBackup := True;
+   if (g = nil) then begin
+      if l.Fido and (CompareAddrs(l.Addr, IniFile.MainAddr) = 0) then begin
+         FreeObject(l);
+      end else begin
+         NetColl.Add(l);
+         fBackup := True;
+      end;
    end else begin
       g.Dele := False;
       g.bOff := l.bOff;
@@ -614,7 +680,6 @@ var
    s: string;
    z: string;
    t: string;
-   k: TKillAction;
 begin
    if not ExistFile(pack) then exit;
    NetColl.Enter;
@@ -647,27 +712,6 @@ begin
             l.Attr := h.attr;
             l.Head.Attribute := h.attr and not (Recd or Sent_ or InTransit or Orphan or KillSent or Local or HoldForPickup or FileRequest or FileUpdateReq);
             FillMSG(n, l);
-            if (l <> nil) and ((h.attr and FileAttached) > 0) then begin
-               o := TStringColl.Create;
-               s := l.Subj;
-               while s <> '' do begin
-                  GetWrd(s, z, ' ');
-                  o.Add(z);
-               end;
-               k := kaBsoNothingAfter;
-               if pos('KFS', l.Flgs) > 0 then begin
-                  k := kaBsoKillAfter;
-               end else
-               if pos('TFS', l.Flgs) > 0 then begin
-                  k := kaBsoTruncateAfter;
-               end;
-               FidoOut.AttachFiles(l.Addr, o, osNormal, k);
-               FreeObject(o);
-               n.Position := 0;
-               h.attr := h.attr and (not FileAttached);
-               n.Write(h, SizeOf(h));
-               n.SaveToFile(pack);
-            end else
             if (l <> nil) and ((h.attr and FileRequest) > 0) then begin
                s := GetOutFileName(l.Addr, osrequest);
                if FidoOut.Lock(l.Addr, osBusy, True) then begin
@@ -754,6 +798,7 @@ var
    o: boolean;
    u: TOutStatus;
 begin
+   if n.Fido and (n.Attr and FileAttached > 0) then exit;
    s := GetOutFileName(t, osNone);
    if pos(UpperCase(s), UpperCase(n.Pack)) > 0 then exit;
    MsgColl.Add('Routing ' + Addr2Str(n.From) + ' -> ' + Addr2Str(n.Addr) + ' via ' + Addr2Str(t));

@@ -34,8 +34,11 @@ type
        GlyphIndex: Integer;
        Address: TFidoAddress;
        Link: string;
+       Netm: string;
        Orig: string;
        Name: string;
+       fMSG: boolean;
+       fATT: boolean;
        Nfo: TFileInfo;
        function Status: TOutStatus; virtual; abstract;
        function StatusSet: TOutStatusset; virtual; abstract;
@@ -112,6 +115,7 @@ type
          CacheCS: TRTLCriticalSection;
          BusyFlags: TColl;
          OutCache: TOutNodeColl;
+         TmpCache: TOutNodeColl;
          ForcedRescan: Boolean;
          constructor Create;
          function AttachFiles(const Address: TFidoAddress; Files: TStringColl; Status: TOutStatus; KillAction: TKillAction): Boolean;
@@ -362,7 +366,7 @@ function TOutBound.ChangeAttachStatusFile(const Address: TFidoAddress; const AFN
 var
   sc: TStringColl;
 begin
-  sc := TStringColl.Create('');
+  sc := TStringColl.Create;
   sc.Add(AFName);
   Result := MoveFiles(sc, @Address, @Address, @OldStatus, @NewStatus, False, False, False);
   FreeObject(sc);
@@ -383,17 +387,15 @@ var
 
 function Moved: Boolean;
 var
-  flags: DWORD;
+   flags: DWORD;
 begin
-  if (Win32Platform = VER_PLATFORM_WIN32_NT) then
-  begin
-    if SrcFName[1] <> s[1] then flags := MOVEFILE_COPY_ALLOWED
-    else flags:=0;
-    Result := MoveFileEx(PChar(SrcFName), PChar(s), flags);
-  end else
-  begin
-    Result := MoveFile(PChar(SrcFName), PChar(s));
-  end;
+   if (Win32Platform = VER_PLATFORM_WIN32_NT) then begin
+      if SrcFName[1] <> s[1] then flags := MOVEFILE_COPY_ALLOWED
+                             else flags:=0;
+      Result := MoveFileEx(PChar(SrcFName), PChar(s), flags);
+   end else begin
+      Result := MoveFile(PChar(SrcFName), PChar(s));
+   end;
 end;
 
 //*procedure FixBoxes;
@@ -1760,7 +1762,10 @@ var
 procedure ScanDir(const Path: string; Zone: Integer; Point: Boolean);
 var
   SR: TuFindData;
-  ss, Dr, Nm, Xt: string;
+  ss,
+  Dr,
+  Nm,
+  Xt: string;
   Nfo: PFileInfo;
   S: TOutStatus;
   II: Integer;
@@ -1844,34 +1849,43 @@ var
    n: TOutNode;
    f: TOutFile;
    s: TOutStatus;
+   b: TOutStatus;
+   k: TKillAction;
    p: TPollType;
+   u: string;
+   t: string;
   an: TAdvNode;
 begin
    an := FindNode(a);
-   OutColl.Sort(@CompareAddrs);
+//   OutColl.Sort(@CompareAddrs);
    if not OutColl.Search(@a, i) then begin
       n := TOutNode.Create;
-      OutColl.Insert(n);
       n.Address := a;
       n.Nfo.Time := GetFileTime(m.Pack);
+      OutColl.Insert(n);
    end else begin
       n := OutColl[i];
    end;
    p := ptpNetm;
+   if m.Attr and HoldForPickup > 0 then begin
+      s := osHoldMail;
+      b := osHold;
+   end else
    if pos('IMM', m.Flgs) > 0 then begin
       s := osImmedMail;
-      n.FStatus := n.FStatus + [s];
+      b := osImmed;
       p := ptpNmIm;
    end else
    if pos('DIR', m.Flgs) > 0 then begin
       s := osDirectMail;
-      n.FStatus := n.FStatus + [s];
+      b := osDirect;
    end else begin
       s := osCrashMail;
-      n.FStatus := n.FStatus + [s];
+      b := osCrash;
    end;
+   n.FStatus := n.FStatus + [s];
    n.FPollType := n.FPollType + [p];
-   if an <> nil then begin
+   if (an <> nil) and (s <> osHoldMail) then begin
       InsertPoll(an, [s], p);
    end;
    if n.Files = nil then begin
@@ -1879,11 +1893,40 @@ begin
    end;
    if not n.Files.FoundFName(m.Pack) then begin
       f := TOutFile.Create;
+      f.fMSG := True;
+      f.fATT := m.Attr and FileAttached > 0;
       f.Name := m.Pack;
       f.Nfo.Time := GetFileTime(m.Pack);
       f.Nfo.Size := GetFileSize(m.Pack);
       f.FStatus := s;
+      if m.Attr and KillSent > 0 then begin
+         f.KillAction := kaBsoKillAfter;
+      end;
       n.Files.Add(f);
+   end;
+   if m.attr and FileAttached > 0 then begin
+      k := kaBsoNothingAfter;
+      if pos('KFS', m.Flgs) > 0 then begin
+         k := kaBsoKillAfter;
+      end else
+      if pos('TFS', m.Flgs) > 0 then begin
+         k := kaBsoTruncateAfter;
+      end;
+      u := m.Subj;
+      while u <> '' do begin
+         GetWrd(u, t, ' ');
+         if ExistFile(t) then begin
+            f := TOutFile.Create;
+            f.Address := a;
+            f.Netm := m.Pack;
+            f.Name := t;
+            f.Nfo.Time := GetFileTime(t);
+            f.Nfo.Size := GetFileSize(t);
+            f.FStatus := b;
+            f.KillAction := k;
+            n.Files.Add(f);
+         end;   
+      end;
    end;
 end;
 
@@ -1997,10 +2040,10 @@ begin
      NetmailHolder.NetColl.Enter;
      for ii := 0 to CollMax(NetmailHolder.NetColl) do begin
         m := NetmailHolder.NetColl[ii];
-        if m.Fido and (pos('DIR', m.Flgs) > 0) then begin
+        if m.Fido and ((pos('DIR', m.Flgs) > 0) or (m.Attr and FileAttached > 0)) then begin
            InsertMSGPoll(m.Addr, m);
         end else
-        if m.Fido and (m.Attr and HoldForPickUp = 0) and (pos('HLD', m.Flgs) = 0) then begin
+        if m.Fido and (m.Attr and HoldForPickUp = 0) then begin
            for nn := 0 to IniFile.NetmailAddrTo.Count - 1 do begin
               s := IniFile.NetmailAddrTo[nn];
               if s = '*' then continue;
@@ -2078,10 +2121,13 @@ var
 begin
   n := TOutNode.Create;
   n.Address := Address;
+  n.fMSG := fMsg;
+  n.fATT := fAtt;
   n.Nfo.Size := Nfo.Size;
   n.Nfo.Time := Nfo.Time;
   n.FStatus := FStatus;
   n.FPollType := FPollType;
+  n.Netm := StrAsg(Netm);
   n.Name := StrAsg(Name);
   if Files <> nil then begin
     n.Files := Files.Copy;
@@ -2158,6 +2204,7 @@ function TOutbound._GetOutCollP(const Single, AFull, Scan: Boolean; const Addr: 
       if OutCache = nil then Result := nil else begin
          if AFull then Result := OutCache.Copy else begin
             Result := TOutNodeColl.Create;
+            EnterCS(CacheCS);
             for i := 0 to OutCache.Count - 1 do begin
                n := OutCache[i];
                if Single and (CompareAddrs(Addr, n.Address) <> 0) then Continue;
@@ -2165,6 +2212,7 @@ function TOutbound._GetOutCollP(const Single, AFull, Scan: Boolean; const Addr: 
                   Result.Insert(n.Copy);
                end;
             end;
+            LeaveCS(CacheCS);
          end;
       end;
    end;
@@ -2176,16 +2224,17 @@ begin
       FFileBoxes := Cfg.FileBoxes.Copy;
    end;
    CfgLeave;
-   EnterCS(CacheCS);
    if not Scan then begin
       Result := GetIt;
    end else begin
       ForcedRescan := False;
+      TmpCache := _GetOutColl;
+      EnterCS(CacheCS);
       FreeObject(OutCache);
-      OutCache := _GetOutColl;
+      OutCache := TmpCache;
+      LeaveCS(CacheCS);
       Result := GetIt;
    end;
-   LeaveCS(CacheCS);
 end;
 
 function TOutFile.OutAttType: TOutAttType;
@@ -2202,12 +2251,15 @@ begin
    f.Orig := StrAsg(Orig);
    f.Link := StrAsg(Link);
    f.Name := StrAsg(Name);
+   f.Netm := StrAsg(Netm);
    f.MoveTo := StrAsg(MoveTo);
    f.Nfo.Size := Nfo.Size;
    f.Nfo.Time := Nfo.Time;
    f.KillAction := KillAction;
    f.FStatus := FStatus;
    f.Address := Address;
+   f.fMSG := fMSG;
+   f.fATT := fATT;
    Result := f;
 end;
 

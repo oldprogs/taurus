@@ -98,6 +98,7 @@ object FreqCfgForm: TFreqCfgForm
         Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goRowMoving, goEditing, goThumbTracking, goDigitalRows]
         ParentFont = False
         TabOrder = 2
+        CheckBoxes = False
         ColWidths = (
           31
           249
@@ -165,6 +166,7 @@ object FreqCfgForm: TFreqCfgForm
         Top = 20
         Width = 405
         Height = 249
+        FileNameCol = 2
         FixedFont.Charset = DEFAULT_CHARSET
         FixedFont.Color = clWindowText
         FixedFont.Height = -12
@@ -181,6 +183,7 @@ object FreqCfgForm: TFreqCfgForm
         Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goRowMoving, goEditing, goThumbTracking, goDigitalRows]
         ParentFont = False
         TabOrder = 0
+        CheckBoxes = False
         ColWidths = (
           31
           72

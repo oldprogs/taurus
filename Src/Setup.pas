@@ -363,7 +363,7 @@ type
   function SetPrefEx(const Remote: boolean): Boolean;
 
 var
-  SetupForm: TSetupForm;
+   SetupForm: TSetupForm;
 
 implementation
 
@@ -372,11 +372,11 @@ uses LngTools, RadIni, xFido, PathNmEx, CfgFiles
      {$IFDEF EXTREME}, RCCUnit {$ENDIF}, MlrThr, MlrForm;
 
 var
-  FidoAddr1: TFidoAddress;
-  FidoAddr2: TFidoAddress;
-  i: integer;
-  HomeChanged : boolean = false;
-  ConfigsChanged : boolean = false;
+   FidoAddr1: TFidoAddress;
+   FidoAddr2: TFidoAddress;
+   i: integer;
+   HomeChanged : boolean = false;
+   ConfigsChanged : boolean = false;
 
 {$R *.DFM}
 
@@ -457,23 +457,17 @@ begin
   IniFile.CloseBWZFile := cbCloseBWZ.Checked;
   IniFile.ForceAddFaxPage := cbForceFaxPage.Checked;
 
-  with TIniFile.Create(IniFName) do
-  try
-    IniFile.Enter;
-    WriteString('system', 'EMSI_CR', eEMSICR.Text);
-    WriteString('system', 'MutexName', eMutexName.Text);
-    WriteString('system', 'ActivateEventName', eActivateEventName.Text);
-    WriteString('system', 'WatcherEventName', eWatcherEventName.Text);
-    WriteInteger('system', 'WinSockVersion', cbWinSockVersion.ItemIndex);
-    WriteBool('system', 'LogThreadTimes', cbLogThreadTimes.Checked);
-    for _i := 0 to 12 do begin
-       WriteString('Sounds', copy(Edits[_i].ed.Name, 3, 10), Edits[_i].ed.Text);
-       WriteBool('Sounds', 'c_' + copy(Edits[_i].ed.Name, 3, 10), Edits[_i].cb.Checked);
-    end;
-  finally
-    free;
-    IniFile.Leave;
+  IniFile.WriteString('system', 'EMSI_CR', eEMSICR.Text);
+  IniFile.WriteString('system', 'MutexName', eMutexName.Text);
+  IniFile.WriteString('system', 'ActivateEventName', eActivateEventName.Text);
+  IniFile.WriteString('system', 'WatcherEventName', eWatcherEventName.Text);
+  IniFile.WriteInteger('system', 'WinSockVersion', cbWinSockVersion.ItemIndex);
+  IniFile.WriteBool('system', 'LogThreadTimes', cbLogThreadTimes.Checked);
+  for _i := 0 to 12 do begin
+     IniFile.WriteString('Sounds', copy(Edits[_i].ed.Name, 3, 10), Edits[_i].ed.Text);
+     IniFile.WriteBool('Sounds', 'c_' + copy(Edits[_i].ed.Name, 3, 10), Edits[_i].cb.Checked);
   end;
+
 //System end
 
 {$IFDEF RASDIAL}
@@ -675,7 +669,7 @@ end;
 
 procedure TSetupForm.SetData(i:integer);
 var
-  n: integer;
+   n: integer;
 begin
 // Main tab
   eMainAKA.Text := Addr2Str(IniFile.MainAddr);
@@ -719,26 +713,18 @@ begin
   cbDisableWinsockTraps.Checked := IniFile.DisableWinsockTraps;
   cbSimpleBSY.Checked := IniFile.SimpleBSY;
   cbCloseBWZ.Checked := IniFile.CloseBWZFile;
-  with TIniFile.Create(IniFName) do
-  try
-    IniFile.Enter;
-    eEMSICR.Text := ReadString('system', 'EMSI_CR', '%0D');
-    eMutexName.Text := ReadString('system', 'MutexName', 'ARGUS_SEMAPHORE');
-    eActivateEventName.Text := ReadString('system', 'ActivateEventName', 'ARGUS_EVENT_ACTIVATE');
-    eWatcherEventName.Text := ReadString('system', 'WatcherEventName', 'ARGUS_EVENT_DIRECTORY_WATCHER');
+  eEMSICR.Text := IniFile.ReadString('system', 'EMSI_CR', '%0D');
+  eMutexName.Text := IniFile.ReadString('system', 'MutexName', 'ARGUS_SEMAPHORE');
+  eActivateEventName.Text := IniFile.ReadString('system', 'ActivateEventName', 'ARGUS_EVENT_ACTIVATE');
+  eWatcherEventName.Text := IniFile.ReadString('system', 'WatcherEventName', 'ARGUS_EVENT_DIRECTORY_WATCHER');
 
-//    cbIncrementArcmail.Checked := ReadBool('system','IncrementArcmail', False);
-    n := ReadInteger('system', 'WinSockVersion', 0);
-    if (n > 2) or (n < 0) then cbWinSockVersion.ItemIndex := 0
-    else cbWinSockVersion.ItemIndex := n;
-    cbLogThreadTimes.Checked := ReadBool('system', 'LogThreadTimes', False);
-    For n := 0 to 12 do begin
-       Edits[n].ed.Text := ReadString('Sounds', copy(Edits[n].ed.Name, 3, 10), copy(Edits[n].ed.Name, 3, 10));
-       Edits[n].cb.Checked := ReadBool('Sounds', 'c_' + copy(Edits[n].ed.Name, 3, 10), True);
-    end;
-  finally
-    free;
-    IniFile.Leave;
+  n := IniFile.ReadInteger('system', 'WinSockVersion', 0);
+  if (n > 2) or (n < 0) then cbWinSockVersion.ItemIndex := 0
+  else cbWinSockVersion.ItemIndex := n;
+  cbLogThreadTimes.Checked := IniFile.ReadBool('system', 'LogThreadTimes', False);
+  For n := 0 to 12 do begin
+     Edits[n].ed.Text := IniFile.ReadString('Sounds', copy(Edits[n].ed.Name, 3, 10), copy(Edits[n].ed.Name, 3, 10));
+     Edits[n].cb.Checked := IniFile.ReadBool('Sounds', 'c_' + copy(Edits[n].ed.Name, 3, 10), True);
   end;
   case IniFile.Priority of
     IDLE_PRIORITY_CLASS: n := 0;
@@ -921,72 +907,73 @@ end;
 
 procedure TSetupForm.FormCreate(Sender: TObject);
 begin
-  FillForm(self, rsSetupForm);
-  tvPages.Items.Item[2].Expand(true);
-  Edits[ 0].ed := edRing;
-  Edits[ 0].cb := cbRing;
-  Edits[ 1].ed := edDial;
-  Edits[ 1].cb := cbDial;
-  Edits[ 2].ed := edConnect;
-  Edits[ 2].cb := cbConnect;
-  Edits[ 3].ed := edSession;
-  Edits[ 3].cb := cbSession;
-  Edits[ 4].ed := edAborted;
-  Edits[ 4].cb := cbAborted;
-  Edits[ 5].ed := edNewLine;
-  Edits[ 5].cb := cbNewLine;
-  Edits[ 6].ed := edEndLine;
-  Edits[ 6].cb := cbEndLine;
-  Edits[ 7].ed := edRASDial;
-  Edits[ 7].cb := cbRASDial;
-  Edits[ 8].ed := edRASConnect;
-  Edits[ 8].cb := cbRASConnect;
-  Edits[ 9].ed := edRASFinish;
-  Edits[ 9].cb := cbRASFinish;
-  Edits[10].ed := edIncoming;
-  Edits[10].cb := cbIncoming;
-  Edits[11].ed := edBBS;
-  Edits[11].cb := cbBBS;
-  Edits[12].ed := edTrap;
-  Edits[12].cb := cbTrap;
+   FillForm(self, rsSetupForm);
+   tvPages.Items.Item[2].Expand(true);
+   Edits[ 0].ed := edRing;
+   Edits[ 0].cb := cbRing;
+   Edits[ 1].ed := edDial;
+   Edits[ 1].cb := cbDial;
+   Edits[ 2].ed := edConnect;
+   Edits[ 2].cb := cbConnect;
+   Edits[ 3].ed := edSession;
+   Edits[ 3].cb := cbSession;
+   Edits[ 4].ed := edAborted;
+   Edits[ 4].cb := cbAborted;
+   Edits[ 5].ed := edNewLine;
+   Edits[ 5].cb := cbNewLine;
+   Edits[ 6].ed := edEndLine;
+   Edits[ 6].cb := cbEndLine;
+   Edits[ 7].ed := edRASDial;
+   Edits[ 7].cb := cbRASDial;
+   Edits[ 8].ed := edRASConnect;
+   Edits[ 8].cb := cbRASConnect;
+   Edits[ 9].ed := edRASFinish;
+   Edits[ 9].cb := cbRASFinish;
+   Edits[10].ed := edIncoming;
+   Edits[10].cb := cbIncoming;
+   Edits[11].ed := edBBS;
+   Edits[11].cb := cbBBS;
+   Edits[12].ed := edTrap;
+   Edits[12].cb := cbTrap;
 end;
 
 procedure TSetupForm.btnReloadRASEntriesClick(Sender: TObject);
 {$IFDEF RASDIAL}
 var
-  s: string;
+   s: string;
 begin
-  if not IniFile.RASEnabled then exit;
-  s := cbEntryList.Text;
-  RasThread.LoadEntryList;
-  cbEntryList.Items.Clear;
-  cbEntryList.Items.AddStrings(RasThread.AllEntries);
-  cbEntryList.ItemIndex := cbEntryList.Items.IndexOf(s)
+   if not IniFile.RASEnabled then exit;
+   s := cbEntryList.Text;
+   RasThread.LoadEntryList;
+   cbEntryList.Items.Clear;
+   cbEntryList.Items.AddStrings(RasThread.AllEntries);
+   cbEntryList.ItemIndex := cbEntryList.Items.IndexOf(s)
 {$ELSE}
 begin
 {$ENDIF}
 end;
 
   procedure _FlashWindow(winobject: TEdit);
-  var i: integer;
+  var
+     i: integer;
   begin//                    $rrggbb
-    winobject.Color := clWhite and $FF00FF;
-    for i := 0 to $FF do begin
-      winobject.Color := winobject.Color + $100;
-      sleep(1);
-      Application.ProcessMessages;
-    end;
-    for i := $FF downto 0 do begin
-      winobject.Color := winobject.Color - $100;
-      sleep(1);
-      Application.ProcessMessages;
-    end;
-    for i := 0 to $FF do begin
-      winobject.Color := winobject.Color + $100;
-      sleep(1);
-      Application.ProcessMessages;
-    end;
-    winobject.Color := clWindow;
+     winobject.Color := clWhite and $FF00FF;
+     for i := 0 to $FF do begin
+        winobject.Color := winobject.Color + $100;
+        sleep(1);
+        Application.ProcessMessages;
+     end;
+     for i := $FF downto 0 do begin
+        winobject.Color := winobject.Color - $100;
+        sleep(1);
+        Application.ProcessMessages;
+     end;
+     for i := 0 to $FF do begin
+        winobject.Color := winobject.Color + $100;
+        sleep(1);
+        Application.ProcessMessages;
+     end;
+     winobject.Color := clWindow;
   end;
 
 procedure TSetupForm.FormClose(Sender: TObject; var Action: TCloseAction);
@@ -1014,14 +1001,12 @@ end;
 
 procedure TSetupForm.sbMainAKABrowseClick(Sender: TObject);
 begin
-  if InputSingleAddress(LngStr(rsMMBrsNdlAt), FidoAddr1, nil) then
-     eMainAKA.Text:=Addr2Str(FidoAddr1);
+   if InputSingleAddress(LngStr(rsMMBrsNdlAt), FidoAddr1, nil) then eMainAKA.Text:=Addr2Str(FidoAddr1);
 end;
 
 procedure TSetupForm.sbSynchClockBrowseClick(Sender: TObject);
 begin
-  if InputSingleAddress(LngStr(rsMMBrsNdlAt), FidoAddr2, nil) then
-     eSynchClock.Text := Addr2Str(FidoAddr2);
+   if InputSingleAddress(LngStr(rsMMBrsNdlAt), FidoAddr2, nil) then eSynchClock.Text := Addr2Str(FidoAddr2);
 end;
 
 procedure TSetupForm.btnHomeClick(Sender: TObject);
@@ -1149,28 +1134,28 @@ end;
 
 procedure TSetupForm.eHomeChange(Sender: TObject);
 begin
-  HomeChanged := true;
+   HomeChanged := true;
 end;
 
 procedure TSetupForm.eConfigsChange(Sender: TObject);
 begin
-  ConfigsChanged := true;
+   ConfigsChanged := true;
 end;
 
 procedure TSetupForm.sbMainNextClick(Sender: TObject);
 begin
-  MainPan1.Visible := false;
-  MainPan2.Visible := true;
-  sbMainPrev.Enabled := true;
-  sbMainNext.Enabled := false;
+   MainPan1.Visible := false;
+   MainPan2.Visible := true;
+   sbMainPrev.Enabled := true;
+   sbMainNext.Enabled := false;
 end;
 
 procedure TSetupForm.sbMainPrevClick(Sender: TObject);
 begin
-  MainPan1.Visible := true;
-  MainPan2.Visible := false;
-  sbMainPrev.Enabled := false;
-  sbMainNext.Enabled := true;
+   MainPan1.Visible := true;
+   MainPan2.Visible := false;
+   sbMainPrev.Enabled := false;
+   sbMainNext.Enabled := true;
 end;
 
 procedure TSetupForm.bFormsFontClick(Sender: TObject);

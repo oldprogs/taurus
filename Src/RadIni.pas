@@ -229,7 +229,9 @@ type
             function ReadString(Sect, Line: string): string; overload;
             function ReadString(Sect, Line, Def: string): string; overload;
             procedure WriteString(Sect, Line, Val: string);
-            function ReadBool(Sect, Line: string): boolean;
+            function ReadBool(Sect, Line: string): boolean; overload;
+            function ReadBool(Sect, Line: string; Def: boolean): boolean; overload;
+            procedure WriteBool(Sect, Line: string; Val: boolean);
             function ReadInteger(Sect, Line: string): integer; overload;
             function ReadInteger(Sect, Line: string; Def: integer): integer; overload;
             procedure WriteInteger(Sect, Line: string; Val: integer);
@@ -316,12 +318,31 @@ begin
    end;
 end;
 
-function TConfig.ReadBool(Sect, Line: string): boolean;
+function TConfig.ReadBool(Sect, Line: string; Def: boolean): boolean;
 begin
    Enter;
    try
       with TIniFile.Create(IniFName) do begin
-         Result := ReadBool(Sect, Line, True);
+         Result := ReadBool(Sect, Line, Def);
+         Free;
+      end;
+   finally
+      Leave;
+   end;
+end;
+
+function TConfig.ReadBool(Sect, Line: string): boolean;
+begin
+   Result := ReadBool(Sect, Line, True);
+end;
+
+procedure TConfig.WriteBool;
+begin
+   Enter;
+   try
+      with TMemIniFile.Create(IniFName) do begin
+         WriteBool(Sect, Line, Val);
+         UpdateFile;
          Free;
       end;
    finally
@@ -338,8 +359,9 @@ procedure TConfig.WriteInteger;
 begin
    Enter;
    try
-      with TIniFile.Create(IniFName) do begin
+      with TMemIniFile.Create(IniFName) do begin
          WriteInteger(sect, Line, Val);
+         UpdateFile;
          Free;
       end;
    finally
@@ -364,8 +386,9 @@ procedure TConfig.WriteString;
 begin
    Enter;
    try
-      with TIniFile.Create(IniFName) do begin
+      with TMemIniFile.Create(IniFName) do begin
          WriteString(Sect, Line, Val);
+         UpdateFile;
          Free;
       end;
    finally
@@ -488,7 +511,7 @@ var
 begin
    Enter;
    try
-      with TIniFile.Create(IniFName) do begin
+      with TMemIniFile.Create(IniFName) do begin
          try
             l := TStringList.Create;
             ReadSection('Grids', l);
@@ -499,6 +522,7 @@ begin
             end;
             l.Free;
          finally
+            UpdateFile;
             Free;
          end;
       end;
@@ -519,7 +543,7 @@ begin
       end;
    finally
       Leave;
-   end;      
+   end;
 end;
 
 constructor TConfig.Create;

@@ -1896,8 +1896,26 @@ begin
 end;
 
 function CompareAddrs(const a, b: TFidoAddress): Integer;
+begin
+   if IniFile.D5Out then begin
+      if a.Domain < b.Domain then Result := -1 else
+      if a.Domain > b.Domain then Result :=  1 else Result := 0;
+      if Result <> 0 then exit;
+   end;
+   Result := a.Zone  - b.Zone;
+   if Result <> 0 then exit;
+   Result := a.Net   - b.Net;
+   if Result <> 0 then exit;
+   Result := a.Node  - b.Node;
+   if Result <> 0 then exit;
+   result := a.Point - b.Point;
+   if Result <> 0 then exit;
+end;
+
+{
+function CompareAddrs(const a, b: TFidoAddress): Integer;
 asm
-  push ebp              {init block}
+  push ebp
   mov  ebp, esp
   push ebx
   push ecx
@@ -1914,12 +1932,12 @@ asm
   sub  ebx,  eax
   mov  eax, [eax]
   mov  al,  [eax + ebx]
-  cmp  al, $00           {if not IniFile.D5Out then}
-  jz   @str1             {  goto @str1}
+  cmp  al, $00
+  jz   @str1
 
   xor  eax, eax
-  lea  edx, [esi + $10]    {edx = a.str}
-  lea  ebx, [edi + $10]    {ebx = b.str}
+  lea  edx, [esi + $10]
+  lea  ebx, [edi + $10]
   mov  cl,  byte ptr [edx]
   mov  al,  byte ptr [ebx]
   sub  eax, ecx
@@ -1951,26 +1969,26 @@ asm
   loop @cycle
 
 @str1:
-  mov  eax, [esi + $00]    {compare a.str[1] and b.str[1]}
+  mov  eax, [esi + $00]
   sub  eax, [edi + $00]
-  jnz  @exit             {  goto @exit}
+  jnz  @exit
 
 @str2:
-  mov  eax, [esi + $04]    {compare a.str[2] and b.str[2]}
+  mov  eax, [esi + $04]
   sub  eax, [edi + $04]
-  jnz  @exit             {  goto @exit}
+  jnz  @exit
 
 @str3:
-  mov  eax, [esi + $08]    {compare a.str[3] and b.str[3]}
+  mov  eax, [esi + $08]
   sub  eax, [edi + $08]
-  jnz  @exit             {  goto @exit}
+  jnz  @exit
 
 @str4:
-  mov  eax, [esi + $0c]    {compare a.str[4] and b.str[4]}
+  mov  eax, [esi + $0c]
   sub  eax, [edi + $0c]
-  jnz  @exit             {  goto @exit}
+  jnz  @exit
 
-@exit:                  {deinit block}
+@exit:
 
   pop  edi
   pop  esi
@@ -1980,6 +1998,7 @@ asm
   pop  ebp
   ret
 end;
+}
 
 constructor TFidoNode.Init;
 begin

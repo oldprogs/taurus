@@ -1579,16 +1579,14 @@ end;
 
 procedure TxGauge.SetMaxValue(Value: Integer);
 begin
-  if Value <> FMaxValue then
-  begin
-    if Value < FMinValue then
-    begin
-      GlobalFail('TxGauge InvalidOp SOutOfRange [%d..%d]',[FMinValue + 1, MaxInt]);
-    end;
-    FMaxValue := Value;
-    if FCurValue > Value then FCurValue := Value;
-    Refresh;
-  end;
+   if Value <> FMaxValue then begin
+      if Value < FMinValue then begin
+         GlobalFail('TxGauge InvalidOp SOutOfRange [%d..%d]',[FMinValue + 1, MaxInt]);
+      end;
+      FMaxValue := Value;
+      if FCurValue > Value then FCurValue := Value;
+      Refresh;
+   end;
 end;
 
 procedure TxGauge.SetProgress(Value: Integer);
