@@ -2305,51 +2305,51 @@ end;
 
 procedure TSerialPort.SetLine(AOptions: Integer);
 var
-  j: Integer;
-  e: Integer;
+   j: Integer;
+   e: Integer;
 begin
-  if FHandle = INVALID_HANDLE_VALUE then exit;
-  j := 0;
-  while not EscapeCommFunction(FHandle, AOptions) do begin
-    Inc(j);
-    e := GetLastError;
-    if (j = 10) or (e <> ERROR_OPERATION_ABORTED) then begin
-       if e = ERROR_INVALID_HANDLE then begin
-          ComHandle := INVALID_HANDLE_VALUE;
-          exit;
-       end;
-       GlobalFail('TSerialPort.SetLine EscapeCommFunction Error: %d', [e]);
-    end;
-    ChkAbort;
-    Sleep(50);
-  end;
+   if FHandle = INVALID_HANDLE_VALUE then exit;
+   j := 0;
+   while not EscapeCommFunction(FHandle, AOptions) do begin
+      Inc(j);
+      e := GetLastError;
+      if (j = 10) or (e <> ERROR_OPERATION_ABORTED) then begin
+         if e = ERROR_INVALID_HANDLE then begin
+            ComHandle := INVALID_HANDLE_VALUE;
+            exit;
+         end;
+         GlobalFail('TSerialPort.SetLine EscapeCommFunction Error: %d', [e]);
+      end;
+      ChkAbort;
+      Sleep(50);
+   end;
 end;
 
 procedure TSerialPort.SetDTR(Value: Boolean);
 const
-  Cmd_DTR : array[Boolean] of Integer = (Windows.CLRDTR, Windows.SETDTR);
+   Cmd_DTR : array[Boolean] of Integer = (Windows.CLRDTR, Windows.SETDTR);
 begin
-  EnterCS(StatCS);
-  if Value <> FDTR then begin
-     SetLine(Cmd_DTR[Value]);
-     FDTR := Value;
-     UpdateLineStatus;
-  end;
-  LeaveCS(StatCS);
+   EnterCS(StatCS);
+   if Value <> FDTR then begin
+      SetLine(Cmd_DTR[Value]);
+      FDTR := Value;
+      UpdateLineStatus;
+   end;
+   LeaveCS(StatCS);
 end;
 
 procedure TSerialPort.SetRTS(Value: Boolean);
 const
-  Cmd_RTS : array[Boolean] of Integer = (Windows.CLRRTS, Windows.SETRTS);
+   Cmd_RTS : array[Boolean] of Integer = (Windows.CLRRTS, Windows.SETRTS);
 begin
-  GlobalFail('%s', ['SetRTS?']);
-  EnterCS(StatCS);
-  if Value <> FRTS then begin
-     SetLine(Cmd_RTS[Value]);
-     FRTS := Value;
-     UpdateLineStatus;
-  end;
-  LeaveCS(StatCS);
+   GlobalFail('%s', ['SetRTS?']);
+   EnterCS(StatCS);
+   if Value <> FRTS then begin
+      SetLine(Cmd_RTS[Value]);
+      FRTS := Value;
+      UpdateLineStatus;
+   end;
+   LeaveCS(StatCS);
 end;
 
 function TSerialPort.ChkAbort;
@@ -2358,42 +2358,42 @@ var
   cs: TComStat;
   ee: TComError;
 begin
-  if FHandle = INVALID_HANDLE_VALUE then begin
-     Result := 0;
-     exit;
-  end;
-  ClearCommError(FHandle, e, @cs);
-  Result := cs.cbInQue;
-  if e <> 0 then begin
-     ee := TComError.Create;
-     ee.Err := e;
-     ee.cs := cs;
-     InsComErr(ee);
+   if FHandle = INVALID_HANDLE_VALUE then begin
+      Result := 0;
+      exit;
+   end;
+   ClearCommError(FHandle, e, @cs);
+   Result := cs.cbInQue;
+   if e <> 0 then begin
+      ee := TComError.Create;
+      ee.Err := e;
+      ee.cs := cs;
+      InsComErr(ee);
    end;
 end;
 
 procedure TSerialPort.SetMask(Arg: Integer);
 var
-  j: Integer;
-  e: Integer;
+   j: Integer;
+   e: Integer;
 begin
-  if FHandle = INVALID_HANDLE_VALUE then begin
-     exit;
-  end;
-  j := 0;
-  while not SetCommMask(FHandle, Arg) do begin
-    Inc(j);
-    e := GetLastError;
-    if (j = 10) or (e <> ERROR_OPERATION_ABORTED) then begin
-       if e = ERROR_INVALID_HANDLE then begin
-          ComHandle := INVALID_HANDLE_VALUE;
-          exit;
-       end;
-       if (StatThr = nil) or ((StatThr <> nil) and StatThr.Terminated) then exit;
-       GlobalFail('TSerialStatusThr.ThreadExec SetCommMask Error %d', [GetLastError]);
-    end;
-    ChkAbort;
-  end;
+   if FHandle = INVALID_HANDLE_VALUE then begin
+      exit;
+   end;
+   j := 0;
+   while not SetCommMask(FHandle, Arg) do begin
+     Inc(j);
+     e := GetLastError;
+     if (j = 10) or (e <> ERROR_OPERATION_ABORTED) then begin
+        if e = ERROR_INVALID_HANDLE then begin
+           ComHandle := INVALID_HANDLE_VALUE;
+           exit;
+        end;
+        if (StatThr = nil) or ((StatThr <> nil) and StatThr.Terminated) then exit;
+        GlobalFail('TSerialStatusThr.ThreadExec SetCommMask Error %d', [GetLastError]);
+     end;
+     ChkAbort;
+   end;
 end;
 
 class function TSerialStatusThr.ThreadName: string;

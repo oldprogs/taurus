@@ -2114,6 +2114,7 @@ begin
    end else begin
       ss := ss + ' failed';
    end;
+   p.Reset;
    p.Typ := ptpOutb;
    MailerTransit.Enter;
    For i := CollMax(MailerTransit) downto 0 do begin
@@ -3871,12 +3872,14 @@ end;
 
 function TFidoPoll.ExtTimeoutExitCode: DWORD;
 var
-   s, z: string;
+   s,
+   z: string;
    i: Integer;
 begin
    s := Node.Ext.Opts;
-   for i := 0 to 4 do
+   for i := 0 to 4 do begin
       GetWrd(s, z, ' ');
+   end;
    Result := PollTimeoutExitCode(s);
 end;
 
@@ -4686,8 +4689,8 @@ procedure AddToBlackList(const ip: string);
 var
    i: integer;
 begin
-   i := IniFile.ReadInteger('Black_List', ip);
-   IniFile.WriteInteger('Black_List', ip, i + 1);
+   i := SavFile.ReadInteger('Black_List', ip);
+   SavFile.WriteInteger('Black_List', ip, i + 1);
 end;
 
 function TMailerThread.ChkBinkPAdr(const S: string; P: TBaseProtocol): Boolean;
@@ -4844,6 +4847,9 @@ const
             LogEMSIData;
             LogFmt(ltGlobalErr, 'Remote presented invalid password (auth=CRAM-MD5) when "%s" is required for %s', [OurPwd, Addr2Str(SD.rmtPrimaryAddr)]);
             P.CustomInfo := cBadPwd;
+            if SD.ActivePoll = nil then begin
+               AddToBlackList(P.CP.CallerId);
+            end;
             Exit;
          end;
          P.CustomInfo := OurPwd;
@@ -7174,6 +7180,7 @@ begin
    FreeObject(lL);
    FreeObject(lS);
    r.Data.AppendTo(SD.Station);
+   SD.Station[0] := SD.Station.Station + ', ' + Name;
    r.AkaA.AppendTo(SD.AkaA);
    r.AkaB.AppendTo(SD.AkaB);
    s := '';
@@ -8345,6 +8352,7 @@ end;
 
 procedure TMailerThread.LogConnect;
 begin
+   SD.SessionStart := uGetSystemTime;
    Log(ltConnect, 'Connect ' + DS.ConnectString);
    SD.NeedModemStatx := True;
    SD.LogEntireModemInput := True;
@@ -8927,16 +8935,16 @@ procedure TMailerThread.DoWZ;
       EnterfidoPolls;
       for i := 0 to CollMax(FidoPolls) do begin
          p := FidoPolls[i];
-         if p.FileSendDelayedNoc or FidoOut.Paused(p.Node.Addr) then begin
+         if (p.Typ <> ptpTest) and (p.FileSendDelayedNoc or FidoOut.Paused(p.Node.Addr)) then begin
             if SD.Prot.TRSList.Matched(Addr2Str(p.Node.Addr)) = -1 then begin
                if not SD.rmtAddrs.Search(@p.Node.Addr, j) then begin
                   SD.Prot.TRSList.Ins(Addr2Str(p.Node.Addr));
+                  SD.Prot.TransitRequested := True;
                end;
             end;
          end;
       end;
       LeaveFidoPolls;
-      SD.Prot.TransitRequested := True;
    end;
 
 begin
@@ -14158,6 +14166,7 @@ end;
 procedure TMailerThread.CopyIPStation;
 begin
    Cfg.IpData.StationData.AppendTo(SD.Station);
+   SD.Station[0] := SD.Station.Station + ', ' + Name;
    Cfg.IpAkaCollA.AppendTo(SD.AkaA);
    Cfg.IpAkaCollB.AppendTo(SD.AkaB);
 end;
@@ -16720,8 +16729,7 @@ var
    n: TAdvNode;
 begin
    p := nil;
-   for i := 0 to CollMax(C) do
-   begin
+   for i := 0 to CollMax(C) do begin
       s := C[i];
       GetWrd(s, z, '^');
       SRPFName := Trim(z);
@@ -16733,8 +16741,7 @@ begin
       n.Addr := SD.rmtPrimaryAddr;
       B := RunExtApp(Self, Logger, Name, nil, n, SRPFName, Nfo, @FileMask, False);
       FreeObject(n);
-      if not B then
-      begin
+      if not B then begin
          ChkErrMsg;
          Log(ltGlobalErr, 'Error starting SRP');
          Continue;

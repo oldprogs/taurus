@@ -287,6 +287,7 @@ var
    i: integer;
    s,
    o: string;
+   b: boolean;
 
 function GetExtApp: TRadArrRec;
 var
@@ -563,6 +564,7 @@ begin
       end;
 
       ReadSection(Netmail, l);
+      b := ReadBool('MSG', 'Encoded', False);
       for i := 0 to l.Count - 1 do begin
          s := l[i];
          NetmailAddrTo.Add(s);
@@ -575,6 +577,9 @@ begin
             delete(s, 1, pos('(', s));
             delete(s, pos(')', s), 1);
          end else s := '';
+         if b then begin
+            s := DecodeStr(s);
+         end;
          NetmailPwd.Add(s);
       end;
       l.Free;
@@ -824,11 +829,12 @@ begin
            if (NetmailAddrFrom[i] = '*') and (NetmailAddrTo[i] = '*') then begin
               s := '*'
            end else begin
-              s := Trim(NetmailAddrFrom[i]) + ' (' + NetmailPwd[i] + ')';
+              s := Trim(NetmailAddrFrom[i]) + ' (' + EncodeStr(NetmailPwd[i]) + ')';
            end;
            WriteString(netmail, NetmailAddrTo[i] , s)
         end;
      end;
+     WriteBool('MSG', 'Encoded', True);
 
      if ExtApp.Count > 0 then begin
         for i := 1 to ExtApp.Count do begin

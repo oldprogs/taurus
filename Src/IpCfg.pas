@@ -9,6 +9,14 @@ uses
   mGrids, Recs, StdCtrls, ComCtrls, MClasses, Buttons, xBase, ExtCtrls;
 
 type
+  TResolveThread = class(T_Thread)
+     numb: integer;
+     iadr: string;
+     fqdn: string;
+     procedure InvokeExec; override;
+     class function ThreadName: string; override;
+  end;
+
   TIPcfgForm = class(TForm)
     bOK: TButton;
     bCancel: TButton;
@@ -121,6 +129,7 @@ type
     OrgEvtCnt: Integer;
     GenCRC: DWORD;
     Ovr: TIPNodeOvrColl;
+    RTh: TResolveThread;
     Activated: Boolean;
     procedure EvtUpdateLists;
     procedure EvtRefillLists;
@@ -155,7 +164,12 @@ begin
    end;
    IPcfgForm.SetData;
    IPcfgForm.tb.ActivePageIndex := SavFile.ReadInteger('IPCfg', 'Page', 0);
+   IPCfgForm.RTh := TResolveThread.Create;
+   IPCfgForm.RTh.Suspended := False;
    Result := IPcfgForm.ShowModal = mrOK;
+   IPCfgForm.RTh.Terminated := True;
+   IPCfgForm.RTh.WaitFor;
+   FreeObject(IPCfgForm.RTh);
    SavFile.WriteInteger('IPCfg', 'Page', IPcfgForm.tb.ActivePageIndex);
    if Result and IPcfgForm.EvtChanged then begin
       RecalcEvents := True;
@@ -466,8 +480,7 @@ begin
 
    IniFile.StoreCfg;
 
-   if DaemonStarted and (GenCRC <> GeneralCRC) then
-      DisplayInfoLng(rsIPRestart, Handle);
+   if DaemonStarted and (GenCRC <> GeneralCRC) then DisplayInfoLng(rsIPRestart, Handle);
    PostMsg(WM_IMPORTIPOVRL);
 end;
 
@@ -649,24 +662,48 @@ begin
    FreeObject(Strs);
 end;
 
-procedure TIPcfgForm.TMTimer(Sender: TObject);
+class function TResolveThread.ThreadName: string;
+begin
+   Result := 'Resolver';
+end;
+
+procedure TResolveThread.InvokeExec;
 var
-   i: integer;
    w: DWORD;
    h: PHostEnt;
 begin
-   for i := 1 to gBList.RowCount - 1 do begin
-      if (gBList.Cells[1, i] <> '') and (gBList.Cells[3, i] = '') then begin
-         w := inet_addr(PChar(gBList.Cells[1, i]));
-         if w <>  INADDR_NONE then begin
-            h := GetHostByAddr(@w, SizeOf(w), AF_INET);
-            if h <> nil then begin
-               gBList.Cells[3, i] := h.h_name;
-            end else begin
-               gBList.Cells[3, i] := '-Unresolved-';
-            end;   
+   if (iadr <> '') and (fqdn = '') then begin
+      w := inet_addr(PChar(iadr));
+      if w <>  INADDR_NONE then begin
+         h := GetHostByAddr(@w, SizeOf(w), AF_INET);
+         if h <> nil then begin
+            fqdn := h.h_name;
+         end else begin
+            fqdn  := '-Unresolved-';
          end;
       end;
+   end else begin
+      Sleep(100);
+   end;
+end;
+
+procedure TIPcfgForm.TMTimer(Sender: TObject);
+var
+   i: integer;
+begin
+   if (RTh.iadr = '') then begin
+      for i := 1 to gBList.RowCount - 1 do begin
+         if (gBList.Cells[1, i] <> '') and (gBList.Cells[3, i] = '') then begin
+            RTh.numb := i;
+            RTh.iadr := gBList.Cells[1, i];
+            exit;
+         end;
+      end;
+   end else
+   if (RTh.fqdn <> '') then begin
+      gBList.Cells[3, RTh.numb] := RTh.fqdn;
+      RTh.iadr := '';
+      RTh.fqdn := '';
    end;
 end;
 

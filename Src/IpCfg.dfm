@@ -818,7 +818,7 @@ object IPcfgForm: TIPcfgForm
           490)
       end
       object gbCache: TGroupBox
-        Left = 315
+        Left = 255
         Top = 2
         Width = 229
         Height = 45
@@ -881,7 +881,7 @@ object IPcfgForm: TIPcfgForm
         Font.Height = -12
         Font.Name = 'Courier'
         Font.Style = []
-        Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goColSizing, goEditing, goThumbTracking, goDigitalRows]
+        Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goColSizing, goRowMoving, goEditing, goThumbTracking, goDigitalRows]
         ParentFont = False
         ScrollBars = ssVertical
         TabOrder = 0
@@ -939,6 +939,7 @@ object IPcfgForm: TIPcfgForm
     OnClick = bExplainClick
   end
   object TM: TTimer
+    Interval = 100
     OnTimer = TMTimer
     Left = 640
     Top = 280

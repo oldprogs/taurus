@@ -140,7 +140,7 @@ implementation
 
 uses
    RadIni, RRegExp, SysUtils, Wizard, Outbound, DateUtils,
-   Forms, Watcher, JclDateTime, RadSav, Recs;
+   Forms, Watcher, JclDateTime, RadSav, Recs, Plus;
 
 procedure FreeNetmailHolder;
 begin
@@ -411,6 +411,9 @@ begin
          FreeObject(n);
          exit;
       end;
+      if i > 0 then begin
+         m.HRec.PktType := 0;
+      end;
       FillChar(h, SizeOf(h), #0);
       move(m.Frnm[1], h.from, Length(m.Frnm));
       move(m.Tonm[1], h.towhom, Length(m.Tonm));
@@ -489,6 +492,9 @@ begin
       if m.Echo <> '' then begin
          FreeObject(n);
          exit;
+      end;
+      if i > 0 then begin
+         m.HRec.PktType := 0;
       end;
       NetmailLogger.LogMSG(m, 0, 'router');
       if (m.Attr and AuditRequest > 0) then begin
@@ -1514,7 +1520,7 @@ begin
    NetmailLog   := MakeNormName(dLog, IniFile.net_log);
    if _LogOK(NetmailLog, t) then begin
       While LogColl.Count > 0 do begin
-        _LogWriteStr(' ' + uFormat(uGetLocalTime) + ' ' + LogColl[0], t);
+        _LogWriteStr(' ' + uFormat(uGetLocalTime) + ' ' + Dos2Win(LogColl[0]), t);
          LogColl.AtFree(0);
       end;
       ZeroHandle(t);
