@@ -85,6 +85,7 @@ type
     gbCash: TGroupBox;
     tsBList: TTabSheet;
     gBList: TAdvGrid;
+    TM: TTimer;
     procedure FormActivate(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -109,6 +110,7 @@ type
     procedure lAvlDblClick(Sender: TObject);
     procedure lLnkDblClick(Sender: TObject);
     procedure bExplainClick(Sender: TObject);
+    procedure TMTimer(Sender: TObject);
   private
     EvtChanged: Boolean;
     FSocksPort: Integer;
@@ -138,7 +140,7 @@ function SetupIP(APageIndex: Integer): Boolean;
 implementation
 
 uses LngTools, xFido, AltRecs, xEvents, OvrExpl, TracePl, Wizard,
-     RadIni, RadSav;
+     RadIni, RadSav, WSock;
 
 {$R *.DFM}
 
@@ -220,6 +222,9 @@ begin
    IniFile.LoadGrid(gPOP3);
    IniFile.LoadGrid(gNNTP);
    SavFile.LoadGrid('Black_List', gBList);
+   for i := 1 to gBList.RowCount - 1 do begin
+      gBList.Cells[3, i] := '';
+   end;
 
    rgProxyType.ItemIndex := Integer(IniFile.ProxyType); // visual
    lSocksAddr.Text := Cfg.Proxy.Addr;
@@ -642,6 +647,27 @@ begin
    FreeObject(d);
    DisplayInfoFormEx(LngStr(rsExplIpRS), Strs);
    FreeObject(Strs);
+end;
+
+procedure TIPcfgForm.TMTimer(Sender: TObject);
+var
+   i: integer;
+   w: DWORD;
+   h: PHostEnt;
+begin
+   for i := 1 to gBList.RowCount - 1 do begin
+      if (gBList.Cells[1, i] <> '') and (gBList.Cells[3, i] = '') then begin
+         w := inet_addr(PChar(gBList.Cells[1, i]));
+         if w <>  INADDR_NONE then begin
+            h := GetHostByAddr(@w, SizeOf(w), AF_INET);
+            if h <> nil then begin
+               gBList.Cells[3, i] := h.h_name;
+            end else begin
+               gBList.Cells[3, i] := '-Unresolved-';
+            end;   
+         end;
+      end;
+   end;
 end;
 
 end.

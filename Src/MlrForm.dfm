@@ -8,7 +8,7 @@ object MailerForm: TMailerForm
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -13
-  Font.Name = 'MS Sans Serif'
+  Font.Name = 'Arial'
   Font.Style = []
   KeyPreview = True
   Menu = MainMenu
@@ -41,9 +41,9 @@ object MailerForm: TMailerForm
       733
       525)
     object lTime0: TLabel
-      Left = 506
+      Left = 507
       Top = 3
-      Width = 91
+      Width = 90
       Height = 16
       Alignment = taRightJustify
       Anchors = []
@@ -502,7 +502,7 @@ object MailerForm: TMailerForm
               object llSndSize: TLabel
                 Left = 20
                 Top = 74
-                Width = 29
+                Width = 30
                 Height = 16
                 Caption = 'Size:'
                 Visible = False
@@ -533,7 +533,7 @@ object MailerForm: TMailerForm
               object llFileSndTime: TLabel
                 Left = 20
                 Top = 92
-                Width = 53
+                Width = 54
                 Height = 16
                 Caption = 'File time:'
                 Layout = tlCenter
@@ -557,7 +557,7 @@ object MailerForm: TMailerForm
               object llTotalSndTime: TLabel
                 Left = 167
                 Top = 92
-                Width = 62
+                Width = 61
                 Height = 16
                 Caption = 'Total time:'
                 Layout = tlCenter
@@ -651,7 +651,7 @@ object MailerForm: TMailerForm
               object llRcvSize: TLabel
                 Left = 20
                 Top = 74
-                Width = 29
+                Width = 30
                 Height = 16
                 Caption = 'Size:'
                 Visible = False
@@ -682,7 +682,7 @@ object MailerForm: TMailerForm
               object llFileRcvTime: TLabel
                 Left = 20
                 Top = 91
-                Width = 53
+                Width = 54
                 Height = 16
                 Caption = 'File time:'
                 Layout = tlCenter
@@ -706,7 +706,7 @@ object MailerForm: TMailerForm
               object llTotalRcvTime: TLabel
                 Left = 167
                 Top = 91
-                Width = 62
+                Width = 61
                 Height = 16
                 Caption = 'Total time:'
                 Layout = tlCenter
@@ -751,9 +751,9 @@ object MailerForm: TMailerForm
                 364
                 59)
               object llSessionTime: TLabel
-                Left = 15
+                Left = 20
                 Top = 26
-                Width = 115
+                Width = 110
                 Height = 16
                 Alignment = taRightJustify
                 Caption = 'Total elapsed time:'
@@ -776,9 +776,9 @@ object MailerForm: TMailerForm
                 Visible = False
               end
               object llSessionCost: TLabel
-                Left = 259
+                Left = 258
                 Top = 26
-                Width = 30
+                Width = 31
                 Height = 16
                 Alignment = taRightJustify
                 Anchors = [akTop, akRight]
@@ -919,11 +919,13 @@ object MailerForm: TMailerForm
                   DefaultColWidth = 160
                   DefaultRowHeight = 18
                   RowCount = 2
-                  Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goDigitalRows]
+                  Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goRowMoving, goDigitalRows]
                   ScrollBars = ssVertical
                   TabOrder = 1
                   Visible = False
+                  OnRowMoved = gLstRowMoved
                   CheckBoxes = False
+                  OnRowDelete = gLstRowDelete
                   ColWidths = (
                     31
                     171
@@ -1013,7 +1015,7 @@ object MailerForm: TMailerForm
                 object lStatus: TLabel
                   Left = 14
                   Top = 25
-                  Width = 22
+                  Width = 20
                   Height = 16
                   Caption = 'Idle'
                   Transparent = False
@@ -1123,6 +1125,43 @@ object MailerForm: TMailerForm
                     BevelOuter = bvNone
                   end
                 end
+              end
+              object evListView: TListView
+                Left = 0
+                Top = 0
+                Width = 379
+                Height = 242
+                Align = alClient
+                Columns = <
+                  item
+                    AutoSize = True
+                    Caption = 'Event'
+                  end
+                  item
+                    Alignment = taRightJustify
+                    Caption = 'Start'
+                    Width = 60
+                  end
+                  item
+                    Alignment = taRightJustify
+                    Caption = 'End'
+                    Width = 60
+                  end>
+                Font.Charset = DEFAULT_CHARSET
+                Font.Color = clWindowText
+                Font.Height = -13
+                Font.Name = 'Courier New'
+                Font.Style = []
+                GridLines = True
+                ReadOnly = True
+                RowSelect = True
+                ParentFont = False
+                SmallImages = ilMainMenu
+                SortType = stData
+                TabOrder = 1
+                ViewStyle = vsReport
+                OnCompare = evListViewCompare
+                OnDblClick = evListViewClick
               end
             end
             object TransPan1: TTransPan
@@ -1325,9 +1364,6 @@ object MailerForm: TMailerForm
         ParentBackground = False
         ParentColor = True
         TabOrder = 1
-        DesignSize = (
-          721
-          40)
         object PollBtnPanel: TTransPan
           Left = 0
           Top = 0
@@ -1612,17 +1648,17 @@ object MailerForm: TMailerForm
             OnClick = bRereadClick
           end
           object llTotalAtInbound: TLabel
-            Left = 102
+            Left = 105
             Top = 2
-            Width = 99
+            Width = 96
             Height = 16
             Alignment = taRightJustify
             Caption = 'Total at inbound:'
           end
           object llAvaibleAtInbound: TLabel
-            Left = 87
+            Left = 92
             Top = 21
-            Width = 114
+            Width = 109
             Height = 16
             Alignment = taRightJustify
             Caption = 'Avaible at inbound:'
@@ -1673,6 +1709,133 @@ object MailerForm: TMailerForm
             Height = 16
             Alignment = taRightJustify
             Caption = 'Outbound size:'
+          end
+        end
+        object DaemonBtnPanel: TTransPan
+          Left = 0
+          Top = 0
+          Width = 721
+          Height = 40
+          Align = alClient
+          BevelOuter = bvNone
+          ParentBackground = False
+          TabOrder = 2
+          Visible = False
+          object RasLabelPan: TTransPan
+            Left = 0
+            Top = 0
+            Width = 509
+            Height = 40
+            Align = alClient
+            BevelOuter = bvNone
+            ParentBackground = False
+            TabOrder = 1
+            DesignSize = (
+              509
+              40)
+            object lStatus2: TLabel
+              Left = 33
+              Top = 14
+              Width = 146
+              Height = 16
+              Caption = 'Connected to Corex VPN'
+            end
+            object lTimeCon: TLabel
+              Left = 495
+              Top = 14
+              Width = 57
+              Height = 16
+              Anchors = [akTop, akRight]
+              Caption = '11:11:11'
+              Font.Charset = DEFAULT_CHARSET
+              Font.Color = clWindowText
+              Font.Height = -15
+              Font.Name = 'MS Sans Serif'
+              Font.Style = [fsBold]
+              ParentFont = False
+            end
+          end
+          object RasBtnPan: TTransPan
+            Left = 509
+            Top = 0
+            Width = 212
+            Height = 40
+            Align = alRight
+            BevelOuter = bvNone
+            ParentBackground = False
+            TabOrder = 0
+            object CancelButton: TButton
+              Left = 108
+              Top = 9
+              Width = 100
+              Height = 25
+              Cancel = True
+              Caption = 'Cancel'
+              TabOrder = 0
+              OnClick = CancelButtonClick
+            end
+            object ConnectButton: TButton
+              Left = 0
+              Top = 9
+              Width = 100
+              Height = 25
+              Caption = 'Connect'
+              Default = True
+              TabOrder = 1
+              OnClick = ConnectButtonClick
+            end
+          end
+        end
+        object SystemBtnPanel: TTransPan
+          Left = 0
+          Top = 0
+          Width = 721
+          Height = 40
+          Align = alClient
+          BevelOuter = bvNone
+          TabOrder = 4
+          Visible = False
+          object bKillBWZ: TSpeedButton
+            Left = 9
+            Top = 4
+            Width = 32
+            Height = 32
+            Hint = 'Delete BWZ line'
+            Enabled = False
+            Flat = True
+            Glyph.Data = {
+              76010000424D7601000000000000760000002800000020000000100000000100
+              0400000000000001000000000000000000001000000000000000000000000000
+              8000008000000080800080000000800080008080000080808000C0C0C0000000
+              FF0000FF000000FFFF00FF000000FF00FF00FFFF0000FFFFFF00333333333333
+              333333333333333FF8F33333333333003033333333FFFF7787333333300000FF
+              0333333FF77777FF733333000FFF444033333F77788877778F33730FFFF4FFFF
+              03337F7F888788FF78F3130FFF4FF444F0337F78F87FF77787331180F4714FFF
+              033377F787777888733371780717FFF03333777F777788F78F338117011FF44F
+              033337777778877878F3871111FF4FFFF033377777F878888733871110F4FFFF
+              0333377777F788FF73337111170FF44033337777777FF777FF33117311704FF0
+              0333777377777F8778F3333331170FFFF033333337777FFFF733333333117000
+              0333333333777777733333333333333333333333333333333333}
+            NumGlyphs = 2
+            ParentShowHint = False
+            ShowHint = True
+            OnClick = bbDeleteClick
+          end
+          object lInfo2: TLabel
+            Left = 361
+            Top = 0
+            Width = 360
+            Height = 40
+            Align = alRight
+            Caption = 'Last in: -:---/---@-------- --/--/-- 00:00:00'
+            Font.Charset = DEFAULT_CHARSET
+            Font.Color = clWindowText
+            Font.Height = -13
+            Font.Name = 'Fixedsys'
+            Font.Style = []
+            ParentFont = False
+            Transparent = True
+            Layout = tlCenter
           end
         end
         object MailerBtnPanel: TTransPan
@@ -1993,115 +2156,25 @@ object MailerForm: TMailerForm
               end
             end
           end
-        end
-        object DaemonBtnPanel: TTransPan
-          Left = 0
-          Top = 0
-          Width = 721
-          Height = 40
-          Align = alClient
-          BevelOuter = bvNone
-          ParentBackground = False
-          TabOrder = 2
-          Visible = False
-          object RasLabelPan: TTransPan
-            Left = 0
+          object lClock: TTransPan
+            Left = 456
             Top = 0
-            Width = 509
-            Height = 40
-            Align = alClient
-            BevelOuter = bvNone
-            ParentBackground = False
-            TabOrder = 1
-            DesignSize = (
-              509
-              40)
-            object lStatus2: TLabel
-              Left = 33
-              Top = 14
-              Width = 148
-              Height = 16
-              Caption = 'Connected to Corex VPN'
-            end
-            object lTimeCon: TLabel
-              Left = 495
-              Top = 14
-              Width = 57
-              Height = 16
-              Anchors = [akTop, akRight]
-              Caption = '11:11:11'
-              Font.Charset = DEFAULT_CHARSET
-              Font.Color = clWindowText
-              Font.Height = -15
-              Font.Name = 'MS Sans Serif'
-              Font.Style = [fsBold]
-              ParentFont = False
-            end
-          end
-          object RasBtnPan: TTransPan
-            Left = 509
-            Top = 0
-            Width = 212
+            Width = 100
             Height = 40
             Align = alRight
             BevelOuter = bvNone
-            ParentBackground = False
-            TabOrder = 0
-            object CancelButton: TButton
-              Left = 108
-              Top = 9
-              Width = 100
-              Height = 25
-              Cancel = True
-              Caption = 'Cancel'
-              TabOrder = 0
-              OnClick = CancelButtonClick
+            BorderWidth = 3
+            Caption = 'lClock'
+            TabOrder = 1
+            object JvxClock: TJvxClock
+              Left = 3
+              Top = 3
+              Width = 94
+              Height = 34
+              AutoSize = True
+              BevelOuter = bvNone
+              Align = alClient
             end
-            object ConnectButton: TButton
-              Left = 0
-              Top = 9
-              Width = 100
-              Height = 25
-              Caption = 'Connect'
-              Default = True
-              TabOrder = 1
-              OnClick = ConnectButtonClick
-            end
-          end
-        end
-        object SystemBtnPanel: TTransPan
-          Left = 0
-          Top = 0
-          Width = 721
-          Height = 40
-          Anchors = [akLeft, akTop, akRight, akBottom]
-          TabOrder = 4
-          Visible = False
-          object bKillBWZ: TSpeedButton
-            Left = 9
-            Top = 4
-            Width = 32
-            Height = 32
-            Hint = 'Delete BWZ line'
-            Enabled = False
-            Flat = True
-            Glyph.Data = {
-              76010000424D7601000000000000760000002800000020000000100000000100
-              0400000000000001000000000000000000001000000000000000000000000000
-              8000008000000080800080000000800080008080000080808000C0C0C0000000
-              FF0000FF000000FFFF00FF000000FF00FF00FFFF0000FFFFFF00333333333333
-              333333333333333FF8F33333333333003033333333FFFF7787333333300000FF
-              0333333FF77777FF733333000FFF444033333F77788877778F33730FFFF4FFFF
-              03337F7F888788FF78F3130FFF4FF444F0337F78F87FF77787331180F4714FFF
-              033377F787777888733371780717FFF03333777F777788F78F338117011FF44F
-              033337777778877878F3871111FF4FFFF033377777F878888733871110F4FFFF
-              0333377777F788FF73337111170FF44033337777777FF777FF33117311704FF0
-              0333777377777F8778F3333331170FFFF033333337777FFFF733333333117000
-              0333333333777777733333333333333333333333333333333333}
-            NumGlyphs = 2
-            ParentShowHint = False
-            ShowHint = True
-            OnClick = bbDeleteClick
           end
         end
       end
@@ -2247,9 +2320,9 @@ object MailerForm: TMailerForm
                 Align = alClient
                 Columns = <
                   item
+                    AutoSize = True
                     Caption = 'Filename'
                     MinWidth = 70
-                    Width = 286
                   end
                   item
                     Caption = 'Temp Size'
@@ -2269,7 +2342,7 @@ object MailerForm: TMailerForm
                   item
                     Caption = 'FileTime'
                     MinWidth = 50
-                    Width = 100
+                    Width = 120
                   end>
                 ColumnClick = False
                 GridLines = True
@@ -2317,8 +2390,8 @@ object MailerForm: TMailerForm
                 Align = alClient
                 Columns = <
                   item
-                    AutoSize = True
                     Caption = 'Line'
+                    Width = 250
                   end
                   item
                     AutoSize = True
@@ -2768,6 +2841,14 @@ object MailerForm: TMailerForm
         ImageIndex = 46
         ShortCut = 32880
         OnClick = mhAboutClick
+      end
+      object N29: TMenuItem
+        Caption = '-'
+      end
+      object Clock1: TMenuItem
+        Caption = 'Clock'
+        ShortCut = 49221
+        OnClick = Clock1Click
       end
     end
   end

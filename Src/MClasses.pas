@@ -738,11 +738,9 @@ end;
 
 procedure TTrayIcon.SetHint(const Value: String);
 begin
-   if fHint <> Value then
-   begin
+   if fHint <> Value then begin
       fHint := Value;
-      if not (csDesigning in ComponentState) then
-      begin
+      if not (csDesigning in ComponentState) then begin
          StrPLCopy(@fData.szTip, fHint, SizeOf(fData.szTip) - 1);
          if fHint <> '' then fData.uFlags := fData.uFlags OR NIF_Tip
                         else fData.uFlags := fData.uFlags AND NOT NIF_Tip;

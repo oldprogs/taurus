@@ -3521,6 +3521,8 @@ begin
   PopupMenu.Items[9].Enabled := ee;
   ee := ee and (not (goFixedNumCols in Options));
   for x := 2 to 6 do PopupMenu.Items[x].Enabled := ee;
+  PopupMenu.Items[5].Enabled := ee or (goRowMoving in Options);
+  PopupMenu.Items[6].Enabled := ee or (goRowMoving in Options);
 end;
 
 procedure TAdvCustomGrid.SetRow(Value: Longint);
@@ -5053,6 +5055,7 @@ end;
 procedure TAdvGrid.CreatePopupMenu;
 var
   ss: string;
+  md: boolean;
 
   procedure AddItem(OC: TNotifyEvent; const sc: string);
   var
@@ -5062,10 +5065,9 @@ var
     i := TMenuItem.Create(PopupMenu);
     GetWrd(ss, z, '|');
     i.Caption := z;
-    if Assigned(OC) then
-    begin
+    if Assigned(OC) then begin
       i.OnClick := OC;
-      i.Enabled :=not MenuDisabled;
+      i.Enabled := not md;
     end;
     if sc <> '' then i.ShortCut := TextToShortcut(sc);
     if Assigned(OC) then i.OnClick := OC;
@@ -5076,13 +5078,16 @@ begin
   PopupMenu := TPopupMenu.Create(Self);
 //  PopupMenu.OnPopup := PM_Popup;
   ss := LngStr(rsSgPopup);
+  md := MenuDisabled;
   AddItem(PM_EditCell, 'F2');
   AddItem(nil, '');
   AddItem(PM_AddRow, 'F5');
   AddItem(PM_InsertRow, 'Alt+Ins');
   AddItem(PM_DuplicateRow, 'F6');
+  md := not (goRowMoving in Options);
   AddItem(PM_DeleteRow, 'Ctrl+Del');
   AddItem(PM_DeleteAllRows, 'Ctrl+Shift+Del');
+  md := MenuDisabled;
   AddItem(nil, '');
   AddItem(PM_ExportTable, 'F3');
   AddItem(PM_ImportTable, 'F4');
@@ -5407,18 +5412,19 @@ end;
 
 procedure TAdvGrid.DelLine;
 var
-  I, CC, FR: LongInt;
+   I,
+  CC,
+  FR: LongInt;
 begin
-  FR := FixedRows;
-  if RowCount = FR + 1 then ClearRow(FR) else
-  begin
-    CC := RowCount - 1 ;
-    for I:= Row to CC - 1 do CopyRow(I + 1, I);
-    RowCount := CC;
-    if goDigitalRows in Options then RenumberRows;
-  end;
-  if not (csDesigning in ComponentState) then
-  if Assigned(fOnRowDelete) then fOnRowDelete(Self, Row);
+   if Assigned(fOnRowDelete) then fOnRowDelete(Self, Row);
+   FR := FixedRows;
+   if RowCount = FR + 1 then ClearRow(FR) else begin
+      CC := RowCount - 1 ;
+      for I:= Row to CC - 1 do CopyRow(I + 1, I);
+      RowCount := CC;
+      if goDigitalRows in Options then RenumberRows;
+   end;
+   if not (csDesigning in ComponentState) then
 end;
 
 procedure TAdvGrid.AddLine;

@@ -277,14 +277,11 @@ begin
 
   InitMsgDispatcher;
 
-{$IFDEF RASDIAL}
   if inifile.RASEnabled then begin
      RasThrd.StartRas;
-  end else
-  begin
+  end else begin
     RasThread := nil
   end;
-{$ENDIF}
 
   StartWatcher;
   SetLanguage(GetRegInterfaceLng);
@@ -349,13 +346,9 @@ begin
 
   OdbcLogCheckInit(MakeNormName(dLog, 'odbcerr.log'));
 
-  {$IFDEF WS}
   if StartupOptions and stoRunIpDaemon <> 0 then _RunDaemon;
-  {$ENDIF}
 
-  {$IFDEF USE_TAPI}
   InitTAPI;
-  {$ENDIF}
 
   OpenAutoStartLines;
 
@@ -459,15 +452,13 @@ begin
 
   s := UpperCase(st);
   s := ExtractWord(1, s, [' ']);
-  if Copy(s, 1, 5) = 'DELAY' then
-  begin
+  if Copy(s, 1, 5) = 'DELAY' then begin
     delete(s, 1, 5);
     Sleep(strtointdef(s, 5000));
   end;
   st := GetParamStr;
   scanandchange(st);
-  if paramcount <> 0 then
-  begin
+  if paramcount <> 0 then begin
     st := StrPas(StrPos(StrUpper(PChar(GetParamStr)), '-I'));
   end;
 
@@ -475,8 +466,7 @@ begin
   scanandchange(st);
   sa := GetSwitches(st);
   b := false;
-  for i := 1 to CountSwitches(st) do
-  begin
+  for i := 1 to CountSwitches(st) do begin
     st := StrPas(StrPos(StrUpper(PChar(GetParamStr)), '-I'));
   end;
   if not b then TestAnotherArgus(proc_i);

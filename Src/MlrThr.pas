@@ -68,9 +68,7 @@ const
     'V)ersion',
     'S)hell',
     'O)utbound',
-{$IFDEF WS}
     'D)aemon',
-{$ENDIF}
     'H)elp',
     'E)xit RCC');
 
@@ -128,11 +126,9 @@ const
     'FULLOUTB    ',
     'OUTB        ',
     'ATTACH      ',
-{$IFDEF WS}
     'DAEMON STATE',
 //    'OPEN DAEMON ',
 //    'CLOSE DAEMON',
-{$ENDIF}
     'EXIT        '
     );*)
 
@@ -152,11 +148,9 @@ const
     ' - display all outbound',
     ' - display out status for desired node',
     ' - attach file to a desired node',
-{$IFDEF WS}
     ' - display TCP/IP daemon state and switch it',
 //    ' - open TCP/IP daemon',
 //    ' - close TCP/IP daemon',
-{$ENDIF}
     ' - close remote control session'
     );*)
 
@@ -171,17 +165,10 @@ const
   ecOurOptions   = [ecARC, ecXMA, ecHFR {,ecFNC}];
   ecOurProtocols = [ecHYD, ecDZA, ecZAP, ecZMO];
 
-  EMSI_CR_d   =  1;   {$IFDEF WS} EMSI_CR_i   =  10; {$ENDIF}
-  EMSI_S3_d   =  5;   {$IFDEF WS} EMSI_S3_i   =  20; {$ENDIF}
-  EMSI_Bl_d   = 20;   {$IFDEF WS} EMSI_Bl_i   =  60; {$ENDIF}
-  EMSI_Tm_d   = 60;   {$IFDEF WS} EMSI_Tm_i   = 300; {$ENDIF}
-
-{$IFNDEF WS}
-  toEMSI_CR      = EMSI_CR_d;
-  toEMSI_S3      = EMSI_S3_d;
-  toEMSI_Block   = EMSI_Bl_d;
-  toEMSI_Timeout = EMSI_Tm_d;
-{$ENDIF}
+  EMSI_CR_d   =  1;    EMSI_CR_i   =  10; 
+  EMSI_S3_d   =  5;    EMSI_S3_i   =  20; 
+  EMSI_Bl_d   = 20;    EMSI_Bl_i   =  60;
+  EMSI_Tm_d   = 60;    EMSI_Tm_i   = 300; 
 
   MaxLogStrings = 200;
   PollOwnerDaemon  = Pointer($FFFFFFFC);
@@ -491,6 +478,8 @@ type
     function  FindAtom(ATyp: Integer): Pointer;
     function  GetAtomListEx(ATyp: Integer; Single: Boolean): Pointer;
     function  GetAtomList(ATyp: Integer): Pointer;
+    function  GetEventListEx: Pointer;
+    function  GetEventList: Pointer;
     function  DwordValueD(ATyp: Integer; ADefault: DWORD): DWORD;
 //    function  PtrValueD(ATyp: Integer; P: Pointer): Pointer;
     function  StrValue(ATyp: Integer): string;
@@ -1061,8 +1050,6 @@ type
 
     WaitEvts: array[0..2 + MaxProcesses] of DWORD;
 
-    EP: TMailerThreadEventProcessor;
-
   // Classes
 
     ActiveFile: TLockFile;
@@ -1266,6 +1253,7 @@ type
     PortReloaded: Boolean;
 
     SD: TMailerThreadInitData;
+    EP: TMailerThreadEventProcessor;
     D,
     PublicD: TDisplayData;
     PublicDS: TDisplayStringData;
@@ -1349,8 +1337,10 @@ type
 
   TOlEventContainer = class(TElementOnly)
     CronRec: TCronRecord;
-    Len, Age: DWORD;
+    Len,
+    Age:   DWORD;
     Atoms: TColl;
+    EName: string;
     function Active: Boolean;
     procedure TimeSync(lt: DWORD);
     destructor Destroy; override;
@@ -1417,8 +1407,9 @@ var
   OutMgrThread: TOutMgrThread;
   CronThr: TCronThread;
   IPPolls: TIPPollsThread;
+  EventsThr : TEventsThread;
 
-function OpenMailerThread(APort: TPort; ALineId: DWORD{$IFDEF WS}; NI: TNewIPLineData{$ENDIF}; ACW, ACH: Integer): TMailerThread;
+function OpenMailerThread(APort: TPort; ALineId: DWORD; NI: TNewIPLineData; ACW, ACH: Integer): TMailerThread;
 procedure ShowIt(const S: String; ShowBalloonTT: boolean);
 procedure _RecalcPolls(Fire: boolean);
 procedure _RecreatePolls;
@@ -1443,6 +1434,7 @@ procedure LeaveFidoPolls;
 procedure InvalidatePollAddrs;
 function ConvertFaxPage(T30_wd: DWORD; Stream: TxMemoryStream): Pointer;
 function AllowedMdmCmdState(AState: TMailerState): Boolean;
+function CronMatch(const t: TSystemTime; const c: TCronRecord): Boolean;
 
  type
   TProcessNfo = class
@@ -1468,6 +1460,7 @@ begin
    if Inifile = nil then exit;
    if Application.MainForm = nil then exit;
    if (Application.MainForm as TMailerForm).TrayIcon = nil then exit;
+   if MailerForms = nil then exit;
    b := false;
    if IniFile.ShowBalloon and (not (Application.MainForm as TMailerForm).TrayIcon.Minimized) then b := true;
    if IniFile.ShowBalloonMin and (Application.MainForm as TMailerForm).TrayIcon.Minimized then b := true;
@@ -1835,7 +1828,6 @@ var
    CommonStatxFName: string;
    CommonStatxHandle: DWORD;
    CommonLog: TCommonLog;
-   EventsThr: TEventsThread;
    Zombies: TColl;
    LastZombiesPurged: EventTimer;
    DaemonEvents: TDaemonEventProcessor;
@@ -1961,16 +1953,12 @@ const
 var
    i: Integer;
 begin
-   if c.IsPermanent then
-   begin
+   if c.IsPermanent then begin
       Result := True;
       if not AllowPermanent then GlobalFail('assert(%s)', [AllowPermanent]);
-   end
-   else
-   begin
+   end else begin
       Result := False;
-      for i := 0 to c.Count - 1 do
-      begin
+      for i := 0 to c.Count - 1 do begin
          Result := (t.wMinute in c.p^[i].Minutes) and
             (t.wHour in c.p^[i].Hours) and
             (t.wDay - 1 in c.p^[i].Days) and
@@ -1978,14 +1966,6 @@ begin
             (DowXlt[t.wDayOfWeek] in c.p^[i].Dows);
          if Result then Exit;
       end;
-
-      {     getsystemtime
-      ArrMatch(t.wMinute, @c.Minutes, c.NumMinutes) and
-      ArrMatch(t.wHour, @c.Hours, c.NumHours) and
-      ArrMatch(t.wDay, @c.Days, c.NumDays) and
-      ArrMatch(t.wMonth, @c.Months, c.NumMonths) and
-      ArrMatch(DowXlt[t.wDayOfWeek], @c.Dows, c.NumDows);
-      }
    end;
 end;
 
@@ -2001,15 +1981,13 @@ end;
 
 function PollOwnerName(p: TFidoPoll): string;
 begin
-{$IFDEF WS}
    if p.Owner = PollOwnerDaemon then
       Result := 'TCP/IP Daemon'
    else
-{$ENDIF}
-      if p = nil then
-         GlobalFail('%s', ['PollOwnerName'])
-      else
-         Result := p.Owner.Name;
+   if p = nil then
+      GlobalFail('%s', ['PollOwnerName'])
+   else
+      Result := p.Owner.Name;
 end;
 
 function GetPollPtr(OwnPolls: TColl; P: TFidoPoll): TPollPtr;
@@ -2043,7 +2021,7 @@ begin
    EventsThr.Events.Leave;
 end;
 
-function PreparePoll(P: TFidoPoll; PP: TPollPtr; var NI: DWORD; TQ: TFSC62Quant; Restriction: TRestrictionData; SC: TStringColl{$IFDEF WS}; Dialup: Boolean{$ENDIF}): Boolean;
+function PreparePoll(P: TFidoPoll; PP: TPollPtr; var NI: DWORD; TQ: TFSC62Quant; Restriction: TRestrictionData; SC: TStringColl; Dialup: Boolean): Boolean;
 var
    k: Integer;
    idx: DWORD;
@@ -2056,11 +2034,9 @@ var
    var
       z: string;
    begin
-{$IFDEF WS}
       if not Dialup then
          z := d.IPAddr
       else
-{$ENDIF}
          z := d.Phone;
       SC.Add(Format(' %s %s,%s - %s', [c, z, d.Flags, s]));
    end;
@@ -2152,7 +2128,9 @@ begin
                ss := ss + #13#10 + FidoPolls.Log.FormatSelf('Test queue removed');
                MailerTransit.AtDelete(i);
             end;
-            m.SD.Prot.SendTRSMSG(s, c);
+            if (m.SD <> nil) and (m.SD.Prot <> nil) then begin
+               m.SD.Prot.SendTRSMSG(s, c);
+            end;   
          end;
       end;
       SetEvt(m.oEvt);
@@ -2192,14 +2170,13 @@ var
          (p.Typ <> ptpNmIm) then
       begin
          case p.Node.PrefixFlag of
-            nfPvt{$IFDEF WS}:
+            nfPvt:
                begin
                   if not DaemonStarted then begin
                      if SC <> nil then SC.Add(Format('The node has %s status in the nodelist. Use manual poll to connect anyway.', [cNodePrefixFlag[p.Node.PrefixFlag]]));
                      Exit;
                   end;
                end;
-{$ELSE}, {$ENDIF}
             nfHold,
             nfDown:
                begin
@@ -2255,15 +2232,12 @@ var
       PP := GetPollPtr(AOwnPolls, P);
       if PP = nil then GlobalFail('%s', ['GetPollPtr=nil']);
 
-{$IFDEF WS}
       if Mlr = PollOwnerDaemon then begin
          CfgEnter;
          RR := Cfg.IPData.Restriction.Copy;
          CfgLeave;
          EP := DaemonEvents;
-      end else
-{$ENDIF}
-      begin
+      end else begin
          CfgEnter;
          lRestrictions := Cfg.Restrictions.Copy;
          lLines := Cfg.Lines.Copy;
@@ -2281,7 +2255,7 @@ var
       FreeObject(R);
       FreeObject(F);
 
-      if not PreparePoll(p, PP, NI, TQ, RR, SC{$IFDEF WS}, Mlr <> PollOwnerDaemon{$ENDIF}) then Exit;
+      if not PreparePoll(p, PP, NI, TQ, RR, SC, Mlr <> PollOwnerDaemon) then Exit;
 
       if FidoOut.Paused(p.Node.Addr) then begin
          Result := plsPSD;
@@ -2738,26 +2712,6 @@ var
    c: integer;
 
 begin
-   if UpperCase(s) = '%STARTRAS%' then begin
-{$IFDEF RASDIAL}
-      RasThread.Connect(False);
-      {if c>0 then } ALogger.Log(ltInfo, 'RasDial inited by cron');
-      //~~~~~~~~~~~~~~ ?????
-{$ELSE}
-      FidoPolls.Log.LogSelf('RASDialUp feature is not avaible in this version');
-{$ENDIF}
-      exit;
-   end;
-   if UpperCase(s) = '%STOPRAS%' then begin
-{$IFDEF RASDIAL}
-      RasThread.Disconnect;
-      {if c>0 then } ALogger.Log(ltInfo, 'RasDial stopped by cron');
-      //~~~~~~~~~~~~~~ ?????
-{$ELSE}
-      FidoPolls.Log.LogSelf('RASDialUp feature is not avaible in this version');
-{$ENDIF}
-      exit;
-   end;
    if UpperCase(s) = '%DELBSY%' then begin
       c := DeleteBSY;
       if c > 0 then ALogger.LogFmt(ltInfo, '%d old BSY-files were deleted (cron-app)', [c]);
@@ -3026,7 +2980,6 @@ function OpenSerialPort(R: TPortRec): TPort;
 var
    P: TPort;
 
-   {$IFDEF USE_TAPI}
    function OpenTapi: Boolean;
    begin
       Result := True;
@@ -3039,7 +2992,6 @@ var
          end;
       end;
    end;
-   {$ENDIF}
 
    function OpenSerial: Boolean;
    var
@@ -3075,15 +3027,11 @@ var
 begin
    P := nil;
    try
-      {$IFDEF USE_TAPI}
       if R.d.Port >= MaxComPorts then begin
          if not OpenTapi then ;
       end else begin
          if not OpenSerial then ;
       end;
-      {$ELSE}
-      if not OpenSerial then ;
-      {$ENDIF}
    except
    end;
    Result := P;
@@ -3204,8 +3152,6 @@ function OpenMailerThread;
 var
    m: TMailerThread;
 
-{$IFDEF WS}
-
    procedure DoInsert;
    var
       i: Integer;
@@ -3221,7 +3167,6 @@ var
       end;
       MailerThreads.Insert(m);
    end;
-{$ENDIF}
 
 begin
    m := TMailerThread.Create;
@@ -3229,24 +3174,15 @@ begin
    m.TermTxData := TTermData.Create(Acw, Ach);
    m.TermRxData := TTermData.Create(Acw, Ach);
    m.CP := APort;
-{$IFDEF USE_TAPI}
    if APort is TTapiPort then begin
-{$IFDEF WS}
       m.DialupLine := True;
-{$ENDIF}
       m.TapiDevice := True;
    end else
-{$ENDIF}
    if APort is TSerialPort then begin
-{$IFDEF WS}
       m.DialupLine := True;
-{$ENDIF}
-{$IFDEF USE_TAPI}
       m.TapiDevice := False;
-{$ENDIF}
    end;
    m.LineId := ALineId;
-{$IFDEF WS}
    if NI <> nil then begin
       m.IpPort := NI.IpPort;
       m.ProtCore := NI.Prot;
@@ -3255,12 +3191,10 @@ begin
       m.CP.PortNumber := NI.IpPort;
       m.CP.PortIndex := NI.IpPort;
    end else
-{$ENDIF}
    begin
       m.ProtCore := ptDialup;
    end;
    m.SD := TMailerThreadInitData.Create;
-{$IFDEF WS}
    if (NI <> nil) and (NI.Poll <> nil) then begin
       NI.Poll.Owner := m;
       m.SD.ActivePoll := NI.Poll;
@@ -3268,19 +3202,15 @@ begin
       m.SD.MayRCC := True;
    end;
    FreeObject(NI);
-{$ENDIF WS}
 
    m.Initialize;
    m.DisplayData;
 
    MailerThreads.Enter;
-{$IFDEF WS}DoInsert{$ELSE}MailerThreads.Insert(m){$ENDIF};
-{$IFDEF WS}
+   DoInsert;
    if not m.DialupLine then
       m.OwnPolls := TColl.Create
-   else
-{$ENDIF}
-   begin
+   else begin
       m.OwnPolls := GetOwnPolls;
       NewTimerAvg(m.TmrNextDial, m.EP.DwordValueD(eiRetry, inifile.FPFlags.Retry));
    end;
@@ -3309,7 +3239,7 @@ var
    i,
    j,
    k: Integer;
-   ol: TOlEventContainer;
+  ol: TOlEventContainer;
    a: TEventAtom;
 begin
    Result := nil;
@@ -3341,6 +3271,30 @@ begin
    Refill;
    EnterEvents;
    Result := GetAtomListEx(ATyp, False);
+   LeaveEvents;
+end;
+
+function TAbstractEventProcessor.GetEventListEx: Pointer;
+var
+   i,
+   k: Integer;
+  ol: TOlEventContainer;
+begin
+   Result := nil;
+   for k := 0 to EvtCnt - 1 do begin
+      i := FindNo(EvtIds^[k], EventsThr.Events);
+      if i = -1 then Continue;
+      ol := EventsThr.Events[i];
+      if Result = nil then Result := TColl.Create;
+      TColl(Result).Add(ol);
+   end;
+end;
+
+function TAbstractEventProcessor.GetEventList: Pointer;
+begin
+   Refill;
+   EnterEvents;
+   Result := GetEventListEx;
    LeaveEvents;
 end;
 
@@ -3434,8 +3388,7 @@ begin
       CfgEnter;
       if LineId = 0 then
          RefillEx(Cfg.IpEvtIds.EvtCnt, Cfg.IpEvtIds.EvtIds)
-      else
-      begin
+      else begin
          l := Pointer(Cfg.Lines.GetRecById(LineId));
          if l.Id <> LineId then GlobalFail('%s', ['TMailerThreadEventProcessor.Refill']);
          RefillEx(l.EvtCnt, l.EvtIds);
@@ -3443,8 +3396,6 @@ begin
       CfgLeave;
    until False;
 end;
-
-{$IFDEF WS}
 
 constructor TDaemonEventProcessor.Create;
 begin
@@ -3461,8 +3412,8 @@ end;
 procedure TDaemonEventProcessor.Refill;
 var
    i: DWORD;
-   ec: Integer;
-   ei: PIntArray;
+  ec: Integer;
+  ei: PIntArray;
 begin
    EnterCS(CS);
    repeat
@@ -3482,7 +3433,6 @@ begin
    until False;
    LeaveCS(CS);
 end;
-{$ENDIF}
 
 // --- Loggers
 
@@ -3494,8 +3444,7 @@ var
    Code: DWORD;
 begin
    ProcessColl := GetProcessColl;
-   for i := ProcessColl.Count - 1 downto 0 do
-   begin
+   for i := ProcessColl.Count - 1 downto 0 do begin
       ProcNfo := ProcessColl[i];
       if not GetExitCodeProcess(ProcNfo.PI.hProcess, Code) then Code := 0;
       if Code = STILL_ACTIVE then Continue;
@@ -3516,8 +3465,7 @@ begin
    TestRunningProcesses;
    ProcessColl := GetProcessColl;
    Zombies.Enter;
-   for i := 0 to ProcessColl.Count - 1 do
-   begin
+   for i := 0 to ProcessColl.Count - 1 do begin
       ProcNfo := ProcessColl[i];
       LogFmt(ltInfo, 'Process "%s" (PID=%x) is leaving in background', [ProcNfo.Name, ProcNfo.PI.dwProcessId]);
       Zombies.Insert(ProcNfo);
@@ -3649,8 +3597,6 @@ begin
    Result := CronThr.ProcessColl;
 end;
 
-{$IFDEF WS}
-
 constructor TDaemonThreadLogger.Create;
 begin
    inherited Create;
@@ -3675,8 +3621,6 @@ begin
    GlobalFail('%s', ['TDaemonThreadLogger.GetProcessColl']);
    Result := nil;
 end;
-
-{$ENDIF}
 
 ////////////////////////////////////////////////////////////////////////
 //                                                                    //
@@ -4053,9 +3997,7 @@ begin
       FreeOwnPoll(TMailerThread(MailerThreads[I]).OwnPolls, Self);
    end;
    MailerThreads.Leave;
-{$IFDEF WS}
    if IPPolls <> nil then FreeOwnPoll(IPPolls.OwnPolls, Self);
-{$ENDIF}
    Release;
    FreeObject(Node);
    inherited Destroy;
@@ -4194,11 +4136,9 @@ var
 begin
    SD.SessionKeyAddr := A;
    CfgEnter;
-   for i := 0 to Cfg.EncryptedNodes.Count - 1 do
-   begin
+   for i := 0 to Cfg.EncryptedNodes.Count - 1 do begin
       en := Cfg.EncryptedNodes[i];
-      if CompareAddrs(A, en.Addr) = 0 then
-      begin
+      if CompareAddrs(A, en.Addr) = 0 then begin
          SD.SessionKey := en.Key;
          Break;
       end;
@@ -4208,12 +4148,9 @@ end;
 
 procedure TMailerThread.LogPostEMSIErr(const Msg: string);
 begin
-   if SD.EMSI_Logged then
-   begin
+   if SD.EMSI_Logged then begin
       Log(ltGlobalErr, Msg);
-   end
-   else
-   begin
+   end else begin
       if SD.PostEMSILogErrors = nil then SD.PostEMSILogErrors := TStringColl.Create;
       SD.PostEMSILogErrors.Add(Msg);
    end;
@@ -4368,13 +4305,10 @@ begin
    FidoPolls.Log.Log(FormatLogStr(ltPolls, S, Name));
 end;
 
-{$IFDEF WS}
-
 procedure TMailerThread.LogDaemon(const S: string);
 begin
    IpPolls.Logger.Log(ltInfo, S);
 end;
-{$ENDIF}
 
 procedure TMailerThread.SetStatusMsg(Id: DWORD; const Param: string);
 var
@@ -4413,7 +4347,6 @@ begin
    end;
    if Terminated then Exit;
    if CP <> nil then CP.Flsh;
-   {$IFDEF USE_TAPI}
    if (CP <> nil) and (CP is TTAPIPort) then begin
       (CP as TTAPIPort).Messages.Enter;
       while (CP as TTAPIPort).Messages.Count > 0 do begin
@@ -4432,7 +4365,6 @@ begin
       end;
       (CP as TTAPIPort).TAPILog.Leave;
    end;
-   {$ENDIF}
    FlushLog;
    DoDisplayData;
    LetsSleep;
@@ -4519,7 +4451,6 @@ begin
       Result := True;
       exit;
    end;
-{$IFDEF USE_TAPI}
    if (CP <> nil) and TapiDevice then begin
       (CP as TTAPIPort).MakeCall;
       if CP.Handle = INVALID_HANDLE_VALUE then begin
@@ -4527,7 +4458,6 @@ begin
          exit;
       end;
    end;
-{$ENDIF}
    HideInput := False;
    TSerialPort(CP).DTR := True;
    DoAccumulate;
@@ -4973,6 +4903,7 @@ const
             FidoOut.DeleteFile(r.Address, r.Orig, r.FStatus) then begin
             LogFmt(ltInfo, '%s unlinked', [r.Name]);
             P.CustomInfo := '';
+            ScanCounter := 10000;
          end;
          s := '';
          case r.KillAction of
@@ -5236,11 +5167,7 @@ var
    begin
       b := true;
       if SD.ActivePoll <> nil then begin
-{$IFDEF WS}
          isDialUp := DialUpLine;
-{$ELSE}
-         isDialUp := true;
-{$ENDIF}
          flags := SD.ActivePoll.Flags(IsDialUp);
          if (not IsFReqTime(flags)) then begin
             b := false;
@@ -5904,9 +5831,7 @@ function TMailerThread.AcceptFile(P: TBaseProtocol): TTransferFileAction;
    end;
 
 begin
-{$IFDEF WS}
    LogHandshakeStart;
-{$ENDIF}
    BWZColl.Enter;
    Result := DoAccept(P);
    case Result of
@@ -6615,7 +6540,7 @@ begin
       if (UpperCase(ExtractFileExt(P.T.d.FName)) = '.PKT') then begin
          if IniFile.UnpackMSG then begin
             FinalizePKT(r.Address, r.Name);
-         end;   
+         end;
       end;
    end;
 
@@ -6727,7 +6652,7 @@ begin
                   i := P.T.D.FSize
                end else begin
                   i := r.Nfo.Size;
-                  if r.Netm <> '' then begin
+                  if (r.Netm <> '') and (not (SD.SessionCore in [scNNTP])) then begin
                      ttt := ClearAttach(r.Address, r.Netm, r.Name);
                      if ttt <> '' then begin
                         t := TOutFile.Create;
@@ -6877,19 +6802,8 @@ begin
          BWZColl.Leave;
       end;
       P.FillOutList := False;
+      P.OutList := SD.OutFiles;
       SD.OutFiles.Leave;
-      exit;
-   end;
-   try
-   SD.OutFiles.Enter;
-   LogHandshakeStart;
-   P.T.D.State := bsActive;
-   P.T.D.ErrPos := 0;
-   P.T.D.FName := '';
-   FreeObject(P.T.Stream);
-   if (SD.SessionCore in [scFTP, scPOP3, scGATE, scNNTP]) and P.DummyNextFile then begin
-      ScanOut(True);
-      P.DummyNextFile := False;
       if SD.SessionCore in [scNNTP] then begin
          While (Integer(SD.TxFiles) > IniFile.CashSize) and (SD.OutFiles.Count > 0) do begin
             f := SD.OutFiles[0];
@@ -6904,9 +6818,22 @@ begin
       end;
       exit;
    end;
+   try
+   SD.OutFiles.Enter;
+   LogHandshakeStart;
+   P.T.D.State := bsActive;
+   P.T.D.ErrPos := 0;
+   P.T.D.FName := '';
+   FreeObject(P.T.Stream);
+   if (SD.SessionCore in [scFTP, scPOP3, scGATE, scNNTP]) and P.DummyNextFile then begin
+      ScanOut(True);
+      P.DummyNextFile := False;
+      Exit;
+   end;
    repeat
       PTDFName := '';
       if (SD.OutFiles.Count = 0) then ScanOut(True);
+      P.OutList := SD.OutFiles;
       if SD.DisabledFiles <> nil then begin
          for i := SD.OutFiles.Count - 1 downto 0 do begin
             f := SD.OutFiles[i];
@@ -8134,7 +8061,6 @@ begin
       State := msHSh_r2;
    msHSh_r2:
       begin
-         {$IFDEF USE_TAPI}
          if (CP <> nil) and TapiDevice then begin
             if (pos(#$7E#$FF#$7D, SD.InB) > 0) or
                (pos(#$7E#$FF#$03, SD.InB) > 0) or
@@ -8153,7 +8079,6 @@ begin
                exit;
             end;
          end;
-         {$ENDIF}
          seq := IdentEMSISeq(SD.InB, iCRC);
          if seq = es_None then begin
             if GotExtApp then
@@ -8544,29 +8469,26 @@ begin
          end;
          if EP.VoidFound(eiDummyZ[OutPoll]) then SD.DummyZFrb := True;
          if OutPoll then begin
-            FilterProtocols(SD.ActivePoll.Flags({$IFDEF WS}DialupLine{$ELSE}True{$ENDIF}));
+            FilterProtocols(SD.ActivePoll.Flags(DialupLine));
          end else begin
             SD.MayFTS1 := not EP.VoidFound(eiAccNoFTS1);
          end;
-         //SD.NiagaraAllowed := SD.NiagaraAllowed and ({$IFDEF WS}(DialupLine) and {$ENDIF} (not EP.VoidFound(eiNiagara[OutPoll])));
+         //SD.NiagaraAllowed := SD.NiagaraAllowed and ((DialupLine) and (not EP.VoidFound(eiNiagara[OutPoll])));
 
          {Niagara was enabled on ifcico port for case when dialup pool}
          {based on access server, which connect remote FTN-mailer}
          {with Argus via TCP/IP chanel}
-         SD.NiagaraAllowed := SD.NiagaraAllowed and ({$IFDEF WS}(DialupLine or (ProtCore = ptifcico)) and {$ENDIF}(not EP.VoidFound(eiNiagara[OutPoll]))); // visual
+         SD.NiagaraAllowed := SD.NiagaraAllowed and ((DialupLine or (ProtCore = ptifcico)) and (not EP.VoidFound(eiNiagara[OutPoll]))); // visual
          SD.MayRCC := ((SD.MayRCC and SD.NiagaraAllowed) or not DialupLine) and not OutPoll;
          SD.MayEMSI := SD.MayEMSI and (not EP.VoidFound(eiEMSI[OutPoll]));
          SD.MayYooHoo := SD.MayYooHoo and (not EP.VoidFound(eiYooHoo[OutPoll]));
       end else begin
-{$IFDEF WS}
          if not DialupLine then begin
             Result := False;
             LogFmt(ltGlobalErr, 'Failed to initiate encrypted session with %s', [Addr2Str(SD.ActivePoll.Node.Addr)]);
             Log(ltWarning, 'Encrypted sessions are possible on BinkP only');
             State := msSE_SessionAborted;
-         end else
-{$ENDIF}
-         begin
+         end else begin
             SD.NiagaraAllowed := True;
             SD.OurProtocols := [];
          end;
@@ -8693,11 +8615,7 @@ procedure TMailerThread.DoWZ;
       ChatEnabled: boolean;
       prec: TProtocolRecord;
    begin
-{$IFDEF WS}
       IsDialUp := DialUpLine;
-{$ELSE}
-      IsDialUp := True;
-{$ENDIF}
       prec.tzshift := SD.tzshift;
       if SD.MayRCC and SD.RemRCC then begin
         prec.ChatEnabled := false;
@@ -9295,9 +9213,10 @@ begin
    msBiDirBatch1,
    msBiDirBatch2:
       begin
-         // protocol checks for an abort by local console (Prot.CancelRequested)
-         // and carrier (CP.DCD)
-         StatusMsg := 'Session (' + SD.Prot.Name + ') with ' + Addr2Str(SD.rmtPrimaryAddr);
+         StatusMsg := 'Session (' + SD.Prot.Name + ',';
+         if SD.ActivePoll = nil then StatusMsg := StatusMsg + ' Server'
+                                else StatusMsg := StatusMsg + ' Client';
+         StatusMsg := StatusMsg + ') with ' + Addr2Str(SD.rmtPrimaryAddr);
          if NeedRescan then DoRescan;
          if SD.FileRefuse then begin
             SD.Prot.FileRefuse := True;
@@ -10021,17 +9940,15 @@ var
             _DTE := IntToStr(Mlr.CP.DTE);
          _CONNECT := Mlr.DS.ConnectString;
          Replace(' ', '_', _CONNECT);
-{$IFDEF WS}
          if not Mlr.DialupLine then
             _CONTROL := 'TCP/IP'
          else
-{$ENDIF}
-            if (Pos('MNP', _CONNECT) > 0) or
-               (Pos('ARQ', _CONNECT) > 0) or
-               (Pos('REL', _CONNECT) > 0) then
-               _CONTROL := 'MNP'
-            else
-               _CONTROL := '';
+         if (Pos('MNP', _CONNECT) > 0) or
+            (Pos('ARQ', _CONNECT) > 0) or
+            (Pos('REL', _CONNECT) > 0) then
+            _CONTROL := 'MNP'
+         else
+            _CONTROL := '';
          _LINE := IntToStr(Mlr.LineNumber);
          if (Mlr.CP = nil) or (not APassHandleSupported) then
             _HANDLE := ''
@@ -10056,16 +9973,13 @@ var
          _SYSOP := ANode.Sysop;
          _SPEED := IntToStr(ANode.Speed);
          //    t:=Time;
-    {$IFDEF WS}
          if Mlr = nil then begin
             if (APoll <> nil) and (ANode.IpData <> nil) then begin
                ad := ANode.IpData[APoll.DataIdx];
                _PHONE := ad.IPAddr;
                _FLAGS := ad.Flags;
             end;
-         end else
-    {$ENDIF}
-         begin
+         end else begin
             if (APoll <> nil) and (ANode.DialupData <> nil) then begin
                ad := ANode.DialupData[APoll.DataIdx];
                _PHONE := ad.Phone;
@@ -10146,10 +10060,7 @@ begin
          InheritHandles := False;
       end else begin
          Mlr.SD.ExtAppCloseSerial := B;
-{$IFDEF WS}
          if not Mlr.DialupLine then Mlr.SD.ExtAppCloseSerial := False;
-{$ENDIF}
-
          if Mlr.CP = nil then begin
             InheritHandles := False;
          end else begin
@@ -10260,9 +10171,7 @@ begin
    FreeObject(r);
    EnterCS(CP_CS);
    CP := FCP;
-   {$IFDEF USE_TAPI}
    if (CP <> nil) then TapiDevice := CP is TTAPIPort;
-   {$ENDIF}
    LeaveCS(CP_CS);
 end;
 
@@ -11511,13 +11420,12 @@ begin
          end;
       mcVersion:
          begin
-            SendStr(ProductNameFull + ', ' + LngStr({$IFDEF WS}rsAboutTCP{$ELSE}rsAboutDialup{$ENDIF}) + CRLF +
+            SendStr(ProductNameFull + ', ' + LngStr(rsAboutTCP) + CRLF +
                FormatLng(rsAboutVersion, [ProductVersion]) + ', ' + ProductDate);
             SendStr(CRLF);
             State := msRemCtrl_1;
             LogFmt(ltInfo, 'Remote Control command: %s', ['MainMenu->Version']);
          end;
-{$IFDEF WS}
       mcDaemon:
          begin
             SendStr(CRLF);
@@ -11526,7 +11434,6 @@ begin
             State := msRemCtrl_1;
             LogFmt(ltInfo, 'Remote Control command: %s', ['MainMenu->Daemon']);
          end;
-{$ENDIF}
       mcExit:
          begin
             State := msRemCtrlOK;
@@ -12047,9 +11954,7 @@ begin
    for i := Low(TModemStdRespIdx) to Pred(mrpNone) do begin
       if not (i in AMask) then Continue;
       Z := SD.ModemRec.StdResp[Integer(I)];
-{$IFDEF USE_TAPI}
       if i = mrpRing then Z := Z + ' TAPI_OFFERING_(OWNER) TAPI_OFFERING_(MONITOR)';
-{$ENDIF}
       while Z <> '' do begin
          GetWrd(Z, W, ' ');
          W := StrQuotePartEx(W, '~', #3, #4);
@@ -12073,11 +11978,9 @@ begin
             if j <> 0 then begin
                RespGotMatch(j, w, i);
                Result := i;
-{$IFDEF USE_TAPI}
                if copy(w, 1, 8) = 'TAPI OFF' then begin
                   Result := mrpTapi;
                end;
-{$ENDIF}
               if IniFile.PlaySounds then begin
                 if (Result = mrpRing) or (Result = mrpTapi) then begin
                   PlaySnd('Ring', SoundsON);
@@ -12299,7 +12202,6 @@ procedure TMailerThread.DoMisc;
          State := msInit;
       end else begin
          State := msStartAnswer;
-         {$IFDEF USE_TAPI}
          if (CP <> nil) and TapiDevice then begin
             if (CP as TTAPIPort).MakeCall then begin
                (CP as TTAPIPort).Answer := True;
@@ -12308,7 +12210,6 @@ procedure TMailerThread.DoMisc;
                State := msIdle;
             end;
          end;
-         {$ENDIF}
       end;
    end;
 
@@ -12318,14 +12219,12 @@ procedure TMailerThread.DoMisc;
       z: string;
    begin
       CheckAnswerRequest;
-     {$IFDEF USE_TAPI}
       if (CP <> nil) and TapiDevice then begin
          SD.InC := SD.InC + (CP as TTAPIPort).ModemString;
          SD.InB := SD.InB + (CP as TTAPIPort).ModemString;
          (CP as TTAPIPort).ModemString := '';
          if CP.Handle = INVALID_HANDLE_VALUE then exit;
       end;
-      {$ENDIF}
       cn := ModemResponseCn;
       case cn of
       mrpNone: CheckAnswerRequest;
@@ -12377,8 +12276,6 @@ procedure TMailerThread.DoMisc;
       SD.InitModemLogged := True;
    end;
 
-{$IFDEF WS}
-
    procedure LogDaemonStatus;
    const
       BStatus: array[Boolean] of string = ('Aborted', 'Complete');
@@ -12394,7 +12291,6 @@ procedure TMailerThread.DoMisc;
       s := s + Format(' IN: %d (%sb) OUT: %d (%sb)', [SD.FilesReceived, Int2Str(SD.cRxBytes), SD.FilesSent, Int2Str(SD.cTxBytes)]);
       LogDaemon(s);
    end;
-{$ENDIF WS}
 
    procedure CreateFlag(const s: string);
    var
@@ -12831,9 +12727,7 @@ begin
             FreeHReqDelete(True);
             PollDone;
             RunPostProcessors(True);
-{$IFDEF WS}
             if not DialupLine then LogDaemonStatus;
-{$ENDIF}
             DoRemoveNiagara;
             NextNeedModemStatx := SD.NeedModemStatx;
             FreeSD;
@@ -12855,13 +12749,10 @@ begin
             ClearTmrPublic;
             ClearTmr1;
             SD.StateDeltaDCD := msNone;
-{$IFDEF WS}
             if not DialupLine then begin
                TossBWZ(false);
                SelfTerminate := True
-            end else
-{$ENDIF}
-            begin
+            end else begin
                State := msInitModem_I;
                ProtCore := ptDialup;
                SD.SessionCore := scEmsiWz;
@@ -13042,19 +12933,16 @@ begin
             ClearTmr1;
             State := msIdle;
             SD.RingsDone := 0;
-            {$IFDEF USE_TAPI}
             if (CP <> nil) and TapiDevice then begin
                if (CP as TTAPIPort).NeedDrop then begin
                   (CP as TTAPIPort).Answer := False;
                end;
             end;
-            {$ENDIF}
          end;
       msIdle: // waiting for a call
          begin
             DoAccumulate;
             CheckModem;
-            {$IFDEF USE_TAPI}
             if (CP <> nil) and TapiDevice then begin
                (CP as TTAPIPort).DropCall;
                (CP as TTAPIPort).CheckOpens;
@@ -13072,7 +12960,6 @@ begin
                   exit;
                end;
             end;
-            {$ENDIF}
             if not TimerInstalled(SD.TmrReInit) then
                NewTimerAvg(SD.TmrReInit, CReinitTime)
             else
@@ -13192,14 +13079,12 @@ begin
                State := msStartDialFailed
             else
                State := msStartDialOK;
-            {$IFDEF USE_TAPI}
             if (CP <> nil) and TapiDevice then begin
               if not (CP as TTAPIPort).MakeCall then begin
                  Log(ltWarning, 'TAPI line is busy. Call is dropped.');
                  State := msSE_NoConnect;
               end;
             end;
-            {$ENDIF}
          end;
       msStartDialOK:
          begin
@@ -13254,12 +13139,10 @@ begin
          end;
       msStartAnswer:
          begin
-            {$IFDEF USE_TAPI}
             if (CP <> nil) and TapiDevice then begin
                if (CP as TTAPIPort).Call = 0 then State := msInit;
                if (CP as TTAPIPort).FHandle = INVALID_HANDLE_VALUE then exit;
             end;
-            {$ENDIF}
             CheckModem;
             SD.InB := '';
             SD.ConnectSpeedGot := False;
@@ -13322,12 +13205,9 @@ begin
          end;
       msCarrierLost:
          begin
-            {$IFDEF USE_TAPI}
             if TapiDevice and (CP as TTAPIPort).fHandOf then begin
                State := msIdle_TAPI;
-            end else
-            {$ENDIF}
-            begin
+            end else begin
                Log(ltWarning, 'Carrier lost');
                State := msSE_SessionAborted;
             end;
@@ -13460,14 +13340,12 @@ var
    I: Integer;
 begin
    SD.Accumulated := (CP <> nil) and (CP.CharReady);
-   {$IFDEF USE_TAPI}
    if (CP <> nil) and TapiDevice then begin
       SD.InC := SD.InC + (CP as TTAPIPort).ModemString;
       SD.InB := SD.InB + (CP as TTAPIPort).ModemString;
       SD.Accumulated := SD.Accumulated or ((CP as TTAPIPort).ModemString <> '');
       (CP as TTAPIPort).ModemString := '';
    end;
-   {$ENDIF}
    if not SD.Accumulated then Exit;
    AddStr := '';
    Get;
@@ -13584,7 +13462,6 @@ begin
       SoundsON := Inifile.PlaySounds;
    end;
 
-{$IFDEF WS}
    if not DialupLine then begin
       Inc(IpIdx);
       while IdxFound(IpIdx) do begin
@@ -13592,9 +13469,7 @@ begin
       end;
       __FName := Format('TCP/IP %d', [IpIdx]);
       CurrentIPFlag := TLockFile.Create(MakeNormName(IniFile.FlagsDir, 'current.ip'), IniFile.SimpleBSY);
-   end else
-{$ENDIF}
-   begin
+   end else begin
       CfgEnter;
       __FName := StrAsg(Cfg.Lines.GetRecById(LineId).Name);
       CfgLeave;
@@ -13630,7 +13505,6 @@ begin
    InitializeCriticalSection(EvtCS);
    InitializeCriticalSection(DisplayDataCS);
 
-{$IFDEF WS}
    if DialupLine then begin
       toEMSI_CR := EMSI_CR_d;
       toEMSI_S3 := EMSI_S3_d;
@@ -13686,9 +13560,7 @@ begin
       if SD.ActivePoll <> nil then s := s + Format(' (%s)', [Addr2Str(SD.ActivePoll.Node.Addr)]);
       LogDaemon(s);
       Log(ltInfo, 'Begin v' + ProductVersion);
-   end else
-{$ENDIF}
-   begin
+   end else begin
       State := msStart;
       PlaySnd('NewLine', SoundsON);
    end;
@@ -13701,12 +13573,9 @@ begin
    LogStrings := TStringColl.Create;
    InitializeCriticalSection(LogCS);
 
-{$IFDEF WS}
    if not DialupLine then
       LogFName := Format('IP_%d.LOG', [IpIdx])
-   else
-{$ENDIF}
-   begin
+   else begin
       CfgEnter;
       lr := Pointer(Cfg.Lines.GetRecById(LineId));
       LogFName := StrAsg(lr.LogFName);
@@ -13717,9 +13586,7 @@ begin
       Log(ltInfo, 'No log file specified for current line');
    end else begin
       LogFName := MakeFullDir(dLog, LogFName);
-{$IFDEF WS}
       if DialupLine then // Let's shorten a little ip_*.log
-{$ENDIF}
          LogFmt(ltInfo, cUsingLogFile, [LogFName]);
       if _LogOK(LogFName, LogFHandle) then begin
          if StartupOptions and stoFastLog = 0 then ZeroHandle(LogFHandle);
@@ -13735,12 +13602,9 @@ begin
       Log(ltInfo, 'Running under: ' + GetOSVer);
    end;
 
-{$IFDEF WS}
    if not DialupLine then
       __LineNumber := IpIdx
-   else
-{$ENDIF}
-   begin
+   else begin
       CfgEnter;
       __LineNumber := Cfg.Lines.GetIdxById(LineId) + 1;
       CfgLeave;
@@ -13901,7 +13765,6 @@ procedure TMailerThread.LogComError;
       LogFmt(ltWarning, 'ComError %s, In=%sb, OutB=%sb', [z, Int2Str(ee.cs.cbInQue), Int2Str(ee.cs.cbOutQue)]);
    end;
 
-{$IFDEF WS}
    procedure LogSock;
    var
       ee: TComError;
@@ -13912,17 +13775,13 @@ procedure TMailerThread.LogComError;
       Log(ltWarning, S);
       LogDaemon(S);
    end;
-{$ENDIF}
 
 begin
    CP.EnterCommErrorCS;
-   while CP.ComErrorColl.Count > 0 do
-   begin
-{$IFDEF WS}
+   while CP.ComErrorColl.Count > 0 do begin
       if not DialupLine then
          LogSock
       else
-{$ENDIF}
          LogSerial;
       CP.ComErrorColl.AtFree(0);
    end;
@@ -13936,7 +13795,7 @@ var
    k: Integer;
    t: TSystemTime;
    ol: TOlEventContainer;
-   
+
 type
    TDSet = 0..60;
    TWSet = set of TDSet;
@@ -13952,16 +13811,16 @@ type
    end;
 
 begin
+   EventsThr.Events.Enter;
    Result := $99999999;
-   for k := 0 to EventsThr.Events.Count - 1 do
-   begin
+   for k := 0 to EventsThr.Events.Count - 1 do begin
       ol := EventsThr.Events[k];
       if ol.CronRec.IsPermanent then continue;
       if ol.Active then continue;
       if ol.CronRec.IsUTC then GetSystemTime(T) else GetLocalTime(T);
       for j := 0 to ol.CronRec.Count - 1 do begin
-         if not (T.wMonth in ol.CronRec.p^[j].Months) then break;
-         if not (T.wDay in ol.CronRec.p^[j].Days) then break;
+         if not ((T.wMonth - 1) in ol.CronRec.p^[j].Months) then break;
+         if not ((T.wDay - 1) in ol.CronRec.p^[j].Days) then break;
          if not (T.wDayOfWeek in ol.CronRec.p^[j].Dows) then break;
          i := (NextMatch(T.wHour, ol.CronRec.p^[j].Hours) - T.wHour) * 60 * 60 * 1000;
          i := (NextMatch(T.wMinute, ol.CronRec.p^[j].Minutes) - T.wMinute) * 60 * 1000 + i;
@@ -13969,6 +13828,7 @@ begin
          if DWORD(i) < DWORD(Result) then Result := DWORD(i);
       end;
    end;
+   EventsThr.Events.Leave;
 end;
 
 procedure TMailerThread.LetsSleep;
@@ -14112,8 +13972,7 @@ begin
    LeaveCS(CP_CS);
    if P = nil then Exit;
    if SD <> nil then SD.LastCallerID := TPort(P).CallerId;
-   if (P <> nil) and (SD <> nil) and (SD.NiagaraSession) then
-   begin
+   if (P <> nil) and (SD <> nil) and (SD.NiagaraSession) then begin
       RemoveNiagara(P);
       SD.NiagaraSession := False;
    end;
@@ -14125,8 +13984,7 @@ var
    i: Integer;
    s: string;
 begin
-   for i := 0 to CollMax(SD.HReqDelete) do
-   begin
+   for i := 0 to CollMax(SD.HReqDelete) do begin
       s := SD.HReqDelete[i];
       if ALog then LogFmt(ltInfo, 'Deleting ERP "%s"', [s]);
       FidoOut.DeleteFile(SD.rmtPrimaryAddr, s, osNormal);
@@ -14145,8 +14003,7 @@ end;
 
 procedure TMailerThread.FreeSD;
 begin
-   if SD <> nil then
-   begin
+   if SD <> nil then begin
       FreeFaxModem;
       FreeObject(SD);
    end;
@@ -14195,19 +14052,13 @@ begin
 
    ZeroHandle(LogFHandle);
    FreeObject(LogStrings);
-{$IFDEF WS}
    FreeObject(CurrentIPFlag);
-{$ENDIF}
-   if RASInvoked then
-   begin
+   if RASInvoked then begin
       postmessage(MainwinHandle, WM_LINEDESTROYED, integer(self), LineID);
    end;
    RefreshOutbound;
    postmessage(MainwinHandle, WM_UPDATELAMPS, 0, 0);
-{$IFDEF WS}
-   if DialupLine then
-{$ENDIF}
-   begin
+   if DialupLine then begin
       PlaySnd('EndLine', SoundsON);
    end;
    inherited Destroy;
@@ -14313,15 +14164,12 @@ begin
    SD.AkaB := TStringColl.Create;
 end;
 
-{$IFDEF WS}
-
 procedure TMailerThread.CopyIPStation;
 begin
    Cfg.IpData.StationData.AppendTo(SD.Station);
    Cfg.IpAkaCollA.AppendTo(SD.AkaA);
    Cfg.IpAkaCollB.AppendTo(SD.AkaB);
 end;
-{$ENDIF}
 
 function TMailerThread.GetInAKAs: string;
 var
@@ -14373,21 +14221,23 @@ end;
 
 procedure TMailerThread.LogFmt(CurTag: TLogTag; const FmtStr: string; const Args: array of const);
 begin
+   if Logger = nil then exit;
    Logger.LogFmt(CurTag, FmtStr, Args)
 end;
 
 procedure TMailerThread.Log;
 begin
-   Logger.Log(CurTag, CurStr)
+   if Logger = nil then exit;
+   Logger.Log(CurTag, CurStr);
 end;
 
 procedure TMailerThread.LogOnce;
 var
    i: Integer;
 begin
+   if Logger = nil then exit;
    if SD.LoggedStrs = nil then SD.LoggedStrs := TStringColl.Create;
-   if not SD.LoggedStrs.Search(@CurStr, i) then
-   begin
+   if not SD.LoggedStrs.Search(@CurStr, i) then begin
       SD.LoggedStrs.AtInsert(i, NewStr(CurStr));
       Logger.Log(CurTag, CurStr);
    end;
@@ -14396,17 +14246,13 @@ end;
 procedure TMailerThread.FlushLog;
 var
    I: Integer;
-   //  j: integer;
    Actually: DWORD;
-   //  s:string;
    FlushLogOK: boolean;
 begin
    if LastLogStr = '' then Exit;
    FlushLogOK := _LogOK(LogFName, LogFHandle);
-   if FlushLogOK then
-   begin
-      if NotFlushedLogStr <> '' then
-      begin
+   if FlushLogOK then begin
+      if NotFlushedLogStr <> '' then begin
          I := Length(NotFlushedLogStr);
          WriteFile(LogFHandle, NotFlushedLogStr[1], I, Actually, nil);
          NotFlushedLogStr := '';
@@ -14414,13 +14260,12 @@ begin
       I := Length(LastLogStr);
       WriteFile(LogFHandle, LastLogStr[1], I, Actually, nil);
       if StartupOptions and stoFastLog = 0 then ZeroHandle(LogFHandle);
-   end
-   else
+   end else begin
       NotFlushedLogStr := StrAsg(NotFlushedLogStr + LastLogStr);
+   end;   
 
    EnterCS(LogCS);
-   if Length(NewLogStr) > $4000 then
-   begin
+   if Length(NewLogStr) > $4000 then begin
       NewLogStr := '';
       TruncateLog := True;
    end;
@@ -14431,8 +14276,7 @@ end;
 
 procedure TMailerThread.DeleteFile(const FName: string);
 begin
-   if not DelFile('MT.DeleteFile', PChar(FName)) then
-   begin
+   if not DelFile('MT.DeleteFile', PChar(FName)) then begin
       SetErrorMsg(FName);
       ChkErrMsg
    end;
@@ -14455,8 +14299,7 @@ var
 begin
    GetSystemTime(Time);
    Result := (Time.wMinute <> LastTimeUTC.wMinute) or (Time.wHour <> LastTimeUTC.wHour);
-   if Result then
-   begin
+   if Result then begin
       LastTimeUTC := Time;
       GetLocalTime(LastTimeLocal);
    end;
@@ -14512,8 +14355,7 @@ var
    r: TCronRecord;
    m: Boolean;
 begin
-   for i := 0 to CollMax(ProcsCron) do
-   begin
+   for i := 0 to CollMax(ProcsCron) do begin
       r := ProcsCron[i];
       if r.IsUTC then
          m := CronMatch(LastTimeUTC, r)
@@ -14666,8 +14508,7 @@ begin
    c := Pointer(Cfg.Events.Copy);
    CfgLeave;
    nc := TColl.Create;
-   for i := 0 to c.Count - 1 do
-   begin
+   for i := 0 to c.Count - 1 do begin
       e := c[i];
       oc := TOlEventContainer.Create;
       oc.CronRec := ParseCronRec(e.Cron, e.Permanent, e.UTC, Err);
@@ -14675,6 +14516,7 @@ begin
       oc.Id := e.Id;
       oc.Len := e.Len;
       oc.Atoms := e.Atoms;
+      oc.EName := e.Name;
       e.Atoms := nil;
       nc.Insert(oc);
    end;
@@ -14752,8 +14594,7 @@ begin
    if CronRec.IsPermanent then Exit;
    i := lt - (Len + 1);
    Age := High(Age) div 2;
-   while i <= lt do
-   begin
+   while i <= lt do begin
       uNix2WinTime(i * 60, T);
       if CronMatch(T, CronRec) then
          Age := 0
@@ -14762,8 +14603,6 @@ begin
       Inc(i);
    end;
 end;
-
-{$IFDEF WS}
 
 const
    DaemonMemSize = 4;
@@ -14820,58 +14659,51 @@ begin
    CurPort := INVALID_VALUE;
    CurProt := ptUndefined;
    CurType := 0; // to avoid warnings
-   for i := 0 to c.Count - 1 do
-   begin
+   for i := 0 to c.Count - 1 do begin
       case DWORD(c[i]) of
-         kwBINKP,
-            kwBINKD,
-            kwBND,
-            kwBNP,
-            kwIBN:
+      kwBINKP,
+      kwBINKD,
+      kwBND,
+      kwBNP,
+      kwIBN:
+         begin
+            CurPort := FindPort(24554, 'IBN,BND,BNP', Flags);
+            CurProt := ptBinkP;
+            Break;
+         end;
+      end;
+   end;
+   if CurPort = INVALID_VALUE then begin
+      for i := 0 to c.Count - 1 do begin
+         case DWORD(c[i]) of
+         kwIFC:
             begin
-               CurPort := FindPort(24554, 'IBN,BND,BNP', Flags);
-               CurProt := ptBinkP;
+               CurPort := FindPort(60179, 'IFC', Flags);
+               CurProt := ptifcico;
                Break;
             end;
-      end;
-   end;
-   if CurPort = INVALID_VALUE then
-   begin
-      for i := 0 to c.Count - 1 do
-      begin
-         case DWORD(c[i]) of
-            kwIFC:
-               begin
-                  CurPort := FindPort(60179, 'IFC', Flags);
-                  CurProt := ptifcico;
-                  Break;
-               end;
          end;
       end;
    end;
-   if CurPort = INVALID_VALUE then
-   begin
-      for i := 0 to c.Count - 1 do
-      begin
+   if CurPort = INVALID_VALUE then begin
+      for i := 0 to c.Count - 1 do begin
          case DWORD(c[i]) of
-            kwTEL,
-               kwTCP,
-               kwVMP,
-               kwIVM,
-               kwITN,
-               kwIP:
-               begin
-                  CurPort := FindPort(23, 'ITN,IP,IVM,TCP,TEL,VMP', Flags);
-                  CurProt := ptTelnet;
-                  Break;
-               end;
+         kwTEL,
+         kwTCP,
+         kwVMP,
+         kwIVM,
+         kwITN,
+         kwIP:
+            begin
+               CurPort := FindPort(23, 'ITN,IP,IVM,TCP,TEL,VMP', Flags);
+               CurProt := ptTelnet;
+               Break;
+            end;
          end;
       end;
    end;
-   if CurPort = INVALID_VALUE then
-   begin
-      for i := 0 to c.Count - 1 do
-      begin
+   if CurPort = INVALID_VALUE then begin
+      for i := 0 to c.Count - 1 do begin
          case DWORD(c[i]) of
 {         kwITX,
          kwIEM,}
@@ -14898,10 +14730,8 @@ begin
          end;
       end;
    end;
-   if CurPort = INVALID_VALUE then
-   begin
-      for i := 0 to c.Count - 1 do
-      begin
+   if CurPort = INVALID_VALUE then begin
+      for i := 0 to c.Count - 1 do begin
          case DWORD(c[i]) of
          kwPOP:
             begin
@@ -14915,16 +14745,12 @@ begin
    c.DeleteAll;
    FreeObject(c);
    if CurPort = INVALID_VALUE then Exit;
-   if ValidInetAddr(Addr) then
-   begin
+   if ValidInetAddr(Addr) then begin
       Inet2Port(Addr, CurPort);
-   end
-   else
-   if ValidSymAddr(Addr) then
-   begin
+   end else
+   if ValidSymAddr(Addr) then begin
       Sym2Port(Addr, CurPort);
-   end
-   else
+   end else
    if CurProt <> ptSMTP then begin
       Exit;
    end;
@@ -14999,8 +14825,7 @@ var
    t: TDaemonExtPollThread;
 begin
    Logger.Log(ltInfo, 'End');
-   for i := 0 to DaemonExtPollThreads.Count - 1 do
-   begin
+   for i := 0 to DaemonExtPollThreads.Count - 1 do begin
       t := DaemonExtPollThreads[i];
       t.WaitFor;
       FreeObject(t);
@@ -15063,7 +14888,6 @@ begin
          end;
       until False;
 
-{$IFDEF RASDIAL}
       CfgEnter;
       RR := Cfg.IPData.Restriction.Copy;
       CfgLeave;
@@ -15086,7 +14910,6 @@ begin
          sendmessage(MainWinHandle, WM_RASDISCONNECT, 0, 0);
          FidoPollsLog('RAS event finished (nothing to do)');
       end;
-{$ENDIF}
    end;
 
    PurgeConnThrs;
@@ -15156,8 +14979,6 @@ begin
    DaemonActiveFlag := TLockFile.Create(MakeNormName(IniFile.FlagsDir, 'active.ip'), IniFile.SimpleBSY);
 end;
 
-{$ENDIF}
-
 ////////////////////////////////////////////////////////////////////////
 //                                                                    //
 //                           Common Logs                              //
@@ -15187,27 +15008,24 @@ var
    Actually: DWORD;
 begin
    EnterCS(CS);
-   if _LogOK(accessFName, accessFHandle) then
-   begin
+   if _LogOK(accessFName, accessFHandle) then begin
       Replace(':', '', FName);
       Replace('\', '/', FName);
       s := uFormatDateTime('dd"/"mmm"/"yyyy:hh:nn:ss ', uGetSystemTime);
       GetBias;
       b := TimeZoneBias;
-      if b < 0 then
-      begin
+      if b < 0 then begin
          b := -b;
          s := s + '+'
-      end
-      else
+      end else begin
          s := s + '-';
+      end;
       b := b div 60;
       s := Format('%s - - [%s%.2d%.2d] "%s /%s" 200 %d' + CRLF, [Addr2Str(Addr), s, b div 60, b mod 60, CGet[Get], LowerCase(FName), FSize]);
       WriteFile(accessFHandle, s[1], Length(s), Actually, nil);
       if StartupOptions and stoFastLog = 0 then ZeroHandle(accessFHandle);
    end;
-   if _LogOK(agentFName, agentFHandle) then
-   begin
+   if _LogOK(agentFName, agentFHandle) then begin
       s := Mailer + CRLF;
       WriteFile(agentFHandle, s[1], Length(s), Actually, nil);
       if StartupOptions and stoFastLog = 0 then ZeroHandle(agentFHandle);
@@ -15222,11 +15040,7 @@ begin
    CommonLog.agentFName := MakeNormName(dLog, IniFile.agentFName);
    CommonStatxFName := MakeNormName(dLog, IniFile.StatxFName);
    PortsColl := TDevicePortColl.Create;
-//   PortsColl.Enter;
-//   PortsColl.Leave;
    FidoPolls := TPollColl.Create;
-//   FidoPolls.Enter;
-//   FidoPolls.Leave;
    MailerThreads := CreateTCollEL('MailerThreads');
    MailerTransit := CreateTCollEL('MailerTransit');
    MailerForms := CreateTCollEL('MailerForms');
@@ -15422,8 +15236,6 @@ begin
 
 end;
 
-{$IFDEF WS}
-
 procedure _ShutdownDaemon;
 var
    I: Integer;
@@ -15473,13 +15285,12 @@ begin
    _RecalcPolls(False);
    FreeObject(DaemonActiveFlag);
 end;
-{$ENDIF}
 
 procedure InvalidatePollAddrs;
 var
    i: Integer;
    p: TFidoPoll;
-   an: TAdvNode;
+  an: TAdvNode;
 begin
    if FidoPolls = nil then Exit;
    if FidoPolls.Count = 0 then Exit;

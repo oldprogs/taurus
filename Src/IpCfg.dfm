@@ -711,8 +711,8 @@ object IPcfgForm: TIPcfgForm
       object gSMTP: TAdvGrid
         Left = 0
         Top = 0
-        Width = 585
-        Height = 284
+        Width = 586
+        Height = 285
         FixedFont.Charset = DEFAULT_CHARSET
         FixedFont.Color = clWindowText
         FixedFont.Height = -12
@@ -818,27 +818,27 @@ object IPcfgForm: TIPcfgForm
           490)
       end
       object gbCash: TGroupBox
-        Left = 355
+        Left = 336
         Top = 2
-        Width = 209
+        Width = 229
         Height = 45
         Anchors = [akTop, akRight]
-        Caption = 'Cash'
+        Caption = 'Cache'
         TabOrder = 1
         DesignSize = (
-          209
+          229
           45)
         object lCash1: TLabel
-          Left = 28
+          Left = 42
           Top = 18
-          Width = 88
+          Width = 94
           Height = 15
           Alignment = taRightJustify
           Anchors = [akTop, akRight]
-          Caption = 'NNTP cash size'
+          Caption = 'NNTP cache size'
         end
         object lCash2: TLabel
-          Left = 182
+          Left = 202
           Top = 18
           Width = 16
           Height = 15
@@ -846,7 +846,7 @@ object IPcfgForm: TIPcfgForm
           Caption = 'Mb'
         end
         object xSpinCash: TxSpinEdit
-          Left = 125
+          Left = 144
           Top = 14
           Width = 51
           Height = 24
@@ -865,15 +865,15 @@ object IPcfgForm: TIPcfgForm
       object gBList: TAdvGrid
         Left = 0
         Top = 0
-        Width = 401
+        Width = 586
         Height = 285
         FixedFont.Charset = DEFAULT_CHARSET
         FixedFont.Color = clWindowText
         FixedFont.Height = -12
         FixedFont.Name = 'Arial'
         FixedFont.Style = []
-        Align = alLeft
-        ColCount = 3
+        Align = alClient
+        ColCount = 4
         DefaultRowHeight = 17
         RowCount = 2
         Font.Charset = DEFAULT_CHARSET
@@ -889,7 +889,8 @@ object IPcfgForm: TIPcfgForm
         ColWidths = (
           31
           190
-          171)
+          64
+          292)
       end
     end
   end
@@ -936,5 +937,10 @@ object IPcfgForm: TIPcfgForm
     TabOrder = 7
     Visible = False
     OnClick = bExplainClick
+  end
+  object TM: TTimer
+    OnTimer = TMTimer
+    Left = 640
+    Top = 280
   end
 end
