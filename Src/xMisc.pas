@@ -407,7 +407,6 @@ type
 
   TBaseProtocol = class
   protected
-     CP                  : TPort;
      CS                  : TRTLCriticalSection;
      FAcceptFile         : TAcceptFile;
      FGetNextFile        : TGetNextFile;
@@ -429,6 +428,7 @@ type
   private
      procedure DoStart;
   public
+     CP                  : TPort;
      CramDisabled,
      Debug,
      OutFlow             : Boolean;
@@ -664,6 +664,7 @@ type
      function  GetPortIndex: Integer;                virtual; abstract;
      function  GetDTE: Integer;                      virtual; abstract;
   public
+     Msg: string;
    // mapped routines
      procedure SetDeltaDCDNotify(h: DWORD);          virtual; abstract;
      procedure SetCommErrorNotify(h: DWORD);         virtual; abstract;
@@ -729,7 +730,8 @@ type
      FDTE,                      { Baudrate port have been locked }
      SzWrite,
      SzWriteNow,
-     PtrReadA, SzReadA,
+     PtrReadA,
+     SzReadA,
      SzReadB,
      HoldPos,
      HoldLen,

@@ -318,9 +318,11 @@ function TConfig.ReadString(Sect, Line, Def: string): string;
 begin
    with TIniFile.Create(IniFName) do begin
       try
+         Enter;
          Result := ReadString(Sect, Line, Def);
       finally
          Free;
+         Leave;
       end;
    end;
 end;
@@ -329,9 +331,11 @@ function TConfig.ReadBool(Sect, Line: string): boolean;
 begin
    with TIniFile.Create(IniFName) do begin
       try
+         Enter;
          Result := ReadBool(Sect, Line, True);
       finally
          Free;
+         Leave;
       end;
    end;
 end;
@@ -345,10 +349,12 @@ procedure TConfig.WriteInteger;
 begin
    with TIniFile.Create(IniFName) do begin
       try
+         Enter;
          WriteInteger(sect, Line, Val);
       finally
          Free;
-      end;      
+         Leave;
+      end;
    end;
 end;
 
@@ -356,9 +362,11 @@ function TConfig.ReadInteger(Sect, Line: string; Def: integer): integer;
 begin
    with TIniFile.Create(IniFName) do begin
       try
+         Enter;
          Result := ReadInteger(Sect, Line, Def);
       finally
          Free;
+         Leave;
       end;
    end;
 end;
@@ -367,9 +375,11 @@ procedure TConfig.WriteString;
 begin
    with TIniFile.Create(IniFName) do begin
       try
+         Enter;
          WriteString(Sect, Line, Val);
       finally
          Free;
+         Leave;
       end;
    end;
 end;
@@ -380,10 +390,12 @@ var
 begin
    with TIniFile.Create(IniFName) do begin
       try
+         Enter;
          Result := TStringList.Create;
          ReadSection('Grids', Result);
       finally
          Free;
+         Leave;
       end;
    end;
    for i := Result.Count - 1 downto 0 do begin
@@ -410,6 +422,7 @@ begin
    end;
    with TIniFile.Create(IniFName) do begin
       try
+         Enter;
          s := TStringList.Create;
          ReadSection('Grids', s);
          Result := TDualColl.Create;
@@ -424,6 +437,7 @@ begin
          s.Free;
       finally
          Free;
+         Leave;
       end;
    end;
 end;
@@ -438,6 +452,7 @@ var s: TStringList;
 begin
    with TIniFile.Create(IniFName) do begin
       try
+         Enter;
          s := TStringList.Create;
          ReadSection('Grids', s);
          r := 1;
@@ -457,6 +472,7 @@ begin
          s.Free;
       finally
          Free;
+         Leave;
       end;
    end;
 end;
@@ -471,6 +487,7 @@ var i: integer;
 begin
    with TIniFile.Create(IniFName) do begin
       try
+         Enter;
          l := TStringList.Create;
          ReadSection('Grids', l);
          for i := l.Count - 1 downto 0 do begin
@@ -481,8 +498,10 @@ begin
          l.Free;
       finally
          Free;
+         Leave;
       end;
    end;
+   Enter;
    for i := 1 to g.RowCount - 1 do begin
       s := '';
       for n := g.FixedCols to g.ColCount - 1 do begin
@@ -492,6 +511,7 @@ begin
       end;
       WriteString('Grids', g.Name + IntToStr(i), s);
    end;
+   Leave;
    i := StringsList.IndexOf(g.Name);
    if i > - 1 then begin
       p := StringsList.Objects[i] as TDualColl;

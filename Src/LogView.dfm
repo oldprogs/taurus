@@ -10,9 +10,11 @@ object LogViewer: TLogViewer
   Font.Height = -11
   Font.Name = 'MS Sans Serif'
   Font.Style = []
+  KeyPreview = True
   OldCreateOrder = False
   OnCreate = FormCreate
   OnDestroy = FormDestroy
+  OnKeyPress = FormKeyPress
   PixelsPerInch = 96
   TextHeight = 13
   object mmView: TJvEditor
@@ -48,5 +50,11 @@ object LogViewer: TLogViewer
     ParentFont = False
     TabStop = True
     UseDockManager = False
+  end
+  object TM: TTimer
+    Interval = 500
+    OnTimer = TMTimer
+    Left = 16
+    Top = 24
   end
 end

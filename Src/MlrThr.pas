@@ -1417,7 +1417,6 @@ type
     hDir: THandle;
     Nodes: TOutNodeColl;
     NodesCS: TRTLCriticalSection;
-    ExtrnCS: TRTLCriticalSection;
     ForcedUpdate: Boolean;
     HandUpdate: Boolean;
     FullRescan: Boolean;
@@ -1425,8 +1424,6 @@ type
     constructor Create;
     destructor Destroy; override;
     procedure InvokeExec; override;
-    procedure Enter;
-    procedure Leave;
     class function ThreadName: string; override;
   end;
 
@@ -2299,6 +2296,8 @@ var
          p.Owner := PollOwnerExtApp;
          Result := plsBSY;
          Exit;
+      end else begin
+         ScanCounter := 1;
       end;
 
       Result := plsAVL;
@@ -4032,6 +4031,7 @@ begin
    if (Owner = nil) or (Owner = PollOwnerExtApp) then Exit;
    FidoOut.UnLock(Node.Addr, osBusyEx); //Always *.csy for waiting connect
    Owner := nil;
+   ScanCounter := 1;
 end;
 
 // --- TMailerThreadInitData
@@ -4049,7 +4049,6 @@ begin
       LeaveFidoPolls;
    end;
 
-   OutMgrThread.Enter;
    for i := 0 to CollMax(rmtAddrs) do
    begin
       if inifile.DynamicOutbound then begin
@@ -4058,10 +4057,8 @@ begin
          FidoOut.Unlock(rmtAddrs[I], osBusy);
       end;
    end;
-   OutMgrThread.Leave;
 
    FreeObject(rmtAddrs);
-
    FreeObject(PostEMSILogErrors);
    FreeObject(YooHooPkt);
    FreeObject(AkaA);
@@ -4553,7 +4550,11 @@ begin
                      DoAccumulate;
                      case ModemResponse of
                         mrpOK: Break;
-                        mrpRing: Log(ltWarning, SD.LastResponse);
+                        mrpRing:
+                           begin
+                              Log(ltWarning, SD.LastResponse);
+                              break;
+                           end;   
                         mrpNone: Sleep(100);
                         mrpNoCarrier:
                         begin
@@ -5129,26 +5130,22 @@ var
       IsDialUp, b: boolean;
    begin
       b := true;
-      if SD.ActivePoll <> nil then
-      begin
+      if SD.ActivePoll <> nil then begin
 {$IFDEF WS}
          isDialUp := DialUpLine;
 {$ELSE}
          isDialUp := true;
 {$ENDIF}
          flags := SD.ActivePoll.Flags(IsDialUp);
-         if (not IsFReqTime(flags)) then
-         begin
+         if (not IsFReqTime(flags)) then begin
             b := false;
             LogOnce(ltinfo, Format('FReqs are temporarly disabled at %s (overrides)', [Addr2Str(SD.ActivePoll.Node.Addr)]));
          end;
 
-         while flags <> '' do
-         begin
+         while flags <> '' do begin
             GetWrd(Flags, f2, ',');
             u := u or (UpperCase(f2) = 'U');
-            if u and (UpperCase(f2) = 'NRQ') then
-            begin
+            if u and (UpperCase(f2) = 'NRQ') then begin
                b := false;
                LogOnce(ltinfo, Format('%s doesn''t accept FReqs (overrides)', [Addr2Str(SD.ActivePoll.Node.Addr)]));
                break;
@@ -5165,15 +5162,11 @@ begin
       SD.rmtAddrs.Add(SD.ActivePoll.Node.Addr);
    end;
    CfgEnter;
-   for n := 0 to SD.rmtAddrs.Count - 1 do
-   begin
-      if IniFile.D5out then
-      begin
+   for n := 0 to SD.rmtAddrs.Count - 1 do begin
+      if IniFile.D5out then begin
          OK := False;
-         for i := 0 to CollMax(Cfg.IpDomA) do
-         begin
-            if MatchMaskAddressListSingle(SD.rmtAddrs[n], Cfg.IpDomA[i]) then
-            begin
+         for i := 0 to CollMax(Cfg.IpDomA) do begin
+            if MatchMaskAddressListSingle(SD.rmtAddrs[n], Cfg.IpDomA[i]) then begin
                if (AltCfg.IpDomC[i] = '') and
                   (SD.rmtAddrs[n].Domain <> '') then
                begin
@@ -5183,22 +5176,17 @@ begin
                OK := True;
             end;
          end;
-         if not OK then
-         begin
+         if not OK then begin
             sss := LowerCase(SD.rmtAddrs[n].Domain);
             i := AltCfg.IpDomC.IdxOf(sss);
-            if i = -1 then
-            begin
-               if SD.rmtAddrs[n].Domain <> '' then
-               begin
+            if i = -1 then begin
+               if SD.rmtAddrs[n].Domain <> '' then begin
                   StoreConfigAfter := True;
                   Cfg.IpDomA.Add(IntToStr(SD.rmtAddrs[n].Zone) + ':*/*');
                   Cfg.IpDomB.Add('');
                   AltCfg.IpDomC.Add(sss);
                end;
-            end
-            else
-            begin
+            end else begin
                StoreConfigAfter := True;
                Cfg.IpDomA[i] := Cfg.IpDomA[i] + ' ' + IntToStr(SD.rmtAddrs[n].Zone) + ':*/*';
             end;
@@ -5212,8 +5200,7 @@ begin
    CfgLeave;
    N := 0;
    TransmitHold := SD.ActivePoll = nil;
-   if not TransmitHold then
-   begin
+   if not TransmitHold then begin
       TransmitHold := inifile.TransmitHold; //pofHold in FidoPolls.Options.d.Flags;
    end;
    Add(osCallback);
@@ -5227,8 +5214,7 @@ begin
    Add(osCrash);
    Add(osDirect);
    Add(osNormal);
-   if TransmitHold then
-   begin
+   if TransmitHold then begin
       Add(osHold);
       Add(osHreq);
    end;
@@ -5237,21 +5223,17 @@ begin
    STrsFilesRqd := EP.StrValue(eiTrsFilesRqd);
    STrsFilesFrb := EP.StrValue(eiTrsFilesFrb);
 
-   if SD.ActivePoll = nil then
-   begin
+   if SD.ActivePoll = nil then begin
       TransmitRequired := TStringColl.Create;
       TransmitForbidden := TStringColl.Create;
       TransmitRequired.FillEnum(ExpandSuperMask(STrsFilesRqd), ' ', True);
       TransmitForbidden.FillEnum(ExpandSuperMask(STrsFilesFrb), ' ', True);
       if TransmitRequired.Count = 0 then FreeObject(TransmitRequired);
       if TransmitForbidden.Count = 0 then FreeObject(TransmitForbidden);
-   end
-   else
-   begin
+   end else begin
       TransmitRequired := nil;
       TransmitForbidden := nil;
-      if (STrsFilesRqd <> '') or (STrsFilesFrb <> '') then
-      begin
+      if (STrsFilesRqd <> '') or (STrsFilesFrb <> '') then begin
          LogOnce(ltInfo, Format('Transmit files restrictions are ignored on outgoing sessions (Required="%s"; Forbidden="%s")', [STrsFilesRqd, STrsFilesFrb]));
       end;
    end;
@@ -5270,13 +5252,11 @@ begin
    SD.OutFiles.FreeAll;
 
    SD.rmtAddrs.Enter;
-   for I := 0 to CollMax(SD.rmtAddrs) do
-   begin
+   for I := 0 to CollMax(SD.rmtAddrs) do begin
       IgnoreNextEvent := True;
       if IniFile.DynamicOutbound then
       if not FidoOut.Lock(SD.rmtAddrs[i], osBusy, True) then continue;
-      for K := 1 to N do
-      begin
+      for K := 1 to N do begin
          S := A[K];
          J := SD.OutFiles.Count;
         // SD.OutFiles := FidoOut.GetOutbound(SD.rmtAddrs[I], [S], SD.OutFiles, nil, nil, True, True);
@@ -5304,23 +5284,21 @@ begin
                PI := @SD.TxFiles;
             end;
          end;
-         for M := L downto J do
-         begin
+         for M := L downto J do begin
             Sleep(20);
             tof := SD.OutFiles[M];
             SD.SentFiles.Enter;
-            for P := 0 to SD.SentFiles.Count - 1 do
-            begin
-               if not (tof.Status in [osImmedMail..osHoldMail]) and
-                  ((tof.Name = TOutFile(SD.SentFiles[P]).Name) or
-                   (tof.Name = TOutFile(SD.SentFiles[P]).Orig)) then
+            for P := 0 to SD.SentFiles.Count - 1 do begin
+               if ((tof.Name = TOutFile(SD.SentFiles[P]).Name) or
+                   (tof.Name = TOutFile(SD.SentFiles[P]).Orig)) and
+                  (tof.Nfo.Time = TOutFile(SD.SentFiles[P]).Nfo.Time) and
+                  (tof.Nfo.Size = TOutFile(SD.SentFiles[P]).Nfo.Size) then
                begin
                   SD.OutFiles.AtFree(M);
                   tof := nil;
                   Break;
                end;
-               if tof.Nfo.Size = 0 then
-               begin
+               if tof.Nfo.Size = 0 then begin
                   SD.OutFiles.AtFree(M);
                   tof := nil;
                   Break;
@@ -5346,8 +5324,7 @@ begin
                ok := False;
             end;
 
-            if ok and (rmfHXT in SD.rmtMailerFlags) then
-            begin
+            if ok and (rmfHXT in SD.rmtMailerFlags) then begin
                case S of
                   osImmedMail, osCrashMail, osDirectMail, osNormalMail, osHoldMail: ;
                else
@@ -5371,21 +5348,17 @@ begin
             osImmed,
             osCrash:
                begin
-                  if (STrsFilesRqd <> '') or (STrsFilesFrb <> '') then
-                  begin
+                  if (STrsFilesRqd <> '') or (STrsFilesFrb <> '') then begin
                      LogOnce(ltInfo, Format('Transmit files restrictions are ignored for Crash attachments (Required="%s"; Forbidden="%s")', [STrsFilesRqd, STrsFilesFrb]));
                   end;
                end;
             else
                begin
                   RqdMatched := TransmitRequired = nil;
-                  if not RqdMatched then
-                  begin
-                     for II := 0 to CollMax(TransmitRequired) do
-                     begin
+                  if not RqdMatched then begin
+                     for II := 0 to CollMax(TransmitRequired) do begin
                         sss := TransmitRequired[II];
-                        if MatchMask(tof.Name, sss) then
-                        begin
+                        if MatchMask(tof.Name, sss) then begin
                            LogOnce(ltInfo, Format('"%s" matches "%s"', [tof.Name, sss]));
                            RqdMatched := True;
                            Break;
@@ -5403,11 +5376,9 @@ begin
                   end;
 
                   FrbMatched := False;
-                  for II := 0 to CollMax(TransmitForbidden) do
-                  begin
+                  for II := 0 to CollMax(TransmitForbidden) do begin
                      sss := TransmitForbidden[II];
-                     if MatchMask(tof.Name, sss) then
-                     begin
+                     if MatchMask(tof.Name, sss) then begin
                         FrbMatched := True;
                         Break;
                      end;
@@ -6563,13 +6534,11 @@ const
    KAR: array[TKillAction] of string = ('', ' - deleted', ' - truncated', ' - delete', ' - move');
 
 begin
-   if P.T.Stream = nil then
-   begin
+   if P.T.Stream = nil then begin
       Exit;
    end;
 
-   if Action = aaSysError then
-   begin
+   if Action = aaSysError then begin
       SetErrorMsg(P.T.D.FName);
       ChkErrMsg;
    end;
@@ -6580,8 +6549,7 @@ begin
    DisplayData;
    if P.T.Stream is TxMemoryStream then
       r := nil
-   else
-   begin
+   else begin
       r := nil;
       if P.SendFTPFile then begin
          for i := 0 to SD.OutFiles.Count - 1 do begin
@@ -6596,15 +6564,13 @@ begin
       end else begin
          r := P.T.r;
       end;
-      if (UpperCase(ExtractFileExt(r.Name)) = '.REQ') then
-      begin
+      if (UpperCase(ExtractFileExt(r.Name)) = '.REQ') then begin
          if rmfHFR in SD.rmtMailerFlags then
             r.KillAction := kaBsoKillAfter
          else
             SD.KillSentREQ := True;
       end;
-      if (UpperCase(ExtractFileExt(r.Name)) = '.CLB') then
-      begin
+      if (UpperCase(ExtractFileExt(r.Name)) = '.CLB') then begin
          SD.KillSentREQ := True;
          SD.Prot.ProtocolError := ecAbortByLocal;
       end;
@@ -6626,12 +6592,12 @@ begin
                   kaBsoKillAfter:
                      begin
                         FreeObject(P.T.Stream);
-                        if SD.HReqDelete <> nil then
-                        begin
+                        if SD.HReqDelete <> nil then begin
                            if SD.HReqDelete.Search(@r.Name, I) then SD.HReqDelete.AtFree(I);
                         end;
                         FidoOut.Lock(r.Address, osBusy, True);
                         DeleteOutFile(r.Name);
+                        OA := True;
                      end;
                   kaBsoTruncateAfter:
                      begin
@@ -6643,8 +6609,7 @@ begin
                   kaFbKillAfter:
                      begin
                         FreeObject(P.T.Stream);
-                        if not DelFile('FinishSend', PChar(r.Name)) then
-                        begin
+                        if not DelFile('FinishSend', PChar(r.Name)) then begin
                            LogFmt(ltWarning, 'Cannot delete %s (%s)', [r.Name, SysErrorMessage(GetLastError)]);
                         end else begin
                            OA := True;
@@ -6655,12 +6620,9 @@ begin
                         FreeObject(P.T.Stream);
                         st := r.Status;
                         MoveTo := ReplaceDirMacro(r.MoveTo, @r.Address, @st, [rmkTime, rmkAddr, rmkStatus], nil);
-                        if not CreateDirInheritance(MoveTo) then
-                        begin
+                        if not CreateDirInheritance(MoveTo) then begin
                            ChkErrMsg;
-                        end
-                        else
-                        begin
+                        end else begin
                            sss := MakeNormName(MoveTo, ExtractFileName(r.Name));
                            ok := MoveFileSmart(r.Name, sss, True, Overwritten);
                            if Overwritten then LogOverwritten(sss);
@@ -6678,19 +6640,15 @@ begin
                   end;
                end;
             end;
-            if r <> nil then
-            begin
+            if r <> nil then begin
                if not P.SendFTPFile then begin
-                  if inifile.DynamicOutbound then
-                  begin
+                  if inifile.DynamicOutbound then begin
                      FidoOut.Lock(r.Address, osBusy, True);
                   end;
                   FidoOut.DeleteFile(r.Address, r.Name, r.FStatus);
-                  if inifile.DynamicOutbound then
-                  begin
+                  if inifile.DynamicOutbound then begin
                      sss := GetOutFileName(r.Address, osNone);
-                     if pos(sss + '.TMP\', r.Name) > 0 then
-                     begin
+                     if pos(sss + '.TMP\', r.Name) > 0 then begin
                         RemoveDir(sss + '.TMP');
                      end;
                      FidoOut.Unlock(r.Address, osBusy);
@@ -6706,8 +6664,7 @@ begin
                      else
                         sss := KAS[r.KillAction];
                      sss := Format('%sSent%s ''%s''', [CPS, sss, P.T.D.FName]);
-                     if (P.ActuallySent > 0) and (P.VisuallySent > 0) then
-                     begin
+                     if (P.ActuallySent > 0) and (P.VisuallySent > 0) then begin
                         ii := P.VisuallySent - P.ActuallySent;
                         if ii > 0 then begin
                            sss :=  sss + ', ' + Format('ZLIB: %d%s (%sb)', [100 * ii div longint(P.VisuallySent), '%', Int2Str(P.ActuallySent)]);
@@ -6752,8 +6709,7 @@ begin
             aaAbort:
                begin
                   LogFmt(ltWarning, 'Protocol aborted while sending ''%s''', [P.T.D.FName]);
-                  if (r <> nil) and (r.Orig <> '') and (r.Link = '') then
-                  begin
+                  if (r <> nil) and (r.Orig <> '') and (r.Link = '') then begin
                      FreeObject(P.T.Stream);
                      MergeMail(r.Address, r.Name, r.Orig);
                   end;
@@ -6764,8 +6720,7 @@ begin
    end;
    FreeObject(P.T.Stream);
    if P.SendFTPFile then begin
-      if (r <> nil) and (r.Orig <> '') and (r.Link = '') then
-      begin
+      if (r <> nil) and (r.Orig <> '') and (r.Link = '') then begin
          MergeMail(r.Address, r.Name, r.Orig);
          r.Name := r.Orig;
          r.Orig := '';
@@ -6778,12 +6733,11 @@ begin
          FreeObject(P.T.r);
       end;
    end else
-   if r <> nil then
-   begin
+   if r <> nil then begin
       SD.OutFiles.Enter;
       for i := CollMax(SD.OutFiles) downto 0 do begin
          t := SD.OutFiles[i];
-         if (t.Orig = r.Orig) and (t.Name = r.Name) then begin
+         if (t.Orig = r.Orig) and ((t.Name = r.Name) or (t.Name = r.Orig)) then begin
             SD.OutFiles.AtDelete(i);
          end;
       end;
@@ -6892,10 +6846,8 @@ begin
    repeat
       PTDFName := '';
       if (SD.OutFiles.Count = 0) then ScanOut(True);
-      if SD.DisabledFiles <> nil then
-      begin
-         for i := SD.OutFiles.Count - 1 downto 0 do
-         begin
+      if SD.DisabledFiles <> nil then begin
+         for i := SD.OutFiles.Count - 1 downto 0 do begin
             f := SD.OutFiles[i];
             if SD.DisabledFiles.Found(UpperCase(f.Name)) then begin
                SD.OutFiles.AtFree(i);
@@ -6903,16 +6855,14 @@ begin
          end;
       end;
       if CollMax(SD.SentFiles) > -1 then begin
-         for i := SD.OutFiles.Count - 1 downto 0 do
-         begin
+         for i := SD.OutFiles.Count - 1 downto 0 do begin
             f := SD.OutFiles[i];
-            if SD.SentFiles.Found(f) and not (f.Status in [osImmedMail..osHoldMail]) then begin
+            if SD.SentFiles.Found(f) then begin
                SD.OutFiles.AtFree(i);
             end;
          end;
       end;
-      if (SD.OutFiles.Count = 0) and not P.SendFTPFile then
-      begin
+      if (SD.OutFiles.Count = 0) and not P.SendFTPFile then begin
          if not SD.SendDummyPkt then Exit;
          SD.SendDummyPkt := False;
          if (SD.SentFiles.Count > 0) then Exit;
@@ -6992,8 +6942,7 @@ begin
 
       P.CustomInfo := '';
 
-      if (f.FStatus = osRequest) and ((rmfNRQ in SD.rmtMailerFlags) or (rmfHRQ in SD.rmtMailerFlags)) then
-      begin
+      if (f.FStatus = osRequest) and ((rmfNRQ in SD.rmtMailerFlags) or (rmfHRQ in SD.rmtMailerFlags)) then begin
          LogFmt(ltWarning, 'Remote refuses file requests - %s not sent', [f.Name]);
          SD.OutFiles.Enter;
          SD.OutFiles.AtDelete(0);
@@ -7020,11 +6969,11 @@ begin
                else
                   zzz := '%.8x.PKT';
                PTDFName := Format(zzz, [GetTickCount xor xRandom32]);
-               if inifile.DynamicOutbound then
-               begin
+               if inifile.DynamicOutbound then begin
                   f.Orig := f.Name;
                   f.Name[length(f.Name)] := '~';
                   FidoOut.Lock(f.Address, osBusy, True);
+                  IgnoreNextEvent := True;
                   RenameFile(f.Orig, f.Name);
                   SD.txTran := f.Nfo.Size;
                   FidoOut.Unlock(f.Address, osBusy);
@@ -7032,13 +6981,10 @@ begin
             end;
       end;
 
-      if (f.Link <> '') and inifile.DynamicOutbound then
-      begin
+      if (f.Link <> '') and inifile.DynamicOutbound then begin
          zzz := ExtractFileExt(f.Name);
-         if IsArcMailExt(zzz) then
-         begin
-            if pos(GetOutFileName(f.Address, osNone) + '.TMP\', f.Name) = 0 then
-            begin
+         if IsArcMailExt(zzz) then begin
+            if pos(GetOutFileName(f.Address, osNone) + '.TMP\', f.Name) = 0 then begin
                f.Orig := f.Name;
                f.Name := GetOutFileName(F.Address, osNone) + '.TMP\' + ExtractFileName(F.Name);
                FidoOut.Lock(f.Address, osBusy, True);
@@ -7046,10 +6992,8 @@ begin
                l := TStringColl.Create;
                zzz := f.Link;
                l.LoadFromFile(zzz);
-               for i := 0 to l.Count - 1 do
-               begin
-                  if pos(UpperCase(f.Orig), UpperCase(l[i])) > 0 then
-                  begin
+               for i := 0 to l.Count - 1 do begin
+                  if pos(UpperCase(f.Orig), UpperCase(l[i])) > 0 then begin
                      l[i] := '^' + f.Name;
                      l.SaveToFile(zzz);
                      break;
@@ -7057,8 +7001,7 @@ begin
                end;
                l.Free;
                RenameFile(f.Orig, f.Name);
-               if f.KillAction = kaBsoTruncateAfter then
-               begin
+               if f.KillAction = kaBsoTruncateAfter then begin
                   s := CreateDosStream(f.Orig, [cWrite]);
                   s.Free;
                   f.KillAction := kaFbKillAfter;
@@ -7077,16 +7020,17 @@ begin
       end;
       s := CreateDosStream(f.Name, cf);
 
-      if s = nil then
-      begin
+      if s = nil then begin
          SetErrorMsg(f.Name);
          ChkErrMsg;
          Fre0;
+         if SD.OutFiles.Count > 0 then begin
+            SD.OutFiles.AtFree(0);
+         end;   
          Continue;
       end;
 
-      if not GetFileNfoByHandle(TDosStream(s).Handle, Info) then
-      begin
+      if not GetFileNfoByHandle(TDosStream(s).Handle, Info) then begin
          SetErrorMsg(f.Name);
          ChkErrMsg;
          FreeObject(s);
@@ -8691,7 +8635,6 @@ begin
       Result := False;
       Exit;
    end;
-   OutMgrThread.Enter;
    s := TStringList.Create;
    for i := j downto 0 do begin
       a := SD.rmtAddrs[i];
@@ -8713,7 +8656,6 @@ begin
    end;
    s.Free;
    FlushLog;
-   OutMgrThread.Leave;
    while ProcessColl.Count > 0 do begin
       ProcessColl.Enter;
       WaitEvts[0] := TProcessNfo(ProcessColl[0]).PI.hProcess;
@@ -9216,6 +9158,7 @@ begin
       msStartWZ:
          begin
             SD.SessionOK := False;
+            FstTic := GetTickCount;
             if SD.rmtPrimaryAddr.Zone = 0 then;
             SD.Accumulate := False;
             Priority := tpNormal;
@@ -10321,16 +10264,16 @@ begin
    if Next then
       OK
    else
-      if Next then
-         P.IncBusyTries('BUSY')
-      else
-         if Next then
-            P.IncNoConnectTries
-         else
-            if Next then
-               P.IncAbortedTries
-            else
-               OK;
+   if Next then
+      P.IncBusyTries('BUSY')
+   else
+   if Next then
+      P.IncNoConnectTries
+   else
+   if Next then
+      P.IncAbortedTries
+   else
+      OK;
 end;
 
 procedure FinalizeExtApp(var Nfo: TProcessInformation; Logger: TAbstractLogger; var ExtPoll: TFidoPoll);
@@ -10376,8 +10319,7 @@ procedure TMailerThread.PollDone;
 var
    R: DWORD;
 begin
-   if SD.ActivePoll <> nil then
-   begin
+   if SD.ActivePoll <> nil then begin
       RollPoll(SD.ActivePoll);
       EnterFidoPolls;
       R := EP.DwordValueD(eiRetry, inifile.FPFlags.Retry);
@@ -12505,8 +12447,7 @@ end;
 
 procedure TMailerThread.DoSE_NoConnect;
 begin
-   if SD.ActivePoll <> nil then
-   begin
+   if SD.ActivePoll <> nil then begin
       SD.ActivePoll.IncNoConnectTries;
       if (SD.ActivePoll.Typ = ptpBack) and
          (SD.ActivePoll.TryNoConnect > 2) then
@@ -13077,12 +13018,10 @@ procedure TMailerThread.DoMisc;
       L := EP.GetAtomList(eiModemScript);
       if L <> nil then
       begin
-         for i := 0 to L.Count - 1 do
-         begin
+         for i := 0 to L.Count - 1 do begin
             eg := L[i];
             RE := GetRegExpr(eg.s);
-            if (RE <> nil) and (RE.Match(SD.InC) > 0) then
-            begin
+            if (RE <> nil) and (RE.Match(SD.InC) > 0) then begin
                SD.InC := '';
                SD.ModemScript := eg.L.Copy;
                s := RE.Matches[0];
@@ -13096,8 +13035,7 @@ procedure TMailerThread.DoMisc;
                SetStatusMsg(rsMMScript, '');
                os := State;
                State := msScript;
-               if not ExecScript(t, SD.ModemScript) then
-               begin
+               if not ExecScript(t, SD.ModemScript) then begin
                   SetStatusMsg(rsMMIdle, '');
                   ClearTmrPublic;
                   State := os;
@@ -13240,12 +13178,10 @@ begin
             ClearTmr1;
             SD.StateDeltaDCD := msNone;
 {$IFDEF WS}
-            if not DialupLine then
-            begin
+            if not DialupLine then begin
                TossBWZ(false);
                SelfTerminate := True
-            end
-            else
+            end else
 {$ENDIF}
             begin
                State := msInitModem_I;
@@ -13269,8 +13205,7 @@ begin
             if CP = nil then DoRestoreSerial;
             if CP = nil then
                State := msStartDialFailed
-            else
-            begin
+            else begin
                if SessionIsOn or CP.DCD then
                   State := msHangup
                else
@@ -13288,24 +13223,18 @@ begin
             if CP = nil then DoRestoreSerial;
             if CP = nil then
                State := msStartDialFailed
-            else
-            begin
-               if SD.NeedModemStatx then
-               begin
+            else begin
+               if SD.NeedModemStatx then begin
                   SD.NeedModemStatx := False;
                   State := msModemStatx;
-               end
-               else
-               begin
+               end else begin
                   if not SD.InitModemLogged then LogModemInit;
                   if SendModemInitString then
                      State := msInitOK
-                  else
-                  begin
+                  else begin
                      if not SD.WasHangup then
                         State := msHangup
-                     else
-                     begin
+                     else begin
                         Dec(SD.Tries);
                         if SD.Tries < 0 then
                            State := msError
@@ -13347,7 +13276,7 @@ begin
                SD.ReportedLogOK := True;
                if (CP <> nil) and (CP.Handle <> INVALID_HANDLE_VALUE) then begin
                   Log(ltInfo, 'OK');
-               end;   
+               end;
             end;
             SetTmr1(2, msIdleA_Expired);
             ClearTmrPublic;
@@ -13710,17 +13639,21 @@ begin
       msDialing:
          begin
          case ModemResponseCn of
-            mrpNone: ;
-            mrpConnect:
-               State := msCN_ConnectString;
-            mrpBusy:
-               State := msSE_Busy;
-            mrpRinging:
-               begin
-                  Inc(SD.RingCount);
-                  Log(ltInfo, SD.LastResponse);
-                  State := msRinging;
-               end;
+         mrpNone: ;
+         mrpNoDial:
+            begin
+               State := msInit;
+            end;
+         mrpConnect:
+            State := msCN_ConnectString;
+         mrpBusy:
+            State := msSE_Busy;
+         mrpRinging:
+            begin
+               Inc(SD.RingCount);
+               Log(ltInfo, SD.LastResponse);
+               State := msRinging;
+            end;
          else
             begin
                Log(ltWarning, SD.LastResponse);
@@ -13984,8 +13917,7 @@ begin
    FreeObject(Lines);
    if SD.DirtyInC then
       SD.DirtyInC := False
-   else
-   begin
+   else begin
       SD.InC := '';
       CollFromAtom(SD.RespFmtREs, eiResponseFormat);
       CollFromAtom(SD.InputFmtREs, eiInputFormat);
@@ -15013,15 +14945,13 @@ procedure TCronThread.InvokeExec;
 var
    i: Integer;
 begin
-   if not Again then
-   begin
+   if not Again then begin
       Again := True;
       DoRecalc;
       DoCheck;
       WaitEvts[0] := oEvt;
    end;
-   for i := 1 to ProcessColl.Count do
-   begin
+   for i := 1 to ProcessColl.Count do begin
       WaitEvts[i] := TProcessNfo(ProcessColl[i - 1]).PI.hProcess;
    end;
    i := MinD(10000, CheckEvents);
@@ -15030,8 +14960,7 @@ begin
    ProcsLogger.TestRunningProcesses;
    if Recalc then
       DoRecalc
-   else
-   begin
+   else begin
       if NextMinute then
          DoCheck
       else
@@ -15711,7 +15640,6 @@ begin
    ForcedUpdate := True;
    HandUpdate := false;
    InitializeCriticalSection(NodesCS);
-   InitializeCriticalSection(ExtrnCS);
    oEvt := CreateEvtA;
    Priority := tpLowest;
 {   OutName := JustPathName(inifile.Outbound);
@@ -15733,7 +15661,6 @@ begin
    FreeObject(Nodes);
    ZeroHandle(oEvt);
    PurgeCS(NodesCS);
-   PurgeCS(ExtrnCS);
    inherited Destroy;
 end;
 
@@ -15779,7 +15706,6 @@ begin
          FNP := Pointer(DWORD(FNP) + FNP.NextEntryOffset);
       end;
 }
-   Enter;
    NewNodes := nil;
    StackNodes := nil;
    Update := ForcedUpdate;
@@ -15832,10 +15758,8 @@ begin
    HandUpdate := false;
    ChangeFlag := OldC <> NewC;
 
-   Leave;
-
    if ChangeFlag then begin
-     _RecalcPolls(False);
+//     _RecalcPolls(False);
       if Application.MainForm <> nil then begin
          PostMessage(Application.MainForm.Handle, WM_OUTBOUNDALERT, 2, 0);
       end;
@@ -15852,16 +15776,6 @@ begin
 
    OldC := NewC;
 
-end;
-
-procedure TOutMgrThread.Enter;
-begin
-   EnterCS(ExtrnCS);
-end;
-
-procedure TOutMgrThread.Leave;
-begin
-   LeaveCS(ExtrnCS);
 end;
 
 {$IFDEF WS}
@@ -15967,14 +15881,14 @@ end;
 
 procedure EnterFidoPolls;
 begin
-   MailerThreads.Enter;
+//   MailerThreads.Enter;
    FidoPolls.Enter;
 end;
 
 procedure LeaveFidoPolls;
 begin
    FidoPolls.Leave;
-   MailerThreads.Leave;
+//   MailerThreads.Leave;
 end;
 
 const
@@ -16133,22 +16047,19 @@ var
 
    procedure SetEOL;
    begin
-      if FirstEOL then
-      begin
+      if FirstEOL then begin
          FirstEOL := False;
          StartPos := i - 1;
          if j < 4 then Dec(StartPos);
       end;
-      if strlen > 0 then
-      begin
+      if strlen > 0 then begin
          if strlen = PageWidth then cbadlines := 0;
          NewLine;
-      end
-      else
+      end else begin
          Reset;
+      end;
       Inc(EOLcnt);
-      if EOLcnt = 5 then
-      begin
+      if EOLcnt = 5 then begin
          EndPos := i;
          i := FSize;
       end;
@@ -16166,8 +16077,7 @@ var
    procedure IsLine(len: Integer);
    begin
       Inc(strlen, len);
-      if len < 64 then
-      begin
+      if len < 64 then begin
          c := 1 - c; // invert color
       end;
       if StrLen > PageWidth then ErrorCode;
@@ -16179,9 +16089,7 @@ begin
       (T30_wd > MaxPageWidth) then
    begin
       PageWidth := MaxInt;
-   end
-   else
-   begin
+   end else begin
       PageWidth := PageWidths[T30_wd];
    end;
 
@@ -16206,34 +16114,26 @@ begin
 
    i := -1;
    zcnt := 0;
-   while i < Integer(FSize) do
-   begin
+   while i < Integer(FSize) do begin
       Inc(i);
       b := P^[i];
       j := 0;
-      while j < 8 do
-      begin
+      while j < 8 do begin
          inc(j);
 
-         if SeekEOL then
-         begin
+         if SeekEOL then begin
             if (b and 1) = 0 then
                Inc(Zcnt)
-            else
-            begin
-               if Zcnt >= 11 then
-               begin
+            else begin
+               if Zcnt >= 11 then begin
                   SetEOL;
                   SeekEOL := False
                end;
                Zcnt := 0;
             end;
-         end
-         else
-         begin
+         end else begin
             ip := htre[c][ip][b and 1];
-            if ip < 0 then
-            begin
+            if ip < 0 then begin
                Inc(ip, 100000);
                case ip of
                   10000: IsLine(0);
@@ -16292,12 +16192,9 @@ var
    pd, pr: TFaxPage;
 begin
    if SD.Faxmodem.FStream = nil then Exit;
-   if SD.Faxmodem.FStream.Size = 0 then
-   begin
+   if SD.Faxmodem.FStream.Size = 0 then begin
       Log(ltWarning, 'Empty page');
-   end
-   else
-   begin
+   end else begin
       pd := DoConvert;
       BlockRBO(SD.Faxmodem.FStream.Memory^, SD.Faxmodem.FStream.Size);
       pr := DoConvert;
@@ -16322,8 +16219,7 @@ var
    begin
       ll := Length(SubStr);
       Result := StrBegsF(SubStr, ll, s, sl);
-      if Result then
-      begin
+      if Result then begin
          Delete(s, 1, ll);
          Dec(sl, ll);
       end;
@@ -16343,25 +16239,21 @@ begin
 
    if Begs('AT') then Exit; // local echo
 
-   if Begs('+F') then
-   begin
+   if Begs('+F') then begin
       // Got facsimile response
-      if s = 'CON' then // DCE response, Fax connection made
-      begin
+      if s = 'CON' then begin
          SD.Faxmodem.fcon := True;
          Exit;
       end;
-      if s = 'CO' then // Class 2.0
-      begin
+      if s = 'CO' then begin
          SD.Faxmodem.fco := True;
          Exit;
       end;
-      if Begs('DCS:') or // Current session parameter
-      Begs('CS:') then // Class 2.0
+      if Begs('DCS:') or  // Current session parameter
+         Begs('CS:') then // Class 2.0
       begin
          SD.Faxmodem.ReadyT30 := True;
-         with SD.Faxmodem.T30 do
-         begin
+         with SD.Faxmodem.T30 do begin
             GW(vr);
             GW(br);
             GW(wd);
@@ -16374,7 +16266,7 @@ begin
          Exit;
       end;
       if Begs('HNG:') or // Call termination status response
-      Begs('HS:') then // Class 2.0
+         Begs('HS:') then // Class 2.0
       begin
          GetWrd(s, z, ',');
          SD.Faxmodem.Hangup := Vl(z);
@@ -16382,7 +16274,7 @@ begin
       end;
 
       if Begs('PTS:') or // Page transfer status // +FPTS:<ppr>,<lc>[,<blc>,<cblc>]
-      Begs('PS:') then // Class 2.0
+         Begs('PS:') then // Class 2.0
       begin
          GW(SD.Faxmodem.PostPageResp);
          GW(SD.Faxmodem.pts_lc);
@@ -16392,10 +16284,9 @@ begin
       end;
 
       if Begs('TSI:') or // Report remote ID response TSI
-      Begs('CI:') then // Class 2.0
+         Begs('CI:') then // Class 2.0
       begin
-         if BothKVC(s) then
-         begin
+         if BothKVC(s) then begin
             DelFC(z);
             DelLC(z)
          end;
@@ -16403,30 +16294,24 @@ begin
          Exit;
       end;
 
-      if Begs('ET:') then // End the page or document command
-      begin
+      if Begs('ET:') then begin
          GW(SD.Faxmodem.PostPageMsg);
          Exit;
       end;
-
       Exit; // Unexpected +F response :-)
-
    end;
 
-   if Begs('CONNECT') then
-   begin
+   if Begs('CONNECT') then begin
       SD.Faxmodem.Connect := True;
       Exit;
    end;
 
-   if Begs('NO CARRIER') or Begs('ERROR') then
-   begin
+   if Begs('NO CARRIER') or Begs('ERROR') then begin
       SD.Faxmodem.Error := True;
       Exit;
    end;
 
-   if Begs('OK') then
-   begin
+   if Begs('OK') then begin
       SD.Faxmodem.OK := True;
       Exit;
    end;
@@ -16444,8 +16329,7 @@ begin
    GetLocalTime(ST);
    MaxN := 0;
    s := MakeNormName(FaxInbound, Format('%.2d%s???.' + Aext, [ST.wDay, ShortMonthNames[ST.wMonth]]));
-   if uFindFirst(s, FT) then
-   begin
+   if uFindFirst(s, FT) then begin
       repeat
          s := Copy(FT.FName, 6, 3);
          D := Vl(s);
@@ -16513,9 +16397,7 @@ begin
       ((t.st <> INVALID_VALUE) and (t.st <= 7)) then
    begin
       sst := Format('%d ms', [ast[t.vr, t.st]]);
-   end
-   else
-   begin
+   end else begin
       sst := Format('ST(%d)', [t.st])
    end;
    Log(ltEMSI_1, '  V. resolution : ' + svr);
@@ -16565,10 +16447,10 @@ procedure TMailerThread.DoFax;
       HangupCodes: array[0..NumHangupCodes - 1] of record i: DWORD;
          s: string
       end = (
-         (i: 0; s: 'Normal and proper end of connection'),
-         (i: 1; s: 'Ring Detect without successful handshake'),
-         (i: 2; s: 'Call aborted, from +FK or AN'),
-         (i: 3; s: 'No Loop Current'),
+         (i:  0; s: 'Normal and proper end of connection'),
+         (i:  1; s: 'Ring Detect without successful handshake'),
+         (i:  2; s: 'Call aborted, from +FK or AN'),
+         (i:  3; s: 'No Loop Current'),
          (i: 10; s: 'Unspecified Phase A error'),
          (i: 11; s: 'No Answer (T.30 T1 timeout)'),
          (i: 20; s: 'Unspecified Transmit Phase B error'),
@@ -16613,12 +16495,12 @@ procedure TMailerThread.DoFax;
    begin
       j := SD.Faxmodem.Hangup;
       if j = INVALID_VALUE then GlobalFail('%s', ['Unexpected Fax Hangup']);
-      for a := 0 to NumHangupCodes - 1 do
-         if HangupCodes[a].i = j then
-         begin
+      for a := 0 to NumHangupCodes - 1 do begin
+         if HangupCodes[a].i = j then begin
             z := HangupCodes[a].s;
             Break;
          end;
+      end;
       if z = '' then z := Format('HNG(%d)', [j]);
       LogFmt(ltInfo, 'Fax session finished - %s', [z]);
    end;
@@ -16629,8 +16511,7 @@ procedure TMailerThread.DoFax;
    begin
       if not (moSwitchDTE in SD.ModemRec.Options) then
          DTE := CP.DTE
-      else
-      begin
+      else begin
          DTE := 19200;
          TSerialPort(CP).SetBPS(DTE);
          RestoreBPS := True;
@@ -16648,17 +16529,13 @@ begin
          begin
             Log(ltConnect, 'Initiating Fax reception');
             ClearTmrPublic;
-            if ProtCore <> ptDialup then
-            begin
+            if ProtCore <> ptDialup then begin
                Log(ltGlobalErr, 'Fax connections are supported over dial-up only!');
                State := msInit;
-            end
-            else
-            begin
+            end else begin
                if moUseExternal in SD.ModemRec.Options then
                   State := msExtApp_0
-               else
-               begin
+               else begin
                   SD.Faxmodem := TFaxmodem.Create;
                   SD.Faxmodem.Hangup := INVALID_VALUE;
                   SD.Faxmodem.ReadyT30 := False;

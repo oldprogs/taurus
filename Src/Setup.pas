@@ -1257,6 +1257,7 @@ var
       n: integer;
       m: integer;
       g: TAdvGrid;
+      f: TFontDialog;
    begin
       for i := 0 to o.ComponentCount - 1 do begin
          c := o.Components[i];
@@ -1271,24 +1272,20 @@ var
             CRC := UpdateCRC32(byte((c as TCheckBox).Checked), CRC);
          end else
          if c is TComboBox then begin
-            CRC := UpdateCRC32(hi((c as TComboBox).ItemIndex), CRC);
-            CRC := UpdateCRC32(lo((c as TComboBox).ItemIndex), CRC);
+            CRC := CRC32Int((c as TComboBox).ItemIndex, CRC);
          end else
          if c is TxSpinEdit then begin
-            CRC := UpdateCRC32(hi((c as TxSpinEdit).Value), CRC);
-            CRC := UpdateCRC32(lo((c as TxSpinEdit).Value), CRC);
+            CRC := CRC32Int((c as TxSpinEdit).Value, CRC);
          end else
          if c is TEdit then begin
             s := (c as TEdit).Text;
             CRC := CRC32Str(s, CRC);
          end else
          if c is TColorBox then begin
-            CRC := UpdateCRC32(hi((c as TColorBox).Selected), CRC);
-            CRC := UpdateCRC32(lo((c as TColorBox).Selected), CRC);
+            CRC := CRC32Int((c as TColorBox).Selected, CRC);
          end else
          if c is THotKey then begin
-            CRC := UpdateCRC32(hi((c as THotKey).HotKey), CRC);
-            CRC := UpdateCRC32(lo((c as THotKey).HotKey), CRC);
+            CRC := CRC32Int((c as THotKey).HotKey, CRC);
          end else
          if c is TAdvGrid then begin
             g := c as TAdvGrid;
@@ -1298,6 +1295,12 @@ var
                   CRC := CRC32Str(s, CRC);
                end;
             end;
+         end else
+         if c is TFontDialog then begin
+            f := c as TFontDialog;
+            CRC := CRC32Int(f.Font.Charset, CRC);
+            CRC := CRC32Int(f.Font.Size, CRC);
+            CRC := UpdateCRC32(byte(f.Font.Style), CRC);
          end;
          CalcCRC(c);
       end;

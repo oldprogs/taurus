@@ -3319,14 +3319,11 @@ var
 begin
   Result := '';
   e := GetCurrentThreadId;
-  if e = MainThreadId then Result := MainThreadMsg else
-  begin
+  if e = MainThreadId then Result := MainThreadMsg else begin
     Thr_Coll.Enter;
-    for i := 0 to Thr_Coll.Count - 1 do
-    begin
+    for i := 0 to Thr_Coll.Count - 1 do begin
       t := Thr_Coll[i];
-      if t.ThreadID = e then
-      begin
+      if t.ThreadID = e then begin
         Result := t.FThreadErrMsg;
         t.FThreadErrMsg := '';
         t.FThreadErrNum := 0;

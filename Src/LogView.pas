@@ -2,27 +2,24 @@ unit LogView;
 interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, xBase, JvEditor;
+  Dialogs, StdCtrls, xBase, JvEditor, ExtCtrls;
 
 type
-  TWatchThread = class(T_Thread)
-     procedure InvokeExec; override;
-  public
-     fTime: cardinal;
-     oTime: cardinal;
-     class function ThreadName: string; override;
-  end;
 
   TLogViewer = class(TForm)
     mmView: TJvEditor;
+    TM: TTimer;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure mmViewGetLineAttr(Sender: TObject; var Line: String;
       index: Integer; var Attrs: TLineAttrs);
+    procedure FormKeyPress(Sender: TObject; var Key: Char);
+    procedure TMTimer(Sender: TObject);
   private
     { Private declarations }
     fLogName: string;
-    fThrName: TWatchThread;
+    fTime: cardinal;
+    oTime: cardinal;
     procedure SetLogName(const s: string);
   public
     { Public declarations }
@@ -45,30 +42,25 @@ uses RadIni, Plus, Wizard;
 
 {$R *.dfm}
 
-class function TWatchThread.ThreadName: string;
-begin
-  Result := 'WatchLogsThread';
-end;
-
-procedure TWatchThread.InvokeExec;
-begin
-   Sleep(100);
-   fTime := GetFileTime(LogViewer.fLogName);
-   if fTime <> oTime then begin
-      oTime := fTime;
-      LogViewer.LogName := LogViewer.LogName;
-   end;
-end;
-
 procedure TLogViewer.SetLogName;
+var
+   tr: integer;
+   st: TStream;
 begin
    mmView.Font.Size := IniFile.LoggerFontSize;
-   mmView.Lines.LoadFromFile(s);
-   if (mmView.TopRow > mmView.Lines.Count - mmView.VisibleRowCount - 2) or (fLogName <> s) then begin
+   tr := mmView.Lines.Count;
+   St := TFileStream.Create(s, fmOpenRead or fmShareDenyNone);
+   try
+     mmView.Lines.LoadFromStream(St);
+   finally
+     St.Free;
+   end;
+//   mmView.Lines.LoadFromFile(s);
+   tr := mmView.Lines.Count - tr;
+   if (mmView.TopRow + tr > mmView.Lines.Count - mmView.VisibleRowCount - 2) or (fLogName <> s) then begin
       mmView.SetLeftTop(0, mmView.Lines.Count - mmView.VisibleRowCount + 2);
    end;
-   fThrName.oTime := GetFileTime(s);
-   fThrName.Suspended := False;
+   oTime := GetFileTime(s);
    fLogName := s;
 end;
 
@@ -77,7 +69,6 @@ var
    s: string;
 begin
    LogViewer := self;
-   fThrName := TWatchThread.Create;
    s := IniFile.ReadString('Sizes', 'LogViewer', '');
    Left := StrToIntDef(ExtractWord(1, s, [',']), Left);
    Top := StrToIntDef(ExtractWord(2, s, [',']), Top);
@@ -87,9 +78,6 @@ end;
 
 procedure TLogViewer.FormDestroy(Sender: TObject);
 begin
-   fThrName.Terminated := True;
-   fThrName.WaitFor;
-   FreeObject(fThrName);
    IniFile.WriteString('Sizes', 'LogViewer',
       IntToStr(Left) + ',' +
       IntToStr(Top) + ',' +
@@ -144,6 +132,20 @@ if (Pos ('[WZ]',Line)<>0) or
    (Pos ('+Poll',Line)<>0) then r := AttrArray[5];
 
    for i := Low(Attrs) to High(Attrs) do Attrs[i] := r;
+end;
+
+procedure TLogViewer.FormKeyPress(Sender: TObject; var Key: Char);
+begin
+   if Key = #27 then Close;
+end;
+
+procedure TLogViewer.TMTimer(Sender: TObject);
+begin
+   fTime := GetFileTime(LogViewer.fLogName);
+   if fTime <> oTime then begin
+      oTime := fTime;
+      LogViewer.LogName := LogViewer.LogName;
+   end;
 end;
 
 end.

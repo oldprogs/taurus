@@ -170,7 +170,8 @@ function DelFile(p, f: string): boolean;
 
 implementation
 
-uses Recs, NdlUtil, LngTools, RRegExp, RadIni, Wizard, Forms;
+uses
+  Recs, NdlUtil, LngTools, RRegExp, RadIni, Wizard, Forms, Watcher;
 
 const
   FAttachDisallowedAttr =
@@ -1311,6 +1312,7 @@ begin
   ScanAllowed := True;
   Locked := False;
   if ALock then begin
+     IgnoreNextEvent := True;
      Locked := LockEx(Address, osBusy, Local, False);
      if (not Local) then ScanAllowed := False;
   end;
@@ -1412,6 +1414,7 @@ begin
      end;
   end;
 
+  if Status = osBusy then IgnoreNextEvent := True;
   b := TBusyFlag.Create(GetOutFileName(Address, Status), IniFile.SimpleBSY);
   b.Address := Address;
   b.Status := Status;
@@ -1446,8 +1449,8 @@ begin
        (b.Status = Status) and
        ((b.Thread = t) or (b.FHandle = 0)) then begin
       if b.FHandle <> 0 then begin
+         if b.Status = osBusy then IgnoreNextEvent := True;
          b.Finish;
-         ScanCounter := 1;
       end;
       BusyFlags.FFree(b);
       exit;
@@ -1456,8 +1459,10 @@ begin
   for h := BusyFlags.Count - 1 downto 0 do begin
     b := BusyFlags[h];
     if (CompareAddrs(b.Address, Address) = 0) and
-       (b.Status = Status) then begin
+       (b.Status = Status) then
+    begin
       if b.FHandle <> 0 then begin
+         if b.Status = osBusy then IgnoreNextEvent := True;
          b.Finish;
       end;
       BusyFlags.FFree(b);
@@ -1532,8 +1537,10 @@ var
 begin
    Result := False;
    for i := 0 to Count - 1 do begin
-      if (TOutFile(Items[i]).Name = o.Name) or
-         (TOutFile(Items[i]).Orig = o.Name) then begin
+      if ((TOutFile(Items[i]).Name = o.Name) or
+          (TOutFile(Items[i]).Orig = o.Name)) and
+          (TOutFile(Items[i]).Nfo.Time = o.Nfo.Time) and
+          (TOutFile(Items[i]).Nfo.Size = o.Nfo.Size) then begin
          Result := True;
          break;
       end;

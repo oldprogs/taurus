@@ -281,11 +281,13 @@ end;
 
 destructor TNNTP.Destroy;
 begin
-   Dec(fEcho.Counter);
-   if fEcho.Counter = 0 then begin
-      EchoMailHolder.Delete(fEcho);
-      FreeObject(fEcho);
-   end;   
+   if fEcho <> nil then begin
+      Dec(fEcho.Counter);
+      if fEcho.Counter = 0 then begin
+         EchoMailHolder.Delete(fEcho);
+         FreeObject(fEcho);
+      end;
+   end;
    inherited Destroy;
 end;
 
@@ -753,6 +755,10 @@ begin
    if CancelRequested then begin
       ProtocolError := ecAbortByLocal;
       State := bdDone;
+   end;
+   if CP.Msg <> '' then begin
+      CustomInfo := CP.Msg;
+      FLogFile(Self, lfLog);
    end;
    Application.ProcessMessages;
 end;

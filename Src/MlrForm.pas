@@ -836,8 +836,7 @@ begin
       MT := GetFileList(dLog, '*.*');
       if MT <> nil then begin
          while MT.Count > 0 do begin
-            if (pos(MT[0], ThreadsLogFName) = 0) and
-               (pos(MT[0], IniFile.StatxFName) = 0) and
+            if (pos(MT[0], IniFile.StatxFName) = 0) and
                (MT[0] <> 'Tau_Ver' ) then
             begin
                n := TMenuItem.Create(m);
