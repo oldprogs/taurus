@@ -3618,13 +3618,11 @@ var
   r: TReqRec;
 begin
   s := UpperCase(SR.FName);
-  for i := 0 to FixedColl.Count - 1 do
-  begin
+  for i := 0 to FixedColl.Count - 1 do begin
     r := FixedColl.At(i);
     if s = UpperCase(r.S) then r.Add(FName, CurPsw, SR.Info);
   end;
-  for i := 0 to MaskedColl.Count - 1 do
-  begin
+  for i := 0 to MaskedColl.Count - 1 do begin
     r := MaskedColl.At(i);
     if _MatchMask(s, r.S, True) then r.Add(FName, CurPsw, SR.Info);
   end;
@@ -3636,22 +3634,17 @@ var
 begin
   B := uFindFirst(MakeNormName(Dir, '*.*'), SR);
   if not B then Exit;
-  while B do
-  begin
-    if SR.Info.Attr and FILE_ATTRIBUTE_HIDDEN = 0 then
-    begin
+  while B do begin
+    if SR.Info.Attr and FILE_ATTRIBUTE_HIDDEN = 0 then begin
       FName := MakeNormName(Dir, SR.FName);
-      if SR.Info.Attr and FILE_ATTRIBUTE_DIRECTORY <> 0 then
-      begin
+      if SR.Info.Attr and FILE_ATTRIBUTE_DIRECTORY <> 0 then begin
         if ARecursive then
-        if Copy(SR.FName,1,1) <> '.' then
-        begin
+        if Copy(SR.FName, 1, 1) <> '.' then begin
           Handle := SR.Handle;
           ScanDir(FName, ARecursive);
           SR.Handle := Handle;
         end;
-      end else
-      begin
+      end else begin
         SearchEntry;
       end;
     end;
@@ -3768,14 +3761,12 @@ begin
   F.FixedColl := TColl.Create;
   F.MaskedColl := TColl.Create;
   if Coll <> nil then
-  for i := 0 to Coll.Count - 1 do
-  begin
+  for i := 0 to Coll.Count - 1 do begin
     r := Coll[i];
     if r.Typ < rtOK then Continue;
     if IsWild(r.S) then F.MaskedColl.Insert(r) else F.FixedColl.Insert(r);
   end;
-  if (F.MaskedColl.Count > 0) or (F.FixedColl.Count > 0) then
-  begin
+  if (F.MaskedColl.Count > 0) or (F.FixedColl.Count > 0) then begin
     CfgEnter;
     F.FreqData := Cfg.FreqData.Copy;
     CfgLeave;
@@ -3783,10 +3774,8 @@ begin
     F.SearchAliases(F.MaskedColl);
   end;
   if (F.FreqData <> nil) and (not (foMasks in F.FreqData.Options)) then F.MaskedColl.DeleteAll;
-  if (F.MaskedColl.Count>0) or (F.FixedColl.Count>0) then
-  begin
-    for i := 0 to F.FreqData.pnPaths.Count - 1 do
-    begin
+  if (F.MaskedColl.Count > 0) or (F.FixedColl.Count > 0) then begin
+    for i := 0 to F.FreqData.pnPaths.Count - 1 do begin
       F.CurPsw := F.FreqData.pnPsw[i];
       F.ScanDir(F.FreqData.pnPaths[i], (foRecursive in F.FreqData.Options));
     end;
@@ -3814,16 +3803,13 @@ end;
 
 begin
   Result := nil;
-  for j := 0 to CollMax(ASC) do
-  begin
-    s := Trim(ASC[j]); if (s = '') or (Length(s) > MAX_PATH*2) then Continue;
+  for j := 0 to CollMax(ASC) do begin
+    s := Trim(ASC[j]); if (s = '') or (Length(s) > MAX_PATH * 2) then Continue;
     OrgStr := s;
     FName := ''; Psw := ''; Upd := ''; unk := False;
-    for i := 0 to 2 do
-    begin
-      GetWrd(s,w,' '); if w = '' then Break;
-      if i = 0 then
-      begin
+    for i := 0 to 2 do begin
+      GetWrd(s, w, ' '); if w = '' then Break;
+      if i = 0 then begin
         FName := w;
         if not StrDeQuote(FName) then unk := True;
       end else
@@ -3835,16 +3821,14 @@ begin
     end;
     r := TReqRec.Create;
     repeat
-      if (unk) or (Length(FName) > MAX_PATH) or (ExtractFileName(FName)<>FName) then ParseErr else
-      begin
-        if Upd = '' then r.Typ := rtNormal else
-        begin
+      if (unk) or (Length(FName) > MAX_PATH) or (ExtractFileName(FName) <> FName) then ParseErr else begin
+        if Upd = '' then r.Typ := rtNormal else begin
           Val(Upd, i, e);
           if e > 0 then begin ParseErr; Break end;
           if i > 0 then r.Typ := rtNewer else begin i := -i; r.Typ := rtUpTo end;
           r.Upd := i;
         end;
-        r.S := FName;
+        r.S := ExtractWord(1, FName, ['"']);
         DelFC(Psw);
         r.Psw := Psw;
       end;

@@ -122,6 +122,7 @@ type
             InCommon: string;
 
             NetmailDir: string;
+            ScanMSG: boolean;
             lang: integer;
             helplang: string;
             Synch: TFidoAddress;
@@ -211,6 +212,7 @@ type
 
             logDelete: boolean;
             logWaitEvt: boolean;
+            SaveWaits: boolean;
 
             StringsList: TStringList;
 
@@ -671,6 +673,7 @@ begin
       CfgDir := MakeFulldir('', ReadString(paths, 'config', ExtractFilePath(ParamStr(0))));
       FlagsDir := MakeFullDir('', ReadString(paths, 'flags', ExtractFilePath(ParamStr(0)) + 'FLAGS'));
       NetmailDir := MakeFullDir('', ReadString('MSG', 'Netmail', 'NETMAIL'));
+      ScanMSG := ReadBool('MSG', 'ScanMSG', False);
 
       accessFName := ReadString(LogNames, 'access_log', GetRegStringDef('access_log', 'access_log'));
       agentFName := ReadString(LogNames, 'agent_log', GetRegStringDef('agent_log', 'agent_log'));
@@ -860,6 +863,7 @@ begin
 
       logDelete := ReadBool(main, 'LogDelete', False);
       logWaitEvt := ReadBool(main, 'LogWaitEvt', False);
+      SaveWaits := ReadBool(main, 'SaveWaits', False);
 
     finally
       free
@@ -994,6 +998,9 @@ begin
       WriteString(paths, 'Inbound', InCommon);
       WriteString(paths, 'HomeDir', HomeDir);
       WriteString(paths, 'config', CfgDir);
+
+      WriteString('MSG', 'Netmail', NetmailDir);
+      WriteBool('MSG', 'ScanMSG', ScanMSG);
 
       WriteString(LogNames, 'access_log', accessFName);
       WriteString(LogNames, 'agent_log', agentFName);

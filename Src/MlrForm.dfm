@@ -1316,6 +1316,7 @@ object MailerForm: TMailerForm
           Height = 54
           Align = alClient
           BevelOuter = bvNone
+          ParentColor = True
           TabOrder = 1
           object ChatMemo1: TMemo
             Left = 0
@@ -1324,7 +1325,7 @@ object MailerForm: TMailerForm
             Height = 191
             TabStop = False
             Align = alTop
-            Color = 14415353
+            ParentColor = True
             ReadOnly = True
             ScrollBars = ssVertical
             TabOrder = 0
@@ -1337,7 +1338,7 @@ object MailerForm: TMailerForm
             Height = 198
             TabStop = False
             Align = alClient
-            Color = 14415353
+            ParentColor = True
             ReadOnly = True
             ScrollBars = ssVertical
             TabOrder = 1

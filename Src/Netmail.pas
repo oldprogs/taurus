@@ -80,7 +80,6 @@ type
       fBackup: Boolean;
    public
       Echomail: boolean;
-      NetWait: TRTLCriticalSection;
       NetColl: TNetColl;
       LstColl: TStringList;
       FilColl: TStringList;
@@ -276,7 +275,6 @@ begin
    FilColl := TStringList.Create;
    FilColl.Sorted := True;
    NetColl := TNetColl.Create;
-   InitializeCriticalSection(NetWait);
 end;
 
 destructor TNetmail.Destroy;
@@ -293,7 +291,6 @@ begin
    FilColl.Free;
    FreeObject(MsgColl);
    FreeObject(PktColl);
-   PurgeCS(NetWait);
    inherited;
 end;
 
@@ -321,9 +318,9 @@ var
    CC: integer;
    PK: TNetmailPKT;
 begin
+   if not IniFile.ScanMSG then exit;
    FP := AddBackSlash(IniFile.ReadString('MSG', 'Netmail', ''));
    if uFindFirst(FP + '*.MSG', SR) then begin
-      EnterCS(NetWait);
       NetColl.Enter;
       NetColl.MarkDel(True);
       PktColl.Enter;
@@ -349,7 +346,6 @@ begin
       uFindClose(SR);
       PktColl.Leave;
       NetColl.Leave;
-      LeaveCS(NetWait);
    end;
 end;
 
@@ -361,7 +357,6 @@ var
   SR: tuFindData;
 begin
    ScanMSG;
-   EnterCS(NetWait);
    NetColl.Enter;
    NetColl.MarkDel(False);
    p := ExtractFilePath(ExtractDir(inifile.Outbound));
@@ -387,7 +382,6 @@ begin
       if NetColl[i].Dele then NetColl.AtFree(i);
    end;
    NetColl.Leave;
-   LeaveCS(NetWait);
 end;
 
 procedure TNetmail.Scan;
@@ -736,6 +730,8 @@ var
    i: TFileStream;
    h: PktHeaderRec;
    b: byte;
+   o: boolean;
+   u: TOutStatus;
 begin
    s := GetOutFileName(t, osNone);
    if pos(UpperCase(s), UpperCase(n.Pack)) > 0 then exit;
@@ -743,17 +739,23 @@ begin
    if Active then begin
       if n.Fido and (pos('IMM', n.Flgs) > 0) then begin
          s := s + '.iut';
+         u := osImmedMail;
       end else
       if n.Fido and (pos('DIR', n.Flgs) > 0) then begin
          s := s + '.dut';
+         u := osDirectMail;
       end else begin
          s := s + '.cut';
+         u := osCrashMail;
       end;
    end else begin
       s := s + '.out';
+      u := osNormalMail;
    end;
    b := 0;
+   o := False;
    if not ExistFile(s) then begin
+      o := True;
       fillchar(h, sizeof(h), 0);
       h.OrigNode  := inifile.MainAddr.Node;
       h.DestNode  := t.Node;
@@ -794,6 +796,9 @@ begin
    i.Write(b, 1);
    i.Free;
    DelMail(n);
+   if o then begin
+      FidoOut.AddOutbound(t, s, u, kaBSOKillAfter);
+   end;
 end;
 
 procedure TNetmail.PackMail;
@@ -839,7 +844,7 @@ var
    b: string;
    n: integer;
 begin
-   EnterCS(NetWait);
+   NetColl.Enter;
    if IniFile.DynamicRouting then
    if FidoOut.Lock(a, osBusy, True) then begin
       for i := 0 to IniFile.NetmailAddrTo.Count - 1 do begin
@@ -879,7 +884,7 @@ begin
       end;
       FidoOut.Unlock(a, osBusy);
    end;
-   LeaveCS(NetWait);
+   NetColl.Leave;
 end;
 
 procedure TNetmail.DeleteMail;
@@ -887,14 +892,14 @@ var
    i: integer;
    m: TNetmailMsg;
 begin
-   EnterCS(NetWait);
+   NetColl.Enter;
    for i := 0 to CollMax(NetColl) do begin
       m := NetColl[i];
       if m.MsId = Id then begin
          DelMail(m);
       end;
    end;
-   LeaveCS(NetWait);
+   NetColl.Leave;
 end;
 
 procedure TNetmail.DelMail;

@@ -1170,11 +1170,8 @@ begin
       p := cr.p;
       RollPoll(p);
       cr.p := p;
-   end
-   else
-   begin
-      if (DaemonStarted) and (cr.Port <> nil) then
-      begin
+   end else begin
+      if (DaemonStarted) and (cr.Port <> nil) then begin
          ILD := TNewIpLineData.Create;
          ILD.Poll := cr.p;
          ILD.IpPort := cr.IpPort;
@@ -4474,6 +4471,7 @@ begin
 
       LInfo1.Font.Assign(LogBox.Font);
       ChatPan.Font.Assign(LogBox.Font);
+      ChatPan.Color := LogBox.Color;
 
       PollsListView.GridLines := GridInPV;
       BWListView.GridLines := GridInBWZ;

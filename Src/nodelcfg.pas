@@ -79,8 +79,6 @@ procedure TNodeListCfgForm.FormClose(Sender: TObject;
 begin
   if ModalResult <> mrOK then Exit;
   for i := 1 to gNL.RowCount - 1 do begin
-     s := ExtractWord(1, gNL.Cells[1, i], ['.']) + '.%%%';
-     gNL.Cells[1, i] := s;
      s := gNL.Cells[2, i];
      if pos('.', s) > 0 then Action := caNone;
      if pos('@', s) > 0 then Action := caNone;

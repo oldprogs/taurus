@@ -322,6 +322,7 @@ type
     eNetmail: TEdit;
     bNetmail: TButton;
     lNetmail: TLabel;
+    cbScanMSG: TCheckBox;
     {$ENDIF}
     procedure tvPagesChange(Sender: TObject; Node: TTreeNode);
     procedure FormCreate(Sender: TObject);
@@ -348,6 +349,7 @@ type
     procedure bFormsFontClick(Sender: TObject);
     procedure tmCRCTimer(Sender: TObject);
     procedure bNetmailClick(Sender: TObject);
+    procedure cbScanMSGClick(Sender: TObject);
   private
     { Private declarations }
     Edits: array[0..12] of TSoundRec;
@@ -399,6 +401,7 @@ begin
      TreatForm(SetupForm);
   end;
   {$ENDIF}
+  SetupForm.cbScanMSGClick(nil);
   Result := SetupForm.ShowModal = mrOK;
   if result and SetupForm.btnApply.Enabled then begin
      SetupForm.GetData;
@@ -423,6 +426,7 @@ begin
   IniFile.FixedRetryTimeout := cbFixedRetryTimeout.Checked;
   Inifile.DynamicOutbound := cbDynamicOutbound.Checked;
   Inifile.DynamicRouting := cbDynamicRouting.Checked;
+  IniFile.ScanMSG := cbScanMSG.Checked;
 //  IniFile.MainReg := seMainRegion.Value;
   IniFile.TimeShift := seSynchShift.Value;
   IniFile.CPS_MinBytes := seCPSMinBytes.Value;
@@ -693,6 +697,7 @@ begin
   cbFixedRetryTimeout.Checked := IniFile.FixedRetryTimeout;
   cbDynamicOutbound.Checked := IniFile.DynamicOutbound;
   cbDynamicRouting.Checked := IniFile.DynamicRouting;
+  cbScanMSG.Checked := IniFile.ScanMSG;
   cbChatEnabled.Checked := IniFile.ChatEnabled;
   cbIgnoreCD.Checked := IniFile.IgnoreCD;
   cbLamps.Checked := IniFile.TrayLamps;
@@ -1302,6 +1307,12 @@ begin
    if s <> '' then begin
       eNetmail.Text := s;
    end;   
+end;
+
+procedure TSetupForm.cbScanMSGClick(Sender: TObject);
+begin
+   eNetmail.Enabled := cbScanMSG.Checked;
+   bNetmail.Enabled := cbScanMSG.Checked;
 end;
 
 end.

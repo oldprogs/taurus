@@ -1306,6 +1306,9 @@ begin
      Inc(ScanCounter);
   end;
   if (LiveCounter > 20 * 60 * 2) or (WindCounter > 20 * 60 * 2) then begin
+     if (EntrLogFName <> '') then begin
+        EnterList.SaveToFile(EntrLogFName);
+     end;
      GlobalFail('Taurus hanged up: %d %d', [LiveCounter, WindCounter]);
   end;
   if ScanCounter > 20 * 5 then begin
@@ -2601,7 +2604,7 @@ begin
       En := Pad(ThreadName, 19) + ': ' + IntToStr(lpHandles^[0]) + ', ' + St;
       EnterList.Enter;
       EnterList.Add(En);
-      if (EntrLogFName <> '') then begin
+      if (EntrLogFName <> '') and IniFile.SaveWaits then begin
          EnterList.SaveToFile(EntrLogFName);
       end;
       EnterList.Leave;
@@ -2623,7 +2626,7 @@ begin
       ii := EnterList.IndexOf(En);
       if ii > - 1 then begin
          EnterList.Delete(ii);
-         if (EntrLogFName <> '') then begin
+         if (EntrLogFName <> '') and IniFile.SaveWaits then begin
             EnterList.SaveToFile(EntrLogFName);
          end;
       end;   
@@ -3446,7 +3449,7 @@ begin
       En := Pad(ThreadName, 19) + ': WaitFor, ' + DebugInfo(3);
       EnterList.Enter;
       EnterList.Add(En);
-      if (EntrLogFName <> '') then begin
+      if (EntrLogFName <> '') and IniFile.SaveWaits then begin
          EnterList.SaveToFile(EntrLogFName);
       end;
       EnterList.Leave;
@@ -3460,7 +3463,7 @@ begin
       ii := EnterList.IndexOf(En);
       if ii > -1 then begin
          EnterList.Delete(ii);
-         if (EntrLogFName <> '') then begin
+         if (EntrLogFName <> '') and IniFile.SaveWaits then begin
             EnterList.SaveToFile(EntrLogFName);
          end;
       end;   
@@ -4028,56 +4031,19 @@ var
 
 procedure TColl.Enter;
 var
-  j: Integer;
-{$IFDEF DEBUG_VERSION}
-  s: string;
-{$ENDIF}
+   j: integer;
 begin
-{$IFDEF DEBUG_VERSION}
-   if (IniFile <> nil) and IniFile.logWaitEvt then begin
-      EnterList.Enter;
-      s := IntToStr(GetCurrentThread) + ', ' + ClassName + ', ' + fName + ', ' + DebugInfo(3);
-      EnterList.Add(Pad('Enter', 19) + ': ' + s);
-      Debug.Add(s);
-      if (EntrLogFName <> '') then begin
-         EnterList.SaveToFile(EntrLogFName);
-      end;
-      EnterList.Leave;
-   end;
-{$ENDIF}
    if CollCS.DebugInfo = nil then exit;
    Windows.EnterCriticalSection(CollCS);
    j := 1; Xchg(Shared, j); if j = 0 then InitializeCriticalSection(CS);
    Windows.LeaveCriticalSection(CollCS);
-   Windows.EnterCriticalSection(CS);
+   EnterCS(CS);
 end;
 
 procedure TColl.Leave;
-{$IFDEF DEBUG_VERSION}
-var
-   i: integer;
-   s: string;
-{$ENDIF}
 begin
-   Windows.LeaveCriticalSection(CS);
-{$IFDEF DEBUG_VERSION}
-   if (IniFile <> nil) and IniFile.logWaitEvt then begin
-      EnterList.Enter;
-      i := EnterList.IndexOf(Pad('Enter', 19) + ': ' + Debug[Debug.Count - 1]);
-      if i > -1 then begin
-         EnterList.Delete(i);
-         Debug.Delete(Debug.Count - 1);
-      end;
-      if i = -1 then begin
-         s := Pad('Error', 19) + ': ' + DebugInfo(3);
-         EnterList.Add(s);
-      end;
-      if (EntrLogFName <> '') then begin
-         EnterList.SaveToFile(EntrLogFName);
-      end;
-      EnterList.Leave;
-   end;
-{$ENDIF}
+   if CS.DebugInfo = nil then exit;
+   LeaveCS(CS);
 end;
 
 procedure EnterCS(var CS: TRTLCriticalSection);
@@ -4087,13 +4053,16 @@ var
    i: integer;
 {$ENDIF}
 begin
-   while CS.DebugInfo = nil do sleep(100);
+   if CS.DebugInfo = nil then begin
+      CS.DebugInfo := nil;
+      exit;
+   end;
 {$IFDEF DEBUG_VERSION}
    if (IniFile <> nil) and IniFile.logWaitEvt then begin
       EnterList.Enter;
       s := 'EnterCS, ' + IntToStr(Integer(CS.DebugInfo)) + ', ' + DebugInfo(3);
       EnterList.Add(Pad('Enter_(pre)', 19) + ': ' + s);
-      if (EntrLogFName <> '') then begin
+      if (EntrLogFName <> '') and IniFile.SaveWaits then begin
          EnterList.SaveToFile(EntrLogFName);
       end;
       EnterList.Leave;
@@ -4109,7 +4078,7 @@ begin
             break;
          end;
       end;
-      if (EntrLogFName <> '') then begin
+      if (EntrLogFName <> '') and IniFile.SaveWaits then begin
          EnterList.SaveToFile(EntrLogFName);
       end;
       EnterList.Leave;
@@ -4133,7 +4102,7 @@ begin
             break;
          end;
       end;
-      if (EntrLogFName <> '') then begin
+      if (EntrLogFName <> '') and IniFile.SaveWaits then begin
          EnterList.SaveToFile(EntrLogFName);
       end;
       EnterList.Leave;

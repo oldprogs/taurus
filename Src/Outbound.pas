@@ -127,6 +127,7 @@ type
          destructor Destroy; override;
          function GetOutColl(AFull: Boolean): TOutNodeColl;
          function GetOutNode(const Addr: TFidoAddress): TOutNode;
+         procedure AddOutbound(const Addr: TFidoAddress; const Name: string; const Stat: TOutstatus; Kill: TKillAction);
          property OutboundSize: longint read GetOutboundSize;
      end;
 
@@ -1844,6 +1845,7 @@ var
   an: TAdvNode;
 begin
    an := FindNode(a);
+   OutColl.Sort(@CompareAddrs);
    if not OutColl.Search(@a, i) then begin
       n := TOutNode.Create;
       OutColl.Insert(n);
@@ -2093,6 +2095,45 @@ begin
     n.DeleteAll;
     FreeObject(n);
   end;
+end;
+
+procedure TOutbound.AddOutbound;
+var
+   i: integer;
+   o: TOutFile;
+   n: TOutNode;
+begin
+   if OutMgrThread.Nodes = nil then exit;
+   EnterCS(OutMgrThread.NodesCS);
+   n := nil;
+   for i := 0 to CollMax(OutMgrThread.Nodes) do begin
+      n := OutMgrThread.Nodes[i];
+      if CompareAddrs(Addr, n.Address) = 0 then begin
+         break;
+      end;
+      n := nil;
+   end;
+   if n = nil then begin
+      n := TOutNode.Create;
+      n.Address := Addr;
+      OutMgrThread.Nodes.Insert(n);
+   end;
+   n.FStatus := n.FStatus + [Stat];
+   if n.Files = nil then begin
+      n.Files := TOutFileColl.Create;
+   end;
+   if not n.Files.FoundFName(Name) then begin
+      o := TOutFile.Create;
+      o.FStatus := Stat;
+      o.KillAction := Kill;
+      o.Address := Addr;
+      o.Name := Name;
+      o.Nfo.Size := GetFileSize(Name);
+      o.Nfo.Time := GetFileTime(Name);
+      n.Files.Insert(o);
+      n.Nfo.Size := n.Nfo.Size + o.Nfo.Size;
+   end;
+   LeaveCS(OutMgrThread.NodesCS);
 end;
 
 function TOutbound.GetOutColl;

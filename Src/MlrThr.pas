@@ -674,10 +674,10 @@ type
     FileSendDelayedNoc: Boolean;
     FileSendDelayedFail: Boolean;
     Birth: DWORD;
-//    CallNow: Boolean; // visual, by 2:5005/47
     DataIdx: DWORD;
     Done: TPollDone;
     LastTry: EventTimer;
+    LastPoll: EventTimer;
     Node: TAdvNode;
     Owner: TMailerThread;
     Revalidate: Boolean;
@@ -1427,7 +1427,7 @@ type
     class function ThreadName: string; override;
   end;
 
-  TPollState = (plsUNK, plsBSY, plsAVL, plsN_A, plsPUB, plsFRB, plsPSD);
+  TPollState = (plsUNK, plsBSY, plsAVL, plsN_A, plsPUB, plsFRB, plsPSD, plsHld);
 
 
 {$IFDEF WS}
@@ -2055,11 +2055,9 @@ begin
    Result := nil;
    try
       OwnPolls.Enter;
-      for i := OwnPolls.Count - 1 downto 0 do
-      begin
+      for i := OwnPolls.Count - 1 downto 0 do begin
          PP := OwnPolls[i];
-         if P = PP.Poll then
-         begin
+         if P = PP.Poll then begin
             Result := PP;
             Exit;
          end;
@@ -2293,6 +2291,13 @@ var
          Exit;
       end;
 
+      if TimerInstalled(p.LastPoll) then begin
+         if ElapsedTime(p.LastPoll) < 30 * 20 then begin
+            Result := plsHLD;
+            Exit;
+         end;
+      end;
+
       os := osBusyEx; //Always *.csy for waiting connect
 
       if not FidoOut.Lock(p.Node.Addr, os, False) then begin
@@ -2347,29 +2352,18 @@ begin
          case GetPollState(AOwnPolls, P, PubInst, Mlr, SC, TQ) of
             plsPSD:
                begin
-                  {          if SC <> nil then SC.Add(LngStr(rsMMOwnByExt)) else
-                            begin
-                             } s := GetErrorMsg;
-                  if s <> '' then
-                  begin
+                  s := GetErrorMsg;
+                  if s <> '' then begin
                      LocLog(s);
                   end;
-                  //            s := Format('Poll on address %s is paused', [Addr2Str(p.Node.Addr)]);
-                  {            if p.Typ = ptpManual then
-                              begin}
-                  //              LocLog(s);
-                  {            end;}
-                  {          end;}
                end;
             plsBSY:
                begin
                   if SC <> nil then
                      SC.Add(LngStr(rsMMOwnByExt))
-                  else
-                  begin
+                  else begin
                      s := GetErrorMsg;
-                     if s <> '' then
-                     begin
+                     if s <> '' then begin
                         LocLog(s);
                      end;
                      s := Format('Address %s is busy', [Addr2Str(p.Node.Addr)]);
@@ -2388,6 +2382,12 @@ begin
                   AP := p;
                   PubInst := False;
                   Result := True;
+                  Exit;
+               end;
+            plsHLD:
+               begin
+                  AP := p;
+                  Result := False;
                   Exit;
                end;
             plsN_A: ;
@@ -2838,6 +2838,9 @@ begin
    else
       Result := True;
    end;
+   if ApplicationDowned and IniFile.Stealth then begin
+      ShowMode := swHide;
+   end;
 end;
 
 function CheckExecPrefixes(var s: string; var Priority: DWORD; var Detached: Boolean; var ShowMode: TExecShowMode; var SetFlag: Boolean): Boolean;
@@ -3156,7 +3159,7 @@ begin
       end else begin
          XChg(ActivePoll.Node, an);
          FreeObject(an);
-         ActivePoll.Reset;
+//         ActivePoll.Reset;
       end;
    end;
    if ActivePoll <> nil then begin
@@ -5231,18 +5234,6 @@ begin
          (NetmailHolder <> nil) and not (SD.SessionCore in [scNNTP]) then NetmailHolder.Route(SD.rmtAddrs[n], SD.ActivePoll <> nil, Log);
    end;
    CfgLeave;
-   if ScanActive then begin
-      if ScanCounter <> 0 then begin
-         ScanCounter := 1000;
-      end;
-      N := 0;
-      while ScanActive do begin
-         Sleep(100);
-         Application.ProcessMessages;
-         if N = 100 then break;
-         inc(N);
-      end;
-   end;
    N := 0;
    TransmitHold := SD.ActivePoll = nil;
    if not TransmitHold then begin
@@ -5283,7 +5274,7 @@ begin
       end;
    end;
 
-   if EP.VoidFound(eiZMHEvent) and not (SD.SessionCore in [scNNTP]) then begin
+   if DialupLine and EP.VoidFound(eiZMHEvent) then begin
       FreeObject(TransmitRequired);
       STrsFilesRqd := CNetMailMask;
       TransmitRequired := TStringColl.Create;
@@ -5622,7 +5613,7 @@ function TMailerThread.AcceptFile(P: TBaseProtocol): TTransferFileAction;
       end;
 
       ss := ExpandSuperMask(EP.StrValue(eiAccFilesRqd));
-      if EP.VoidFound(eiZMHEvent) then begin
+      if DialupLine and EP.VoidFound(eiZMHEvent) then begin
          ss := '*.pkt';
          LogOnce(ltInfo, 'ZMH event in progress. Incoming trafic is restricted');
       end;
@@ -5791,48 +5782,35 @@ function TMailerThread.AcceptFile(P: TBaseProtocol): TTransferFileAction;
       begin
          SD.WzRec := GetBWZ(P.R.D.FName, P.R.D.FSize, P.R.D.FTime, SD.rmtPrimaryAddr, SD.rmtAddrs);
       end;
-      if SD.WzRec <> nil then
-      begin
-         if SD.WzRec.Locked then
-         begin
+      if SD.WzRec <> nil then begin
+         if SD.WzRec.Locked then begin
             Log(ltInfo, Format('Already processing ''%s''', [SD.WzRec.GetBwzFName]));
             Result := aaAcceptLater;
             SD.WzRec := nil;
             Exit;
-         end
-         else
-         begin
+         end else begin
             s := CreateDosStream(SD.WzRec.GetBWZFName, [cWrite, cExisting]);
-            if s <> nil then
-            begin
+            if s <> nil then begin
                d := s.Seek(0, FILE_END);
-               if d = INVALID_FILE_SIZE then
-               begin
+               if d = INVALID_FILE_SIZE then begin
                   SetErrorMsg(SD.WzRec.GetBWZFName);
                   ChkErrMsg;
-               end
-               else
-                  if d = P.R.D.FSize then
-                  begin
+               end else
+                  if d = P.R.D.FSize then begin
                      // got completely but can''t move it to inbound
                      Result := aaRefuse;
                      FreeObject(s);
                      SD.WzRec := nil;
                      Exit;
-                  end
-                  else
-                  begin
-                     if (IniFile.IgnoreBWZSize) or (d = SD.WZRec.TmpSize) then
-                     begin
+                  end else begin
+                     if (IniFile.IgnoreBWZSize) or (d = SD.WZRec.TmpSize) then begin
                         SD.WZRec.Locked := True;
                         P.R.D.FOfs := d;
                         P.R.Stream := s;
                         Result := aaOK;
                         P.R.D.StreamType := xstInDiskFileAppend;
                         Exit;
-                     end
-                     else
-                     begin
+                     end else begin
                         LogFmt(ltInfo, 'Complete File Size/Time: Saved[%s/%d], Got[%s/%d]',
                            [Int2Str(SD.WZRec.FSize), SD.WZRec.FTime,
                            Int2Str(P.R.D.FSize), P.R.D.FTime]);
@@ -5843,9 +5821,7 @@ function TMailerThread.AcceptFile(P: TBaseProtocol): TTransferFileAction;
                FreeObject(s);
                Log(ltInfo, Format('Deleting invalid ''%s''', [SD.WzRec.GetBwzFName]));
                DeleteFile(SD.WzRec.GetBWZFName);
-            end
-            else
-            begin
+            end else begin
                Log(ltWarning, Format('Can''t open ''%s''', [SD.WzRec.GetBwzFName]));
             end;
             FreeBWZ(SD.WzRec);
@@ -5856,8 +5832,7 @@ function TMailerThread.AcceptFile(P: TBaseProtocol): TTransferFileAction;
       SD.WzRec.Locked := True;
       fn := SD.WzRec.GetBWZFName;
 
-      if not CreateDirInheritance(ExtractFileDir(fn)) then
-      begin
+      if not CreateDirInheritance(ExtractFileDir(fn)) then begin
          ChkErrMsg;
          Result := aaAcceptLater;
          if SD.WzRec.TmpSize = 0 then
@@ -5868,8 +5843,7 @@ function TMailerThread.AcceptFile(P: TBaseProtocol): TTransferFileAction;
       end;
 
       s := CreateDosStream(fn, [cTruncate]);
-      if s = nil then
-      begin
+      if s = nil then begin
          SetErrorMsg(fn);
          ChkErrMsg;
          Result := aaAcceptLater;
@@ -5909,8 +5883,7 @@ begin
                Log(ltInfo, Format('Receiving ''%s'' (%sb)', [P.R.D.FName, Int2Str(P.R.D.FSize)]));
             end;
             P.R.D.FPos := P.R.D.FOfs;
-            if P.R.D.FPos <> 0 then
-            begin
+            if P.R.D.FPos <> 0 then begin
                LogFmt(ltInfo, 'Receiving from offset %s', [Int2Str(P.R.D.FPos)]);
                P.R.Stream.Seek(P.R.D.FPos, FILE_BEGIN);
             end;
@@ -5926,8 +5899,7 @@ begin
          begin
             Log(ltInfo, Format('Delaying ''%s''', [P.R.D.FName]));
             DelFromList(P.R.D.FName);
-            if rmfNoFileDelay in SD.rmtMailerFlags then
-            begin
+            if rmfNoFileDelay in SD.rmtMailerFlags then begin
                Log(ltWarning, 'Remote mailer doesn''t support Delay File Capability - disconnecting');
                Result := aaAbort;
             end;
@@ -5942,13 +5914,21 @@ const
    eiSz: array[Boolean] of Integer = (eiFreqPubSz, eiFreqPwdSz);
    eiCnt: array[Boolean] of Integer = (eiFreqPubCnt, eiFreqPwdCnt);
 var
-   i, j: Integer;
+   i,
+   j: Integer;
    r: TReqRec;
    f: TReqFile;
    s: TStringColl;
    ss: string;
-   etr, esr, ecr: Boolean;
-   MaxMinutes, TotCount, TotSize, MaxCount, MaxSizeA, MaxSizeB: DWORD;
+   etr,
+   esr,
+   ecr: Boolean;
+   MaxMinutes,
+   TotCount,
+   TotSize,
+   MaxCount,
+   MaxSizeA,
+   MaxSizeB: DWORD;
    b: Boolean;
 
    procedure lg(const AStr: string);
@@ -5972,20 +5952,16 @@ begin
 
    s := TStringColl.Create;
    if SD.ReqLines <> nil then
-      for i := 0 to SD.ReqLines.Count - 1 do
-      begin
+      for i := 0 to SD.ReqLines.Count - 1 do begin
          r := SD.ReqLines[i];
-         if r.Typ < rtOK then
-         begin
+         if r.Typ < rtOK then begin
             LogFmt(ltWarning, 'Unrecognized request line "%s"', [Copy(r.s, 1, MAX_PATH)]);
             Continue;
          end;
-         if r.Files = nil then
-         begin
+         if r.Files = nil then begin
             if r.SRPs <> nil then
                ProcessSRPs(r.SRPs)
-            else
-            begin
+            else begin
                if r.Psw = '' then
                   ss := ''
                else
@@ -6015,8 +5991,7 @@ begin
             GlobalFail('%s', ['TMailerThread.ReportReq t.Typ(B) ??'])
          end;
 
-         for j := 0 to r.Files.Count - 1 do
-         begin
+         for j := 0 to r.Files.Count - 1 do begin
             if j mod 100 = 99 then FlushLog;
             f := r.Files[j];
             if SD.OutFiles.FoundFName(f.FName) or
@@ -6024,34 +5999,26 @@ begin
                s.FoundUC(f.FName) then
             begin
                lg(' already attached %s (%sb, %s) - skipping');
-            end
-            else
-            begin
-               if TotCount >= MaxCount then
-               begin
+            end else begin
+               if TotCount >= MaxCount then begin
                   lg(' %s (%sb, %s) exceeds by count');
-                  if not ecr then
-                  begin
+                  if not ecr then begin
                      ecr := True;
                      LogFmt(ltInfo, 'Maximum of %d files is allowed', [MaxCount]);
                   end;
                   Continue;
                end;
-               if TotSize + f.Info.Size > MaxSizeA then
-               begin
+               if TotSize + f.Info.Size > MaxSizeA then begin
                   lg(' %s (%sb, %s) exceeds by duration');
-                  if not etr then
-                  begin
+                  if not etr then begin
                      etr := True;
                      LogFmt(ltInfo, 'Maximum of %d minutes (%s KB on %d BPS) is allowed', [MaxMinutes, Int2Str(MaxSizeA div 1024), SD.ConnectSpeed]);
                   end;
                   Continue;
                end;
-               if TotSize + f.Info.Size > MaxSizeB then
-               begin
+               if TotSize + f.Info.Size > MaxSizeB then begin
                   lg(' %s (%sb, %s) exceeds by size');
-                  if not esr then
-                  begin
+                  if not esr then begin
                      esr := True;
                      LogFmt(ltInfo, 'Maximum of %s KB is allowed', [Int2Str(MaxSizeB div 1024)]);
                   end;
@@ -6067,6 +6034,19 @@ begin
    FidoOut.AttachFiles(SD.rmtPrimaryAddr, S, osHReq, kaBsoNothingAfter);
    ChkErrMsg;
    if S.Count > 0 then LogFmt(ltInfo, 'Total %d requested file(s) attached', [S.Count]);
+   if CollMax(S) > -1 then begin
+      ScanActive := True;
+      ScanCounter := 1000;
+      i := 0;
+      while ScanActive do begin
+         sleep(100);
+         Application.ProcessMessages;
+         inc(i);
+         if i = 100 then begin
+            break;
+         end;
+      end;
+   end;
    FreeObject(S);
 end;
 
@@ -6368,44 +6348,34 @@ var
          InStream := False;
       end;
 
-      if Action = aaRefuse then
-      begin
+      if Action = aaRefuse then begin
          Log(ltInfo, 'Receiving file was rejected by local operator');
          DoKillFile;
-      end
-      else
-      begin
-         if Action = aaAcceptLater then
-         begin
+      end else begin
+         if Action = aaAcceptLater then begin
             Log(ltInfo, 'Receiving file was skipped by local operator');
          end else
-         if Action = aaAcceptLater_r then
-         begin
+         if Action = aaAcceptLater_r then begin
             Log(ltInfo, 'Receiving file was skipped by remote');
          end;
-         if not CompleteFile then
-         begin
+         if not CompleteFile then begin
             if InStream then
                FreeObject(P.R.Stream)
             else
             if KillFile then
                DoKillFile
-            else
-            begin
+            else begin
                Log(ltWarning, Format('%sPart of ''%s'' (%sb) is temporarily stored as ''%s''', [CPS, P.R.D.FName, Int2Str(P.R.Stream.Size), SD.WzRec.GetBWZFname]));
                SD.WzRec.TmpSize := ss;
                FreeObject(P.R.Stream);
                SD.WzRec.Locked := False;
                SD.WzRec := nil;
             end;
-         end
-         else
-         begin
+         end else begin
             case P.R.D.StreamType of
                xstInMemREQ:
                   begin
-                     if not SD.SkipInMem then
-                     begin
+                     if not SD.SkipInMem then begin
                         CfgEnter;
                         IsSRIF := foSRIF in Cfg.FreqData.Options;
                         ExtSRIF := Cfg.FreqData.Misc[0];
@@ -6422,8 +6392,7 @@ var
                xstInMemCLB:
                   begin
                      an := FindNode(SD.rmtPwdAddr);
-                     if an <> nil then
-                     begin
+                     if an <> nil then begin
                         InsertPoll(an, [], ptpBack);
                      end;
                      FreeObject(P.R.Stream);
@@ -6437,13 +6406,10 @@ var
                      SD.WzRec.TmpSize := ss;
                      CommonLog.Add(SD.rmtPrimaryAddr, MakeNormName(GetInboundDir(SD.rmtPrimaryAddr, P.R.D.FName, SD.PasswordProtected, PutKind), SD.WzRec.FName), False, ss, DS.rmtSoft);
                      FreeObject(P.R.Stream);
-                     if TossSingleBWZ(SD.WzRec, fn) then
-                     begin
+                     if TossSingleBWZ(SD.WzRec, fn) then begin
                         sss := Format('%sReceived ''%s''', [CPS, fn]);
                         FreeBWZ(SD.WzRec);
-                     end
-                     else
-                     begin
+                     end else begin
                         ChkErrMsg;
                         if CompleteFile then SD.WzRec.FSize := P.R.d.FSize;
                         sss := Format('%sReceived/queued ''%s''', [CPS, SD.WzRec.GetBWZFname]);
@@ -6453,8 +6419,7 @@ var
                         SD.WzRec.Locked := False;
                         SD.WzRec := nil;
                      end;
-                     if (P.ActuallyRece > 0) and (P.VisuallyRece > 0) then
-                     begin
+                     if (P.ActuallyRece > 0) and (P.VisuallyRece > 0) then begin
                         ii := P.VisuallyRece - P.ActuallyRece;
                         if ii > 0 then begin
                            sss := sss + ', ' + Format('ZLIB: %d%s (%sb)', [100 * ii div longint(P.VisuallyRece), '%', Int2Str(P.ActuallyRece)]);
@@ -6471,21 +6436,18 @@ var
 
 begin
    FreqSC := nil;
-   if P.R.Stream = nil then
-   begin
+   if P.R.Stream = nil then begin
       Exit;
    end;
    DoFinish;
-   if FreqSC <> nil then
-   begin
+   if FreqSC <> nil then begin
       if IsSRIF then
          ProcessSRIF(FreqSC, ExtSRIF, TmpDir)
       else
          ProcessRequestFTS(FreqSC);
       SD.FReqProcessed := True;
       if ProtCore = ptBinkP then TBinkP(SD.Prot).freqprocessed := true;
-      if (ProtCore = ptBinkP) and (P.TxClosed) then
-      begin
+      if (ProtCore = ptBinkP) and (P.TxClosed) then begin
          P.OutFlow := false;
       end;
    end;
@@ -6549,7 +6511,8 @@ begin
          end;
       end else
       if (n.Status in MailSet) and
-         (P.T.r <> nil) and not (P.T.r.Status in MailSet) then begin
+         (P.T.r <> nil) and not (P.T.r.Status in MailSet) then
+      begin
          Result := True;
       end;
    end;
@@ -7710,7 +7673,7 @@ begin
    Put('{', Password);
 
    LinkCodes := [el8N1];
-   if EP.VoidFound(eiZMHEvent) then Include(LinkCodes, elHXT);
+   if DialupLine and EP.VoidFound(eiZMHEvent) then Include(LinkCodes, elHXT);
    //  if SD.ActivePoll <> nil then Include(LinkCodes, elPUA);
 
    Put('{', BuildEMSILinkCodes(LinkCodes));
@@ -14646,7 +14609,7 @@ begin
          if SD.ActivePoll <> nil then begin
             SD.ActivePoll.Release;
          end;
-         if EP.VoidFound(eiZMHEvent) then begin
+         if DialupLine and EP.VoidFound(eiZMHEvent) then begin
             if not (osImmedMail in p.Flav) and
                not (osCrashMail in p.Flav) and
                not (osDirectMail in P.Flav) then
@@ -14663,7 +14626,7 @@ begin
             State := msStartDial;
          end;
       end else begin
-         if (p <> nil) and EP.VoidFound(eiZMHEvent) then begin
+         if (p <> nil) and DialupLine and EP.VoidFound(eiZMHEvent) then begin
             if not (osImmedMail in p.Flav) and
                not (osCrashMail in p.Flav) and
                not (osDirectMail in P.Flav) then PubInst := False;
@@ -15394,9 +15357,12 @@ begin
       Thr.Suspended := False;
       Exit;
    end;
-   if SetPortTyp(p.IPAddr, p.Node.Addr, p.IPFlags, Port, Prot, Typ) then
-      _WSAConnect(p.IPAddr, p, Prot, Port, Typ) else
+   if SetPortTyp(p.IPAddr, p.Node.Addr, p.IPFlags, Port, Prot, Typ) then begin
+      NewTimerSecs(p.LastPoll, 0);
+     _WSAConnect(p.IPAddr, p, Prot, Port, Typ);
+   end else begin
       p.Release;
+   end;
 end;
 
 procedure TIPPollsThread.InvokeDone;

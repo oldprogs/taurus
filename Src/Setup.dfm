@@ -128,7 +128,7 @@ object SetupForm: TSetupForm
     Top = 27
     Width = 356
     Height = 319
-    PageIndex = 12
+    PageIndex = 9
     TabOrder = 1
     object TPage
       Left = 0
@@ -797,7 +797,7 @@ object SetupForm: TSetupForm
       object lHelpLanguage: TLabel
         Left = 181
         Top = 25
-        Width = 36
+        Width = 26
         Height = 15
         Caption = 'Help'
         FocusControl = cbHelpLanguage
@@ -1746,7 +1746,7 @@ object SetupForm: TSetupForm
         Width = 145
         Height = 23
         Style = csDropDownList
-        ItemHeight = 0
+        ItemHeight = 15
         TabOrder = 0
       end
       object btnReloadRASEntries: TButton
@@ -2026,7 +2026,7 @@ object SetupForm: TSetupForm
       object cbDynamicRouting: TCheckBox
         Left = 8
         Top = 11
-        Width = 336
+        Width = 165
         Height = 17
         Caption = 'Use Dynamic Routing'
         TabOrder = 1
@@ -2046,6 +2046,15 @@ object SetupForm: TSetupForm
         Caption = '...'
         TabOrder = 3
         OnClick = bNetmailClick
+      end
+      object cbScanMSG: TCheckBox
+        Left = 178
+        Top = 11
+        Width = 163
+        Height = 17
+        Caption = 'Scan MSG area'
+        TabOrder = 4
+        OnClick = cbScanMSGClick
       end
     end
     object TPage
