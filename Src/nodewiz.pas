@@ -343,9 +343,7 @@ end;
 
 procedure TNodeWizzardForm.bEditIpRestClick(Sender: TObject);
 begin
-  {$IFDEF WS}
   if SetupIp(4) then ProcessChanges;
-  {$ENDIF}
 end;
 
 procedure TNodeWizzardForm.bEditDialAKAClick(Sender: TObject);
@@ -355,9 +353,7 @@ end;
 
 procedure TNodeWizzardForm.bEditIpAkaClick(Sender: TObject);
 begin
-  {$IFDEF WS}
   if SetupIp(2) then ProcessChanges;
-  {$ENDIF}
 end;
 
 procedure TNodeWizzardForm.bElSetClick(Sender: TObject);
@@ -467,148 +463,124 @@ var
   i: Integer;
 begin
   s := '';
-  if L.Count > 0 then
-  begin
+  if L.Count > 0 then begin
     s := L[0];
-    for i := 1 to L.Count-2 do s := s + ', ' + L[i];
-    if L.Count > 1 then s := s + LngStr(rsNWand) + L[L.Count-1];
+    for i := 1 to L.Count - 2 do s := s + ', ' + L[i];
+    if L.Count > 1 then s := s + LngStr(rsNWand) + L[L.Count - 1];
   end;
   Result := s;
 end;
 
 procedure TNodeWizzardForm.bDeleteNodeClick(Sender: TObject);
 var
-  L: TStringList;
-  s: string;
+   L: TStringList;
+   s: string;
   ps: Integer;
-  r: TNodeWizzardRec;
+   r: TNodeWizzardRec;
   wc: TNodeWizzardColl;
 
 procedure AddL(id: Integer);
 begin
-  L.Add(LngStr(id));
+   L.Add(LngStr(id));
 end;
 
 begin
-  L := TStringList.Create;
-  if lbAtoms.Items.Count > 0 then AddL(rsNW_events);
-  if lbDialRest.Items.Count > 0 then AddL(rsNW_dialrest);
-  if lbIpRest.Items.Count > 0 then AddL(rsNW_iprest);
-  if lbDialAKA.Items.Count > 0 then AddL(rsNW_dupaka);
-  if lbIpAKA.Items.Count > 0 then AddL(rsNW_ipaka);
-  if L.Count > 0 then
-  begin
-    s := StrListToStrAnd(L);
-    FreeObject(L);
-    DisplayError(FormatLng(rsNWRBfD, [s]), Handle);
-    Exit;
-  end;
-  SaveFields;
-  r := Fwr;
-  if r = nil then Exit;
-  if r.IsEncryptedLink then AddL(rsNW_enclink);
-  if r.Password <> '' then AddL(rsNW_basicpwd);
-  if r.DupOvr <> '' then AddL(rsNW_dupovr);
-  if r.IpOvr <> '' then AddL(rsNW_ipovr);
-  if r.FBoxIn <> '' then AddL(rsNW_infbox);
-  if r.FBoxOut <> '' then r.FBoxOut:='';//AddL(rsNW_outfbox);
-  if r.PollPer <> '' then AddL(rsNW_ppoll);
-  if r.PollExt <> '' then AddL(rsNW_extpoll);
-  if r.PostProc <> '' then AddL(rsNW_postp);
-  wc := Fwc;
-  if not wc.Search(@r.a, ps) then GlobalFail('TNodeWizzardForm.bDeleteNodeClick(%s) - node not found', [Addr2Str(r.A)]);
-  if L.Count = 0 then
-  begin
-    FreeObject(L);
-    wc.AtFree(ps);
-    Fwr := nil;
-    cbCurNode.Items.Delete(ps);
-    cbCurNode.OnClick(Sender);
-    Exit;
-  end;
-  s := StrListToStrAnd(L);
-  FreeObject(L);
-  if not YesNoConfirm(FormatLng(rsNWCfmDelNC, [Addr2Str(r.A), s]), Handle) then Exit;
-  r.FinalizeStrs;
-  r.IsEncryptedLink := False;
-  SaveNodeWizzardColl(nil, r);
-  wc.AtFree(ps);
-  Fwr := nil;
-  cbCurNode.Items.Delete(ps);
-  cbCurNode.OnClick(Sender);
-  if not StoreConfig(Handle) then PostCloseMessage;
+   L := TStringList.Create;
+   if lbAtoms.Items.Count > 0 then AddL(rsNW_events);
+   if lbDialRest.Items.Count > 0 then AddL(rsNW_dialrest);
+   if lbIpRest.Items.Count > 0 then AddL(rsNW_iprest);
+   if lbDialAKA.Items.Count > 0 then AddL(rsNW_dupaka);
+   if lbIpAKA.Items.Count > 0 then AddL(rsNW_ipaka);
+   if L.Count > 0 then begin
+      s := StrListToStrAnd(L);
+      FreeObject(L);
+      DisplayError(FormatLng(rsNWRBfD, [s]), Handle);
+      Exit;
+   end;
+   SaveFields;
+   r := Fwr;
+   if r = nil then Exit;
+   if r.IsEncryptedLink then AddL(rsNW_enclink);
+   if r.Password <> '' then AddL(rsNW_basicpwd);
+   if r.DupOvr <> '' then AddL(rsNW_dupovr);
+   if r.IpOvr <> '' then AddL(rsNW_ipovr);
+   if r.FBoxIn <> '' then AddL(rsNW_infbox);
+   if r.FBoxOut <> '' then r.FBoxOut:='';//AddL(rsNW_outfbox);
+   if r.PollPer <> '' then AddL(rsNW_ppoll);
+   if r.PollExt <> '' then AddL(rsNW_extpoll);
+   if r.PostProc <> '' then AddL(rsNW_postp);
+   wc := Fwc;
+   if not wc.Search(@r.a, ps) then GlobalFail('TNodeWizzardForm.bDeleteNodeClick(%s) - node not found', [Addr2Str(r.A)]);
+   if L.Count = 0 then begin
+      FreeObject(L);
+      wc.AtFree(ps);
+      Fwr := nil;
+      cbCurNode.Items.Delete(ps);
+      cbCurNode.OnClick(Sender);
+      Exit;
+   end;
+   s := StrListToStrAnd(L);
+   FreeObject(L);
+   if not YesNoConfirm(FormatLng(rsNWCfmDelNC, [Addr2Str(r.A), s]), Handle) then Exit;
+   r.FinalizeStrs;
+   r.IsEncryptedLink := False;
+   SaveNodeWizzardColl(nil, r);
+   wc.AtFree(ps);
+   Fwr := nil;
+   cbCurNode.Items.Delete(ps);
+   cbCurNode.OnClick(Sender);
+   if not StoreConfig(Handle) then PostCloseMessage;
 end;
 
 procedure TNodeWizzardForm.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
 var
-  i: Integer;
+   i: Integer;
 
 procedure ClickIn;
 begin
-  CanClose := False;
-  cbCurNode.ItemIndex := i;
-  cbCurNode.OnClick(Sender);
+   CanClose := False;
+   cbCurNode.ItemIndex := i;
+   cbCurNode.OnClick(Sender);
 end;
 
 var
   wc: TNodeWizzardColl;
-  r: TNodeWizzardRec;
-  s, z: string;
-//  fb: TFileBoxCfg;
-  fbdc: TFileBoxDirColl;
+   r: TNodeWizzardRec;
+   s,
+   z: string;
+fbdc: TFileBoxDirColl;
 begin
   if ModalResult <> mrOK then Exit;
   SaveFields;
   wc := Fwc;
-  fbdc := TFileBoxDirColl.Create('');
-  for i := 0 to wc.Count-1 do
-  begin
+  fbdc := TFileBoxDirColl.Create;
+  for i := 0 to wc.Count - 1 do begin
     r := wc[i];
-    if r.DupOvr <> '' then
-    begin
+    if r.DupOvr <> '' then begin
       s := ValidOverride(r.DupOvr, True, z);
-      if s <> '' then
-      begin
+      if s <> '' then begin
         ClickIn;
         DisplayError(FormatLng(rsNWInvDupOvrI, [z, s]), Handle);
         Break;
       end;
     end;
-    if r.IpOvr <> '' then
-    begin
+
+    if r.IpOvr <> '' then begin
       s := ValidOverride(r.IpOvr, False, z);
-      if s <> '' then
-      begin
+      if s <> '' then begin
         ClickIn;
         DisplayError(FormatLng(rsNWInvIpOvrI, [z, s]), Handle);
         Break;
       end;
     end;
-    if r.FBoxOut <> '' then
-    begin
-{      s := r.FBoxOut;
-      GetWrd(s, z, '|');
-      if (s = '') or (z = '') then Continue;
-      fb := TFileBoxCfg.Create;
-      fb.FAddr := Addr2Str(r.A);
-      fb.FStatus := Char2OutStatus(z[1]);
-      fb.FDir := s;
-      if not GetFileBoxDirColl(fb.FAddr, fb.Dir(Cfg.FileBoxes.DefaultDir, 0), fb.FStatus, fbdc, @s, nil, nil) then
-      begin
-        FreeObject(fb);
-        ClickIn;
-        DisplayError(s, Handle);
-        Break;
-      end;
-      FreeObject(fb);}
-      r.FBoxOut:='';
+
+    if r.FBoxOut <> '' then begin
+       r.FBoxOut := '';
     end;
 
-    if r.PollPer <> '' then
-    begin
+    if r.PollPer <> '' then begin
       s := ValidCronRecStr(r.PollPer);
-      if s <> '' then
-      begin
+      if s <> '' then begin
         ClickIn;
         DisplayError(s, Handle);
         Break;
@@ -620,21 +592,21 @@ end;
 
 procedure TNodeWizzardForm.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
-  if ModalResult <> mrOK then Exit;
-  SaveNodeWizzardColl(Fwc, nil);
-  FreeObject(Fwc);
-  if not StoreConfig(Handle) then PostCloseMessage;
+   if ModalResult <> mrOK then Exit;
+   SaveNodeWizzardColl(Fwc, nil);
+   FreeObject(Fwc);
+   if not StoreConfig(Handle) then PostCloseMessage;
 end;
 
 procedure TNodeWizzardForm.FormCreate(Sender: TObject);
 begin
-  gPsw.MenuDisabled:=true;
-  FillForm(Self, rsNodeWizzardForm);
+   gPsw.MenuDisabled:=true;
+   FillForm(Self, rsNodeWizzardForm);
 end;
 
 procedure TNodeWizzardForm.bHelpClick(Sender: TObject);
 begin
-  Application.HelpContext(HelpContext);
+   Application.HelpContext(HelpContext);
 end;
 
 procedure TNodeWizzardForm.bEditFileBoxClick(Sender: TObject);

@@ -158,19 +158,22 @@ var
    IPcfgForm: TIPcfgForm;
 begin
    IPcfgForm := TIPcfgForm.Create(Application);
+   IPcfgForm.SetData;
    case APageIndex of
    2: IPcfgForm.tb.ActivePage := IPcfgForm.lAKA;
    4: IPcfgForm.tb.ActivePage := IPcfgForm.lRestrict;
+   else
+      IPcfgForm.tb.ActivePageIndex := SavFile.ReadInteger('IPCfg', 'Page', 0);
    end;
-   IPcfgForm.SetData;
-   IPcfgForm.tb.ActivePageIndex := SavFile.ReadInteger('IPCfg', 'Page', 0);
    IPCfgForm.RTh := TResolveThread.Create;
    IPCfgForm.RTh.Suspended := False;
    Result := IPcfgForm.ShowModal = mrOK;
    IPCfgForm.RTh.Terminated := True;
    IPCfgForm.RTh.WaitFor;
    FreeObject(IPCfgForm.RTh);
-   SavFile.WriteInteger('IPCfg', 'Page', IPcfgForm.tb.ActivePageIndex);
+   if aPageIndex > 0 then begin
+      SavFile.WriteInteger('IPCfg', 'Page', IPcfgForm.tb.ActivePageIndex);
+   end;
    if Result and IPcfgForm.EvtChanged then begin
       RecalcEvents := True;
       SetEvt(oRecalcEvents);

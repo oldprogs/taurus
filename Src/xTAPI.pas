@@ -126,8 +126,9 @@ procedure LineCallbackProc (hDevice,
                             dwParam1,
                             dwParam2,
                             dwParam3 : DWORD); stdcall; far;
-var ci: TLineCallInfo;
-    ii: integer;
+var
+   ci: TLineCallInfo;
+   ii: integer;
 begin
 
   ThisTapiPort := FindTapiPort(dwInstance);
@@ -315,7 +316,8 @@ begin
 end;
 
 function TTapiPort.SaveHandle;
-var i: integer;
+var
+   i: integer;
 begin
    Result := False;
    if h = 0 then exit;
@@ -330,7 +332,8 @@ begin
 end;
 
 function TTapiPort.NextHandle;
-var i: integer;
+var
+   i: integer;
 begin
    Result := 0;
    for i := 0 to 9 do begin
@@ -343,7 +346,8 @@ begin
 end;
 
 procedure TTapiPort.FreeHandle;
-var i: integer;
+var
+   i: integer;
 begin
    for i := 0 to 9 do begin
       if a[i] = h then begin
@@ -378,9 +382,9 @@ const
 
 constructor TTapiPort.Create;
 var
-   Ext : TLINEEXTENSIONID;
    i: integer;
    s: string;
+ Ext: TLINEEXTENSIONID;
 begin
    hCommFile := INVALID_HANDLE_VALUE;
    Version := 0;
@@ -495,7 +499,7 @@ begin
    end;
    if DWORD(RC) = LINEERR_INVALLINEHANDLE then begin
       Line := 0;
-   end;   
+   end;
 end;
 
 procedure TTapiPort.StorLine;
@@ -513,8 +517,9 @@ begin
 end;
 
 function TTapiPort.OpenLine;
-var l: integer;
-  Ext: TLINEEXTENSIONID;
+var
+   l: integer;
+ Ext: TLINEEXTENSIONID;
 begin
    Enter;
    Result := False;
@@ -571,9 +576,10 @@ end;
 
 procedure TTAPIPort.CheckCalls;
 type
-    t = array[0..0] of THandle;
-var c: PLineCallList;
-    a:^t;
+   t = array[0..0] of THandle;
+var
+   c: PLineCallList;
+   a:^t;
 begin
    if RealOwner then exit;
    GetMem(c, 1024);
@@ -601,7 +607,8 @@ begin
 end;
 
 procedure TTAPIPort.CloseLine;
-var l: THandle;
+var
+   l: THandle;
 begin
    Enter;
    repeat
@@ -626,7 +633,8 @@ begin
 end;
 
 function  TTAPIPort.GetOnline;
-var ds: TLineDevStatus;
+var
+   ds: TLineDevStatus;
 begin
    Result := -1;
    ds.dwTotalSize := SizeOf(ds);
@@ -649,7 +657,8 @@ begin
 end;
 
 procedure TTAPIPort.CheckOpens;
-var o: integer;
+var
+   o: integer;
 begin
    if Call <> 0 then exit;
    o := OnLine;
@@ -667,9 +676,9 @@ end;
 
 function  TTAPIPort.MakeCall;
 var
-   cp: TLINECALLPARAMS;
-    i: integer;
-    c: HCALL;
+  cp: TLINECALLPARAMS;
+   i: integer;
+   c: HCALL;
 begin
    Result := False;
    OpenLine;
@@ -727,8 +736,9 @@ begin
 end;
 
 procedure TTAPIPort.SetPriority;
-var a: string;
-    i: integer;
+var
+   a: string;
+   i: integer;
 begin
    a := ExtractFileName(ParamStr(0));
    for i := 1 to 15 do begin
@@ -754,7 +764,8 @@ begin
 end;
 
 procedure TTAPIPort.DropCall;
-var h: THandle;
+var
+   h: THandle;
 begin
    SetPriority;
    if PassThrough and (FHandle <> INVALID_HANDLE_VALUE) then exit;
@@ -788,7 +799,8 @@ begin
 end;
 
 procedure TTAPIPort.HandOff;
-var rc: long;
+var
+   rc: long;
 begin
    Privileges := LINECALLPRIVILEGE_OWNER;
    fAnswer := False;
@@ -873,36 +885,36 @@ End;
 
 function I_lineNegotiateAPIVersion (dwDeviceID: DWORD): DWORD;
 Var
-  ei: TLINEEXTENSIONID;
-  av: DWORD;
-  rc: DWORD;
+   ei: TLINEEXTENSIONID;
+   av: DWORD;
+   rc: DWORD;
 Begin
-    av := 0;
-    rc := lineNegotiateAPIVersion (TapiAppHandler, dwDeviceID,
-                                   LoVer, LoVer, @av, @ei);
-    if (rc = LINEERR_INCOMPATIBLEAPIVERSION) Then Begin
-       Result := 0;
-       exit;
-    End;
-    Result := av;
+   av := 0;
+   rc := lineNegotiateAPIVersion (TapiAppHandler, dwDeviceID,
+                                  LoVer, LoVer, @av, @ei);
+   if (rc = LINEERR_INCOMPATIBLEAPIVERSION) Then Begin
+      Result := 0;
+      exit;
+   End;
+   Result := av;
 End;
 
 function GetLineName (dn: DWORD): string;
 var
-    av: DWORD;
-    dc: LPLINEDEVCAPS;
+   av: DWORD;
+   dc: LPLINEDEVCAPS;
 begin
-    GetMem(dc, sizeof(TLINEDEVCAPS) + 1024);
-    FillChar(dc^, SizeOf(dc^), #0);
-    dc.dwTotalSize := sizeof(dc^) + 1024;
-    av := I_lineNegotiateLegacyAPIVersion (dn);
-    if (av <> 0) Then begin
-       lineGetDevCaps (TAPIAppHandler, dn, av, 0, dc);
-       Result := GetLineName(dc);
-    end else begin
-       Result := 'Cannot find device';
-    end;
-    FreeMem(dc, sizeof(TLINEDEVCAPS) + 1024);
+   GetMem(dc, sizeof(TLINEDEVCAPS) + 1024);
+   FillChar(dc^, SizeOf(dc^), #0);
+   dc.dwTotalSize := sizeof(dc^) + 1024;
+   av := I_lineNegotiateLegacyAPIVersion (dn);
+   if (av <> 0) Then begin
+      lineGetDevCaps (TAPIAppHandler, dn, av, 0, dc);
+      Result := GetLineName(dc);
+   end else begin
+      Result := 'Cannot find device';
+   end;
+   FreeMem(dc, sizeof(TLINEDEVCAPS) + 1024);
 end;
 
 function GetLineName (dc: LPLINEDEVCAPS): string;
@@ -944,7 +956,7 @@ End;
 function VerifyUsableLine (id: DWORD): LONG;
 Var
     hLine_: HLINE;
-    hCall_ : HCALL;
+    hCall_: HCALL;
     dc: LPLINEDEVCAPS;
     rs: LPLINEADDRESSSTATUS;
     vs: LPVARSTRING;
@@ -1061,8 +1073,9 @@ Begin
 End;
 
 function GetLineID(n: string): integer;
-var l: TStringList;
-    i: integer;
+var
+   l: TStringList;
+   i: integer;
 begin
    Result := -1;
    l := TStringList.Create;
@@ -1077,60 +1090,59 @@ end;
 
 function FillTAPILines(sl: TStrings): DWORD;
 Var
-    id: DWORD;
-    av: DWORD;
-    dc: LPLINEDEVCAPS;
-    ln: string;
-    i: integer;
+  id: DWORD;
+  av: DWORD;
+  dc: LPLINEDEVCAPS;
+  ln: string;
+   i: integer;
 Begin
-    Result := MAXDWORD;
-    sl.Clear;
-    GetMem(LPVOID(dc), sizeof(TLINEDEVCAPS) + 1024);
-    FillChar(dc^, SizeOf(dc^), #0);
-    dc.dwTotalSize := sizeof(TLINEDEVCAPS) + 1024;
-    for id := 0 to TapiDevsNumber - 1 do
-    begin
-       av := I_lineNegotiateLegacyAPIVersion (id);
-       if (av <> 0) Then Begin
-          if lineGetDevCaps (TAPIAppHandler, id, av, 0, dc) = 0 then begin
-             ln := GetLineName (dc);
-          end else begin
-             ln := 'Wrong device ID';
-          end;
-       End else begin
-       // Couldn't NegotiateAPIVersion.  Line is unavail.
-          ln := 'Line is unavailable';
-       end;
-       // If this line is usable and we don't have a default initial
-       // line yet, make this the initial line.
-       if (VerifyUsableLine(id) > -1) Then begin
-           Result := id;
-           // Put the device name into the control
-           i := sl.Add (ln);
-           sl.Objects[i] := pointer(id);
-       end;
-       ln := '';
-    End; {for dwDeviceID := 0 to dwNumDevs - 1 do}
-    FreeMem (dc, sizeof(TLINEDEVCAPS) + 1024);
+   Result := MAXDWORD;
+   sl.Clear;
+   GetMem(LPVOID(dc), sizeof(TLINEDEVCAPS) + 1024);
+   FillChar(dc^, SizeOf(dc^), #0);
+   dc.dwTotalSize := sizeof(TLINEDEVCAPS) + 1024;
+   for id := 0 to TapiDevsNumber - 1 do begin
+      av := I_lineNegotiateLegacyAPIVersion (id);
+      if (av <> 0) Then Begin
+         if lineGetDevCaps (TAPIAppHandler, id, av, 0, dc) = 0 then begin
+            ln := GetLineName (dc);
+         end else begin
+            ln := 'Wrong device ID';
+         end;
+      End else begin
+      // Couldn't NegotiateAPIVersion.  Line is unavail.
+         ln := 'Line is unavailable';
+      end;
+      // If this line is usable and we don't have a default initial
+      // line yet, make this the initial line.
+      if (VerifyUsableLine(id) > -1) Then begin
+          Result := id;
+          // Put the device name into the control
+          i := sl.Add (ln);
+          sl.Objects[i] := pointer(id);
+      end;
+      ln := '';
+   End; {for dwDeviceID := 0 to dwNumDevs - 1 do}
+   FreeMem (dc, sizeof(TLINEDEVCAPS) + 1024);
 End;
 
 procedure InitTAPI;
 begin
-  FillChar(TapiPortArray, SizeOf(TapiPortArray), #0);
-  FillChar(ExecsArray, SizeOf(ExecsArray), #0);
-  CallBackEntered := False;
-  TapiInitialized := lineInitialize(
-                    @TapiAppHandler,
-                     GetModuleHandle (nil),
-                     LineCallbackProc,
-                    'Taurus'#0,
-                    @TapiDevsNumber,
-                     ) = 0;
+   FillChar(TapiPortArray, SizeOf(TapiPortArray), #0);
+   FillChar(ExecsArray, SizeOf(ExecsArray), #0);
+   CallBackEntered := False;
+   TapiInitialized := lineInitialize(
+                     @TapiAppHandler,
+                      GetModuleHandle (nil),
+                      LineCallbackProc,
+                     'Taurus'#0,
+                     @TapiDevsNumber,
+                      ) = 0;
 end;
 
 procedure FinishTAPI;
 begin
-  if TapiInitialized then lineShutdown(TapiAppHandler);
+   if TapiInitialized then lineShutdown(TapiAppHandler);
 end;
 
 end.

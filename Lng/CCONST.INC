@@ -385,6 +385,7 @@ const
   rsMMTabSystem     = 488;
   rsMMwcSystem      = 489;
   rsNetPathGrid     = 490;
+  rsMMOutProperties = 491;
 
   rsCDCh            = 103;
   rsNBBoNotLtd      = 104;

@@ -483,6 +483,8 @@ type
     ppProperties: TMenuItem;
     N31: TMenuItem;
     mpProperties: TMenuItem;
+    ompProperties: TMenuItem;
+    N32: TMenuItem;
     procedure MainTabControlChange(Sender: TObject);
     procedure bAbortClick(Sender: TObject);
     procedure bStartClick(Sender: TObject);
@@ -617,6 +619,7 @@ type
     procedure New1Click(Sender: TObject);
     procedure stListViewApiDropFiles(Sender: TObject);
     procedure ppPropertiesClick(Sender: TObject);
+    procedure ompPropertiesClick(Sender: TObject);
   private
     OutBSize: int64;
     aOutbound: TAnimate;
@@ -2802,6 +2805,7 @@ begin
 
    a := D.TxTot;
    b := D.txBytes + txAdd;
+   if b > a then b := a;
    if (a = b) then SetSndTime(False);
    if (a = 0) or (a < b) then begin
       SetSndTotalTime(False); // visual
@@ -5803,6 +5807,7 @@ begin
    ompBrowseNL.Enabled := Found;
    ompEditFreq.Enabled := Found;
    ompCreateFlag.Enabled := Found;
+   ompProperties.Enabled := Found;
    if Found then begin
      h := Addr2Str(o.Address);
      if FidoOut.Paused(o.Address) then ompCfPause.Caption := 'Unpause'
@@ -5815,6 +5820,7 @@ begin
    ompBrowseNL.Caption := FormatLng(rsMMOutBrwsAt, [h]);
    ompEditFreq.Caption := FormatLng(rsMMOutEdFrq, [h]);
    ompCreateFlag.Caption := FormatLng(rsMMOutCrtFlg, [h]);
+   ompProperties.Caption := FormatLng(rsMMOutProperties, [h]);
 
    for i := 0 to OutMgrPopup.Items.Count - 1 do begin
       m := OutMgrPopup.Items[i];
@@ -7063,6 +7069,17 @@ begin
       if not ParseAddress(s, a) then GlobalFail('TMailerForm.bTracePollClick, failed to parse "%s"', [s]);
       InvokeNodeWizzard(s);
    end;
+end;
+
+procedure TMailerForm.ompPropertiesClick(Sender: TObject);
+var
+   o: TOutItem;
+   a: TFidoAddress;
+begin
+   o := OutMgrSelectedItem;
+   if o = nil then Exit;
+   a := o.Address;
+   InvokeNodeWizzard(Addr2Str(a));
 end;
 
 end.

@@ -2060,6 +2060,7 @@ begin
                                               else fn := Dr + Nm + '.*';
    if uFindFirstEx(fn, SR, FindExSearchLimitToDirectories) then begin
       repeat
+         Application.ProcessMessages;
          if SR.Info.Attr and FILE_ATTRIBUTE_DIRECTORY <> 0 then begin
             if SR.FName[1] <> '.' then begin
                Xt := ExtractWord(2, SR.FName, ['.']);

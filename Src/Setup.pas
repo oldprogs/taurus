@@ -732,7 +732,6 @@ begin
   cbGridBWZ.Checked := IniFile.GridInBWZ;
   cbGridPV.Checked := IniFile.GridInPV;
 
-{$IFDEF EXTREME}
   fdForms.Font.Name := IniFile.FormsFontName;
   fdForms.Font.Size := IniFile.FormsFontSize;
   fdForms.Font.Style := [];
@@ -740,7 +739,6 @@ begin
   if IniFile.FormsFontAttr[2] = '1' then fdForms.Font.Style := fdForms.Font.Style + [fsItalic];
   if IniFile.FormsFontAttr[3] = '1' then fdForms.Font.Style := fdForms.Font.Style + [fsUnderline];
   if IniFile.FormsFontAttr[4] = '1' then fdForms.Font.Style := fdForms.Font.Style + [fsStrikeOut];
-{$ENDIF}
 
   fdLogger.Font.Color := IniFile.LoggerFore;
   fdLogger.Font.Name := IniFile.LoggerFontName;
@@ -752,9 +750,7 @@ begin
   if IniFile.LoggerFontAttr[3] = '1' then fdLogger.Font.Style := fdLogger.Font.Style + [fsUnderline];
   if IniFile.LoggerFontAttr[4] = '1' then fdLogger.Font.Style := fdLogger.Font.Style + [fsStrikeOut];
 
-  {$IFDEF EXTREME}
   lFormsFont.Caption  := Format('%s (%d Pts)', [Font.Name, Font.Size]);
-  {$ENDIF}
   lLoggerFont.Caption := Format('%s (%d Pts)', [fdLogger.Font.Name, fdLogger.Font.Size]);
   cbShowIcons.Checked := IniFile.ShowMenuIcons;
 //Interface end

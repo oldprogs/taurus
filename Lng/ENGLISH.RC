@@ -166,6 +166,7 @@ LANGUAGE LANG_ENGLISH,0
   LngBaseEnglish+rsMMOutBrwsAt     "Browse Nodelist at %s"
   LngBaseEnglish+rsMMOutEdFrq      "Edit File Request for %s"
   LngBaseEnglish+rsMMOutCrtFlg     "Create Flag for %s"
+  LngBaseEnglish+rsMMOutProperties "Properties of %s"
   LngBaseEnglish+rsMMOutDoNItems   "%s (%d items)"
   LngBaseEnglish+rsMMOutOpemItem   "Open %s"
   LngBaseEnglish+rsMMOutCurOfCur   "Current Item of Current Node"

@@ -1245,6 +1245,7 @@ type
     PubBatchR: TBatch;
 
     State: TMailerState;
+    EscapeChar: Char;
     OwnPolls: TColl;
 
     StatusMsg: string;
@@ -3255,6 +3256,7 @@ var
    a: TEventAtom;
 begin
    Result := nil;
+   if EvtIds = nil then exit;
    if EventsThr = nil then exit;
    if EventsThr.Events = nil then exit;
    for k := 0 to EvtCnt - 1 do begin
@@ -5521,8 +5523,10 @@ begin
    SD.SentFiles.Leave;
    LeaveCS(DisplayDataCS);
    IgnoreNextEvent := False;
-   SD.txMail  := txMl;
-   SD.txFiles := txFl;
+   if txMl + txFl > SD.txMail + SD.txFiles then begin
+      SD.txMail  := txMl;
+      SD.txFiles := txFl;
+   end;   
 end;
 
 function TMailerThread.AcceptFile(P: TBaseProtocol): TTransferFileAction;
@@ -8389,6 +8393,8 @@ begin
    if not (SD.SessionCore in [scBinkP, scFTP, scHTTP, scSMTP, scPOP3, scGATE, scNNTP]) and (SD.ActivePoll = nil) then begin
       CP.SendString('(CONNECT ' + DS.ConnectString + ')'#13#10);
    end;
+   SD.txMail := 0;
+   SD.txFiles := 0;
 end;
 
 procedure TMailerThread.FilterProtocols(const AFlags: string);
@@ -12714,9 +12720,9 @@ begin
       msStart:
          begin
             Log(ltInfo, 'Begin v' + ProductVersion);
-//            SendModemString('ATS2?|');
-//            EscapeChar := Chr(StrToIntDef(ExtractWord(1, SD.InC, [#10,#13]), 43));
-//            Log(ltInfo, 'Escape char = ''' + EscapeChar + '''');
+            SendModemString('ATS2?|');
+            EscapeChar := Chr(StrToIntDef(ExtractWord(1, SD.InC, [#10,#13]), 43));
+            Log(ltInfo, 'Escape char = ''' + EscapeChar + '''');
             TossBWZ(false);
             State := msInit;
          end;
@@ -14124,7 +14130,7 @@ begin
       end;
       SetStatusMsg(rsMMOutChk, '');
       if ExitNow then exit;
-      c := FidoOut.GetOutColl(False, True);
+      c := FidoOut.GetOutColl(False, False);
       ChkErrMsg;
       if c <> nil then begin
          RecreatePolls(c);

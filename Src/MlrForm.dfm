@@ -3041,6 +3041,13 @@ object MailerForm: TMailerForm
         OnClick = ompCfPauseClick
       end
     end
+    object N32: TMenuItem
+      Caption = '-'
+    end
+    object ompProperties: TMenuItem
+      Caption = 'Properties of 2:469/38'
+      OnClick = ompPropertiesClick
+    end
     object N22: TMenuItem
       Caption = '-'
     end

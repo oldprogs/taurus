@@ -166,6 +166,7 @@ LANGUAGE LANG_RUSSIAN,0
   LngBaseRussian+rsMMOutBrwsAt     "Обзор списка узлов с %s"
   LngBaseRussian+rsMMOutEdFrq      "Файловый запрос на %s"
   LngBaseRussian+rsMMOutCrtFlg     "Создать флаг на %s"
+  LngBaseRussian+rsMMOutProperties "Свойства %s"
   LngBaseRussian+rsMMOutDoNItems   "%s (%d элементов)"
   LngBaseRussian+rsMMOutOpemItem   "Открыть %s"
   LngBaseRussian+rsMMOutCurOfCur   "Текущий элемент текущего узла"
