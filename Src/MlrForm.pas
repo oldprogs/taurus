@@ -1006,7 +1006,11 @@ begin
          newitem.SubItems.Add(Int2StrK(r.FSize));
          newitem.SubItems.Add(Addr2Str(r.Addr));
          age := FileAge(r.GetBWZFName);
-         date := FileDateToDateTime(age);
+         if age > -1 then begin
+            date := FileDateToDateTime(age);
+         end else begin
+            date := Date;
+         end;
          st := formatdatetime('dd-mmm-yyyy hh:nn:ss', date);
          newitem.SubItems.Add(st);
       end;

@@ -22,6 +22,7 @@ type
    );
 
    TEchomail = class(TNetmail)
+      Counter: integer;
       constructor Create; virtual;
       function findArt(const n: integer; const e: string): TNetmailMsg;
    end;
@@ -70,10 +71,31 @@ begin
    Result := TNNTP.Create(CP);
 end;
 
+function FindHolder(const a: TFidoAddress): TEchomail;
+var
+   i: integer;
+   h: TEchomail;
+begin
+   Result := nil;
+   EchoMailHolder.Enter;
+   for i := 0 to CollMax(EchomailHolder) do begin
+      h := EchoMailHolder[i];
+      if CompareAddrs(h.Address, a) = 0 then begin
+         Result := h;
+         exit;
+      end;
+   end;
+   EchoMailHolder.Leave;
+end;
+
 constructor TEchoMail.Create;
 begin
    inherited;
    Echomail := True;
+   Counter := 1;
+   EchoMailHolder.Enter;
+   EchoMailHolder.Add(Self);
+   EchoMailHolder.Leave;
 end;
 
 function TEchoMail.findArt;
@@ -118,8 +140,14 @@ begin
 end;
 
 destructor TNNTP.Destroy;
+var
+   e: TEchoMail;
 begin
-   FreeObject(fEcho);
+   Dec(fEcho.Counter);
+   if fEcho.Counter = 0 then begin
+      EchoMailHolder.Delete(fEcho);
+      FreeObject(fEcho);
+   end;   
    inherited Destroy;
 end;
 
@@ -161,9 +189,14 @@ begin
 end;
 
 function TNNTP.RecStep;
+var
+   i: integer;
 begin
    Result := True;
    if fLine = '' then exit;
+   for i := 1 to Length(fLine) do begin
+     if fLine[i] = 'Í' then fLine[i] := 'H';
+   end;
    NewTimerSecs(Timer, BinkPTimeout);
    if (R.Stream.Write(fLine[1], Length(fLine)) <> DWORD(Length(fLine))) or (GetErrorNum <> 0) then
    begin
@@ -223,6 +256,7 @@ begin
          begin
             if z = 'AUTHINFO' then begin
                GetWrd(s, z, ' ');
+               z := UpperCase(z);
                if z = 'USER' then begin
                   fUser := s;
                   CustomInfo := 'Login: ' + s;
@@ -249,31 +283,36 @@ begin
                      State := bdIdle;
                      FillOutList := True;
                      FGetNextFile(Self);
-                     fEcho := TEchoMail.Create;
-                     fEcho.Address := FiAddr;
-                     z := IniFile.ReadString('NNTP', 'EchoList', '');
-                     if ExistFile(z) then begin
-                        l := TStringList.Create;
-                        l.LoadFromFile(z);
-                        for i := 0 to l.Count - 1 do begin
-                           z := l[i];
-                           if z = '' then continue;
-                           if z[1] = ';' then continue;
-                           if WordCount(z, [' ']) > 1 then begin
-                              z := ExtractWord(2, z, [' ']);
+                     fEcho := FindHolder(FiAddr);
+                     if fEcho = nil then begin
+                        fEcho := TEchoMail.Create;
+                        fEcho.Address := FiAddr;
+                        z := IniFile.ReadString('NNTP', 'EchoList', '');
+                        if ExistFile(z) then begin
+                           l := TStringList.Create;
+                           l.LoadFromFile(z);
+                           for i := 0 to l.Count - 1 do begin
+                              z := l[i];
+                              if z = '' then continue;
+                              if z[1] = ';' then continue;
+                              if WordCount(z, [' ']) > 1 then begin
+                                 z := ExtractWord(2, z, [' ']);
+                              end;
+                              fEcho.LstColl.Add(z);
                            end;
-                           fEcho.LstColl.Add(z);
+                           l.Free;
                         end;
-                        l.Free;
-                     end;
-                     for i := 0 to CollMax(OutPaths) do begin
-                        s := UpperCase(OutPaths[i]);
-                        if (fEcho.FilColl.IndexOf(s) = -1) and
-                           (pos('.PKT', s) = Length(s) - 3) then begin
-                           fEcho.ScanPacket(s);
+                        for i := 0 to CollMax(OutPaths) do begin
+                           s := UpperCase(OutPaths[i]);
+                           if (fEcho.FilColl.IndexOf(s) = -1) and
+                              (pos('.PKT', s) = Length(s) - 3) then begin
+                              fEcho.ScanPacket(s);
+                           end;
                         end;
+                        fEcho.SaveIdx;
+                     end else begin
+                        Inc(fEcho.Counter);
                      end;
-                     fEcho.SaveIdx;
                   end else begin
                      PutString('502 ' + CustomInfo);
                      State := bdAuth;
@@ -310,16 +349,25 @@ begin
                end;
             end else
             if z = 'GROUP' then begin
+               CustomInfo := z + ' ' + s;
+               FLogFile(Self, lfLog);
                i := fEcho.LstColl.IndexOf(s);
                if i > -1 then begin
                   Group := s;
                   fNumb := Integer(fEcho.LstColl.Objects[i]);
-                  PutString('211 ' + IntToStr(MaxD(1, fNumb)) + ' ' + IntToStr(MinD(1, fNumb)) + ' ' + IntToStr(fNumb) + ' ' + s);
+                  s := '211 ' + IntToStr(MaxD(1, fNumb)) + ' ' + IntToStr(MinD(1, fNumb)) + ' ' + IntToStr(fNumb) + ' ' + s;
+                  PutString(s);
+                  CustomInfo := s;
+                  FLogFile(Self, lfLog);
                end else begin
                   PutString('411 group not found');
+                  CustomInfo := 'Group not found';
+                  FLogFile(Self, lfLog);
                end;
             end else
             if z = 'XOVER' then begin
+               CustomInfo := z + ' ' + s;
+               FLogFile(Self, lfLog);
                if Group <> '' then begin
                   if s = '' then begin
                      PutString('420 no article selected');
@@ -349,6 +397,8 @@ begin
                end;
             end else
             if z = 'ARTICLE' then begin
+               CustomInfo := z + ' ' + s;
+               FLogFile(Self, lfLog);
                if s = '' then begin
                   PutString('420 no article selected');
                end else begin
@@ -388,6 +438,8 @@ begin
                end;
             end else
             if z = 'POST' then begin
+               CustomInfo := z + ' ' + s;
+               FLogFile(Self, lfLog);
                R.ClearFileInfo;
                nFrom := '';
                nDest := '';

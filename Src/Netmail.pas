@@ -90,6 +90,7 @@ procedure FreeNetmailHolder;
 
 var
    NetmailHolder: TNetmail;
+   EchomailHolder: TColl;
 
 implementation
 
@@ -128,7 +129,7 @@ begin
    if Chrs = '+7_FIDO 2' then begin
       Result := 'ibm866';
    end else begin
-      Result := 'us-ascii';
+      Result := 'ibm866';
    end;
 end;
 
@@ -793,5 +794,10 @@ end;
 initialization
 
 NetmailHolder := nil;
+EchomailHolder := TColl.Create;
+
+finalization
+
+FreeObject(EchomailHolder);
 
 end.
