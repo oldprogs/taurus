@@ -3706,6 +3706,7 @@ begin
       T.SD.Prot.CancelRequested := True
    else
       T.State := FStatus;
+   SetEvt(T.oEvt);
 end;
 
 constructor TMlrEvtExecTerminal.Create(AWndHandle: DWORD);
@@ -4600,7 +4601,8 @@ function TMailerThread.ChkNonEmsiPwd(P: TBaseProtocol): Boolean;
 var
    AkasLocked: Boolean;
 begin
-   //  Result := True;
+   Result := False;
+   if P = nil then exit;
    LogEMSIData;
    SD.BadPassword := not ValidEncryptedAKAs;
    SD.BadPassword := SD.BadPassword or (not CheckPasswords);
@@ -6408,6 +6410,7 @@ begin
       if (ProtCore = ptBinkP) and (P.TxClosed) then begin
          P.OutFlow := false;
       end;
+      SendMessage(Application.MainForm.Handle, WM_REREADOUTB, 1, 1);
    end;
    Inc(D.rxBytes, P.R.D.FSize);
    Inc(SD.cRxBytes, P.R.D.FPos - P.R.D.FOfs);
@@ -8284,6 +8287,7 @@ begin
    Node := CNone;
 
    if (not SD.rmtPrimaryAddrSet) and (SD.ActivePoll <> nil) then begin
+      if SD.ActivePoll.Node = nil then exit;
       SD.rmtPrimaryAddrSet := True;
       SD.rmtPrimaryAddr := SD.ActivePoll.Node.Addr;
       if SD.rmtAddrs = nil then SD.rmtAddrs := TFidoAddrColl.Create;
@@ -13512,8 +13516,6 @@ begin
    oEvt := CreateEvt(False);
    if TapiDevice then (CP as TTAPIPort).WakeEvent := oEvt;
    EvtNew := False;
-   InitializeCriticalSection(EvtCS);
-   InitializeCriticalSection(DisplayDataCS);
 
    if DialupLine then begin
       toEMSI_CR := EMSI_CR_d;
@@ -14024,6 +14026,8 @@ end;
 constructor TMailerThread.Create;
 begin
    inherited create;
+   InitializeCriticalSection(EvtCS);
+   InitializeCriticalSection(DisplayDataCS);
 end;
 
 destructor TMailerThread.Destroy;
@@ -14059,11 +14063,6 @@ begin
 
    // Delete critical sections
 
-   PurgeCS(EvtCS);
-   PurgeCS(DisplayDataCS);
-   PurgeCS(LogCS);
-   PurgeCS(CP_CS);
-
    ZeroHandle(LogFHandle);
    FreeObject(LogStrings);
    FreeObject(CurrentIPFlag);
@@ -14075,6 +14074,12 @@ begin
    if DialupLine then begin
       PlaySnd('EndLine', SoundsON);
    end;
+
+   PurgeCS(EvtCS);
+   PurgeCS(DisplayDataCS);
+   PurgeCS(LogCS);
+   PurgeCS(CP_CS);
+
    inherited Destroy;
    ScanCounter := 1;
 end;
@@ -15168,6 +15173,7 @@ begin
       terminated := true;
       exit;
    end;
+   if FidoOut = nil then exit;
 
 {      ReadDirectoryChangesW(hDir, @FNI, SizeOf(FNI), True, FILE_NOTIFY_CHANGE_SIZE, @i, nil, nil);
       j := 0; FNP := @FNI;

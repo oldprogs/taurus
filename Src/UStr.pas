@@ -379,7 +379,6 @@ end;
     DotPos : Byte;
   begin
     PathName := JustFileName(PathName);
-    DotPos := Pos('.', PathName);
     for DotPos := Length(PathName) downto 1 do begin
        if PathName[DotPos] = '.' then break;
     end;

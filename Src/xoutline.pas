@@ -2517,30 +2517,29 @@ end;
 
 procedure TxCustomOutline.Loaded;
 var
-  Item: TOutlineBitmap;
+   Item: TOutlineBitmap;
 begin
-  inherited Loaded;
-  with FRootNode do
-  begin
-    FExpandCount := List.Count;
-    Row := 0;
-    ResetSelectedItem;
-    if ResizeGrid then Invalidate;
-    if List.Count > 0 then
-    begin
-      TOutlineNode(List.First).SetGoodIndex;
-      FSelectedItem := List.First;
-    end;
-    if csDesigning in ComponentState then FullExpand;
-  end;
-  for Item := obPlus to obLeaf do
-    if (Item in FOldBitmaps) and not (Item in FUserBitmaps) then
-      ChangeBitmap(nil, Item);
-  FOldBitmaps := [];
-  SetHorzScrollBar;
-  if IniFile = nil then exit;
-  Font.Name := IniFile.ReadString('interface', 'formsfontname', 'Arial');
-  Font.Size := IniFile.ReadInteger('interface', 'formsfontsize', 8);
+   inherited Loaded;
+   with FRootNode do begin
+      FExpandCount := List.Count;
+      Row := 0;
+      ResetSelectedItem;
+      if ResizeGrid then Invalidate;
+      if List.Count > 0 then begin
+         TOutlineNode(List.First).SetGoodIndex;
+         FSelectedItem := List.First;
+      end;
+      if csDesigning in ComponentState then FullExpand;
+   end;
+   for Item := obPlus to obLeaf do
+   if (Item in FOldBitmaps) and not (Item in FUserBitmaps) then ChangeBitmap(nil, Item);
+   FOldBitmaps := [];
+   SetHorzScrollBar;
+   if IniFile = nil then exit;
+   if not (csDesigning in ComponentState) then begin
+      Font.Name := IniFile.ReadString('interface', 'formsfontname', 'Arial');
+      Font.Size := IniFile.ReadInteger('interface', 'formsfontsize', 8);
+   end; 
 end;
 
 procedure TxCustomOutline.SaveToFile(const FileName: string);

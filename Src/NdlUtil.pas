@@ -1524,22 +1524,23 @@ begin
    if (n <> nil) and (n.Addr.Point = 0) then begin
       s1 := n.Phone;
       case IdentOvrItem(s1, False, False) of
-      oiPhoneNum : begin Base := False; Nodes[False] := n end;
-      oiIPSym, oiIpNum: begin Base := True; Nodes[False] := n end;
+      oiPhoneNum : begin Base := False; Nodes[False] := n; end;
+      oiIPSym,
+      oiIpNum: begin Base := True; Nodes[False] := n; end;
       else
-        begin
-          if s1 = '-Unpublished-' then
+         begin
+            if s1 = '-Unpublished-' then
 //            n := nil
-          else begin
-            Base := True;
-            Nodes[False] := n
-          end;
-        end;
+            else begin
+               Base := True;
+               Nodes[False] := n
+            end;
+         end;
       end;{of case}
    end;
-   DialupData := GetNodeOvrData(Addr, {$IFDEF WS}True,{$ENDIF} Nodes[Base]);
+   DialupData := GetNodeOvrData(Addr, {$IFDEF WS} True, {$ENDIF} Nodes[Base]);
    if DaemonStarted then begin
-      IPData := GetNodeOvrData(Addr, {$IFDEF WS}False,{$ENDIF} Nodes[not Base]);
+      IPData := GetNodeOvrData(Addr, {$IFDEF WS} False, {$ENDIF} Nodes[not Base]);
    end else begin
       IPData := nil;
    end;

@@ -140,7 +140,7 @@ implementation
 
 uses
    RadIni, RRegExp, SysUtils, Wizard, Outbound, DateUtils,
-   Forms, Watcher, JclDateTime, RadSav, Recs, Plus;
+   Forms, Watcher, JclDateTime, RadSav, Recs, Plus, UStr;
 
 procedure FreeNetmailHolder;
 begin
@@ -435,6 +435,7 @@ begin
       h.orig_net  := m.From.Net;
       h.dest_net  := m.Addr.Net;
       h.date_arrived := DateTimeToDosDateTime(Date + Time);
+      h.date_arrived := (h.date_arrived and $FFFF0000) shr 16 + (h.date_arrived and $0000FFFF) shl 16;
       h.attr := h.attr and (not Local);
       if not AddrColl.Search(@m.Addr, j) then begin
          h.attr := m.Attr or KillSent or InTransit;
@@ -1116,6 +1117,9 @@ begin
             l.Frnm := h.from;
             l.Tonm := h.towhom;
             l.Subj := h.subject;
+            s := (PChar(@h.azdate));
+            s := Format('%19s', [s]) + #0;
+            move(s[1], h.azdate, 20);
             move(h.azdate, l.Head.DateTime, 20);
             l.Attr := h.attr;
             l.Head.Attribute := h.attr and not (Recd or Sent_ or InTransit or Orphan or KillSent or Local or HoldForPickup or FileRequest or FileUpdateReq);
@@ -1152,6 +1156,7 @@ var
    h: PktHeaderRec;
    m: PackedMsgHeaderRec;
    l: TNetmailMsg;
+   s: string;
 begin
    if not ExistFile(pack) then exit;
    if EchoMail and (FilColl.IndexOf(pack) > -1) then exit;
@@ -1172,6 +1177,9 @@ begin
          l.Offs := n.Position;
          l.Pack := pack;
          n.Read(m, sizeof(m));
+         s := (PChar(@m.DateTime));
+         s := Format('%19s', [s]) + #0;
+         move(s[1], m.DateTime, 20);
          l.HRec := h;
          l.Head := m;
          l.Lock.Zone  := h.DestZone;
@@ -1251,7 +1259,7 @@ begin
       h.OrigPoint := inifile.MainAddr.Point;
       h.DestPoint := t.Point;
       w           := UpperCase(a);
-      move(w[1], h.Password, length(a));
+      move(w[1], h.Password, minI(8, length(a)));
       i := TFileStream.Create(s, fmCreate);
       i.Write(h, sizeof(h));
       i.Write(b, 1);

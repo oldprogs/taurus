@@ -3306,6 +3306,18 @@ procedure TMailerForm.UpdateView(fromcc: boolean);
       b := False;
       for k := 0 to CollMax(c) do begin
          ol := c[k];
+         if ol.CronRec.IsPermanent then begin
+            e := evListView.FindCaption(0, ol.EName, False, True, True);
+            if e = nil then begin
+               b := True;
+               e := evListView.Items.Add;
+               e.Caption := ol.EName;
+               e.SubItems.Add('--:--');
+               e.SubItems.Add('--:--');
+               e.ImageIndex := 05;
+            end;
+            e.DropTarget := False;
+         end else begin
          if ol.CronRec.IsUTC then GetSystemTime(S) else GetLocalTime(S);
          u := s;
          for j := 0 to ol.CronRec.Count - 1 do begin
@@ -3373,6 +3385,7 @@ procedure TMailerForm.UpdateView(fromcc: boolean);
                end;
             end;
             e.DropTarget := False;
+         end;
          end;
       end;
       if c <> nil then begin
@@ -5367,6 +5380,17 @@ begin
       aOutbound.Visible := True;
       aOutbound.Active := True;
    end;
+   if Full then begin
+      c := 0;
+      while OutMgrThread.HandUpdate do begin
+         Application.ProcessMessages;
+         Sleep(100);
+         inc(c);
+         if c = 50 then begin
+            exit;
+         end;
+      end;
+   end;
 end;
 
 procedure TMailerForm.TrayIconClick(Sender: TObject);
@@ -6157,8 +6181,8 @@ begin
    OutMgrSelectedItemInstead := OutMgrOutline.SelectedItem;
    if s <> '' then DisplayError(s, Handle);
    if DoPoll then InsertPollAddress(A);
+   RereadOutbound(True);
    _RecalcPolls(True);
-   RereadOutbound(false);
 end;
 
 procedure TMailerForm.AttachFilesQuery(const A: TFidoAddress);
@@ -6960,7 +6984,7 @@ begin
 end;
 
 procedure TMailerForm.evListViewCompare(Sender: TObject; Item1,
-  Item2: TListItem; Data: Integer; var Compare: Integer);
+          Item2: TListItem; Data: Integer; var Compare: Integer);
 begin
    if Item1.SubItems[0] > Item2.SubItems[0] then Compare := +1 else
    if Item1.SubItems[0] < Item2.SubItems[0] then Compare := -1 else

@@ -10,17 +10,7 @@ interface uses Forms, Windows;
 
 const
      idlEnglish    =  0;
-{$IFDEF LNG_RUSSIAN}   idlRussian    =  1; {$ENDIF}
-{$IFDEF LNG_MITKY}     idlMitky      =  2; {$ENDIF}
-{$IFDEF LNG_ROMANIAN}  idlRomanian   =  3; {$ENDIF}
-{$IFDEF LNG_CHECH}     idlCzech      =  4; {$ENDIF}
-{$IFDEF LNG_UKRAINIAN} idlUkrainian  =  5; {$ENDIF}
-{$IFDEF LNG_BULGARIAN} idlBulgarian  =  6; {$ENDIF}
-{$IFDEF LNG_POLISH}    idlPolish     =  7; {$ENDIF}
-{$IFDEF LNG_GERMAN}    idlGerman     =  8; {$ENDIF}
-{$IFDEF LNG_DUTCH}     idlDutch      =  9; {$ENDIF}
-{$IFDEF LNG_SPANISH}   idlSpanish    = 10; {$ENDIF}
-{$IFDEF LNG_DANISH}    idlDanish     = 11; {$ENDIF}
+{$IFDEF LNG_RUSSIAN} idlRussian    =  1; {$ENDIF}
 
 var
    ResLngBase: Integer;
@@ -50,20 +40,8 @@ uses
 
 {$R ..\LNG\ENG.RES}
 
-{$IFDEF LNG_GERMAN}
-{$R ..\LNG\GER.RES}
-{$ENDIF}
-
 {$IFDEF LNG_RUSSIAN}
 {$R ..\LNG\RUS.RES}
-{$ENDIF}
-
-{$IFDEF LNG_DUTCH}
-{$R ..\LNG\DUT.RES}
-{$ENDIF}
-
-{$IFDEF LNG_DANISH}
-{$R ..\LNG\DAN.RES}
 {$ENDIF}
 
 procedure GridFillColLng(AG: Pointer; Id: Integer);
@@ -113,7 +91,6 @@ begin
       Inc(i);
    end;
 end;
-
 
 procedure DisplayErrorLng(Id: Integer; Handle: DWORD);
 begin

@@ -36,10 +36,14 @@ begin
    s := StrAsg(ps.s);
    FreeObject(ps);
    case Integer(p) of
-   Integer(PanelOwnerPolls)  : L := FidoPolls.Log.Strings;
-{$IFDEF WS}
-   Integer(PanelOwnerDaemon) : L := IpPolls.LogContainer.Strings;
-{$ENDIF}
+   Integer(PanelOwnerPolls):
+      begin
+        if (FidoPolls <> nil) and (FidoPolls.Log <> nil) then L := FidoPolls.Log.Strings else exit;
+      end;
+   Integer(PanelOwnerDaemon):
+      begin
+         if (IpPolls <> nil) and (IpPolls.LogContainer <> nil) then L := IpPolls.LogContainer.Strings else exit;
+      end;
    else begin GlobalFail('Unk AddSpcLogStr(%s)', [s]); Exit end;
    end;
    L.Add(S);

@@ -217,7 +217,7 @@ begin
          end else begin
             fStam := IntToStr(GetCurrentThreadId) + '.' + IntToStr(GetTickCount);
             fStam := '<' + fStam + '@' + ProductName + '>';
-            PutString('220 SMTP server is ready ' + fStam);
+            PutString('220 Taurus-SMTP server is ready ' + fStam);
             State := bdUser;
 //            i := inet_addr(PAnsiChar(CP.CallerId));
 //            e := GetHostByAddr(@i, 4, PF_INET);

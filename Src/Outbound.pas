@@ -662,7 +662,7 @@ begin
    S := GetOutFileName(Address, Status);
    DS := CreateDosStreamDir(S, [cRead, cWrite]);
    if DS = nil then Exit;
-   L := TStringColl.Create('');
+   L := TStringColl.Create;
    L.LoadFromStream(DS);
    FoundFiles := TStringColl.Create;
    AddNew := False;
@@ -1595,7 +1595,8 @@ begin
       if ((TOutFile(Items[i]).Name = o.Name) or
           (TOutFile(Items[i]).Orig = o.Name)) and
           (TOutFile(Items[i]).Nfo.Time = o.Nfo.Time) and
-          (TOutFile(Items[i]).Nfo.Size = o.Nfo.Size) then begin
+          (TOutFile(Items[i]).Nfo.Size = o.Nfo.Size) then
+      begin
          Result := True;
          break;
       end;
@@ -2290,7 +2291,7 @@ function TOutbound._GetOutCollP(const Single, AFull, Scan: Boolean; const Addr: 
             EnterCS(CacheCS);
             if OutCache <> nil then begin
                Result := OutCache.Copy;
-            end;   
+            end;
             LeaveCS(CacheCS);
          end else begin
             Result := TOutNodeColl.Create;
@@ -2322,6 +2323,7 @@ begin
       EnterCS(CacheCS);
       FreeObject(OutCache);
       OutCache := TmpCache;
+      TmpCache := nil;
       LeaveCS(CacheCS);
       Result := GetIt;
    end;
