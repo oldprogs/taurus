@@ -120,6 +120,7 @@ type
 
 procedure FreeNetmailHolder;
 function  ClearAttach(d: TFidoAddress; m, a: string): string;
+function  ChangAttach(m, a: string): boolean;
 procedure UnpackPKT(p: string);
 procedure FinalizePKT(a: TFidoAddress; p: string);
 procedure NewMessage(a: TFidoAddress; o, u: string);
@@ -262,6 +263,60 @@ begin
          n.Position := 0;
          n.Write(h, SizeOf(h));
          n.SaveToFile(m);
+      end;
+      n.Free;
+   end;
+end;
+
+function ChangAttach;
+var
+   n: TMemStream;
+   h: _fidomsgtype;
+   z: string;
+   t: string;
+   s: string;
+   b: boolean;
+begin
+   Result := False;
+   if not ExistFile(m) then exit;
+   n := TMemStream.Create;
+   if n <> nil then begin
+      try
+         n.LoadFromFile(m);
+      except
+         n.Free;
+         exit;
+      end;
+      n.Read(h, sizeof(h));
+      if h.attr and Fileattached = 0 then begin
+         n.Free;
+         exit;
+      end;
+      s := h.subject;
+      t := '';
+      b := False;
+      while s <> '' do begin
+         GetWrd(s, z, ' ');
+         if Pos(JustFileName(UpperCase(z)), UpperCase(a)) <> 0 then begin
+            b := True;
+            t := t + a + ' ';
+         end else begin
+            if ExistFile(z) then begin
+               t := t + z + ' ';
+            end else begin
+               b := True;
+            end;
+         end;
+      end;
+      if b then begin
+         if t <> '' then begin
+            FillChar(h.subject, SizeOf(h.subject), #0);
+            move(t[1], h.subject, Length(t));
+         end;
+         n.Position := 0;
+         n.Write(h, SizeOf(h));
+         n.SaveToFile(m);
+         Result := True;
       end;
       n.Free;
    end;
@@ -427,6 +482,10 @@ begin
    n.ScanPacket(p);
    for i := 0 to CollMax(n.NetColl) do begin
       m := n.NetColl[i];
+      if m.Echo <> '' then begin
+         FreeObject(n);
+         exit;
+      end;
       NetmailLogger.LogMSG(m, 'router');
       if (m.Attr and AuditRequest > 0) then begin
          NewMessage(m.From, m.Frnm, 'Transit confirmation');
@@ -989,6 +1048,7 @@ begin
       g.Dele := False;
       g.bOff := l.bOff;
       g.Offs := l.Offs;
+      g.Pack := l.Pack;
       FreeObject(l);
    end;
    FreeMem(p, n.Size + 80);

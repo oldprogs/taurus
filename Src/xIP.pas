@@ -1989,7 +1989,7 @@ begin
   Result := False;
   if p = nil then exit;
   f := TStringColl.Create;
-  f.FillEnum(TFidoPoll(p).IPFlags, ',', True);
+  f.FillEnum(TFidoPoll(p).IPFlags, [','], True);
   if IniFile.AllViaProxy then result := not f.Found('NOPROXY')
   else result := f.Found('PROXY');
   FreeObject(f);

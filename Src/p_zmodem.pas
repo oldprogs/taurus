@@ -460,33 +460,32 @@ end;
 
 constructor TZmodem.Create;
 begin
-  inherited Create(ACP);
-  Options := AOptions;
-  AllocBuffers;
-  InitData;
+   inherited Create(ACP);
+   Options := AOptions;
+   AllocBuffers;
+   InitData;
 end;
 
 destructor TZmodem.Destroy;
   {-Dispose of Zmodem}
 begin
-  DeallocBuffers;
-  inherited Destroy;
+   DeallocBuffers;
+   inherited Destroy;
 end;
 
 
 procedure TZmodem.PutCharEscaped(AC : Byte);
 var
-  EC: Byte;
+   EC: Byte;
 begin
-  if not EscapeChar(AC, EC) then LastChar := AC else
-  begin
+   if not EscapeChar(AC, EC) then LastChar := AC else begin
     {This character needs escaping, stuff a ZDle and escape it}
-    CP.PutChar(ZDle);
-    LastChar := EC;
-  end;
+      CP.PutChar(ZDle);
+      LastChar := EC;
+   end;
 
   {Stuff the character}
-  CP.PutChar(LastChar);
+   CP.PutChar(LastChar);
 end;
 
 
@@ -2099,8 +2098,7 @@ begin
         tzCheckFinish,
         tzSendData,
         tzWaitAck :
-          if NewData then
-          begin
+          if NewData then begin
             {Header might be present, try to get one}
             CheckForHeader;
             if ProtocolStatus = psAbortByRemote then
@@ -2176,13 +2174,10 @@ begin
             {Get the next file to send}
             T.ClearFileInfo;
             FGetNextFile(Self);
-            if T.D.FName = '' then ZmodemState := tzSendFinish else
-            begin
-              if StrandardHandshake then
-              begin
+            if T.D.FName = '' then ZmodemState := tzSendFinish else begin
+              if StrandardHandshake then begin
                 ZmodemState := tzStartFile;
-              end else
-              begin
+              end else begin
                 if HandshakeDone then ZmodemState := tzStartFile else ZmodemState := tzSendZRQI;
               end;
             end;
@@ -2235,8 +2230,7 @@ begin
               begin
                 if not BlockError(tzCheckFile, tzError, DefHandshakeRetry) then begin
                   {Resend ZFile}
-                  if (CP.OutUsed <= T.D.BlkLen) then
-                  begin
+                  if (CP.OutUsed <= T.D.BlkLen) then begin
                     PutBinaryHeader(ZFile);
                     TransmitBlock;
                   end;
@@ -2256,13 +2250,11 @@ begin
             DataInTransit := 0;
 
             LastBlock := T.D.FPos >= T.D.FSize;
-            if LastBlock then
-            begin
+            if LastBlock then begin
               TxFinishReason := frRefuse;
 //              FinishSend(aaRefuse);
               ZmodemState := tzSendEOF;
-            end else
-            begin
+            end else begin
               {Send ZData header}
 
               BlockErrors := 0;
@@ -2278,21 +2270,18 @@ begin
           begin
             {Get a block to send}
             Inc(GoodAfterBad);
-            if GoodAfterBad > 8 then
-            begin
+            if GoodAfterBad > 8 then begin
               GoodAfterBad := 0;
               T.D.BlkLen := MinD(MaxProtocolBlock, T.D.BlkLen * 2);
             end;
             DataBlockLen := T.D.BlkLen;
             SetLastError(0);
             DataBlockLen := T.Stream.Read(DataBlock^, DataBlockLen);
-            if (GetLastError <> 0) or (DataBlockLen <= 0) then
-            begin
+            if (GetLastError <> 0) or (DataBlockLen <= 0) then begin
               FinishSend(aaSysError);
               Cancel;
               ZmodemState := tzError;
-            end else
-            begin
+            end else begin
               LastBlock := T.D.FPos + DataBlockLen >= T.D.FSize;
 
               {Show the new data on the way}
@@ -2322,15 +2311,12 @@ begin
 
         tzSendData :
           if (ProtocolStatus = psGotHeader) then ProcessHeader else
-          if (CP.OutUsed <= T.D.BlkLen) then
-          begin
+          if (CP.OutUsed <= T.D.BlkLen) then begin
             TransmitBlock;
-            if LastBlock then
-            begin
+            if LastBlock then begin
               ZmodemState := tzSendEof;
             end else
-            if Terminator = ZCrcW then
-            begin
+            if Terminator = ZCrcW then begin
               SetTransTimer;
               ZmodemState := tzWaitAck;
             end else
@@ -2532,22 +2518,22 @@ begin
   Result := ZModemState = tzDone;
 end;
 
-
 procedure TZmodem.CheckCancel(AState: TZmodemState);
 begin
-  if ProtocolStatus <> psAbortByLocal then
-  begin
-    if CancelRequested then
-    begin
+  if ProtocolStatus <> psAbortByLocal then begin
+    if CancelRequested then begin
       Cancel;
       ZmodemState := AState;
     end else
     {if not CP.CharReady then}
-    if CP.DCD <> CP.Carrier then
-    begin
+    if CP.DCD <> CP.Carrier then begin
       CP.Carrier := not CP.Carrier;
       ZmodemState := AState;
       ProtocolStatus := psAbortNoCarrier;
+    end else
+    if Timeout then begin
+      ZmodemState := AState;
+      ProtocolStatus := psTimeout;
     end;
   end;
 end;

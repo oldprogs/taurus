@@ -2734,22 +2734,21 @@ end;
 
 function AreFlagsTCP(s: string): Boolean;
 var
-  f: TStringColl;
-  i: Integer;
+   f: TStringColl;
+   i: Integer;
 begin
-  Result := False;
+   Result := False;
 //  s := UpperCase(s); //All standard flags must be UpperCased
                        //in other case they are not standard IP-Flags
-  i := Pos('U,', s);
-  if i > 0 then s := Copy(s, 1, i);
-  f := TStringColl.Create;
-  f.FillEnum(s, ',', True);
-  for i := 0 to f.Count - 1 do
-  begin
-    if IsIpFlag(CRC32Str(Extractword(1, f[i], [':']), CRC32_INIT)) then begin Result := True; Break end;
-  end;
+   i := Pos('U,', s);
+   if i > 0 then s := Copy(s, 1, i);
+   f := TStringColl.Create;
+   f.FillEnum(s, [','], True);
+   for i := 0 to f.Count - 1 do begin
+     if IsIpFlag(CRC32Str(Extractword(1, f[i], [':']), CRC32_INIT)) then begin Result := True; Break end;
+   end;
 //  Result := f.Found('TCP') or f.Found('VMP') or f.Found('TEL') or f.Found('TELNET') or f.Found('IFC') or f.Found('BINKP') or f.Found('BINKD') or f.Found('BND');
-  FreeObject(f);
+   FreeObject(f);
 end;
 
 function GetTransportType;

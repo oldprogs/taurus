@@ -1450,7 +1450,7 @@ uses
    p_Binkp, FTS1, xNiagara, tarif, AltRecs, Plus,
    p_RCC, p_FTP, p_HTTP, p_SMTP, p_POP3, p_GATE, p_NNTP,
    MlrForm, RasThrd, Netmail, RadIni, Wizard, SysUtils, mmSystem,
-   Reader, xIP, xTAPI, RadSav;
+   Reader, xIP, xTAPI, RadSav, UStr;
 
 procedure ShowIt(const S: string; ShowBalloonTT: boolean);
 var
@@ -2664,7 +2664,7 @@ begin
    us := UpperCase(ConnectStr);
    Replace('/', ' ', us);
    C := TStringColl.Create;
-   C.FillEnum(us, ' ', True);
+   C.FillEnum(us, [' '], True);
    Result := _LinkRestrictionMatches(C, UpperCase(Rqd), False) and
              _LinkRestrictionMatches(C, UpperCase(Frb), True);
    FreeObject(C);
@@ -5246,8 +5246,8 @@ begin
    if SD.ActivePoll = nil then begin
       TransmitRequired := TStringColl.Create;
       TransmitForbidden := TStringColl.Create;
-      TransmitRequired.FillEnum(ExpandSuperMask(STrsFilesRqd), ' ', True);
-      TransmitForbidden.FillEnum(ExpandSuperMask(STrsFilesFrb), ' ', True);
+      TransmitRequired.FillEnum(ExpandSuperMask(STrsFilesRqd), [' '], True);
+      TransmitForbidden.FillEnum(ExpandSuperMask(STrsFilesFrb), [' '], True);
       if TransmitRequired.Count = 0 then FreeObject(TransmitRequired);
       if TransmitForbidden.Count = 0 then FreeObject(TransmitForbidden);
    end else begin
@@ -5262,12 +5262,13 @@ begin
       FreeObject(TransmitRequired);
       STrsFilesRqd := CNetMailMask;
       TransmitRequired := TStringColl.Create;
-      TransmitRequired.FillEnum(ExpandSuperMask(STrsFilesRqd), ' ', True);
+      TransmitRequired.FillEnum(ExpandSuperMask(STrsFilesRqd), [' '], True);
       LogOnce(ltInfo, 'ZMH event in progress. Outgoing trafic is restricted');
    end;
 
    EnterCS(DisplayDataCS);
-   SD.txMail := SD.txTran;
+//   SD.txMail := SD.txTran;
+   SD.txMail := 0;
    SD.txFiles := 0;
    SD.OutFiles.FreeAll;
 
@@ -5459,13 +5460,11 @@ begin
    FreeObject(TransmitRequired);
    FreeObject(TransmitForbidden);
 
-   if not SD.WeHaveReported then
-   begin
+   if not SD.WeHaveReported then begin
       SD.WeHaveReported := True;
       if (SD.txMail + SD.txFiles = 0) then
          Log(ltInfo, 'Nothing for them')
-      else
-      begin
+      else begin
          LogFmt(ltInfo, 'We have %sb of mail and %sb of files for them', [Int2Str(SD.txMail), Int2Str(SD.txFiles)]);
       end;
       if ProtCore in [ptBinkP, ptPOP3, ptGATE] then SD.Prot.ReportTraf(SD.txMail, SD.txFiles);
@@ -6798,6 +6797,9 @@ begin
                Log(ltInfo, 'Purging NNTP cash .. ' + JustFileName(f.Name) + ' deleted');
                FidoOut.DeleteFile(f.Address, f.Name, f.FStatus);
                DelFile('NNTP Cash', f.Name);
+               if f.Netm <> '' then begin
+                  ClearAttach(f.Address, f.Netm, f.Name);
+               end;
             end;
             SD.txFiles := SD.txFiles - f.Nfo.Size;
             SD.OutFiles.AtFree(0);
@@ -6954,26 +6956,30 @@ begin
          end;
       end;
 
-      if (f.Link <> '') and inifile.DynamicOutbound then begin
+      if ((f.Link <> '') or (f.Netm <> '')) and inifile.DynamicOutbound then begin
          zzz := ExtractFileExt(f.Name);
-         if IsArcMailExt(zzz) then begin
+         if IsArcMailExt(zzz) or (zzz = '.TMP') then begin
             if pos(GetOutFileName(f.Address, osNone) + '.TMP\', f.Name) = 0 then begin
                f.Orig := f.Name;
-               f.Name := GetOutFileName(F.Address, osNone) + '.TMP\' + ExtractFileName(F.Name);
+               f.Name := GetOutFileName(F.Address, osNone) + '.TMP\' + ExtractFileName(F.Name) + '.TMP';
                FidoOut.Lock(f.Address, osBusy, True);
                CreateDir(ExtractFilePath(F.Name));
-               l := TStringColl.Create;
-               zzz := f.Link;
-               l.LoadFromFile(zzz);
-               for i := 0 to l.Count - 1 do begin
-                  if pos(UpperCase(f.Orig), UpperCase(l[i])) > 0 then begin
-                     l[i] := '^' + f.Name;
-                     IgnoreNextEvent := True;
-                     l.SaveToFile(zzz);
-                     break;
+               if f.Link <> '' then begin
+                  l := TStringColl.Create;
+                  zzz := f.Link;
+                  l.LoadFromFile(zzz);
+                  for i := 0 to l.Count - 1 do begin
+                     if pos(UpperCase(f.Orig), UpperCase(l[i])) > 0 then begin
+                        l[i] := '^' + f.Name;
+                        IgnoreNextEvent := True;
+                        l.SaveToFile(zzz);
+                        break;
+                     end;
                   end;
+                  l.Free;
+               end else begin
+                  ChangAttach(f.Netm, f.Name);
                end;
-               l.Free;
                IgnoreNextEvent := True;
                RenameFile(f.Orig, f.Name);
                if f.KillAction = kaBsoTruncateAfter then begin
@@ -6984,6 +6990,8 @@ begin
                end;
                FidoOut.Unlock(f.Address, osBusy);
             end;
+            PTDFName := JustName('a');
+            PTDFName := JustName(f.Name);
          end;
       end;
 
@@ -14617,19 +14625,19 @@ end;
 
 function SetPortTyp(const Addr: string; const fAddr: TFidoAddress; const Flags: string; var Port: DWORD; var Prot: TProtCore; var Typ: DWORD): Boolean;
 var
-   sc: TStringColl;
+  sc: TStringColl;
    c: TColl;
    CurPort: DWORD;
    CurProt: TProtCore;
    CurType: DWORD;
    i: Integer;
    j: integer;
-   ss: TStringList;
+  ss: TStringList;
    s: string;
 begin
    Result := False;
    sc := TStringColl.Create;
-   sc.FillEnum(Uppercase(Flags), ',', True);
+   sc.FillEnum(Uppercase(Flags), [','], True);
    c := TColl.Create;
    for i := 0 to sc.Count - 1 do
       c.Add(Pointer(CRC32Str(ExtractWord(1, sc[i], [':']), CRC32_INIT)));
@@ -15254,8 +15262,10 @@ begin
    FreeObject(IPPolls);
    ShutdownDaemon;
    MailerThreads.Leave;
-   IPMon.WaitFor;
-   FreeObject(IPMon);
+   if IPMon <> nil then begin
+      IPMon.WaitFor;
+      FreeObject(IPMon);
+   end;
    DaemonStarted := False;
    OnlineStarted := False;
    PurgeAdvNodeCache;

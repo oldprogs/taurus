@@ -44,7 +44,9 @@ procedure LanguageDone;
 
 implementation
 
-uses mGrids, xBase, SysUtils, Classes, Menus, StdCtrls, ExtCtrls, ComCtrls, CheckLst;
+uses
+   mGrids, xBase, SysUtils, Classes, Menus, StdCtrls, ExtCtrls,
+   ComCtrls, CheckLst, Buttons;
 
 {$R ..\LNG\ENG.RES}
 
@@ -174,13 +176,16 @@ end;
 procedure FillForm;
 var
    s,
-   z: string;
+   z,
+   u: string;
    L: TStringColl;
    i,
    j: Integer;
+   n: Integer;
    C: TComponent;
+   t: TTreeNode;
 begin
-   L := TStringColl.Create('FillForm.L');
+   L := TStringColl.Create;
    L.LoadFromString(LngStr(Id));
    F.Caption := L[0];
    for i := 1 to L.Count - 1 do begin
@@ -193,6 +198,7 @@ begin
       if C is TLabel then TLabel(C).Caption := z else
       if C is TStaticText then TStaticText(C).Caption := z else
       if C is TButton then TButton(C).Caption := z else
+      if C is TSpeedButton then TSpeedButton(C).Caption := z else
       if C is TCheckBox then TCheckBox(C).Caption := z else
       if C is TRadioButton then TRadioButton(C).Caption := z else
       if C is TGroupBox  then TGroupBox (C).Caption := z else
@@ -232,7 +238,7 @@ begin
             THeaderControl(C).Sections[j].Text := z;
             Inc(j);
          end;
-      end;
+      end else
       if C is TComboBox then begin
          j := 0;
          while s <> '' do begin
@@ -241,7 +247,7 @@ begin
             Inc(j);
             if TComboBox(C).Items.Count - 1 < j then break;
          end;
-      end;
+      end else
       if C is TCheckListBox then begin
          j := 0;
          while s <> '' do begin
@@ -249,6 +255,26 @@ begin
             TCheckListBox(C).Items[j] := z;
             Inc(j);
             if TCheckListBox(C).Items.Count - 1 < j then break;
+         end;
+      end else
+      if C is TTreeView then begin
+         j := 0;
+         s := z + '|' + s;
+         while s <> '' do begin
+            GetWrd(s, z, '|');
+            u := z;
+            n := 0;
+            while u <> '' do begin
+               GetWrd(u, z, ';');
+               if n = 0 then begin
+                  TTreeView(C).Items[j].Text := z;
+               end else begin
+                  t := TTreeView(C).Items[j];
+                  t.Item[n - 1].Text := z;
+               end;
+               inc(n);
+            end;
+            inc(j);
          end;
       end;
    end;
@@ -258,13 +284,16 @@ end;
 procedure _FillForm;
 var
    s,
-   z: string;
+   z,
+   u: string;
    L: TStringColl;
    i,
    j: Integer;
+   n: Integer;
    C: TComponent;
+   t: TTreeNode;
 begin
-   L := TStringColl.Create('_FillForm.L');
+   L := TStringColl.Create;
    L.LoadFromString(_LngStr(Id, lngbase));
    F.Caption := L[0];
    for i := 1 to L.Count - 1 do begin
@@ -316,7 +345,7 @@ begin
             THeaderControl(C).Sections[j].Text := z;
             Inc(j);
          end;
-      end;
+      end else
       if C is TComboBox then begin
          j := 0;
          while s <> '' do begin
@@ -325,7 +354,7 @@ begin
             Inc(j);
             if TComboBox(C).Items.Count - 1 < j then break;
          end;
-      end;
+      end else
       if C is TCheckListBox then begin
          j := 0;
          while s <> '' do begin
@@ -334,22 +363,37 @@ begin
             Inc(j);
             if TCheckListBox(C).Items.Count - 1 < j then break;
          end;
+      end else
+      if C is TTreeView then begin
+         j := 0;
+         s := z + '|' + s;
+         while s <> '' do begin
+            GetWrd(s, z, '|');
+            u := z;
+            n := 0;
+            while u <> '' do begin
+               GetWrd(u, z, ';');
+               if n = 0 then begin
+                  TTreeView(C).Items[j].Text := z;
+               end else begin
+                  t := TTreeView(C).Items[j];
+                  t.Item[n - 1].Text := z;
+               end;
+               inc(n);
+            end;
+            inc(j);
+         end;
       end;
    end;
    FreeObject(L);
 end;
-
 
 procedure SetLanguage;
 begin
    CurrentLng := Index;
    case Index of
    MaxInt :;
-    {$IFDEF LNG_SPANISH} idlSpanish: ResLngBase := LngBaseSpanish; {$ENDIF}
-    {$IFDEF LNG_DUTCH}   idlDutch:   ResLngBase := LngBaseDutch;   {$ENDIF}
-    {$IFDEF LNG_GERMAN}  idlGerman:  ResLngBase := LngBaseGerman;  {$ENDIF}
-    {$IFDEF LNG_DANISH}  idlDanish:  ResLngBase := LngBaseDanish;  {$ENDIF}
-    {$IFDEF LNG_RUSSIAN} idlRussian: ResLngBase := LngBaseRussian; {$ENDIF}
+   idlRussian: ResLngBase := LngBaseRussian;
    else
       begin
          CurrentLng := 0;

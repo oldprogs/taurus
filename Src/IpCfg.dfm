@@ -782,7 +782,7 @@ object IPcfgForm: TIPcfgForm
         566
         265)
       object lNNTPImport: TLabel
-        Left = 68
+        Left = 36
         Top = 20
         Width = 168
         Height = 15
@@ -817,8 +817,8 @@ object IPcfgForm: TIPcfgForm
           64
           490)
       end
-      object gbCash: TGroupBox
-        Left = 336
+      object gbCache: TGroupBox
+        Left = 315
         Top = 2
         Width = 229
         Height = 45
@@ -828,7 +828,7 @@ object IPcfgForm: TIPcfgForm
         DesignSize = (
           229
           45)
-        object lCash1: TLabel
+        object lCache: TLabel
           Left = 42
           Top = 18
           Width = 94

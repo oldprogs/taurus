@@ -207,7 +207,6 @@ type
     mcNodelist: TMenuItem;
     mhContents: TMenuItem;
     N9: TMenuItem;
-    mhWebSite: TMenuItem;
     mpTrace: TMenuItem;
     PollPopupMenu: TPopupMenu;
     ppCreatePoll: TMenuItem;
@@ -404,9 +403,7 @@ type
     bKillBWZ: TSpeedButton;
     bChat: TSpeedButton;
     mnuTossBwz: TMenuItem;
-    mnuWebSites: TMenuItem;
-    mnuRadiusOnWeb: TMenuItem;
-    mnuArgusClone: TMenuItem;
+    mnuWebSite: TMenuItem;
     tpMinimize: TMenuItem;
     N26: TMenuItem;
     N27: TMenuItem;
@@ -425,9 +422,7 @@ type
     llSessionCost: TLabel;
     lSessionCost: TLabel;
     mnuTerminal: TMenuItem;
-    llTotalAtInbound: TLabel;
     llAvaibleAtInbound: TLabel;
-    lTotalAtInbound: TLabel;
     lAvaibleAtInbound: TLabel;
     lOutboundSize: TLabel;
     llOutboundSize: TLabel;
@@ -474,10 +469,14 @@ type
     GroupBox1: TGroupBox;
     stListView: TListView;
     evListView: TListView;
-    Clock1: TMenuItem;
+    mnuClock: TMenuItem;
     N29: TMenuItem;
     lClock: TTransPan;
     JvxClock: TJvxClock;
+    Clock2: TJvxClock;
+    pobLeft: TTransPan;
+    pobCenter: TTransPan;
+    Label1: TLabel;
     procedure MainTabControlChange(Sender: TObject);
     procedure bAbortClick(Sender: TObject);
     procedure bStartClick(Sender: TObject);
@@ -605,7 +604,7 @@ type
       var MinWidth, MinHeight, MaxWidth, MaxHeight: Integer);
     procedure gLstRowDelete(Sender: TObject; xRow: Integer);
     procedure gLstRowMoved(Sender: TObject; FromIndex, ToIndex: Integer);
-    procedure Clock1Click(Sender: TObject);
+    procedure mnuClockClick(Sender: TObject);
     procedure evListViewClick(Sender: TObject);
     procedure evListViewCompare(Sender: TObject; Item1, Item2: TListItem;
       Data: Integer; var Compare: Integer);
@@ -1169,8 +1168,8 @@ var
    ss: TStringList;
    i: integer;
 begin
-   if cr.Error then
-   begin
+   if FidoPolls.IndexOf(cr.p) > - 1 then begin
+   if cr.Error then begin
       z := TFidoPoll(cr.p).IPAddr;
       if cr.Prot = ptSMTP then begin
          ss := IniFile.ReadSection('Grids', 'gPOP3');
@@ -1215,6 +1214,7 @@ begin
          PostMsg(WM_UPDATETABS);
       end;
    end;
+   end;
    FreeObject(cr);
 end;
 
@@ -1258,15 +1258,12 @@ var
       open := _FileExists(FOpen);
       close := _FileExists(FClose);
 
-      if open then
-      begin
+      if open then begin
          if not DaemonStarted then SwitchDaemon(INVALID_HANDLE_VALUE);
-      end
-      else
-         if close then
-         begin
-            if DaemonStarted then SwitchDaemon(INVALID_HANDLE_VALUE);
-         end;
+      end else
+      if close then begin
+         if DaemonStarted then SwitchDaemon(INVALID_HANDLE_VALUE);
+      end;
 
       if open then DeleteFile(FOpen);
       if close then DeleteFile(FClose);
@@ -1790,12 +1787,17 @@ begin
          WM_HOTKEY:
             begin
                if Msg.WParam = 700 then begin
-                  Application.ShowMainForm := True;
-                  Application.MainForm.WindowState := wsNormal;
-                  Application.MainForm.Visible := True;
-                  Application.Restore;
-                  SendMsg(WM_UPDATETABS);
-                  SendMsg(WM_TABCHANGE);
+                  if ApplicationDowned then begin
+                     Application.ShowMainForm := True;
+                     Application.MainForm.WindowState := wsNormal;
+                     Application.MainForm.Visible := True;
+                     Application.Restore;
+                     Application.BringToFront;
+                     SendMsg(WM_UPDATETABS);
+                     SendMsg(WM_TABCHANGE);
+                  end else begin
+                     Application.Minimize;
+                  end;
                end;
             end;
          WM_CHECKNETMAIL:
@@ -2027,15 +2029,11 @@ begin
       aOutbound.Active := False;
    end;
    try
-      if IniFile.InSecure[2] <> ':' then
-         dsk := 0
-      else
-         dsk := ord(Upcase(IniFile.InSecure[1])) - $40;
-      lTotalAtInbound.Caption := FloatToStr(Round(DiskFree(dsk) / 1048576)) + ' Mb';
+      if IniFile.InSecure[2] <> ':' then dsk := 0
+                                    else dsk := ord(Upcase(IniFile.InSecure[1])) - $40;
       lAvaibleAtInbound.Caption := FloatToStr(Round(DiskFree(dsk) / 1048576 - IniFile.FreeSpaceLmt)) + ' Mb';
    except on E: Exception do ProcessTrap(E.Message, 'procedure TMailerForm.UpdateOutboundManager: Disk space check');
    end;
-
    floutb;
 end;
 
@@ -2078,8 +2076,8 @@ begin
    if IniFile.Stealth then begin
       WindowState := wsMinimized;
       Application.ShowMainForm := False;
-      SetHotKey;
    end else Show;
+   SetHotKey;
 end;
 
 procedure TMailerForm.InsertEvt(Evt: Pointer);
@@ -3941,6 +3939,7 @@ begin
       else
          ;
       end; {case}
+      Application.Minimize;
       if DaemonStarted then _ShutdownDaemon;
       if HelpInitialized then begin
          HelpInitialized := False;
@@ -3958,7 +3957,7 @@ begin
       x2 := @x;
       with inifile do
          RadBWZ := x2^;
-      SavFile.WriteInteger('Sizes', 'stListView', stListView.Columns[0].Width);   
+      SavFile.WriteInteger('Sizes', 'stListView', stListView.Columns[0].Width);
       for I := 0 to 5 do
          o[i] := OutMgrHeader.Sections[i].Width;
       with inifile do
@@ -4253,7 +4252,7 @@ begin
       for i := 0 to FidoPolls.Count - 1 do begin
          p := FidoPolls[i];
          if CompareAddrs(a, p.Node.Addr) = 0 then begin
-            if (p.Owner = PollOwnerExtApp) or (p.Owner = nil) then begin
+            if True or (p.Owner = PollOwnerExtApp) or (p.Owner = nil) then begin
                p.Done := pdnDeleted;
                FidoPolls.AtFree(i);
             end else begin
@@ -4296,7 +4295,7 @@ end;
 
 procedure TMailerForm.bDeleteAllPollsClick(Sender: TObject);
 begin
-   FreeAllPolls(pdnDeleteAll, False);
+   FreeAllPolls(pdnDeleteAll, True);
    PostMsg(WM_UPDATEVIEW);
 end;
 
@@ -4542,7 +4541,7 @@ begin
    lTimeOut.Font.Style := [fsBold];
    lTimeOut.Top := bAdd.Top + (bAdd.Height - lTimeOut.Height) div 2;
    OutMgrOutLine.ItemHeight := Abs(Font.Height) + 4;
-   Clock1Click(nil);
+   mnuClockClick(nil);
 end;
 
 procedure TMailerForm.WMStartMdmCmd(var M: TMessage);
@@ -6601,7 +6600,7 @@ procedure TMailerForm.mfRestartClick(Sender: TObject);
 begin
    StoreConfig(0);
    ShellExecute(0, nil, PChar(ParamStr(0)),
-      PChar('delay5000'), PChar(ExtractFilePath(ParamStr(0))), sw_shownormal);
+      PChar('delay9000'), PChar(ExtractFilePath(ParamStr(0))), sw_shownormal);
    PostCloseMessage;
 end;
 
@@ -6868,14 +6867,14 @@ begin
    ActiveLine.SD.Prot.ListBuf.Add('LST MOV ' + (Sender as TAdvGrid).Cells[1, FromIndex] + ' ' + IntToStr(FromIndex - ToIndex));
 end;
 
-procedure TMailerForm.Clock1Click(Sender: TObject);
+procedure TMailerForm.mnuClockClick(Sender: TObject);
 begin
    if Sender <> nil then begin
       IniFile.ClockVisible := not IniFile.ClockVisible;
    end;   
    evListView.Visible := not IniFile.ClockVisible;
    Clock.ClockEnabled :=     IniFile.ClockVisible;
-   Clock1.Checked := IniFile.ClockVisible;
+   mnuClock.Checked := IniFile.ClockVisible;
 end;
 
 procedure TMailerForm.evListViewClick(Sender: TObject);

@@ -380,8 +380,12 @@ end;
   begin
     PathName := JustFileName(PathName);
     DotPos := Pos('.', PathName);
-    if DotPos > 0 then
-      PathName := Copy(PathName, 1, DotPos-1);
+    for DotPos := Length(PathName) downto 1 do begin
+       if PathName[DotPos] = '.' then break;
+    end;
+    if DotPos > 0 then begin
+       PathName := Copy(PathName, 1, DotPos - 1);
+    end;
     JustName := PathName;
   end;
 

@@ -3990,65 +3990,61 @@ var
 
 function Matches(const S: string; AForb: Boolean): Boolean;
 var
-  L: TColl;
+   L: TColl;
   ri: TRestrictItem;
-  i: Integer;
-  b: Boolean;
+   i: Integer;
+   b: Boolean;
   es: string;
 begin
-  L := ParseRestrictStr(S, @es);
-  if L = nil then Result := False else
-  begin
-    Result := True;
-    for i := 0 to L.Count - 1 do
-    begin
-      ri := L[i];
-      case ri.Typ of
-        oiAddress:
-          b := CompareAddrs(Addr, ri.Addr) = 0;
-        oiAddressMask:
-          b := MatchMaskAddress(Addr, ri.S);
-        oiFlag:
-          b := FlagColl.Found(UpperCase(ri.S));
-        oiPhoneNum:
-          b := Pos(ri.S, Phone) = 1;
-       else
-         begin
-           b := False;
-//           b := Boolean(GlobalFail('%s', ['DialAllowed unknown Typ'])); // to avoid 'uninitialized' warning
+   L := ParseRestrictStr(S, @es);
+   if L = nil then Result := False else begin
+      Result := True;
+      for i := 0 to L.Count - 1 do begin
+         ri := L[i];
+         case ri.Typ of
+         oiAddress:
+            b := CompareAddrs(Addr, ri.Addr) = 0;
+         oiAddressMask:
+            b := MatchMaskAddress(Addr, ri.S);
+         oiFlag:
+            b := FlagColl.Found(UpperCase(ri.S));
+         oiPhoneNum:
+            b := Pos(ri.S, Phone) = 1;
+         else
+            begin
+               b := False;
+//               b := Boolean(GlobalFail('%s', ['DialAllowed unknown Typ'])); // to avoid 'uninitialized' warning
+            end;
+         end;
+         if not b then begin
+            Result := False;
+            Break;
          end;
       end;
-      if not b then
-      begin
-        Result := False;
-        Break;
-      end;
-    end;
-    FreeObject(L);
-  end;
+      FreeObject(L);
+   end;
 end;
 
 function SubItemFound(SC: TStringColl; Initial: Boolean): Boolean;
 var
-  i: Integer;
-  s: string;
+   i: Integer;
+   s: string;
 const
-  Expl: array[Boolean] of Integer = (rsRecsRqdCndNS, rsRecsFrbCndS);
+   Expl: array[Boolean] of Integer = (rsRecsRqdCndNS, rsRecsFrbCndS);
 begin
-  Result := Initial;
-  for i := 0 to CollMax(SC) do
-  begin
-    s := Trim(SC[i]);
-    if s = '' then Continue;
-    Result := Matches(s, not Initial);
-    if Result then Break;
-  end;
-  if Result <> Initial then AExpl := LngStr(Expl[not Initial]);
+   Result := Initial;
+   for i := 0 to CollMax(SC) do begin
+      s := Trim(SC[i]);
+      if s = '' then Continue;
+      Result := Matches(s, not Initial);
+      if Result then Break;
+   end;
+   if Result <> Initial then AExpl := LngStr(Expl[not Initial]);
 end;
 
 begin
   FlagColl := TStringColl.Create;
-  FlagColl.FillEnum(UpperCase(Flags), ',', True);
+  FlagColl.FillEnum(UpperCase(Flags), [',', ':'], True);
   Result := SubItemFound(AR.Required, True) and not SubItemFound(AR.Forbidden, False);
   FreeObject(FlagColl);
 end;
@@ -4529,7 +4525,7 @@ begin
             z := OvrData.Flags;
             fc := TStringColl.Create;
             if Pos(',!ALL,', ',' + UpperCase(z) + ',') = 0 then begin
-               fc.FillEnum(ss, ',', False);
+               fc.FillEnum(ss, [','], False);
                if (Pos(',!CM,', ',' + UpperCase(z) + ',') <> 0) or
                   (Pos(',CM,', ',' + UpperCase(z) + ',') <> 0) or
                   (NodeFSC62Local(z) <> []) then
@@ -4559,7 +4555,7 @@ begin
             if TransportFlagsMatch(s, z, Dialup) then DoAdd else begin
                if Dialup then begin
                   fc := TStringColl.Create;
-                  fc.FillEnum(z, ',', False);
+                  fc.FillEnum(z, [','], False);
                   PurgeIpFlags(fc);
                   z := fc.LongStringD(',');
                   DoAdd;
@@ -5109,43 +5105,42 @@ begin
   T := CreateTextReader(FName);
   if T = nil then Exit;
   sc := TStringColl.Create;
-  while not T.EOF do
-  begin
+  while not T.EOF do begin
     s := Trim(T.GetStr);
     if s = '' then Continue;
     case Typ of
-      actBinkPlus:
-        begin
+    actBinkPlus:
+       begin
           if s[1] = ';' then i := -1 else i := Pos('%;', s);
-        end;
-      else
-        begin
+       end;
+    else
+       begin
           i := Pos(';', s);
-        end;
+       end;
     end;
     if i = -1 then Continue;
     if i > 0 then s := Trim(Copy(s, 1, i - 1));
     if s = '' then Continue;
-    sc.FillEnum(s, ' ', False);
+    sc.FillEnum(s, [' '], False);
     case Typ of
-      actTMail,
-      actTMailSubst,
-      actTMailSecutiry:
-      begin
-        s := sc[0];
-        if (s[1] = '[') and (s[Length(s)] = ']') then sc.AtFree(0);
-        if sc.Count = 0 then Continue;
-      end;
+    actTMail,
+    actTMailSubst,
+    actTMailSecutiry:
+       begin
+          s := sc[0];
+          if (s[1] = '[') and (s[Length(s)] = ']') then sc.AtFree(0);
+          if sc.Count = 0 then Continue;
+       end;
     end;
 
     case Typ of
-      actBinkD: ProcessImportStrBinkD(Coll, sc);
-      actBinkPlus: ProcessImportStrBinkPlus(FName, Coll, sc);
-      actTMail: ProcessImportStrTMail(FName, Coll, sc);
-      actTMailSubst: ProcessImportStrTMailSubst(Coll, sc);
-      actTMailSecutiry: ProcessImportStrTMailSecurity(Coll, sc);
-      actXenia: ProcessImportStrXenia(FName, Coll, sc);
-      else GlobalFail('%s', ['ImportAlienCfg']);
+    actBinkD: ProcessImportStrBinkD(Coll, sc);
+    actBinkPlus: ProcessImportStrBinkPlus(FName, Coll, sc);
+    actTMail: ProcessImportStrTMail(FName, Coll, sc);
+    actTMailSubst: ProcessImportStrTMailSubst(Coll, sc);
+    actTMailSecutiry: ProcessImportStrTMailSecurity(Coll, sc);
+    actXenia: ProcessImportStrXenia(FName, Coll, sc);
+    else GlobalFail('%s', ['ImportAlienCfg']);
     end;
     sc.FreeAll;
   end;

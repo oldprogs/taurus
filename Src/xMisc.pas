@@ -2558,8 +2558,7 @@ end;
 
 function  TOneWayProtocol.Timeout: Boolean;
 begin
-  if TimerExpired(TimeoutTimer)
-  then
+  if TimerInstalled(TimeoutTimer) and TimerExpired(TimeoutTimer) then
     Result := True
   else
     Result := False;

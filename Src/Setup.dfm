@@ -134,7 +134,7 @@ object SetupForm: TSetupForm
     Width = 418
     Height = 373
     Anchors = [akLeft, akTop, akRight, akBottom]
-    PageIndex = 5
+    PageIndex = 4
     TabOrder = 1
     object TPage
       Left = 0

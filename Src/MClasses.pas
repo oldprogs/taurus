@@ -645,33 +645,28 @@ const CheckWidth  = 14;
 
 procedure Register;
 begin
-  RegisterComponents('Argus', [THistoryLine, TModemLamp, TMicroTerm, TxGauge, TxSpinButton, TxSpinEdit, TLogger, TNavyGauge, TNavyGraph, TxOutlin, TNoteBook, TDirectoryListBox, TDriveComboBox, TTransPan, TTransEdit, TTransGroupBox]);
+   RegisterComponents('Argus', [THistoryLine, TModemLamp, TMicroTerm, TxGauge, TxSpinButton, TxSpinEdit, TLogger, TNavyGauge, TNavyGraph, TxOutlin, TNoteBook, TDirectoryListBox, TDriveComboBox, TTransPan, TTransEdit, TTransGroupBox]);
 end;
 
 Procedure InitSysType;
 Var
-  VersionInfo : TOSVersionInfo;
+   VersionInfo : TOSVersionInfo;
 Begin
-  VersionInfo.dwOSVersionInfoSize := SizeOf(VersionInfo);
-  GetVersionEx(VersionInfo);
-  OsVer5 := VersionInfo.dwMajorVersion >= 5
+   VersionInfo.dwOSVersionInfoSize := SizeOf(VersionInfo);
+   GetVersionEx(VersionInfo);
+   OsVer5 := VersionInfo.dwMajorVersion >= 5
 //  SysWinNt:=VersionInfo.dwPlatformID=VER_PLATFORM_WIN32_NT;
 End;
 
-{Create the Component}
 constructor TTrayIcon.Create(Owner: TComponent);
 var Hint: String;
 //    OSVerInfo:TOSVersionInfo;
     WindowPlacement: TWindowPlacement;
 begin
-   {Call inherited create method}
    Inherited Create(Owner);
-   {Create the fIcon object, and assign the Application Icon to it}
    fIcon := TIcon.Create;
    fNoTrayIcon :=  True;
-   if not (csDesigning in ComponentState) then
-   {At RunTime *only*, perform the following:}
-   begin
+   if not (csDesigning in ComponentState) then begin
       FillChar(fData, SizeOf(fData), 0);
       fWindowHandle := AllocateHWnd(WndProc);
       fData.cbSize := SizeOf(fData);
@@ -682,8 +677,7 @@ begin
       fData.uCallbackMessage := WM_TrayCallBack_Message;
       if fHint = '' then Hint := Application.Title
                     else Hint := fHint;
-      if Hint <> '' then
-      begin
+      if Hint <> '' then begin
          fData.uFlags := fData.uFlags OR NIF_Tip;
          StrPLCopy(@fData.szTip, Hint, SizeOf(fData.szTip) - 1);
       end;
@@ -701,41 +695,37 @@ end;
 {Destroy the Component}
 destructor TTrayIcon.Destroy;
 begin
-  if fActive and (not fNoTrayIcon) then RemoveIconFromTray;
-  if not (csDesigning in ComponentState) then DeAllocateHWnd(FWindowHandle);
-  fIcon.Free;
-  inherited Destroy;
+   if fActive and (not fNoTrayIcon) then RemoveIconFromTray;
+   if not (csDesigning in ComponentState) then DeAllocateHWnd(FWindowHandle);
+   fIcon.Free;
+   inherited Destroy;
 end;
 
 procedure TTrayIcon.SetSeparateIcon(Value: Boolean);
 begin
-  try
-    if fSeparateIcon <> Value then fSeparateIcon := Value;//some people get errors in this line. But why???
-
-    if not (csDesigning in ComponentState) then
+   try
+      if fSeparateIcon <> Value then fSeparateIcon := Value;
+      if not (csDesigning in ComponentState) then
       case fSeparateIcon of
-        False: if fActive and (NOT fMinimized) then RemoveIconFromTray;
-        True: if fActive then AddIconToTray;
+      False: if fActive and (NOT fMinimized) then RemoveIconFromTray;
+      True: if fActive then AddIconToTray;
       end;
-  finally
+   finally
    //
-  end;
+   end;
 end;
 
 procedure TTrayIcon.SetActive(Value: Boolean);
 begin
-  if fActive = Value then Exit;
-  fActive := Value;
-  if not (csDesigning in ComponentState) then
-  begin
-    if fActive and (fMinimized xor fSeparateIcon) then
-    begin
-      if fNoTrayIcon then AddIconToTray;
-    end else
-    begin
-      if not fNoTrayIcon then RemoveIconFromTray;
-    end;
-  end;
+   if fActive = Value then Exit;
+   fActive := Value;
+   if not (csDesigning in ComponentState) then begin
+      if fActive and (fMinimized xor fSeparateIcon) then begin
+         if fNoTrayIcon then AddIconToTray;
+      end else begin
+         if not fNoTrayIcon then RemoveIconFromTray;
+      end;
+   end;
 end;
 
 procedure TTrayIcon.SetHint(const Value: String);
@@ -753,8 +743,7 @@ end;
 
 procedure TTrayIcon.SetIcon(Icon:TIcon);
 begin
-   if fIcon <> Icon then
-   begin
+   if fIcon <> Icon then begin
       fIcon.Assign(Icon);
       fData.hIcon := Icon.Handle;
       UpdateTrayIcon;
@@ -763,36 +752,30 @@ end;
 
 procedure TTrayIcon.AddIconToTray;
 begin
-  if fActive  AND fNoTrayIcon then
-  begin
-    if Integer(Shell_NotifyIcon(NIM_Add, @fData)) = 0 then
-    begin
+   if fActive  AND fNoTrayIcon then begin
+      if Integer(Shell_NotifyIcon(NIM_Add, @fData)) = 0 then begin
 //      GlobalFail('%s', ['AddIconToTray: Shell_NotifyIcon Error']);
-    end else
-    begin
-      fNoTrayIcon := False;
-    end;
-  end;
+      end else begin
+         fNoTrayIcon := False;
+      end;
+   end;
 end;
 
 procedure TTrayIcon.RemoveIconFromTray;
 begin
-  if Integer(Shell_NotifyIcon(NIM_Delete, @fData)) = 0 then
-  begin
+   if Integer(Shell_NotifyIcon(NIM_Delete, @fData)) = 0 then begin
 //    GlobalFail('%s', ['RemoveIconFromTray: Shell_NotifyIcon Error']);
-  end;
-  fNoTrayIcon := True;
+   end;
+   fNoTrayIcon := True;
 end;
 
 procedure TTrayIcon.UpdateTrayIcon;
 begin
-  if (fActive) AND not (csDesigning in ComponentState) then
-  begin
-    if Integer(Shell_NotifyIcon(NIM_Modify, @fData)) = 0 then
-    begin
+   if (fActive) AND not (csDesigning in ComponentState) then begin
+      if Integer(Shell_NotifyIcon(NIM_Modify, @fData)) = 0 then begin
 //      GlobalFail('%s', ['UpdateTrayIcon: Shell_NotifyIcon Error']);
-    end;
-  end;
+      end;
+   end;
 end;
 
 procedure TTrayIcon.WndProc(var Msg:TMessage);
@@ -816,26 +799,22 @@ end;
 
 procedure TTrayIcon.HandleRightClick(Sender: TObject);
 begin
-  PostMessage(TForm(Owner).Handle, WM_TRAYRC, 0, Integer(Sender));
+   PostMessage(TForm(Owner).Handle, WM_TRAYRC, 0, Integer(Sender));
 end;
 
 procedure TTrayIcon.ShowHint(const Title, Text: string);
 var
-  nid:TNotifyIconDataA;
+   nid: TNotifyIconDataA;
 begin
-  if OsVer5 then
-  begin
-    nid := fdata;
-//    fdata.cbSize:=sizeof(TNotifyIconData);
-//    nid.uID:=NIIF_INFO;
-//    nid.uID:=icon_id;
-    nid.uFlags := NIF_INFO;
-    StrPLCopy(@nid.szInfo,Text, SizeOf(nid.szInfo) - 1);
-    StrPLCopy(@nid.szInfoTitle, Title, SizeOf(nid.szInfoTitle) - 1);
-    nid.uTimeout := 5000;
-    nid.dwInfoFlags := NIIF_INFO;
-    Shell_NotifyIconA(NIM_MODIFY, @nid);
-  end
+   if OsVer5 then begin
+      nid := fdata;
+      nid.uFlags := NIF_INFO;
+      StrPLCopy(@nid.szInfo,Text, SizeOf(nid.szInfo) - 1);
+      StrPLCopy(@nid.szInfoTitle, Title, SizeOf(nid.szInfoTitle) - 1);
+      nid.uTimeout := 5000;
+      nid.dwInfoFlags := NIIF_INFO;
+      Shell_NotifyIconA(NIM_MODIFY, @nid);
+   end;
 end;
 
 procedure TTrayIcon.DoRightClick(Sender: TObject);
@@ -854,14 +833,13 @@ end;
 
 procedure TTrayIcon.HandleMinimize(Sender:TObject);
 begin
-  ApplicationDowned := True;
-  if fActive then
-  begin
-    ShowWindow(Application.Handle, SW_Hide);
-    if fNoTrayIcon then AddIconToTray;
-  end;
-  fMinimized := True;
-  if Assigned(fOnMinimize) then fOnMinimize(Sender);
+   ApplicationDowned := True;
+   if fActive then begin
+      ShowWindow(Application.Handle, SW_Hide);
+      if fNoTrayIcon then AddIconToTray;
+   end;
+   fMinimized := True;
+   if Assigned(fOnMinimize) then fOnMinimize(Sender);
 end;
 
 procedure TTrayIcon.HandleRestore(Sender:TObject);
@@ -1762,341 +1740,317 @@ end;
 
 procedure TxSpinButton.WMGetDlgCode(var Msg: TWMGetDlgCode);
 begin
-  Msg.Result := DLGC_WANTARROWS;
+   Msg.Result := DLGC_WANTARROWS;
 end;
 
 procedure TxSpinButton.Loaded;
 var
-  W, H: Integer;
+   W,
+   H: Integer;
 begin
-  inherited Loaded;
-  W := Width;
-  H := Height;
-  DoAdjustSize (W, H);
-  if (W <> Width) or (H <> Height) then
-    inherited SetBounds (Left, Top, W, H);
+   inherited Loaded;
+   W := Width;
+   H := Height;
+   DoAdjustSize (W, H);
+   if (W <> Width) or (H <> Height) then inherited SetBounds (Left, Top, W, H);
 end;
 
 function TxSpinButton.GetUpGlyph: TBitmap;
 begin
-  Result := FUpButton.Glyph;
+   Result := FUpButton.Glyph;
 end;
 
 procedure TxSpinButton.SetUpGlyph(Value: TBitmap);
 begin
-  if Value <> nil then
-    FUpButton.Glyph := Value
-  else
-  begin
-    FUpButton.Glyph.Handle := LoadBitmap(HInstance, 'SpinUp');
-    FUpButton.NumGlyphs := 1;
-    FUpButton.Invalidate;
-  end;
+   if Value <> nil then
+      FUpButton.Glyph := Value
+   else begin
+      FUpButton.Glyph.Handle := LoadBitmap(HInstance, 'SpinUp');
+      FUpButton.NumGlyphs := 1;
+      FUpButton.Invalidate;
+   end;
 end;
 
 function TxSpinButton.GetDownGlyph: TBitmap;
 begin
-  Result := FDownButton.Glyph;
+   Result := FDownButton.Glyph;
 end;
 
 procedure TxSpinButton.SetDownGlyph(Value: TBitmap);
 begin
-  if Value <> nil then
-    FDownButton.Glyph := Value
-  else
-  begin
-    FDownButton.Glyph.Handle := LoadBitmap(HInstance, 'SpinDown');
-    FDownButton.NumGlyphs := 1;
-    FDownButton.Invalidate;
-  end;
+   if Value <> nil then FDownButton.Glyph := Value else begin
+      FDownButton.Glyph.Handle := LoadBitmap(HInstance, 'SpinDown');
+      FDownButton.NumGlyphs := 1;
+      FDownButton.Invalidate;
+   end;
 end;
 
 { TxSpinEdit }
 
 constructor TxSpinEdit.Create(AOwner: TComponent);
 begin
-  inherited Create(AOwner);
-  FButton := TxSpinButton.Create (Self);
-  FButton.Width := 15;
-  FButton.Height := 17;
-  FButton.Visible := True;
-  FButton.Parent := Self;
-  FButton.FocusControl := Self;
-  FButton.OnUpClick := UpClick;
-  FButton.OnDownClick := DownClick;
-  Text := '0';
-  ControlStyle := ControlStyle - [csSetCaption];
-  FIncrement := 1;
-  FEditorEnabled := True;
+   inherited Create(AOwner);
+   FButton := TxSpinButton.Create (Self);
+   FButton.Width := 15;
+   FButton.Height := 17;
+   FButton.Visible := True;
+   FButton.Parent := Self;
+   FButton.FocusControl := Self;
+   FButton.OnUpClick := UpClick;
+   FButton.OnDownClick := DownClick;
+   Text := '0';
+   ControlStyle := ControlStyle - [csSetCaption];
+   FIncrement := 1;
+   FEditorEnabled := True;
 end;
 
 destructor TxSpinEdit.Destroy;
 begin
-  FButton := nil;
-  inherited Destroy;
+   FButton := nil;
+   inherited Destroy;
 end;
 
 procedure TxSpinEdit.WMMouseWheel(var M: TMessage);
 begin
-  MouseWheel(SmallInt(M.wParam and $FFFF), SmallInt((M.wParam shr 16) and $FFFF), SmallInt(M.lParam and $FFFF), SmallInt((M.lParam shr 16) and $FFFF))
+   MouseWheel(SmallInt(M.wParam and $FFFF), SmallInt((M.wParam shr 16) and $FFFF), SmallInt(M.lParam and $FFFF), SmallInt((M.lParam shr 16) and $FFFF))
 end;
 
 procedure TxSpinEdit.MouseWheel(fwKeys, zDelta, xPos, yPos: SmallInt);
 var
-  ScrollCode, i, Count, Key: Integer;
-  wKey: Word;
+   ScrollCode, i, Count, Key: Integer;
+   wKey: Word;
 begin
-  GetWheelCommands(zDelta, ScrollCode, Count);
-  case ScrollCode of
+   GetWheelCommands(zDelta, ScrollCode, Count);
+   case ScrollCode of
     SB_LINEDOWN : Key := VK_DOWN;
     SB_LINEUP   : Key := VK_UP;
     SB_PAGEDOWN : Key := VK_PRIOR;
     SB_PAGEUP   : Key := VK_NEXT;
-    else Exit;
-  end;
-  for i := 1 to Count do begin wKey := Key; KeyDown(wKey, []) end;
+   else Exit;
+   end;
+   for i := 1 to Count do begin wKey := Key; KeyDown(wKey, []) end;
 end;
 
 procedure TxSpinEdit.KeyDown(var Key: Word; Shift: TShiftState);
 begin
-  inherited KeyDown(Key, Shift);
-  case Key of
-    VK_UP, VK_NEXT: UpClick (Self);
-    VK_DOWN,VK_PRIOR: DownClick (Self);
-  end;
+   inherited KeyDown(Key, Shift);
+   case Key of
+   VK_UP, VK_NEXT: UpClick (Self);
+   VK_DOWN,VK_PRIOR: DownClick (Self);
+   end;
 end;
 
 procedure TxSpinEdit.KeyPress(var Key: Char);
 begin
-  if not IsValidChar(Key) then begin
-    Key := #0;
-    MessageBeep(0)
-  end;
-  if Key <> #0 then begin
-    inherited KeyPress(Key);
-    if (Key = Char(VK_RETURN)) or (Key = Char(VK_ESCAPE)) then begin
+   if not IsValidChar(Key) then begin
+      Key := #0;
+      MessageBeep(0)
+   end;
+   if Key <> #0 then begin
+      inherited KeyPress(Key);
+      if (Key = Char(VK_RETURN)) or (Key = Char(VK_ESCAPE)) then begin
       { must catch and remove this, since is actually multi-line }
-      GetParentForm(Self).Perform(CM_DIALOGKEY, Byte(Key), 0);
-      if Key = Char(VK_RETURN) then Key := #0;
-    end;
-  end;
+         GetParentForm(Self).Perform(CM_DIALOGKEY, Byte(Key), 0);
+         if Key = Char(VK_RETURN) then Key := #0;
+      end;
+   end;
 end;
 
 function TxSpinEdit.IsValidChar(Key: Char): Boolean;
 begin
-  Result := (Key in [DecimalSeparator, '+', '-', '0'..'9']) or
-    ((Key < #32) {and (Key <> Chr(VK_RETURN))});
-  if not FEditorEnabled and Result and ((Key >= #32) or
-      (Key = Char(VK_BACK)) or (Key = Char(VK_DELETE))) then
-    Result := False;
+   Result := (Key in [DecimalSeparator, '+', '-', '0'..'9']) or ((Key < #32) {and (Key <> Chr(VK_RETURN))});
+   if not FEditorEnabled and Result and ((Key >= #32) or (Key = Char(VK_BACK)) or (Key = Char(VK_DELETE))) then Result := False;
 end;
 
 procedure TxSpinEdit.CreateParams(var Params: TCreateParams);
 begin
-  inherited CreateParams(Params);
+   inherited CreateParams(Params);
 {  Params.Style := Params.Style and not WS_BORDER;  }
-  Params.Style := Params.Style or ES_MULTILINE or WS_CLIPCHILDREN;
+   Params.Style := Params.Style or ES_MULTILINE or WS_CLIPCHILDREN;
 end;
 
 procedure TxSpinEdit.CreateWnd;
 begin
-  inherited CreateWnd;
-  SetEditRect;
+   inherited CreateWnd;
+   SetEditRect;
 end;
 
 procedure TxSpinEdit.SetEditRect;
 var
-  Loc: TRect;
+   Loc: TRect;
 begin
-  SendMessage(Handle, EM_GETRECT, 0, LongInt(@Loc));
-  Loc.Bottom := ClientHeight + 1;  {+1 is workaround for windows paint bug}
-  Loc.Right := ClientWidth - FButton.Width - 2;
-  Loc.Top := 0;
-  Loc.Left := 0;
-  SendMessage(Handle, EM_SETRECTNP, 0, LongInt(@Loc));
-  SendMessage(Handle, EM_GETRECT, 0, LongInt(@Loc));  {debug}
+   SendMessage(Handle, EM_GETRECT, 0, LongInt(@Loc));
+   Loc.Bottom := ClientHeight + 1;  {+1 is workaround for windows paint bug}
+   Loc.Right := ClientWidth - FButton.Width - 2;
+   Loc.Top := 0;
+   Loc.Left := 0;
+   SendMessage(Handle, EM_SETRECTNP, 0, LongInt(@Loc));
+   SendMessage(Handle, EM_GETRECT, 0, LongInt(@Loc));  {debug}
 end;
 
 procedure TxSpinEdit.WMSize(var Msg: TWMSize);
 var
-  MinHeight: Integer;
+   MinHeight: Integer;
 begin
-  inherited;
-  MinHeight := GetMinHeight;
-    { text edit bug: if size to less than minheight, then edit ctrl does
-      not display the text }
-  if Height < MinHeight then
-    Height := MinHeight
-  else if FButton <> nil then
-  begin
-    if NewStyleControls then
-      FButton.SetBounds(Width - FButton.Width - 5, 0, FButton.Width, Height - 5)
-    else FButton.SetBounds (Width - FButton.Width, 0, FButton.Width, Height);
-    SetEditRect;
-  end;
+   inherited;
+   MinHeight := GetMinHeight;
+   if Height < MinHeight then Height := MinHeight
+                         else
+   if FButton <> nil then begin
+      if NewStyleControls then FButton.SetBounds(Width - FButton.Width - 5, 0, FButton.Width, Height - 5)
+      else FButton.SetBounds (Width - FButton.Width, 0, FButton.Width, Height);
+      SetEditRect;
+   end;
 end;
 
 function TxSpinEdit.GetMinHeight: Integer;
 var
-  DC: HDC;
-  SaveFont: HFont;
-  I: Integer;
-  SysMetrics, Metrics: TTextMetric;
+   DC: HDC;
+   SaveFont: HFont;
+   I: Integer;
+   SysMetrics,
+   Metrics: TTextMetric;
 begin
-  DC := GetDC(0);
-  GetTextMetrics(DC, SysMetrics);
-  SaveFont := SelectObject(DC, Font.Handle);
-  GetTextMetrics(DC, Metrics);
-  SelectObject(DC, SaveFont);
-  ReleaseDC(0, DC);
-  I := SysMetrics.tmHeight;
-  if I > Metrics.tmHeight then I := Metrics.tmHeight;
-  Result := Metrics.tmHeight + I div 4 + GetSystemMetrics(SM_CYBORDER) * 4 + 2;
+   DC := GetDC(0);
+   GetTextMetrics(DC, SysMetrics);
+   SaveFont := SelectObject(DC, Font.Handle);
+   GetTextMetrics(DC, Metrics);
+   SelectObject(DC, SaveFont);
+   ReleaseDC(0, DC);
+   I := SysMetrics.tmHeight;
+   if I > Metrics.tmHeight then I := Metrics.tmHeight;
+   Result := Metrics.tmHeight + I div 4 + GetSystemMetrics(SM_CYBORDER) * 4 + 2;
 end;
 
 procedure TxSpinEdit.UpClick (Sender: TObject);
 begin
-  if ReadOnly then MessageBeep(0)
-  else Value := Value + FIncrement;
+   if ReadOnly then MessageBeep(0)
+   else Value := Value + FIncrement;
 end;
 
 procedure TxSpinEdit.DownClick (Sender: TObject);
 begin
-  if ReadOnly then MessageBeep(0)
-  else Value := Value - FIncrement;
+   if ReadOnly then MessageBeep(0)
+   else Value := Value - FIncrement;
 end;
 
 procedure TxSpinEdit.WMPaste(var Msg: TWMPaste);
 begin
-  if not FEditorEnabled or ReadOnly then Exit;
-  inherited;
+   if not FEditorEnabled or ReadOnly then Exit;
+   inherited;
 end;
 
 procedure TxSpinEdit.WMCut(var Msg: TWMPaste);
 begin
-  if not FEditorEnabled or ReadOnly then Exit;
-  inherited;
+   if not FEditorEnabled or ReadOnly then Exit;
+   inherited;
 end;
 
 procedure TxSpinEdit.CMExit(var Msg: TCMExit);
 begin
-  inherited;
-  if CheckValue (Value) <> Value then
-    SetValue (Value);
+   inherited;
+   if CheckValue (Value) <> Value then SetValue (Value);
 end;
 
 function TxSpinEdit.GetValue: LongInt;
 begin
-  Result := StrToIntDef (Text, FMinValue);
+   Result := StrToIntDef (Text, FMinValue);
 end;
 
 procedure TxSpinEdit.SetValue (NewValue: LongInt);
 begin
-  Text := IntToStr (CheckValue (NewValue));
+   Text := IntToStr (CheckValue (NewValue));
 end;
 
 function TxSpinEdit.CheckValue (NewValue: LongInt): LongInt;
 begin
-  Result := NewValue;
-  if (FMaxValue <> FMinValue) then
-  begin
-    if NewValue < FMinValue then
-      Result := FMinValue
-    else if NewValue > FMaxValue then
-      Result := FMaxValue;
-  end;
+   Result := NewValue;
+   if (FMaxValue <> FMinValue) then begin
+      if NewValue < FMinValue then Result := FMinValue
+                              else
+      if NewValue > FMaxValue then Result := FMaxValue;
+   end;
 end;
 
 procedure TxSpinEdit.CMEnter(var Msg: TCMGotFocus);
 begin
-  if AutoSelect and not (csLButtonDown in ControlState) then
-    SelectAll;
-  inherited;
+   if AutoSelect and not (csLButtonDown in ControlState) then SelectAll;
+   inherited;
 end;
 
 {TTimerSpeedButton}
 
 destructor TTimerSpeedButton.Destroy;
 begin
-  if FRepeatTimer <> nil then
-    FRepeatTimer.Free;
-  inherited Destroy;
+   if FRepeatTimer <> nil then FRepeatTimer.Free;
+   inherited Destroy;
 end;
 
-procedure TTimerSpeedButton.MouseDown(Button: TMouseButton; Shift: TShiftState;
-  X, Y: Integer);
+procedure TTimerSpeedButton.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
-  inherited MouseDown (Button, Shift, X, Y);
-  if tbAllowTimer in FTimeBtnState then
-  begin
-    if FRepeatTimer = nil then
-      FRepeatTimer := TTimer.Create(Self);
-
-    FRepeatTimer.OnTimer := TimerExpired;
-    FRepeatTimer.Interval := InitRepeatPause;
-    FRepeatTimer.Enabled  := True;
-  end;
+   inherited MouseDown (Button, Shift, X, Y);
+   if tbAllowTimer in FTimeBtnState then begin
+      if FRepeatTimer = nil then FRepeatTimer := TTimer.Create(Self);
+      FRepeatTimer.OnTimer := TimerExpired;
+      FRepeatTimer.Interval := InitRepeatPause;
+      FRepeatTimer.Enabled  := True;
+   end;
 end;
 
-procedure TTimerSpeedButton.MouseUp(Button: TMouseButton; Shift: TShiftState;
-                                  X, Y: Integer);
+procedure TTimerSpeedButton.MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
-  inherited MouseUp (Button, Shift, X, Y);
-  if FRepeatTimer <> nil then
-    FRepeatTimer.Enabled  := False;
+   inherited MouseUp (Button, Shift, X, Y);
+   if FRepeatTimer <> nil then FRepeatTimer.Enabled := False;
 end;
 
 procedure TTimerSpeedButton.TimerExpired(Sender: TObject);
 begin
-  FRepeatTimer.Interval := RepeatPause;
-  if (FState = bsDown) and MouseCapture then
-  begin
-    try
-      Click;
-    except
-      FRepeatTimer.Enabled := False;
-      raise;
-    end;
-  end;
+   FRepeatTimer.Interval := RepeatPause;
+   if (FState = bsDown) and MouseCapture then begin
+      try
+         Click;
+      except
+         FRepeatTimer.Enabled := False;
+         raise;
+      end;
+   end;
 end;
 
 procedure TTimerSpeedButton.Paint;
 var
-  R: TRect;
+   R: TRect;
 begin
-  inherited Paint;
-  if tbFocusRect in FTimeBtnState then
-  begin
-    R := Bounds(0, 0, Width, Height);
-    _InflateRect(R, -3, -3);
-    if FState = bsDown then _OffsetRect(R, 1, 1);
-    DrawFocusRect(Canvas.Handle, R);
-  end;
+   inherited Paint;
+   if tbFocusRect in FTimeBtnState then begin
+      R := Bounds(0, 0, Width, Height);
+     _InflateRect(R, -3, -3);
+      if FState = bsDown then _OffsetRect(R, 1, 1);
+      DrawFocusRect(Canvas.Handle, R);
+   end;
 end;
 
 procedure TLogger.WMEraseBkGnd(var Message: TWMEraseBkGnd);
 begin
-  if (fEraseBkGnd) and (not(csDesigning in ComponentState)) then
-  begin
-    if Assigned(fOnEraseBkGnd) then fOnEraseBkGnd(self);
-    Message.Result := 1;
-  end else inherited;
+   if (fEraseBkGnd) and (not(csDesigning in ComponentState)) then begin
+      if Assigned(fOnEraseBkGnd) then fOnEraseBkGnd(self);
+      Message.Result := 1;
+   end else inherited;
 end;
 
 constructor TLogger.Create(AOwner: TComponent);
 begin
-  inherited Create(AOwner);
-  ControlStyle := ControlStyle + [csOpaque];
-  TabStop := True;
-  b := TBitmap.Create;
-  FColor := clBtnFace;
-  Font.Height := 8;
+   inherited Create(AOwner);
+   ControlStyle := ControlStyle + [csOpaque];
+   TabStop := True;
+   b := TBitmap.Create;
+   FColor := clBtnFace;
+   Font.Height := 8;
 end;
 
 destructor TLogger.Destroy;
 begin
-  inherited Destroy;
-  FreeObject(b);
+   inherited Destroy;
+   FreeObject(b);
 end;
 
 procedure TLogger.KeyDown(var Key: Word; Shift: TShiftState);
@@ -2123,7 +2077,7 @@ end;
 
 procedure TLogger.WMGetDlgCode(var Msg: TWMGetDlgCode);
 begin
-  Msg.Result := DLGC_WANTARROWS;
+   Msg.Result := DLGC_WANTARROWS;
 end;
 
 {procedure TLogger.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
@@ -2141,26 +2095,25 @@ end;}
 
 procedure TLogger.CreateParams(var Params: TCreateParams);
 begin
-  inherited CreateParams(Params);
-  with Params do
-  begin
+   inherited CreateParams(Params);
+   with Params do begin
     ExStyle := ExStyle or WS_EX_CLIENTEDGE;
 //    Style := Style or WS_VSCROLL or WS_HSCROLL;
-  end;
+   end;
 end;
 
 procedure TLogger.WMSetFocus(var M: TMessage);
 begin
-  inherited;
-  AutoScroll := False;
-  Invalidate;
+   inherited;
+   AutoScroll := False;
+   Invalidate;
 end;
 
 procedure TLogger.WMKillFocus(var M: TMessage);
 begin
-  inherited;
-  AutoScroll := True;
-  Invalidate;
+   inherited;
+   AutoScroll := True;
+   Invalidate;
 end;
 
 procedure TLogger.WMVScroll(var M: TWMScroll);
@@ -2180,8 +2133,8 @@ end;
 
 procedure TLogger.SetColor(c: TColor);
 begin
-  FColor := c;
-  FC := true;
+   FColor := c;
+   FC := true;
 end;
 
 procedure TLogger.DoPaint(sil: boolean);
@@ -2205,106 +2158,112 @@ end;
 
 function TLogger.CalcBounds: Boolean;
 begin
-  Result := False;
-  if FCharWidth = 0 then Exit;
-  FCols := (FX + FCharWidth - 1) div FCharWidth;
-  FRows := (FY + FCharHeight - 1) div FCharHeight;
+   Result := False;
+   if FCharWidth = 0 then Exit;
+   FCols := (FX + FCharWidth - 1) div FCharWidth;
+   FRows := (FY + FCharHeight - 1) div FCharHeight;
 end;
 
 procedure TLogger.SetLines(V: TStringColl);
 begin
-  if FLines = V then Exit;
-  FLines := V;
-  if FLines <> nil then
-  begin
-    Text := FLines.LongString;
-    Perform(em_linescroll, 0, FLines.Count);
-  end;
-  AutoScroll := True;
-  JustChanged := True;
-  Invalidate;
+   if FLines = V then Exit;
+   FLines := V;
+   if FLines <> nil then begin
+      Text := FLines.LongString;
+      Perform(em_linescroll, 0, FLines.Count);
+   end;
+   AutoScroll := True;
+   JustChanged := True;
+   Invalidate;
 end;
 
 procedure TNavyGauge.CreateParams(var Params: TCreateParams);
 begin
-  inherited CreateParams(Params);
-  with Params do
-  begin
-    ExStyle := ExStyle or WS_EX_CLIENTEDGE;
-  end;
+   inherited CreateParams(Params);
+   with Params do begin
+      ExStyle := ExStyle or WS_EX_CLIENTEDGE;
+   end;
 end;
 
 var
-  GaugeCache, GaugeA, GaugeB, Digits: TBitmap;
+   GaugeCache,
+   GaugeA,
+   GaugeB,
+   Digits: TBitmap;
 
 procedure LoadGauge;
 begin
-  if GaugeA <> nil then Exit;
-  GaugeA := TBitmap.Create;
-  GaugeB := TBitmap.Create;
-  Digits := TBitmap.Create;
+   if GaugeA <> nil then Exit;
+   GaugeA := TBitmap.Create;
+   GaugeB := TBitmap.Create;
+   Digits := TBitmap.Create;
 //  GaugeCache := TBitmap.Create;
-  GaugeA.LoadFromResourceName(HInstance, 'GAUGE_A');
-  GaugeB.LoadFromResourceName(HInstance, 'GAUGE_B');
-  Digits.LoadFromResourceName(HInstance, 'DIGITS');
+   GaugeA.LoadFromResourceName(HInstance, 'GAUGE_A');
+   GaugeB.LoadFromResourceName(HInstance, 'GAUGE_B');
+   Digits.LoadFromResourceName(HInstance, 'DIGITS');
 end;
 
 function MagicString(j: DWORD): string;
 begin
-  case j of
-    0..999:
+   case j of
+   0..999:
       Result := IntToStr(j)             + '<';
-    1000..999999:
+   1000..999999:
       Result := IntToStr(j div    1000) + ';';
-    1000000..High(j):
+   1000000..High(j):
       Result := IntToStr(j div 1000000) + ':';
-  end;
-  while Length(Result) < 4 do Result := '<' + Result;
+   end;
+   while Length(Result) < 4 do Result := '<' + Result;
 end;
 
 function MagicFormula(j: DWORD): DWORD;
 begin
-  Result := Round(Ln(j / 10 + 1) * 6);
+   Result := Round(Ln(j / 10 + 1) * 6);
 end;
 
 procedure TNavyGauge.DoPaint;
 const
-  yo = 6;
-  cLevelHeight = 3;
-  wd = 8;
-  ds = 6;
-  nd = 4;
+   yo = 6;
+   cLevelHeight = 3;
+   wd = 8;
+   ds = 6;
+   nd = 4;
 
 var
-  cNumLevels: DWORD;
-  i, de, dh, xp, xo, l, v, bw: DWORD;
-  s: string;
+   cNumLevels: DWORD;
+   i,
+  de,
+  dh,
+  xp,
+  xo,
+   l,
+   v,
+  bw: DWORD;
+   s: string;
 
 procedure PutDigit(DigitIdx, Pos: DWORD);
 begin
-  if DigitIdx = 12 then Exit;
-  BitBlt(GaugeCache.Canvas.Handle, xp + Pos * wd, de + l + ds, wd, dh, Digits.Canvas.Handle, DigitIdx * wd, 0, SRCCOPY);
+   if DigitIdx = 12 then Exit;
+   BitBlt(GaugeCache.Canvas.Handle, xp + Pos * wd, de + l + ds, wd, dh, Digits.Canvas.Handle, DigitIdx * wd, 0, SRCCOPY);
 end;
 
 begin
-  dh := Digits.Height;
-  cNumLevels := (PrevCH - yo - dh - ds - 4) div 3;
-  v := cNumLevels - MinD(MagicFormula(Value) div 6, cNumLevels);
-  bw := GaugeA.Width;
-  xo := (PrevCW - bw) div 2;
-  xp := (PrevCW - wd * nd) div 2;
-  Windows.FillRect(GaugeCache.Canvas.Handle, Rect(0, 0, PrevCW, PrevCH), COLOR_3DDKSHADOW + 1);
-  BitBlt(GaugeCache.Canvas.Handle, xo, yo, bw, v * cLevelHeight, GaugeA.Canvas.Handle, 0, 0, SRCCOPY);
-  l := (cNumLevels - v) * cLevelHeight;
-  de := yo + v * cLevelHeight;
-  if l > 0 then
-  BitBlt(GaugeCache.Canvas.Handle, xo, de, bw, l, GaugeB.Canvas.Handle, 0, 0, SRCCOPY);
-  s := MagicString(Value div TCPIP_Round);
-  for i := Length(s) downto 1 do
-  begin
-    PutDigit(Ord(s[i]) - Ord('0'), i - 1);
-  end;
-  BitBlt(Canvas.Handle, 0, 0, PrevCW, PrevCH, GaugeCache.Canvas.Handle, 0, 0, SRCCOPY);
+   dh := Digits.Height;
+   cNumLevels := (PrevCH - yo - dh - ds - 4) div 3;
+   v := cNumLevels - MinD(MagicFormula(Value) div 6, cNumLevels);
+   bw := GaugeA.Width;
+   xo := (PrevCW - bw) div 2;
+   xp := (PrevCW - wd * nd) div 2;
+   Windows.FillRect(GaugeCache.Canvas.Handle, Rect(0, 0, PrevCW, PrevCH), COLOR_3DDKSHADOW + 1);
+   BitBlt(GaugeCache.Canvas.Handle, xo, yo, bw, v * cLevelHeight, GaugeA.Canvas.Handle, 0, 0, SRCCOPY);
+   l := (cNumLevels - v) * cLevelHeight;
+   de := yo + v * cLevelHeight;
+   if l > 0 then BitBlt(GaugeCache.Canvas.Handle, xo, de, bw, l, GaugeB.Canvas.Handle, 0, 0, SRCCOPY);
+   s := MagicString(Value div TCPIP_Round);
+   for i := Length(s) downto 1 do begin
+      PutDigit(Ord(s[i]) - Ord('0'), i - 1);
+   end;
+   BitBlt(Canvas.Handle, 0, 0, PrevCW, PrevCH, GaugeCache.Canvas.Handle, 0, 0, SRCCOPY);
 end;
 
 {procedure TNavyGauge.InvSize;
@@ -2324,145 +2283,143 @@ end;}
 
 procedure SetCacheSize(const R: TRect; var PrevCW, PrevCH: DWORD);
 begin
-  if GaugeCache = nil then GaugeCache := TBitmap.Create;
-  PrevCW := R.Right;
-  PrevCH := R.Bottom;
-  if GaugeCache.Width < Integer(PrevCW) then GaugeCache.Width := Integer(PrevCW);
-  if GaugeCache.Height < Integer(PrevCH) then GaugeCache.Height := Integer(PrevCH);
+   if GaugeCache = nil then GaugeCache := TBitmap.Create;
+   PrevCW := R.Right;
+   PrevCH := R.Bottom;
+   if GaugeCache.Width < Integer(PrevCW) then GaugeCache.Width := Integer(PrevCW);
+   if GaugeCache.Height < Integer(PrevCH) then GaugeCache.Height := Integer(PrevCH);
 end;
 
 procedure TNavyGauge.Paint;
 begin
-  if csDesigning in ComponentState then Exit;
-  LoadGauge;
-  SetCacheSize(GetClientRect, PrevCW, PrevCH);
-  DoPaint;
+   if csDesigning in ComponentState then Exit;
+   LoadGauge;
+   SetCacheSize(GetClientRect, PrevCW, PrevCH);
+   DoPaint;
 end;
 
 constructor TNavyGauge.Create(AOwner: TComponent);
 begin
-  inherited Create(AOwner);
-  ControlStyle := ControlStyle + [csOpaque];
+   inherited Create(AOwner);
+   ControlStyle := ControlStyle + [csOpaque];
 end;
 
 procedure TNavyGraph.WMEraseBkGnd(var Message: TWMEraseBkGnd);
 begin
-  if fEraseBkGnd and not (csDesigning in ComponentState) then
-  begin
-    if Assigned(fOnEraseBkGnd) then fOnEraseBkGnd(self);
-    Message.Result := 1;
-  end else inherited;
+   if fEraseBkGnd and not (csDesigning in ComponentState) then begin
+      if Assigned(fOnEraseBkGnd) then fOnEraseBkGnd(self);
+      Message.Result := 1;
+   end else inherited;
 end;
 
 destructor TNavyGraph.Destroy;
 begin
-  inherited Destroy;
+   inherited Destroy;
 end;
 
 procedure TNavyGraph.CreateParams(var Params: TCreateParams);
 begin
-  inherited CreateParams(Params);
-  with Params do
-  begin
-    ExStyle := ExStyle or WS_EX_CLIENTEDGE;
-  end;
+   inherited CreateParams(Params);
+   with Params do begin
+      ExStyle := ExStyle or WS_EX_CLIENTEDGE;
+   end;
 end;
 
 procedure TNavyGraph.Paint;
 begin
-  if csDesigning in ComponentState then Exit;
-  LoadGauge;
-  SetCacheSize(GetClientRect, PrevCW, PrevCH);
-  DoPaint;
+   if csDesigning in ComponentState then Exit;
+   LoadGauge;
+   SetCacheSize(GetClientRect, PrevCW, PrevCH);
+   DoPaint;
 end;
 
 type
-  TPointArray = array[0..(MaxInt) div SizeOf(TPoint) div 2] of TPoint;
-  PPointArray = ^TPointArray;
+   TPointArray = array[0..(MaxInt) div SizeOf(TPoint) div 2] of TPoint;
+   PPointArray = ^TPointArray;
 
 var
-  ngPoints: PPointArray;
-  ngPointsNum: Integer;
-  ngSizes: PIntArray;
-  ngSizesNum: Integer;
-  ngCurPoints, ngPointsIdx, ngSizesIdx: Integer;
+   ngPoints: PPointArray;
+   ngPointsNum: Integer;
+   ngSizes: PIntArray;
+   ngSizesNum: Integer;
+   ngCurPoints,
+   ngPointsIdx,
+   ngSizesIdx: Integer;
 
 procedure AddPoint(P: TPoint);
 const
-  IncStep = 32;
+   IncStep = 32;
 begin
-  if ngPointsNum = ngPointsIdx then
-  begin
-    Inc(ngPointsNum, IncStep);
-    ReallocMem(ngPoints, ngPointsNum*SizeOf(TPoint));
-  end;
-  ngPoints^[ngPointsIdx] := P;
-  Inc(ngPointsIdx);
-  Inc(ngCurPoints);
+   if ngPointsNum = ngPointsIdx then begin
+      Inc(ngPointsNum, IncStep);
+      ReallocMem(ngPoints, ngPointsNum*SizeOf(TPoint));
+   end;
+   ngPoints^[ngPointsIdx] := P;
+   Inc(ngPointsIdx);
+   Inc(ngCurPoints);
 end;
 
 procedure EndPoly;
 const
-  IncStep = 32;
+   IncStep = 32;
 begin
-  if ngSizesNum = ngSizesIdx then
-  begin
-    Inc(ngSizesNum, IncStep);
-    ReallocMem(ngSizes, ngSizesNum*SizeOf(Integer));
-  end;
-  ngSizes^[ngSizesIdx] := ngCurPoints; ngCurPoints := 0;
-  Inc(ngSizesIdx);
+   if ngSizesNum = ngSizesIdx then begin
+      Inc(ngSizesNum, IncStep);
+      ReallocMem(ngSizes, ngSizesNum*SizeOf(Integer));
+   end;
+   ngSizes^[ngSizesIdx] := ngCurPoints; ngCurPoints := 0;
+   Inc(ngSizesIdx);
 end;
 
 procedure EndPolies(HDC: DWORD);
 begin
-  PolyPolyLine(HDC, ngPoints^, ngSizes^, ngSizesIdx);
-  ngPointsIdx := 0;
-  ngSizesIdx := 0;
+   PolyPolyLine(HDC, ngPoints^, ngSizes^, ngSizesIdx);
+   ngPointsIdx := 0;
+   ngSizesIdx := 0;
 end;
 
 procedure TNavyGraph.DoPaint;
 const
-  gcell = 12;
+   gcell = 12;
 var
-  k: DWORD;
-  i, j: Integer;
+   k: DWORD;
+   i,
+   j: Integer;
 begin
-  Windows.FillRect(GaugeCache.Canvas.Handle, Rect(0, 0, PrevCW, PrevCH), COLOR_3DDKSHADOW+1);
-  GaugeCache.Canvas.Pen.Color := clGreen;
+   Windows.FillRect(GaugeCache.Canvas.Handle, Rect(0, 0, PrevCW, PrevCH), COLOR_3DDKSHADOW+1);
+   GaugeCache.Canvas.Pen.Color := clGreen;
 // vertical lines
-  i := (gcell - 1) - (GridStep mod gcell);
-  while i < Integer(PrevCW) do begin AddPoint(Point(i, 0)); AddPoint(Point(i, PrevCH)); EndPoly; Inc(i, gcell);  end;
+   i := (gcell - 1) - (GridStep mod gcell);
+   while i < Integer(PrevCW) do begin AddPoint(Point(i, 0)); AddPoint(Point(i, PrevCH)); EndPoly; Inc(i, gcell);  end;
 // horizontal lines
-  i := PrevCH;
-  while i > 0 do begin Dec(i, gcell); AddPoint(Point(0, i)); AddPoint(Point(PrevCW, i)); EndPoly end;
-  EndPolies(GaugeCache.Canvas.Handle);
-  GaugeCache.Canvas.Pen.Color := $00FF00;
-  k := TCPIP_GrDataSz - PrevCW;
-  if PrevCW > 0 then
-  for i := 0 to PrevCW-1 do
-  begin
-    j := Data[k]; Inc(k);
-    if j= -1 then Continue;
-    AddPoint(Point(i, PrevCH-2-MinD(MagicFormula(j),PrevCH-3)));
-  end;
-  EndPoly;
-  EndPolies(GaugeCache.Canvas.Handle);
-  BitBlt(Canvas.Handle, 0, 0, PrevCW, PrevCH, GaugeCache.Canvas.Handle, 0, 0, SRCCOPY);
+   i := PrevCH;
+   while i > 0 do begin Dec(i, gcell); AddPoint(Point(0, i)); AddPoint(Point(PrevCW, i)); EndPoly end;
+   EndPolies(GaugeCache.Canvas.Handle);
+   GaugeCache.Canvas.Pen.Color := $00FF00;
+   k := TCPIP_GrDataSz - PrevCW;
+   if PrevCW > 0 then
+   for i := 0 to PrevCW - 1 do begin
+      j := Data[k]; Inc(k);
+      if j= -1 then Continue;
+      AddPoint(Point(i, PrevCH-2-MinD(MagicFormula(j),PrevCH-3)));
+   end;
+   EndPoly;
+   EndPolies(GaugeCache.Canvas.Handle);
+   BitBlt(Canvas.Handle, 0, 0, PrevCW, PrevCH, GaugeCache.Canvas.Handle, 0, 0, SRCCOPY);
 end;
 
 constructor TNavyGraph.Create(AOwner: TComponent);
 begin
-  inherited Create(AOwner);
-  ControlStyle := ControlStyle + [csOpaque];
+   inherited Create(AOwner);
+   ControlStyle := ControlStyle + [csOpaque];
 end;
 
 procedure TxOutlin.WMDropFiles(var Msg: TMessage);
 begin
-  DragQueryPoint(Msg.wParam, DropPoint);
-  DroppedFiles := GetAPIDroppedFiles(Msg.wParam);
-  OnApiDropFiles(Self);
-  Msg.Result := 0;
+   DragQueryPoint(Msg.wParam, DropPoint);
+   DroppedFiles := GetAPIDroppedFiles(Msg.wParam);
+   OnApiDropFiles(Self);
+   Msg.Result := 0;
 end;
 
 constructor TLogContainer.Create;
@@ -2486,47 +2443,45 @@ var
    c: char;
 begin
    case t of
-      ltGlobalErr: c := '!';
-      ltWarning: c := '*';
-      ltInfo: c := ' ';
-      ltConnect: c := '^';
-      ltNoConnect: c := '-';
-      ltEvent: c := 'e';
-      ltEMSI: c := '=';
-      ltEMSI_1: c := ':';
-      ltDial: c := '&';
-      ltRing: c := '#';
-      ltTime: c := '%';
-      ltCost: c := '$';
-      ltFileOK: c := '+';
-      ltFileErr: c := '?';
-      ltPolls:
-         begin
-            c := ' ';
-            S := Format('[%s]', [AName]);
-         end;
-{$IFDEF WS}
-      ltDaemon:
-         begin
-            c := ' ';
-            S := Format('[%s]', [AName]);
-         end;
-{$ENDIF}
-      ltHydraNfo:
-         begin
-            c := '[';
-            S := 'Hyd:';
-         end;
-      ltHydraMsg:
-         begin
-            c := ']';
-            S := 'Mgs:';
-         end;
-      ltDebug:
-         begin
-            c := '@';
-            S := 'Dbg:';
-         end;
+   ltGlobalErr: c := '!';
+   ltWarning: c := '*';
+   ltInfo: c := ' ';
+   ltConnect: c := '^';
+   ltNoConnect: c := '-';
+   ltEvent: c := 'e';
+   ltEMSI: c := '=';
+   ltEMSI_1: c := ':';
+   ltDial: c := '&';
+   ltRing: c := '#';
+   ltTime: c := '%';
+   ltCost: c := '$';
+   ltFileOK: c := '+';
+   ltFileErr: c := '?';
+   ltPolls:
+      begin
+         c := ' ';
+         S := Format('[%s]', [AName]);
+      end;
+   ltDaemon:
+      begin
+         c := ' ';
+         S := Format('[%s]', [AName]);
+      end;
+   ltHydraNfo:
+      begin
+         c := '[';
+         S := 'Hyd:';
+      end;
+   ltHydraMsg:
+      begin
+         c := ']';
+         S := 'Mgs:';
+      end;
+   ltDebug:
+      begin
+         c := '@';
+         S := 'Dbg:';
+      end;
    else
       c := '_';
    end;
@@ -2579,23 +2534,23 @@ end;
 
 procedure DoneMClasses;
 begin
-  ReallocMem(ngSizes, 0);
-  ReallocMem(ngPoints, 0);
-  FreeObject(LampsBitmap);
-  FreeObject(WorkBmp);
-  FreeObject(BmpChr[0]);
-  FreeObject(BmpChr[1]);
-  FreeObject(BmpChr[2]);
-  FreeObject(BmpChr[3]);
-  FreeObject(GaugeA);
-  FreeObject(GaugeB);
-  FreeObject(Digits);
-  FreeObject(GaugeCache);
+   ReallocMem(ngSizes, 0);
+   ReallocMem(ngPoints, 0);
+   FreeObject(LampsBitmap);
+   FreeObject(WorkBmp);
+   FreeObject(BmpChr[0]);
+   FreeObject(BmpChr[1]);
+   FreeObject(BmpChr[2]);
+   FreeObject(BmpChr[3]);
+   FreeObject(GaugeA);
+   FreeObject(GaugeB);
+   FreeObject(Digits);
+   FreeObject(GaugeCache);
 end;
 
 initialization
-  MaxHistorySize := 30;
-  HistoryColl := nil;
-  InitSysType;
+   MaxHistorySize := 30;
+   HistoryColl := nil;
+   InitSysType;
 end.
 

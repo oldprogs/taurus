@@ -42,7 +42,7 @@ object MailerForm: TMailerForm
       525)
     object lTime0: TLabel
       Left = 508
-      Top = 3
+      Top = 5
       Width = 90
       Height = 16
       Alignment = taRightJustify
@@ -52,7 +52,7 @@ object MailerForm: TMailerForm
     end
     object lTime1: TLabel
       Left = 617
-      Top = 3
+      Top = 5
       Width = 108
       Height = 16
       Alignment = taRightJustify
@@ -524,110 +524,6 @@ object MailerForm: TMailerForm
             Font.Style = []
             ParentFont = False
             Layout = tlCenter
-          end
-        end
-        object OutMgrBtnPanel: TTransPan
-          Left = 0
-          Top = 0
-          Width = 722
-          Height = 40
-          Align = alClient
-          BevelOuter = bvNone
-          ParentBackground = False
-          TabOrder = 3
-          Visible = False
-          object bReread: TSpeedButton
-            Left = 9
-            Top = 4
-            Width = 32
-            Height = 32
-            Hint = 'Rescan'
-            Enabled = False
-            Flat = True
-            Glyph.Data = {
-              DE010000424DDE01000000000000760000002800000024000000120000000100
-              0400000000006801000000000000000000001000000010000000000000000000
-              80000080000000808000800000008000800080800000C0C0C000808080000000
-              FF0000FF000000FFFF00FF000000FF00FF00FFFF0000FFFFFF00333333444444
-              33333333333F8888883F33330000324334222222443333388F3833333388F333
-              000032244222222222433338F8833FFFFF338F3300003222222AAAAA22243338
-              F333F88888F338F30000322222A33333A2224338F33F8333338F338F00003222
-              223333333A224338F33833333338F38F00003222222333333A444338FFFF8F33
-              3338888300003AAAAAAA33333333333888888833333333330000333333333333
-              333333333333333333FFFFFF000033333333333344444433FFFF333333888888
-              00003A444333333A22222438888F333338F3333800003A2243333333A2222438
-              F38F333333833338000033A224333334422224338338FFFFF8833338000033A2
-              22444442222224338F3388888333FF380000333A2222222222AA243338FF3333
-              33FF88F800003333AA222222AA33A3333388FFFFFF8833830000333333AAAAAA
-              3333333333338888883333330000333333333333333333333333333333333333
-              0000}
-            NumGlyphs = 2
-            ParentShowHint = False
-            ShowHint = True
-            OnClick = bRereadClick
-          end
-          object llTotalAtInbound: TLabel
-            Left = 105
-            Top = 2
-            Width = 96
-            Height = 16
-            Alignment = taRightJustify
-            Caption = 'Total at inbound:'
-          end
-          object llAvaibleAtInbound: TLabel
-            Left = 92
-            Top = 21
-            Width = 109
-            Height = 16
-            Alignment = taRightJustify
-            Caption = 'Avaible at inbound:'
-          end
-          object lTotalAtInbound: TLabel
-            Left = 204
-            Top = 2
-            Width = 30
-            Height = 16
-            Caption = '0 Mb'
-            Font.Charset = DEFAULT_CHARSET
-            Font.Color = clWindowText
-            Font.Height = -13
-            Font.Name = 'Arial'
-            Font.Style = [fsBold]
-            ParentFont = False
-          end
-          object lAvaibleAtInbound: TLabel
-            Left = 204
-            Top = 21
-            Width = 30
-            Height = 16
-            Caption = '0 Mb'
-            Font.Charset = DEFAULT_CHARSET
-            Font.Color = clWindowText
-            Font.Height = -13
-            Font.Name = 'Arial'
-            Font.Style = [fsBold]
-            ParentFont = False
-          end
-          object lOutboundSize: TLabel
-            Left = 411
-            Top = 2
-            Width = 30
-            Height = 16
-            Caption = '0 Mb'
-            Font.Charset = DEFAULT_CHARSET
-            Font.Color = clWindowText
-            Font.Height = -13
-            Font.Name = 'Arial'
-            Font.Style = [fsBold]
-            ParentFont = False
-          end
-          object llOutboundSize: TLabel
-            Left = 319
-            Top = 2
-            Width = 88
-            Height = 16
-            Alignment = taRightJustify
-            Caption = 'Outbound size:'
           end
         end
         object DaemonBtnPanel: TTransPan
@@ -1102,6 +998,148 @@ object MailerForm: TMailerForm
             end
           end
         end
+        object OutMgrBtnPanel: TTransPan
+          Left = 0
+          Top = 0
+          Width = 722
+          Height = 40
+          Align = alClient
+          BevelOuter = bvNone
+          BorderWidth = 3
+          ParentBackground = False
+          TabOrder = 3
+          Visible = False
+          object Clock2: TJvxClock
+            Left = 625
+            Top = 3
+            Width = 94
+            Height = 34
+            Align = alRight
+            Font.Charset = DEFAULT_CHARSET
+            Font.Color = clWindowText
+            Font.Height = -14
+            Font.Name = 'Arial'
+            Font.Style = []
+            ParentFont = False
+          end
+          object pobCenter: TTransPan
+            Left = 81
+            Top = 3
+            Width = 420
+            Height = 34
+            Align = alLeft
+            BevelOuter = bvNone
+            Constraints.MaxWidth = 420
+            Constraints.MinWidth = 420
+            TabOrder = 1
+            object llAvaibleAtInbound: TLabel
+              Left = 0
+              Top = 0
+              Width = 151
+              Height = 34
+              Align = alLeft
+              Alignment = taRightJustify
+              Caption = '     Available at inbound:   '
+              Layout = tlCenter
+            end
+            object lOutboundSize: TLabel
+              Left = 370
+              Top = 0
+              Width = 30
+              Height = 34
+              Align = alRight
+              Caption = '0 Mb'
+              Font.Charset = DEFAULT_CHARSET
+              Font.Color = clWindowText
+              Font.Height = -13
+              Font.Name = 'Arial'
+              Font.Style = [fsBold, fsUnderline]
+              ParentFont = False
+              Layout = tlCenter
+            end
+            object llOutboundSize: TLabel
+              Left = 270
+              Top = 0
+              Width = 100
+              Height = 34
+              Align = alRight
+              Alignment = taRightJustify
+              Caption = 'Outbound size:   '
+              Layout = tlCenter
+            end
+            object lAvaibleAtInbound: TLabel
+              Left = 151
+              Top = 0
+              Width = 30
+              Height = 34
+              Align = alLeft
+              Caption = '0 Mb'
+              Font.Charset = DEFAULT_CHARSET
+              Font.Color = clWindowText
+              Font.Height = -13
+              Font.Name = 'Arial'
+              Font.Style = [fsBold, fsUnderline]
+              ParentFont = False
+              Layout = tlCenter
+            end
+            object Label1: TLabel
+              Left = 400
+              Top = 0
+              Width = 20
+              Height = 34
+              Align = alRight
+              Caption = '     '
+            end
+          end
+          object pobLeft: TTransPan
+            Left = 3
+            Top = 3
+            Width = 78
+            Height = 34
+            Align = alLeft
+            BevelOuter = bvNone
+            TabOrder = 2
+            object bReread: TSpeedButton
+              Left = 21
+              Top = 0
+              Width = 32
+              Height = 32
+              Hint = 'Rescan'
+              Enabled = False
+              Flat = True
+              Glyph.Data = {
+                DE010000424DDE01000000000000760000002800000024000000120000000100
+                0400000000006801000000000000000000001000000010000000000000000000
+                80000080000000808000800000008000800080800000C0C0C000808080000000
+                FF0000FF000000FFFF00FF000000FF00FF00FFFF0000FFFFFF00333333444444
+                33333333333F8888883F33330000324334222222443333388F3833333388F333
+                000032244222222222433338F8833FFFFF338F3300003222222AAAAA22243338
+                F333F88888F338F30000322222A33333A2224338F33F8333338F338F00003222
+                223333333A224338F33833333338F38F00003222222333333A444338FFFF8F33
+                3338888300003AAAAAAA33333333333888888833333333330000333333333333
+                333333333333333333FFFFFF000033333333333344444433FFFF333333888888
+                00003A444333333A22222438888F333338F3333800003A2243333333A2222438
+                F38F333333833338000033A224333334422224338338FFFFF8833338000033A2
+                22444442222224338F3388888333FF380000333A2222222222AA243338FF3333
+                33FF88F800003333AA222222AA33A3333388FFFFFF8833830000333333AAAAAA
+                3333333333338888883333330000333333333333333333333333333333333333
+                0000}
+              NumGlyphs = 2
+              ParentShowHint = False
+              ShowHint = True
+              OnClick = bRereadClick
+            end
+          end
+          object pobRight: TTransPan
+            Left = 501
+            Top = 3
+            Width = 124
+            Height = 34
+            Align = alClient
+            BevelOuter = bvNone
+            TabOrder = 3
+          end
+        end
       end
       object TopNotebookPanel: TTransPan
         Left = 0
@@ -1318,12 +1356,12 @@ object MailerForm: TMailerForm
                   item
                     Alignment = taRightJustify
                     Caption = 'Start'
-                    Width = 60
+                    Width = 80
                   end
                   item
                     Alignment = taRightJustify
                     Caption = 'End'
-                    Width = 60
+                    Width = 80
                   end>
                 Font.Charset = DEFAULT_CHARSET
                 Font.Color = clWindowText
@@ -2184,150 +2222,6 @@ object MailerForm: TMailerForm
           end
         end
       end
-      object SystemPanel: TTransPan
-        Left = 0
-        Top = 0
-        Width = 721
-        Height = 425
-        UseDockManager = False
-        FullRepaint = False
-        ParentBackground = True
-        TabOrder = 4
-        Visible = False
-        object Panel4: TTransPan
-          Left = 1
-          Top = 1
-          Width = 719
-          Height = 230
-          Align = alTop
-          BevelOuter = bvNone
-          BorderWidth = 10
-          FullRepaint = False
-          ParentBackground = False
-          TabOrder = 0
-          object GroupBox2: TGroupBox
-            Left = 10
-            Top = 10
-            Width = 699
-            Height = 210
-            Align = alClient
-            Caption = ' badwazoo.lst '
-            ParentBackground = False
-            TabOrder = 0
-            object Panel11: TTransPan
-              Left = 2
-              Top = 18
-              Width = 695
-              Height = 190
-              Align = alClient
-              BevelOuter = bvNone
-              BorderWidth = 4
-              FullRepaint = False
-              ParentBackground = False
-              TabOrder = 0
-              object bwListView: TListView
-                Left = 4
-                Top = 4
-                Width = 687
-                Height = 182
-                Align = alClient
-                Columns = <
-                  item
-                    AutoSize = True
-                    Caption = 'Filename'
-                    MinWidth = 70
-                  end
-                  item
-                    Caption = 'Temp Size'
-                    MinWidth = 50
-                    Width = 86
-                  end
-                  item
-                    Caption = 'Full Size'
-                    MinWidth = 50
-                    Width = 86
-                  end
-                  item
-                    Caption = 'From Node'
-                    MinWidth = 50
-                    Width = 86
-                  end
-                  item
-                    Caption = 'FileTime'
-                    MinWidth = 50
-                    Width = 120
-                  end>
-                ColumnClick = False
-                GridLines = True
-                ReadOnly = True
-                RowSelect = True
-                PopupMenu = pBWZ
-                TabOrder = 0
-                ViewStyle = vsReport
-                OnClick = bwListBoxClick
-              end
-            end
-          end
-        end
-        object TransPan3: TTransPan
-          Left = 1
-          Top = 231
-          Width = 719
-          Height = 193
-          Align = alClient
-          BevelOuter = bvNone
-          BorderWidth = 10
-          TabOrder = 1
-          object GroupBox1: TGroupBox
-            Left = 10
-            Top = 10
-            Width = 699
-            Height = 173
-            Align = alClient
-            Caption = 'Opened Lines'
-            TabOrder = 0
-            object stPanel: TTransPan
-              Left = 2
-              Top = 18
-              Width = 695
-              Height = 153
-              Align = alClient
-              BevelOuter = bvNone
-              BorderWidth = 3
-              TabOrder = 0
-              object stListView: TListView
-                Left = 3
-                Top = 3
-                Width = 689
-                Height = 147
-                Align = alClient
-                Columns = <
-                  item
-                    Caption = 'Line'
-                    Width = 250
-                  end
-                  item
-                    AutoSize = True
-                    Caption = 'State'
-                  end
-                  item
-                    Alignment = taCenter
-                    Caption = 'Timer'
-                    Width = 100
-                  end>
-                ColumnClick = False
-                GridLines = True
-                ReadOnly = True
-                RowSelect = True
-                ParentShowHint = False
-                ShowHint = True
-                TabOrder = 0
-                ViewStyle = vsReport
-              end
-            end
-          end
-        end
-      end
       object OutMgrPanel: TTransPan
         Left = 0
         Top = 0
@@ -2419,6 +2313,152 @@ object MailerForm: TMailerForm
           EraseBackGround = True
           OnApiDropFiles = OutMgrOutlineApiDropFiles
           Data = {1F}
+        end
+      end
+      object SystemPanel: TTransPan
+        Left = 0
+        Top = 0
+        Width = 721
+        Height = 425
+        UseDockManager = False
+        FullRepaint = False
+        ParentBackground = True
+        TabOrder = 4
+        Visible = False
+        object Panel4: TTransPan
+          Left = 1
+          Top = 1
+          Width = 719
+          Height = 230
+          Align = alTop
+          BevelOuter = bvNone
+          BorderWidth = 10
+          FullRepaint = False
+          ParentBackground = False
+          TabOrder = 0
+          object GroupBox2: TGroupBox
+            Left = 10
+            Top = 10
+            Width = 699
+            Height = 210
+            Align = alClient
+            Caption = ' badwazoo.lst '
+            ParentBackground = False
+            TabOrder = 0
+            object Panel11: TTransPan
+              Left = 2
+              Top = 18
+              Width = 695
+              Height = 190
+              Align = alClient
+              BevelOuter = bvNone
+              BorderWidth = 4
+              FullRepaint = False
+              ParentBackground = False
+              TabOrder = 0
+              object bwListView: TListView
+                Left = 4
+                Top = 4
+                Width = 687
+                Height = 182
+                Align = alClient
+                BevelOuter = bvNone
+                Columns = <
+                  item
+                    AutoSize = True
+                    Caption = 'Filename'
+                    MinWidth = 70
+                  end
+                  item
+                    Caption = 'Temp Size'
+                    MinWidth = 50
+                    Width = 86
+                  end
+                  item
+                    Caption = 'Full Size'
+                    MinWidth = 50
+                    Width = 86
+                  end
+                  item
+                    Caption = 'From Node'
+                    MinWidth = 50
+                    Width = 86
+                  end
+                  item
+                    Caption = 'FileTime'
+                    MinWidth = 50
+                    Width = 120
+                  end>
+                ColumnClick = False
+                GridLines = True
+                ReadOnly = True
+                RowSelect = True
+                PopupMenu = pBWZ
+                TabOrder = 0
+                ViewStyle = vsReport
+                OnClick = bwListBoxClick
+              end
+            end
+          end
+        end
+        object TransPan3: TTransPan
+          Left = 1
+          Top = 231
+          Width = 719
+          Height = 193
+          Align = alClient
+          BevelOuter = bvNone
+          BorderWidth = 10
+          TabOrder = 1
+          object GroupBox1: TGroupBox
+            Left = 10
+            Top = 10
+            Width = 699
+            Height = 173
+            Align = alClient
+            Caption = 'Opened Lines'
+            TabOrder = 0
+            object stPanel: TTransPan
+              Left = 2
+              Top = 18
+              Width = 695
+              Height = 153
+              Align = alClient
+              BevelOuter = bvNone
+              BorderWidth = 3
+              TabOrder = 0
+              object stListView: TListView
+                Left = 3
+                Top = 3
+                Width = 689
+                Height = 147
+                Align = alClient
+                BevelOuter = bvSpace
+                Columns = <
+                  item
+                    Caption = 'Line'
+                    Width = 250
+                  end
+                  item
+                    AutoSize = True
+                    Caption = 'State'
+                  end
+                  item
+                    Alignment = taCenter
+                    Caption = 'Timer'
+                    Width = 100
+                  end>
+                ColumnClick = False
+                GridLines = True
+                ReadOnly = True
+                RowSelect = True
+                ParentShowHint = False
+                ShowHint = True
+                TabOrder = 0
+                ViewStyle = vsReport
+              end
+            end
+          end
         end
       end
     end
@@ -2824,21 +2864,10 @@ object MailerForm: TMailerForm
       object N9: TMenuItem
         Caption = '-'
       end
-      object mnuWebSites: TMenuItem
+      object mnuWebSite: TMenuItem
         Caption = 'Web Sites'
         ImageIndex = 45
-        object mhWebSite: TMenuItem
-          Caption = 'Argus &Web Site (on-line)'
-          OnClick = mhWebSiteClick
-        end
-        object mnuRadiusOnWeb: TMenuItem
-          Caption = 'Taurus Web Site'
-          OnClick = mnuRadiusOnWebClick
-        end
-        object mnuArgusClone: TMenuItem
-          Caption = 'All Argus clones'
-          OnClick = mnuArgusCloneClick
-        end
+        OnClick = mnuRadiusOnWebClick
       end
       object N8: TMenuItem
         Caption = '-'
@@ -2852,10 +2881,10 @@ object MailerForm: TMailerForm
       object N29: TMenuItem
         Caption = '-'
       end
-      object Clock1: TMenuItem
+      object mnuClock: TMenuItem
         Caption = 'Clock'
         ShortCut = 49221
-        OnClick = Clock1Click
+        OnClick = mnuClockClick
       end
     end
   end

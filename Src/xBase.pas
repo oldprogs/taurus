@@ -642,7 +642,7 @@ type
     function Matched(const Str: string): Integer;
     function FoundU(const Str: string): Boolean;
     function FoundUC(const Str: string): Boolean;
-    procedure FillEnum(Str: string; Delim: Char; Sorted: Boolean);
+    procedure FillEnum(Str: string; Delim: TCharSet; Sorted: Boolean);
     function LongString: string;
     function LongStringD(c: char): string;
     function LongStringS(const s: string): string;
@@ -1887,158 +1887,158 @@ end;
 
 function ReplaceEx(const Pattern, ReplaceString: string; var S: string; CI: Boolean): Boolean;
 var
-  I, J, LP, LR: Integer;
+   I,
+   J,
+  LP,
+  LR: Integer;
 begin
-  Result := False;
-  J  := 1;
-  LP := Length(Pattern);
-  LR := Length(ReplaceString);
-  repeat
-    if CI then
-    begin
-      I := Pos(Pattern, UpperCase(CopyLeft(S, J)));
-    end else
-    begin
-      I := Pos(Pattern, CopyLeft(S, J));
-    end;
-    if I > 0 then
-    begin
-      Delete(S, J+I-1, LP);
-      Insert(ReplaceString, S, J + I - 1);
-      Result := True;
-    end;
-    Inc(J, I + LR - 1);
-  until I = 0;
+   Result := False;
+   J  := 1;
+   LP := Length(Pattern);
+   LR := Length(ReplaceString);
+   repeat
+      if CI then begin
+         I := Pos(Pattern, UpperCase(CopyLeft(S, J)));
+      end else begin
+         I := Pos(Pattern, CopyLeft(S, J));
+      end;
+      if I > 0 then begin
+         Delete(S, J + I - 1, LP);
+         Insert(ReplaceString, S, J + I - 1);
+         Result := True;
+      end;
+      Inc(J, I + LR - 1);
+   until I = 0;
 end;
 
 function Replace(const Pattern, ReplaceString: string; var S: string): Boolean;
 begin
-  Result := ReplaceEx(Pattern, ReplaceString, S, False);
+   Result := ReplaceEx(Pattern, ReplaceString, S, False);
 end;
 
 function ReplaceCI(const Pattern, ReplaceString: string; var S: string): Boolean;
 begin
-  Result := ReplaceEx(Pattern, ReplaceString, S, True);
+   Result := ReplaceEx(Pattern, ReplaceString, S, True);
 end;
 
 procedure DelDoubles;
 var
-  i: Integer;
+   i: Integer;
 begin
-  repeat
-    i := Pos(ST, Source);
-    if i = 0 then Break;
-    Delete(Source, I, 1);
-  until False;
+   repeat
+      i := Pos(ST, Source);
+      if i = 0 then Break;
+      Delete(Source, I, 1);
+   until False;
 end;
 
 function DelLeft(const S: string): string;
 var
-  I, L: Integer;
+   I,
+   L: Integer;
 begin
-  I := 1;
-  L := Length(S);
-  while I <= L do
-  begin
-    case S[I] of #9, ' ':; else Break end;
-    Inc(I);
-  end;
-  Result := Copy(S, I, L + 1 - I);
+   I := 1;
+   L := Length(S);
+   while I <= L do begin
+      case S[I] of #9, ' ':; else Break end;
+      Inc(I);
+   end;
+   Result := Copy(S, I, L + 1 - I);
 end;
 
 function DelRight(const S: string): string;
 var
-  I: Integer;
+   I: Integer;
 begin
-  I := Length(S);
-  while I>0 do
-  begin
-    case S[I] of #9, ' ':; else Break end;
-    Dec(I);
-  end;
-  Result := Copy(S, 1, I);
+   I := Length(S);
+   while I > 0 do begin
+      case S[I] of #9, ' ':; else Break end;
+      Dec(I);
+   end;
+   Result := Copy(S, 1, I);
 end;
 
 function _DelSpaces(const s: string): string;
 begin
-  Result := DelLeft(DelRight(s));
+   Result := DelLeft(DelRight(s));
 end;
 
 procedure DelFC(var s: string);
 begin
-  Delete(s, 1, 1);
+   Delete(s, 1, 1);
 end;
 
 procedure DelLC(var s: string);
 var
-  l: Integer;
+   l: Integer;
 begin
-  l := Length(s);
-  case l of
-    0 : ;
-    1 : s := '';
-    else SetLength(s, l - 1);
-  end;
+   l := Length(s);
+   case l of
+   0 : ;
+   1 : s := '';
+   else SetLength(s, l - 1);
+   end;
 end;
 
 function Int2Str(L: Integer): string;
-var I: Integer;
+var
+   I: Integer;
 begin
-  Str(L, Result);
-  I := Length(Result) - 2;
-  while I > 1 do
-    begin
+   Str(L, Result);
+   I := Length(Result) - 2;
+   while I > 1 do begin
       { Thousand Separator }
       Insert(',' , Result, I);
       Dec(I, 3);
-    end;
+   end;
 end;
 
 function Int2StrK(L: Integer): string;
 begin
-  case L of
-    0..999 :
+   case L of
+   0..999 :
       begin
-        Result := Int2Str(L) + 'b';
+         Result := Int2Str(L) + 'b';
       end;
-    1000..999999:
+   1000..999999:
       begin
-        Str(L / 1000:0:1, Result);
-        Result := Result + 'K';
+         Str(L / 1000:0:1, Result);
+         Result := Result + 'K';
       end;
-    1000000..999999999:
+   1000000..999999999:
       begin
-        Str(L / 1000000:0:1, Result);
-        Result := Result + 'M';
+         Str(L / 1000000:0:1, Result);
+         Result := Result + 'M';
       end;
-  end;
+   end;
 end;
 
 function FormatMinSec(Sec: Integer): string;
 begin
-  if Sec = -1 then Result := '' else
-  Result := Format('%.2d:%.2d:%.2d', [Sec div 3600, (Sec div 60) mod 60, Sec mod 60]);
+   if Sec = -1 then Result := '' else
+   Result := Format('%.2d:%.2d:%.2d', [Sec div 3600, (Sec div 60) mod 60, Sec mod 60]);
 end;
 
 function ExtractFileRoot(const FileName: string): string;
 begin
-  Result := Copy(FileName, 1, Pos(':', FileName) + 1);
+   Result := Copy(FileName, 1, Pos(':', FileName) + 1);
 end;
 
 function WipeChars;
 var
-  i, j: Integer;
+   i,
+   j: Integer;
 begin
-  Result := ''; j := Length(AStr);
-  for i := 1 to j do if Pos(AStr[I], AWipeChars) = 0 then AddStr(Result, AStr[I]);
+   Result := ''; j := Length(AStr);
+   for i := 1 to j do if Pos(AStr[I], AWipeChars) = 0 then AddStr(Result, AStr[I]);
 end;
 
 procedure FillCharSet(const AStr: string; var CharSet: TCharSet);
 var
-  i: Integer;
+   i: Integer;
 begin
-  CharSet := [];
-  for i := 1 to Length(AStr) do Include(CharSet, AStr[i]);
+   CharSet := [];
+   for i := 1 to Length(AStr) do Include(CharSet, AStr[i]);
 end;
 
 function DigitsOnly(const AStr: string): Boolean;
@@ -4204,12 +4204,22 @@ begin
    for i := MaxI(0, Count - 1) to Count - 1 do Result := Result + Strings[i];
 end;
 
-procedure TStringColl.FillEnum(Str: string; Delim: Char; Sorted: Boolean);
+procedure TStringColl.FillEnum(Str: string; Delim: TCharSet; Sorted: Boolean);
 var
    Z: string;
+   c: Char;
+   i: integer;
+   d: Char;
 begin
    while Str <> '' do begin
-      GetWrd(Str, Z, Delim);
+      d := ' ';
+      for i := 1 to Length(Str) do begin
+         if Str[i] in Delim then begin
+            d := Str[i];
+            break;
+         end;
+      end;
+      GetWrd(Str, Z, d);
       if Sorted then InsD(Z) else Add(Z);
    end;
 end;

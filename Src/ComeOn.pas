@@ -16,10 +16,8 @@ uses
   MlrForm, MlrThr,
   Forms, SysUtils,
   Messages,
-  classes, AltRecs, {$IFDEF NETMAIL} Netmail,{$ENDIF}
-  NdlUtil, MClasses, {$IFDEF RASDIAL} RasThrd, {$ENDIF}
-                     {$IFDEF USE_TAPI} xTAPI, {$ENDIF}
-  xBase, xMisc, Recs, RadIni,
+  classes, AltRecs, Netmail, NdlUtil, MClasses, RasThrd,
+  xTAPI, xBase, xMisc, Recs, RadIni,
 
 {$IFDEF GRAB}
   Controls, Menus, StdCtrls, ExtCtrls, ComCtrls, MdmCmd,
@@ -144,24 +142,21 @@ end;
 
 procedure AnotherArgus;
 begin
-  Stop('Another instance is already running', ProductName);
+//  Stop('Another instance is already running', ProductName);
   Halt;
 end;
 
-procedure TestAnotherArgus(const sss:string);
+procedure TestAnotherArgus(const sss: string);
 var
   H: THandle;
 begin
   SetLastError(0);
   if sss = '' then inipath := MakeFullDir(JustPathname(paramstr(0)), JustFileNameOnly(ParamStr(0)) + '.ini')
   else inipath := sss;
-  {$IFDEF EXTREME}
   IniName := inipath;
-  {$ENDIF}
   with TIniFile.Create(inipath) do begin
      sMutexName := ReadString('system', 'MutexName', 'ARGUS_SEMAPHORE');
      sActivateEventName := ReadString('system', 'ActivateEventName', 'ARGUS_EVENT_ACTIVATE');
-     TNodelistDataFixUp := ReadBool('system', 'TNodelistDataFixUp', false);
      free;
   end;
   hMutex := CreateMutex(nil, False, PCHAR(sMutexName));
@@ -193,18 +188,15 @@ var st,
      i: integer;
 begin
   st := GetParamStr;
-  if paramcount <> 0 then
-  begin
+  if paramcount <> 0 then begin
     st := StrPas(StrPos(StrUpper(PChar(GetParamStr)), '-I'));
   end;
 
   scanandchange(st);
   sa := GetSwitches(st);
   st2 := '';
-  for i := 1 to CountSwitches(st) do
-  begin
-    if copy(sa[i], 1, 3) = '-I:' then
-    begin
+  for i := 1 to CountSwitches(st) do begin
+    if copy(sa[i], 1, 3) = '-I:' then begin
       ExtractSubParam(sa[i], st2);
       break;
     end;
@@ -440,16 +432,17 @@ begin
   CurrentThreadHandle := GetCurrentThread;
 
   st := GetParamStr;
-  if paramcount <> 0 then
-  begin
+  if paramcount <> 0 then begin
     st := StrPas(StrPos(StrUpper(PChar(GetParamStr)), 'DELAY'));
   end;
 
   s := UpperCase(st);
   s := ExtractWord(1, s, [' ']);
+  b := True;
   if Copy(s, 1, 5) = 'DELAY' then begin
+    b := False; 
     delete(s, 1, 5);
-    Sleep(strtointdef(s, 5000));
+    Sleep(strtointdef(s, 9000));
   end;
   st := GetParamStr;
   scanandchange(st);
@@ -460,11 +453,10 @@ begin
   st := GetParamStr;
   scanandchange(st);
   sa := GetSwitches(st);
-  b := false;
   for i := 1 to CountSwitches(st) do begin
     st := StrPas(StrPos(StrUpper(PChar(GetParamStr)), '-I'));
   end;
-  if not b then TestAnotherArgus(proc_i);
+{  if b then} TestAnotherArgus(proc_i);
   DoComeOn;
 end;
 

@@ -49,52 +49,54 @@ end;
 
 procedure TOvrExplainForm.SetData;
 var
-  i: Integer;
-  O: TOvrData;
-  s, z: string;
-  S1, S2, S3, S4, SC: TStringColl;
-  t: TFSC62Time;
+   i: Integer;
+   O: TOvrData;
+   s,
+   z: string;
+  S1,
+  S2,
+  S3,
+  S4,
+  SC: TStringColl;
+   t: TFSC62Time;
 begin
-  S1 := TStringColl.Create('');
-  S2 := TStringColl.Create('');
-  S3 := TStringColl.Create('');
-  S4 := TStringColl.Create('');
-  for i := 0 to CollMax(C) do
-  begin
-    O := C[i];
-    s := O.PhoneDirect;
-    if s = '' then s := Addr2Str(O.PhoneNodelist);
-    S1.Add(s);
-    s := O.Flags;
-    t := NodeFSC62Local(s);
-    if (t = []) then z := '' else
-    begin
-      z := FSC62TimeToStr(t);
-      SC := TStringColl.Create('');
-      SC.FillEnum(s, ',', False);
-      PurgeTimeFlags(SC);
-      s := SC.LongStringD(',');
-      FreeObject(SC);
-    end;
-    S3.Add(z);
-    t := NodeFSC62LocalEx(s,true);
-    if (t = []) then z := '' else
-    begin
-      z := FSC62TimeToStr(t);
-      SC := TStringColl.Create('');
-      SC.FillEnum(s, ',', False);
-      PurgeTimeFlagsEx(SC,true);
-      s := SC.LongStringD(',');
-      FreeObject(SC);
-    end;
-    S2.Add(s);
-    S4.Add(z);
-  end;
-  gOvr.SetData([S1, S2, S3, S4]);
-  FreeObject(S1);
-  FreeObject(S2);
-  FreeObject(S3);
-  FreeObject(S4);
+   S1 := TStringColl.Create('');
+   S2 := TStringColl.Create('');
+   S3 := TStringColl.Create('');
+   S4 := TStringColl.Create('');
+   for i := 0 to CollMax(C) do begin
+      O := C[i];
+      s := O.PhoneDirect;
+      if s = '' then s := Addr2Str(O.PhoneNodelist);
+      S1.Add(s);
+      s := O.Flags;
+      t := NodeFSC62Local(s);
+      if (t = []) then z := '' else begin
+         z := FSC62TimeToStr(t);
+         SC := TStringColl.Create('');
+         SC.FillEnum(s, [','], False);
+         PurgeTimeFlags(SC);
+         s := SC.LongStringD(',');
+         FreeObject(SC);
+      end;
+      S3.Add(z);
+      t := NodeFSC62LocalEx(s,true);
+      if (t = []) then z := '' else begin
+         z := FSC62TimeToStr(t);
+         SC := TStringColl.Create('');
+         SC.FillEnum(s, [','], False);
+         PurgeTimeFlagsEx(SC,true);
+         s := SC.LongStringD(',');
+         FreeObject(SC);
+      end;
+      S2.Add(s);
+      S4.Add(z);
+   end;
+   gOvr.SetData([S1, S2, S3, S4]);
+   FreeObject(S1);
+   FreeObject(S2);
+   FreeObject(S3);
+   FreeObject(S4);
 end;
 
 function TOvrExplainForm.Valid: Boolean;
@@ -113,22 +115,17 @@ begin
   SC3 := TStringColl.Create('');
   SC4 := TStringColl.Create('');
   gOvr.GetData([SC1, SC2, SC3, SC4]);
-  for i := 0 to CollMax(SC1) do
-  begin
+  for i := 0 to CollMax(SC1) do begin
     s1 := SC1[i];
     it := IdentOvrItem(s1, False, False);
-    if Dialup then
-    begin
-      if (it <> oiAddress) and (it <> oiPhoneNum) then
-      begin
+    if Dialup then begin
+      if (it <> oiAddress) and (it <> oiPhoneNum) then begin
         DisplayError(FormatLng(rsOvEdNotPhN, [s1]), Handle);
         err := True;
         Break;
       end;
-    end else
-    begin
-      if (it <> oiAddress) and (it <> oiIpNum) and (it <> oiIpSym) then
-      begin
+    end else begin
+      if (it <> oiAddress) and (it <> oiIpNum) and (it <> oiIpSym) then begin
         DisplayError(FormatLng(rsOvEdNotIP, [s1]), Handle);
         Err := True;
         Break;
@@ -137,15 +134,12 @@ begin
 //    if LC = nil then LC := TColl.Create;
     PosU := -1;
     s2 := Trim(SC2[i]);
-    SC := TStringColl.Create('');
-    if s2 <> '' then
-    begin
-      SC.FillEnum(s2, ',', False);
-      for j := 0 to CollMax(SC) do
-      begin
+    SC := TStringColl.Create;
+    if s2 <> '' then begin
+      SC.FillEnum(s2, [','], False);
+      for j := 0 to CollMax(SC) do begin
         s := SC[j];
-        if Copy(s, 1, 1) = '!' then
-        begin
+        if Copy(s, 1, 1) = '!' then begin
           TS := Copy(s, 1, 3);
           if (TS<>'!01') and (TS<>'!02')
                          and (TS<>'!08')
@@ -153,8 +147,7 @@ begin
                          and (TS<>'!18')
                          and (TS<>'!20') then Delete (s, 1, 1);
          end;
-        if IdentOvrItem(s, False, True) <> oiFlag then
-        begin
+        if IdentOvrItem(s, False, True) <> oiFlag then begin
           DisplayError(FormatLng(rsOvEdNotFlag, [s]), Handle);
           FreeObject(SC);
           Err := True;
@@ -165,11 +158,9 @@ begin
       if err then Break;
     end;
     s2 := Trim(SC3[i]);
-    if s2 <> '' then
-    begin
+    if s2 <> '' then begin
       s := HumanTime2UTxyL(s2, PosU = -1);
-      if s = '' then
-      begin
+      if s = '' then begin
         DisplayError(FormatLng(rsOvEdNotTime, [s2]), Handle);
         FreeObject(SC);
         Err := True;
@@ -180,11 +171,9 @@ begin
     end;
 
     s2 := Trim(SC4[i]);
-    if s2 <> '' then
-    begin
+    if s2 <> '' then begin
       s := HumanTime2UTxyLEx(s2, True, PosU = -1);
-      if s = '' then
-      begin
+      if s = '' then begin
         DisplayError(FormatLng(rsOvEdNotTime, [s2]), Handle);
         FreeObject(SC);
         Err := True;
@@ -198,12 +187,12 @@ begin
     FreeObject(SC);
     O := TOvrData.Create;
     case it of
-      oiAddress: if not ParseAddress(s1, O.PhoneNodelist) then GlobalFail('%s', ['TOvrExplainForm.Valid (A)']);
-      oiPhoneNum, oiIpNum, oiIpSym: O.PhoneDirect := s1;
-      else GlobalFail('%s', ['TOvrExplainForm.Valid (B)'])
+    oiAddress: if not ParseAddress(s1, O.PhoneNodelist) then GlobalFail('%s', ['TOvrExplainForm.Valid (A)']);
+    oiPhoneNum, oiIpNum, oiIpSym: O.PhoneDirect := s1;
+    else GlobalFail('%s', ['TOvrExplainForm.Valid (B)'])
     end;
     O.Flags := s2;
-    if LC = nil then LC := TColl.Create('');
+    if LC = nil then LC := TColl.Create;
     LC.Add(O);
   end;
   if err then FreeObject(LC);

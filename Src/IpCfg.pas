@@ -80,9 +80,9 @@ type
     lNNTPImport: TLabel;
     gNNTP: TAdvGrid;
     xSpinCash: TxSpinEdit;
-    lCash1: TLabel;
+    lCache: TLabel;
     lCash2: TLabel;
-    gbCash: TGroupBox;
+    gbCache: TGroupBox;
     tsBList: TTabSheet;
     gBList: TAdvGrid;
     TM: TTimer;
@@ -93,8 +93,7 @@ type
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure bImportClick(Sender: TObject);
     procedure bHelpClick(Sender: TObject);
-    procedure FormKeyDown(Sender: TObject; var Key: Word;
-      Shift: TShiftState);
+    procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure tbChange(Sender: TObject);
     procedure lAvlClick(Sender: TObject);
     procedure bRightClick(Sender: TObject);
@@ -139,8 +138,9 @@ function SetupIP(APageIndex: Integer): Boolean;
 
 implementation
 
-uses LngTools, xFido, AltRecs, xEvents, OvrExpl, TracePl, Wizard,
-     RadIni, RadSav, WSock;
+uses
+   LngTools, xFido, AltRecs, xEvents, OvrExpl, TracePl, Wizard,
+   RadIni, RadSav, WSock;
 
 {$R *.DFM}
 

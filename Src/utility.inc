@@ -160,7 +160,7 @@ begin
       Delete(s, 1, pos(',', s));
       s := Trim(s);
       SC := TStringColl.Create('');
-      SC.FillEnum(s, ',', False);
+      SC.FillEnum(s, [','], False);
       for sp := 0 to CollMax(SC) do begin
          s := SC[sp];
          Local := True;

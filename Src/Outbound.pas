@@ -1966,18 +1966,24 @@ begin
       n.Files := TOutFileColl.Create;
    end;
    if not n.Files.FoundFName(m.Pack) then begin
-      f := TOutFile.Create;
-      f.fMSG := True;
-      f.fATT := m.Attr and FileAttached > 0;
-      f.Name := m.Pack;
-      f.Nfo.Time := GetFileTime(m.Pack);
-      f.Nfo.Size := GetFileSize(m.Pack);
-      f.FStatus := s;
-      if m.Attr and KillSent > 0 then begin
-         f.KillAction := kaBsoKillAfter;
+      if ExistFile(m.Pack) then begin
+         f := TOutFile.Create;
+         f.fMSG := True;
+         f.fATT := m.Attr and FileAttached > 0;
+         f.Name := m.Pack;
+         f.Nfo.Time := GetFileTime(m.Pack);
+         f.Nfo.Size := GetFileSize(m.Pack);
+         f.FStatus := s;
+         if m.Attr and KillSent > 0 then begin
+            f.KillAction := kaBsoKillAfter;
+         end;
+         n.Files.Add(f);
+         FidoOut.fOutboundSize := FidoOut.fOutboundSize + f.Nfo.Size;
+      end else begin
+         FreeMem(m.Body, m.Size);
+         m.Body := nil;
+         FillChar(m.Addr, 0, SizeOf(m.Addr));
       end;
-      n.Files.Add(f);
-      FidoOut.fOutboundSize := FidoOut.fOutboundSize + f.Nfo.Size;
    end;
    if m.attr and FileAttached > 0 then begin
       k := kaBsoNothingAfter;
@@ -1986,6 +1992,9 @@ begin
       end else
       if pos('TFS', m.Flgs) > 0 then begin
          k := kaBsoTruncateAfter;
+         if pos('.TMP', m.Subj) = Length(m.Subj) - 3 then begin
+            k := kaBsoKillAfter;
+         end;
       end;
       u := m.Subj;
       while u <> '' do begin

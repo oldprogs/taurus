@@ -6404,15 +6404,12 @@ var
   I: Integer;
   Info: TTopMostEnumInfo;
 begin
-  if Application.Handle <> 0 then
-  begin
-    if FTopMostLevel = 0 then
-    begin
+  if Application.Handle <> 0 then begin
+    if FTopMostLevel = 0 then begin
       Info.TopWindow := Handle;
       Info.IncludeMain := IncludeMain;
       EnumWindows(@GetTopMostWindows, Longint(@Info));
-      if FTopMostList.Count <> 0 then
-      begin
+      if FTopMostList.Count <> 0 then begin
         Info.TopWindow := GetWindow(Info.TopWindow, GW_HWNDPREV);
         if GetWindowLong(Info.TopWindow, GWL_EXSTYLE) and WS_EX_TOPMOST <> 0 then
           Info.TopWindow := HWND_NOTOPMOST;
@@ -6705,8 +6702,7 @@ end;
 
 procedure TApplication.Minimize;
 begin
-  if not IsIconic(FHandle) then
-  begin
+  if not IsIconic(FHandle) then begin
     NormalizeTopMosts;
     SetActiveWindow(FHandle);
     if (MainForm <> nil) and (ShowMainForm or MainForm.Visible)

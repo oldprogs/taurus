@@ -781,7 +781,7 @@ begin
   cbAlwaysInTray.Checked := IniFile.AlwaysInTray;
   cbStealth.Checked := IniFile.Stealth;
   hkPopup.HotKey := IniFile.PopupKey;
-  hkPopup.Enabled := cbStealth.Checked;
+//  hkPopup.Enabled := cbStealth.Checked;
   cbBalloon.Checked := IniFile.ShowBalloon;
   cbBalloonMin.Checked := IniFile.ShowBalloonMin;
 //Tray end
@@ -1181,7 +1181,7 @@ end;
 
 procedure TSetupForm.cbStealthClick(Sender: TObject);
 begin
-   hkPopup.Enabled := cbStealth.Checked;
+//   hkPopup.Enabled := cbStealth.Checked;
 end;
 
 procedure TSetupForm.hkPopupChange(Sender: TObject);

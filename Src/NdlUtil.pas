@@ -1457,6 +1457,8 @@ function FindIPAddr(const fn: TFidoNode): string;
 var
    q: TColl;
 begin
+   Result := '';
+   if fn = nil then exit;
    Result := FindBBS(fn.Station);
    if Result = '' then Result := FindPHN(fn.Phone);
    if Result = '' then begin
