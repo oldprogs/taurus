@@ -511,8 +511,10 @@ begin
             NetColl.Add(l);
             fBackup := True;
          end else begin
-            FreeObject(l);
             g.Dele := False;
+            g.bOff := l.bOff;
+            g.Offs := l.Offs;
+            FreeObject(l);
          end;
          Application.ProcessMessages;
       end;
@@ -682,6 +684,7 @@ begin
    NetColl.Enter;
    FreeMem(n.Body, n.Size);
    n.Body := nil;
+   n.MsId := '';
    if ExistFile(n.Pack) then begin
       try
          FidoOut.Lock(n.Lock, osBusy, True);
@@ -705,6 +708,7 @@ begin
       for g := 0 to CollMax(NetColl) do begin
          e := NetColl[g];
          if (e.Pack = n.Pack) and (e <> n) and (e.Offs > n.Offs) then begin
+            e.bOff := e.bOff - sizeof(n.Head) - n.Size + n.Addy;
             e.Offs := e.Offs - sizeof(n.Head) - n.Size + n.Addy;
          end;
       end;

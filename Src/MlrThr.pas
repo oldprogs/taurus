@@ -6899,6 +6899,8 @@ begin
       if (r <> nil) and (r.Orig <> '') and (r.Link = '') then
       begin
          MergeMail(r.Address, r.Name, r.Orig);
+         r.Name := r.Orig;
+         r.Orig := '';
       end;
       if r.Link = 'FTP' then begin
          i := SD.OutFiles.IndexOf(r);
