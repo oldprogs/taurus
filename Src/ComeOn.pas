@@ -365,16 +365,12 @@ begin
   StopWatcher;
   Application.MainForm.Free;
 
-{$IFDEF USE_TAPI}
   FinishTAPI;
-{$ENDIF}
 
   if StoreConfigAfter then StoreConfig(0);
   if AltStoreConfigAfter then AltStoreConfig(0);
 
-{$IFDEF RASDIAL}
   RasThrd.FinishRas;
-{$ENDIF}
 
   FreePlugins;
 
@@ -387,9 +383,7 @@ begin
 
   DoneMailers;
   DoneFidoOut;
-{$IFDEF NETMAIL}
   FreeNetmailHolder;
-{$ENDIF}
   FreeNodeController;
   DoneNdlUtil;
   CloseBWZlog;

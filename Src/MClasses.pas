@@ -244,6 +244,7 @@ Type
         ID: Word;
         constructor Create(AnID: Word);
         procedure AddStr(const S: String);
+        procedure DelStr(const S: String);
         function GetStr(Idx: Integer): String;
         constructor Load(Stream: TxStream); override;
         procedure Store(Stream: TxStream); override;
@@ -632,6 +633,7 @@ var
 function HistoryCount(ID: Word): Integer;
 function HistoryStr(ID, Number: Word): String;
 procedure HistoryAdd(ID: Word; const S: String);
+procedure HistoryDel(ID: Word; const S: String);
 procedure DoneMClasses;
 
 procedure Register;
@@ -878,96 +880,106 @@ end;
 
 constructor THistoryItem.Create;
 begin
-  inherited Create;
-  S := Str;
-  Marked := False;
+   inherited Create;
+   S := Str;
+   Marked := False;
 end;
 
 constructor THistoryID.Create;
 begin
-  inherited Create('THistoryID');
-  ID := AnID;
+   inherited Create('THistoryID');
+   ID := AnID;
 end;
 
 procedure THistoryID.AddStr;
-  var I: Integer;
-      P: THistoryItem;
+var
+   I: Integer;
+   P: THistoryItem;
 begin
-  if S = '' then Exit;
-  I := 0;
-  while I < Count do
-    begin
+   if S = '' then Exit;
+   I := 0;
+   while I < Count do begin
       P := At(I);
-      if (P <> nil) and (P.S <> '') and (P.S = S) then
-        begin
-          MoveTo(I, 0);
-          Exit;
-        end;
+      if (P <> nil) and (P.S <> '') and (P.S = S) then begin
+         MoveTo(I, 0);
+         Exit;
+      end;
       Inc(I);
-    end;
-  I := Count-1;
-  while (I>=0) and (Count >= MaxHistorySize) do
-    begin
+   end;
+   I := Count - 1;
+   while (I >= 0) and (Count >= MaxHistorySize) do begin
       P := At(I);
-      if P.Marked then Dec(I)
-        else begin
-               P.S := S;
-               MoveTo(I, 0);
-               Exit;
-             end;
-    end;
-  AtInsert(0, THistoryItem.Create(S))
+      if P.Marked then Dec(I) else begin
+         P.S := S;
+         MoveTo(I, 0);
+         Exit;
+      end;
+   end;
+   AtInsert(0, THistoryItem.Create(S))
+end;
+
+procedure THistoryID.DelStr;
+var
+   I: Integer;
+   P: THistoryItem;
+begin
+   if S = '' then Exit;
+   I := 0;
+   while I < Count do begin
+      P := At(I);
+      if (P <> nil) and (P.S <> '') and (P.S = S) then begin
+         AtDelete(i);
+         Exit;
+      end;
+      Inc(I);
+   end;
 end;
 
 function THistoryID.GetStr;
-  var P: THistoryItem;
+var
+   P: THistoryItem;
 begin
-  GetStr := '';
-  if (Idx >= 0) and (Idx < Count) then
-     begin
-       P := At(Idx);
-       if (P <> nil) and (P.S <> '') then GetStr := P.S
-     end;
+   GetStr := '';
+   if (Idx >= 0) and (Idx < Count) then begin
+      P := At(Idx);
+      if (P <> nil) and (P.S <> '') then GetStr := P.S
+   end;
 end;
 
 procedure TxOutlin.WMEraseBkGnd(var Message: TWMEraseBkGnd);
 begin
-  if (fEraseBkGnd) and (not(csDesigning in ComponentState)) then
-  begin
-    if Assigned(fOnEraseBkGnd) then fOnEraseBkGnd(self);
-    Message.Result := 1;
-  end else inherited;
+   if (fEraseBkGnd) and (not(csDesigning in ComponentState)) then begin
+      if Assigned(fOnEraseBkGnd) then fOnEraseBkGnd(self);
+      Message.Result := 1;
+   end else inherited;
 end;
 
 procedure TTransPan.WMEraseBkGnd(var Message: TWMEraseBkGnd);
 begin
-  if (fEraseBkGnd) and (not(csDesigning in ComponentState)) then
-  begin
-    if Assigned(fOnEraseBkGnd) then fOnEraseBkGnd(self);
-    Message.Result := 1;
-  end else inherited;
+   if (fEraseBkGnd) and (not(csDesigning in ComponentState)) then begin
+     if Assigned(fOnEraseBkGnd) then fOnEraseBkGnd(self);
+     Message.Result := 1;
+   end else inherited;
 end;
 
 procedure TTransGroupBox.WMEraseBkGnd(var Message: TWMEraseBkGnd);
 begin
-  if (fEraseBkGnd) and (not(csDesigning in ComponentState)) then
-  begin
-    if Assigned(fOnEraseBkGnd) then fOnEraseBkGnd(self);
-    Message.Result := 1;
-  end else inherited;
+   if (fEraseBkGnd) and (not(csDesigning in ComponentState)) then begin
+      if Assigned(fOnEraseBkGnd) then fOnEraseBkGnd(self);
+      Message.Result := 1;
+   end else inherited;
 end;
 
 procedure TTransEdit.WMEraseBkGnd(var Message: TWMEraseBkGnd);
 begin
-  if (fEraseBkGnd) and (not(csDesigning in ComponentState)) then
-  begin
-    if Assigned(fOnEraseBkGnd) then fOnEraseBkGnd(self);
-    Message.Result := 1;
-  end else inherited;
+   if (fEraseBkGnd) and (not(csDesigning in ComponentState)) then begin
+      if Assigned(fOnEraseBkGnd) then fOnEraseBkGnd(self);
+      Message.Result := 1;
+   end else inherited;
 end;
 
 function GetHistoryID(ID: Integer; Create: Boolean): THistoryID;
-  label 1;
+label 1;
 
   function DoFind(P: THistoryID): Boolean;
   begin
@@ -975,41 +987,48 @@ function GetHistoryID(ID: Integer; Create: Boolean): THistoryID;
   end;
 
 var
-  i,c: Integer;
-  p: THistoryId;
+   i,
+   c: Integer;
+   p: THistoryId;
 begin
-  GetHistoryID := nil;
-  if (HistoryColl = nil) then
-   begin
-     if Create then
-      begin
-        HistoryColl := THistoryColl.Create('HistoryColl');
-        Result := THistoryID.Create(ID);
-        HistoryColl.Insert(Result);
+   GetHistoryID := nil;
+   if (HistoryColl = nil) then begin
+      if Create then begin
+         HistoryColl := THistoryColl.Create('HistoryColl');
+         Result := THistoryID.Create(ID);
+         HistoryColl.Insert(Result);
       end;
-     Exit;
+      Exit;
    end;
-  Result := nil;
-  c := HistoryColl.Count-1;
-  for i := 0 to c do
-  begin
-    p := HistoryColl.At(i);
-    if DoFind(p) then begin Result := p; Break end;
-  end;
-  if Result = nil then
-    if Create then
-    begin
+   Result := nil;
+   c := HistoryColl.Count - 1;
+   for i := 0 to c do begin
+      p := HistoryColl.At(i);
+      if DoFind(p) then begin Result := p; Break end;
+   end;
+   if Result = nil then
+   if Create then begin
       Result := THistoryID.Create(ID);
       HistoryColl.Insert(Result);
-    end;
+   end;
 end;
 
 procedure HistoryAdd(ID: Word; const S: String);
-  var HID: THistoryID;
+var
+   HID: THistoryID;
 begin
-  HID := GetHistoryID(ID, True);
-  if HID = nil then Exit;
-  HID.AddStr(S);
+   HID := GetHistoryID(ID, True);
+   if HID = nil then Exit;
+   HID.AddStr(S);
+end;
+
+procedure HistoryDel(ID: Word; const S: String);
+var
+   HID: THistoryID;
+begin
+   HID := GetHistoryID(ID, True);
+   if HID = nil then Exit;
+   HID.DelStr(S);
 end;
 
 function HistoryStr(ID, Number: Word): String;

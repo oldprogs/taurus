@@ -2835,6 +2835,8 @@ begin
       ListBuf := TStringColl.Create;
    end;
    ListBuf.Add('TRS ' + a + ' ' + c);
+   CustomInfo := 'Transit request response: ' + a + ' ' + c;
+   FLogFile(Self, lfLog);
 end;
 
 function TBaseProtocol.Compress;

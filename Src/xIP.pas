@@ -944,8 +944,10 @@ var
   SockHandle: TSocket;
   IpSessionCount: integer;
 begin
-  if Terminated then Result := 0 else
-  begin
+  Result := 0;
+  if Cfg = nil then exit;
+  if Cfg.IPData = nil then exit;
+  if Terminated then Result := 0 else begin
     Error := False;
     SockHandle := TSocket(CP.Handle);
     Result := _recv(SockHandle, Buf, Size, Error, @CP.ReadOL);
@@ -960,18 +962,10 @@ begin
     end;
     Inc(TIPMonThread(IPMon).TCPIP_In, Result);
 
-    // visual. Incoming traffic shaper.
-
     IpSessionCount := (Cfg.IpData.OutC - OutConnsAvail) + (Cfg.IpData.InC - SockMgr.SocksAvail);
     if (CP.MaxBPSIn > 0) then
-      if (TIPMonThread(IPMon).TCPIP_In >= CP.MaxBPSIn) then
-        sleep(trunc(1000 * IpSessionCount / (CP.MaxBPSIn / TIPMonThread(IPMon).TCPIP_In)))
-      else
-
-{    if (result > 0) and (Cfg.IpData.InBandwidth > 0) then
-      if (TCPIP_InR > Cfg.IpData.InBandwidth) then
-        sleep(trunc(1000/(Cfg.IpData.InBandwidth/TIPMonThread(IPMon).TCPIP_In)));}
-
+    if (TIPMonThread(IPMon).TCPIP_In >= CP.MaxBPSIn) then
+        sleep(trunc(1000 * IpSessionCount / (CP.MaxBPSIn / TIPMonThread(IPMon).TCPIP_In)));
   end;
 end;
 

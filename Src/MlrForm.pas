@@ -737,16 +737,7 @@ procedure PurgeActiveFlags;
 procedure VCompileNodelist(AAuto: boolean);
 
 type
-   T_OpenTerm = function(comportidx: integer;
-      baudrateidx: integer;
-      stopbitidx: integer;
-      databitidx: integer;
-      parityidx: integer;
-      rts: boolean;
-      xon: boolean;
-      dialprefix: PChar;
-      icon: HICON
-      ): Boolean; stdcall; //external 'E:\Program Files\Borland\Delphi7\Projects\radxterm.dll' name 'OpenTerminal';
+   T_OpenTerm = function(Handle: THandle): Boolean; stdcall;
 
    T_OpenUniTerm = function(PortHandle: THandle): Boolean; stdcall;
 
@@ -795,34 +786,33 @@ begin
    if MailerThreads = nil then Exit;
    MT := TStringColl.Create;
    MailerThreads.Enter;
-   MailerForms.Enter;
-   for j := 0 to MailerThreads.Count - 1 do
+   for j := 0 to MailerThreads.Count - 1 do begin
       MT.Ins(TMailerThread(MailerThreads[j]).Name);
-   for j := 0 to MailerForms.Count - 1 do
-   begin
+   end;
+   MailerThreads.Leave;
+   MailerForms.Enter;
+   for j := 0 to MailerForms.Count - 1 do begin
       mf := MailerForms[j];
       m := mf.msOpenDialup;
       tm := mf.mnuLines;
-      with m do
-         while Count > 0 do
-         begin
+      with m do begin
+         while Count > 0 do begin
             f := Items[0];
             Remove(f);
             FreeObject(f);
          end;
-      with tm do
-         while Count > 0 do
-         begin
+      end;
+      with tm do begin
+         while Count > 0 do begin
             f := Items[0];
             Remove(f);
             FreeObject(f);
          end;
-      for i := 0 to Cfg.Lines.Count - 1 do
-      begin
+      end;
+      for i := 0 to Cfg.Lines.Count - 1 do begin
          l := Cfg.Lines[i];
          n := TMenuItem.Create(m);
-         if i < 9 then
-         begin
+         if i < 9 then begin
             n.ShortCut := c + i;
          end;
          tn := TMenuItem.Create(m);
@@ -830,13 +820,10 @@ begin
          tn.Caption := l.Name;
          n.OnClick := mf.LineOpenClick;
          tn.OnClick := mf.LineOpenClick;
-         if MT.Found(l.Name) then
-         begin
+         if MT.Found(l.Name) then begin
             n.Checked := True;
             tn.Checked := True;
-         end
-         else
-         begin
+         end else begin
             n.Tag := l.id;
             tn.Tag := l.id;
          end;
@@ -863,7 +850,6 @@ begin
       end;
    end;
    MailerForms.Leave;
-   MailerThreads.Leave;
    FreeObject(MT);
 end;
 
@@ -910,18 +896,14 @@ var
 begin
    try
 
-      MailerThreads.Enter;
       if (MailerThreads <> nil) then begin
          if (MailerThreads.Count = 0) then ShowIt('Idle', True)
          else if (MailerThreads.Count > 1) then {ShowIt('', False);}
       end;
-      MailerThreads.Leave;
 
       MailerForms.Enter;
-      if MailerForms <> nil then begin
-         for i := 0 to MailerForms.Count - 1 do begin
-            TMailerForm(MailerForms.At(i)).UpdateView(false);
-         end;
+      for i := 0 to CollMax(MailerForms) do begin
+         TMailerForm(MailerForms.At(i)).UpdateView(false);
       end;
       MailerForms.Leave;
 
@@ -1317,7 +1299,7 @@ var
          if close then begin
             DeleteFile(FClose);
             MailerThreads.Enter;
-            for j := 0 to MailerThreads.Count - 1 do begin
+            for j := 0 to CollMax(MailerThreads) do begin
                t := MailerThreads[j];
                if Integer(t.LineId) = LR.Id then begin
                   t.InsertEvt(TMlrEvtFlagTerminate.Create);
@@ -1662,7 +1644,7 @@ begin
          l := Cfg.Lines[Line];
          MlrT := nil;
          MailerThreads.Enter;
-         for i := 0 to MailerThreads.Count - 1 do begin
+         for i := 0 to CollMax(MailerThreads) do begin
             MlrT := MailerThreads[i];
             if DWORD(l.Id) = MlrT.LineId then begin
                break;
@@ -1837,54 +1819,47 @@ begin
             begin
                UpdateViewAll;
                case msg.WParam of
-                  RASCS_CONNECTED:
+               RASCS_CONNECTED:
+                  begin
+                     FidoPollsLog('RAS connected to: ' + RASThread.EntryName);
+                     InvalidatePollAddrs;
+                     if not DaemonStarted then
                      begin
-                        FidoPollsLog('RAS connected to: ' + RASThread.EntryName);
-                        InvalidatePollAddrs;
-                        if not DaemonStarted then
-                        begin
+                        SwitchDaemon(INVALID_HANDLE_VALUE);
+                     end;
+                     _RecalcPolls(True);
+                     PlaySnd('RASConnect', RASSoundsON);
+                  end;
+               RASCS_DISCONNECTED:
+                  begin
+                     PlaySnd('RASFinish', RASSoundsON);
+                     if RASConnect then begin
+                        RASConnect := False;
+                        if not RASProcess then begin
+                           RASInvoked := True;
+                        end else begin
+                           RASInvoked := False;
+                        end;
+                        if not RASDaemonS and DaemonStarted then begin
                            SwitchDaemon(INVALID_HANDLE_VALUE);
                         end;
-                        _RecalcPolls(True);
-                        PlaySnd('RASConnect', RASSoundsON);
-                     end;
-                  RASCS_DISCONNECTED:
-                     begin
-                        PlaySnd('RASFinish', RASSoundsON);
-                        if RASConnect then
-                        begin
-                           RASConnect := False;
-                           if not RASProcess then
-                           begin
-                              RASInvoked := True;
-                           end
-                           else
-                           begin
-                              RASInvoked := False;
+                        if RASMailLin <> 0 then begin
+                           for LinesCnt := 0 to MailerThreads.Count - 1 do begin
+                              if TMailerThread(MailerThreads[LinesCnt]).LineId = RASMailLin then exit;
                            end;
-                           if not RASDaemonS and DaemonStarted then
-                           begin
-                              SwitchDaemon(INVALID_HANDLE_VALUE);
-                           end;
-                           if RASMailLin <> 0 then
-                           begin
-                              for LinesCnt := 0 to MailerThreads.Count - 1 do
-                              begin
-                                 if TMailerThread(MailerThreads[LinesCnt]).LineId = RASMailLin then exit;
-                              end;
-                              repeat
-                                 RASWaitPtr := Integer(OpenMailer(RASMailLin, 0));
-                                 Application.ProcessMessages;
-                                 Sleep(100);
-                              until RASWaitPtr <> 0;
-                              if MailerForms <> nil then begin
-                                 PostMsg(WM_UPDATETABS);
-                                 PostMsg(WM_TABCHANGE);
-                                 PostMsg(WM_UPDATEMENUS);
-                              end;
+                           repeat
+                              RASWaitPtr := Integer(OpenMailer(RASMailLin, 0));
+                              Application.ProcessMessages;
+                              Sleep(100);
+                           until RASWaitPtr <> 0;
+                           if MailerForms <> nil then begin
+                              PostMsg(WM_UPDATETABS);
+                              PostMsg(WM_TABCHANGE);
+                              PostMsg(WM_UPDATEMENUS);
                            end;
                         end;
                      end;
+                  end;
                end;
                if msg.LParam <> 0 then
                begin
@@ -2113,8 +2088,9 @@ var
    i: Integer;
 begin
    a := ActiveLine;
-   for i := 0 to MailerThreads.Count - 1 do
+   for i := 0 to MailerThreads.Count - 1 do begin
       if a = MailerThreads[i] then a.InsertEvt(Evt);
+   end;   
 end;
 
 procedure TMailerForm.InvalidateLabels;
@@ -2222,7 +2198,7 @@ begin
    ti := -1;
    c := 0;
    ic := MainTabControl.Tabs.Count;
-   for i := 0 to MailerThreads.Count - 1 do begin
+   for i := 0 to CollMax(MailerThreads) do begin
       m := MailerThreads.At(i);
       if not m.DialupLine then Continue;
       if ActiveLine = m then ti := c;
@@ -3562,6 +3538,7 @@ procedure TMailerForm.UpdateView(fromcc: boolean);
    var
       B: boolean;
       i: integer;
+      o: integer;
       m: TMailerThread;
       a: TListItem;
       r: string;
@@ -3578,7 +3555,7 @@ procedure TMailerForm.UpdateView(fromcc: boolean);
       end;
       MailerThreads.Enter;
       for i := 0 to stListView.Items.Count - 1 do begin
-         stListView.Items[i].Data := pointer(1);
+         stListView.Items[i].DropTarget := True;
       end;
       for i := 0 to CollMax(MailerThreads) do begin
          m := MailerThreads[i];
@@ -3589,14 +3566,19 @@ procedure TMailerForm.UpdateView(fromcc: boolean);
             a.SubItems.Add('');
             a.SubItems.Add('');
          end;
-         a.Data := nil;
+         a.DropTarget := False;
          if a.SubItems[0] <> m.StatusMsg then begin
             a.SubItems[0] := m.StatusMsg;
          end;
          if TimerInstalled(m.D.TmrPublic) then begin
             r := IntToStr(RemainingTimeSecs(m.D.TmrPublic));
          end else begin
-            r := '';
+            if m.FstTic <> 0 then begin
+               o := GetTickCount - m.fsttic;
+               r := FormatDateTime('hh:mm:ss', EncodeTime(((o div 1000) div 60) div 60, ((o div 1000) div 60) mod 60, (o div 1000) mod 60, o mod 1000));
+            end else begin
+               r := '';
+            end;
          end;
          if a.SubItems[1] <> r then begin
             a.SubItems[1] := r;
@@ -3604,7 +3586,7 @@ procedure TMailerForm.UpdateView(fromcc: boolean);
       end;
       MailerThreads.Leave;
       for i := stListView.Items.Count - 1 downto 0 do begin
-         if stListView.Items[i].Data <> nil then begin
+         if stListView.Items[i].DropTarget then begin
             stListView.Items.Delete(i);
          end;
       end;
@@ -3706,7 +3688,7 @@ procedure TMailerForm.MainTabControlChange(Sender: TObject);
       ActiveLine := nil;
       i := MainTabControl.TabIndex;
       ch := 0;
-      for j := 0 to MailerThreads.Count - 1 do begin
+      for j := 0 to CollMax(MailerThreads) do begin
          m := MailerThreads[j];
          if not m.DialupLine then Continue;
          if ch = i then begin
@@ -3735,7 +3717,7 @@ procedure TMailerForm.MainTabControlChange(Sender: TObject);
          Exit
       end;
       Inc(ch);
-      for j := 0 to MailerThreads.Count - 1 do begin
+      for j := 0 to CollMax(MailerThreads) do begin
          m := MailerThreads[j];
          if m.DialupLine then Continue;
          if ch = i then begin
@@ -4082,7 +4064,7 @@ var
    begin
       m := nil;
       j := -1;
-      for i := 0 to MailerThreads.Count - 1 do begin
+      for i := 0 to CollMax(MailerThreads) do begin
          m := MailerThreads[i];
          if m.LineId = LineId then begin
             j := i;
@@ -4129,7 +4111,7 @@ begin
    end else begin
       _MT := TStringList.Create;
       _MT.Sorted := false;
-      for j := 0 to MailerThreads.Count - 1 do begin
+      for j := 0 to CollMax(MailerThreads) do begin
          _MT.Add(TMailerThread(MailerThreads[j]).Name);
       end;
       s := TMenuItem(Sender).Caption;
@@ -4384,7 +4366,7 @@ var
    var
       ModuleName: string;
    begin
-      ModuleName := MakeNormName(HomeDir, 'radxterm.rdl');
+      ModuleName := MakeNormName(HomeDir, 'wTerminal.dll');
       ModuleHandle := LoadLibrary(PChar(ModuleName));
       result := ModuleHandle <> 0;
    end;
@@ -4488,9 +4470,8 @@ begin
    end else begin
       ClearTimer(flflgtimer);
       ModuleLoaded := DoLoadLibrary;
-      if ModuleLoaded then
-      begin
-        F_OpenUniTerm := __Load('OpenUniTerminal');
+      if ModuleLoaded then begin
+        F_OpenUniTerm := __Load('CreateTermWindow');
         if @F_OpenUniTerm = nil then begin
           F_OpenTerm := __Load('OpenTerminal'); // for backward compability
         end
@@ -4507,22 +4488,6 @@ begin
       if IniFile.RadMF.Maximized = 1 then WindowState := wsMaximized;
    end;
 
-   SndTot.BackColor := IniFile.GaugeBack;
-   RcvTot.BackColor := IniFile.GaugeBack;
-   SndTot.ForeColor := IniFile.GaugeFore;
-   RcvTot.ForeColor := IniFile.GaugeFore;
-   bwListView.Color := IniFile.BadWazooBack;
-   stListView.Color := IniFile.BadWazooBack;
-   evListView.Color := IniFile.BadWazooBack;
-   bwListView.Font.Color := IniFile.BadWazooFore;
-   stListView.Font.Color := IniFile.BadWazooFore;
-   evListView.Font.Color := IniFile.BadWazooFore;
-   LogBox.Color := IniFile.LoggerBack;
-   LogBox.Brush.Color := IniFile.LoggerBack;
-   LogBox.Font.Color := IniFile.LoggerFore;
-   LogBox.DoPaint(true);
-//   PollBtnPanel.Color := IniFile.LoggerBack;
-
    SetHKSpace(IniFile.UseSpace);
 
    destroyallmenu;
@@ -4534,18 +4499,6 @@ begin
    InitOutMgrPopup;
 
    with IniFile do begin
-      LogBox.Font.Name := LoggerFontName;
-      LogBox.Font.Size := LoggerFontSize;
-
-      LogBox.Font.Style := [];
-
-      if LoggerFontAttr[1] = '1' then LogBox.Font.Style := LogBox.Font.Style + [fsBold];
-      if LoggerFontAttr[2] = '1' then LogBox.Font.Style := LogBox.Font.Style + [fsItalic];
-      if LoggerFontAttr[3] = '1' then LogBox.Font.Style := LogBox.Font.Style + [fsUnderline];
-      if LoggerFontAttr[4] = '1' then LogBox.Font.Style := LogBox.Font.Style + [fsStrikeOut];
-
-      LInfo1.Font.Assign(LogBox.Font);
-      LInfo2.Font.Assign(LogBox.Font);
       ChatPan.Font.Assign(LogBox.Font);
       ChatPan.Color := LogBox.Color;
       eType.Font.Color := clBlack;
@@ -4580,6 +4533,7 @@ begin
 
       Panel2.Width := SplitA;
       TermsPanel.Width := SplitB;
+      SetColors;
       SplitterAPanelMoved(nil);
       SplitterBPanelMoved(nil);
    end;
@@ -4624,45 +4578,13 @@ end;
 procedure TMailerForm.WMStartTerm(var M: TMessage);
 var
    p: TPortRec;
-   dataidx, baudidx: integer;
+   dataidx,
+   baudidx: integer;
 begin
    if (ActiveLine is TMailerThread) and (ActiveLine.DialupLine) then begin
-     if @F_OpenUniTerm <> nil then begin
-       F_OpenUniTerm(ActiveLine.CP.Handle);
-     end else if @F_OpenTerm <> nil then begin
-       p := GetPortRec(ActiveLine.LineId);
-       {  cbSpeed.Text := IntToStr(Port.d.BPS);
-       }
-       case p.d.BPS of
-          0..110: baudidx := 0;
-          111..300: baudidx := 1;
-          301..600: baudidx := 2;
-          601..1200: baudidx := 3;
-          1201..2400: baudidx := 4;
-          2401..4800: baudidx := 5;
-          4801..9600: baudidx := 6;
-          9601..14400: baudidx := 7;
-          14401..19200: baudidx := 8;
-          19201..38400: baudidx := 9;
-          38401..56000: baudidx := 10;
-          56001..57600: baudidx := 11;
-          57601..115200: baudidx := 12;
-          115201..128000: baudidx := 13;
-       else
-          baudidx := 14;
-       end; {case}
-       case p.d.Data of
-          5: dataidx := 1;
-          6: dataidx := 2;
-          7: dataidx := 3;
-          8: dataidx := 4;
-       else
-          dataidx := 0;
-       end; {case}
-       F_OpenTerm(p.d.Port + 1, baudidx, p.d.Stop, dataidx, p.d.Parity, p.d.hFlow, p.d.sFlow, PChar(ActiveLine.SD.ModemRec.Cmds.Prefix), Application.Icon.Handle)
-     end else begin
-       //GlobalFail???
-     end;
+      if @F_OpenUniTerm <> nil then begin
+         F_OpenUniTerm(ActiveLine.CP.Handle);
+      end;
    end;
    InsertEvt(TMlrEvtChStatus.Create(msInit));
 end;
@@ -4766,10 +4688,10 @@ begin
    if M.WParam = 2 then begin
       if MailerThreads = nil then exit;
       if MailerThreads.Count = 0 then exit;
-      if inifile = nil then exit;
-      if not inifile.DynamicOutbound then exit;
+      if IniFile = nil then exit;
+      if not IniFile.DynamicOutbound then exit;
       MailerThreads.Enter;
-      for i := 0 to MailerThreads.Count - 1 do begin
+      for i := 0 to CollMax(MailerThreads) do begin
          t := MailerThreads[i];
          if t.Terminated then continue;
          if t.SD = nil then continue;
@@ -4791,7 +4713,7 @@ var
    m: TMailerThread;
 begin
    n := 0;
-   for i := 0 to MailerThreads.Count - 1 do begin
+   for i := 0 to CollMax(MailerThreads) do begin
       m := MailerThreads[i];
       if not m.DialupLine then begin
          inc(n);
@@ -4942,7 +4864,7 @@ begin
                SC.Concat(LC);
             end;
 
-            for ii := 0 to MailerThreads.Count - 1 do begin
+            for ii := 0 to CollMax(MailerThreads) do begin
                m := MailerThreads[ii];
                if not m.DialupLine then Continue;
                ChkPS(m.OwnPolls, m);
@@ -4951,13 +4873,14 @@ begin
                   LC.Ins0('');
                end;
                SC.Concat(LC);
-
             end;
+
             FreeObject(LC);
             if AV then begin
                SC.Ins0('');
                SC.Ins0(LngStr(PtpTyp[p.typ]));
             end;
+
             LeaveFidoPolls;
             DisplayInfoFormEx(FormatLng(rsMMPollNfoC, [Addr2Str(a)]), SC);
             FreeObject(SC);
@@ -6738,38 +6661,53 @@ begin
       mlResetTimeOut.ShortCut := 16418;
 end;
 
-procedure TMailerForm.SetColors;
+procedure SetFontSize(c: TComponent; s: integer);
 var
-   i: Integer;
+   i: integer;
+   w: TComponent;
 begin
-   if MailerForms = nil then Exit;
-   for i := 0 to MailerForms.Count - 1 do begin
-      with TMailerForm(MailerForms.At(i)) do begin
-         SndTot.BackColor := IniFile.GaugeBack;
-         RcvTot.BackColor := IniFile.GaugeBack;
-         SndTot.ForeColor := IniFile.GaugeFore;
-         RcvTot.ForeColor := IniFile.GaugeFore;
-         bwListView.Color := IniFile.BadWazooBack;
-         bwListView.Font.Color := IniFile.BadWazooFore;
-         stListView.Color := IniFile.BadWazooBack;
-         stListView.Font.Color := IniFile.BadWazooFore;
-         evListView.Color := IniFile.BadWazooBack;
-         evListView.Font.Color := IniFile.BadWazooFore;
-         LogBox.Color := IniFile.LoggerBack;
-         LogBox.Brush.Color := IniFile.LoggerBack;
-         LogBox.Font.Color := IniFile.LoggerFore;
-         LogBox.Font.Name := IniFile.LoggerFontName;
-         LogBox.Font.Size := IniFile.LoggerFontSize;
-
-         LogBox.Font.Style := [];
-         if IniFile.LoggerFontAttr[1] = '1' then LogBox.Font.Style := LogBox.Font.Style + [fsBold];
-         if IniFile.LoggerFontAttr[2] = '1' then LogBox.Font.Style := LogBox.Font.Style + [fsItalic];
-         if IniFile.LoggerFontAttr[3] = '1' then LogBox.Font.Style := LogBox.Font.Style + [fsUnderline];
-         if IniFile.LoggerFontAttr[4] = '1' then LogBox.Font.Style := LogBox.Font.Style + [fsStrikeOut];
-         LogBox.Text := '';
-         LogBox.dopaint(true);
+   for i := 0 to c.ComponentCount - 1 do begin
+      w := c.Components[i];
+      if w is TLabel then begin
+         if (w as TLabel).Font.Name <> 'Small Fonts' then begin
+            (w as TLabel).Font.Size := s;
+         end; 
+      end else begin
+         SetFontSize(w, s);
       end;
    end;
+end;
+
+procedure TMailerForm.SetColors;
+begin
+   if MailerForms = nil then Exit;
+   SetFontSize(Self, Font.Size);
+   SndTot.BackColor := IniFile.GaugeBack;
+   RcvTot.BackColor := IniFile.GaugeBack;
+   SndTot.ForeColor := IniFile.GaugeFore;
+   RcvTot.ForeColor := IniFile.GaugeFore;
+   bwListView.Color := IniFile.BadWazooBack;
+   bwListView.Font.Color := IniFile.BadWazooFore;
+   stListView.Color := IniFile.BadWazooBack;
+   stListView.Font.Color := IniFile.BadWazooFore;
+   evListView.Color := IniFile.BadWazooBack;
+   evListView.Font.Color := IniFile.BadWazooFore;
+   LogBox.Color := IniFile.LoggerBack;
+   LogBox.Brush.Color := IniFile.LoggerBack;
+   LogBox.Font.Color := IniFile.LoggerFore;
+   LogBox.Font.Name := IniFile.LoggerFontName;
+   LogBox.Font.Size := IniFile.LoggerFontSize;
+   LogBox.Font.Style := [];
+   if IniFile.LoggerFontAttr[1] = '1' then LogBox.Font.Style := LogBox.Font.Style + [fsBold];
+   if IniFile.LoggerFontAttr[2] = '1' then LogBox.Font.Style := LogBox.Font.Style + [fsItalic];
+   if IniFile.LoggerFontAttr[3] = '1' then LogBox.Font.Style := LogBox.Font.Style + [fsUnderline];
+   if IniFile.LoggerFontAttr[4] = '1' then LogBox.Font.Style := LogBox.Font.Style + [fsStrikeOut];
+   LogBox.Text := '';
+   LogBox.DoPaint(true);
+   LInfo1.Font.Assign(LogBox.Font);
+   LInfo2.Font.Assign(LogBox.Font);
+   PollBtnPanel.Color := LogBox.Color;
+   SystemBtnPanel.Color := LogBox.Color;
 end;
 
 procedure TMailerForm.pBWZPopup(Sender: TObject);

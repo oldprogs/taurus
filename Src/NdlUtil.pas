@@ -1555,7 +1555,6 @@ begin
       if ((Base = False) and (DialupData = nil)) then DialupData := CAND(True) else
       if ((Base = True) and (IPData = nil)) then IpData := CAND(False);
    end;
-{$IFDEF WS}
    if DaemonStarted and (IPData = nil) then begin
       if n <> nil then begin
          ga := FindBBS(n.Station);
@@ -1577,7 +1576,6 @@ begin
       FreeObject(IpData);
       IpData := TmpData;
    end;
-{$ENDIF}
    if (DialupData = nil) and (IPData = nil) then Exit;
    Result := TAdvNode.Create;
    if n <> nil then begin

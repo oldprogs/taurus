@@ -248,6 +248,8 @@ procedure FreeIni;
 begin
    IniFile.Free;
    IniFile := nil;
+   SavFile.Free;
+   SavFile := nil;
 end;
 
 constructor TConfig.Create;
@@ -394,6 +396,10 @@ begin
       CfgDir := MakeFulldir('', ReadString(paths, 'config', ExtractFilePath(ParamStr(0))));
       FlagsDir := MakeFullDir('', ReadString(paths, 'flags', ExtractFilePath(ParamStr(0)) + 'FLAGS'));
       NetmailDir := MakeFullDir('', ReadString('MSG', 'Netmail', 'NETMAIL'));
+      if NetmailDir <> '' then begin
+         WriteString('Grids', 'gNetPath1', NetmailDir + '|');
+         NetmailDir := '';
+      end;
       ScanMSG := ReadBool('MSG', 'ScanMSG', False);
       UnpackMSG := ReadBool('MSG', 'UnpackMSG', False);
 

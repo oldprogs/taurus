@@ -115,13 +115,13 @@ end;
 
 procedure TMailerLineCfgForm.UpdateEvt;
 var
-  i: Integer;
+   i: Integer;
 begin
-  CurEvtCnt := LnkEvts.Count;
-  ReallocMem(CurEvtIds, CurEvtCnt * SizeOf(Integer));
-  for i := 0 to CurEvtCnt - 1 do begin
-    CurEvtIds^[i] := TElement(LnkEvts[i]).Id;
-  end;
+   CurEvtCnt := LnkEvts.Count;
+   ReallocMem(CurEvtIds, CurEvtCnt * SizeOf(Integer));
+   for i := 0 to CurEvtCnt - 1 do begin
+      CurEvtIds^[i] := TElement(LnkEvts[i]).Id;
+   end;
 end;
 
 procedure TMailerLineCfgForm.FormClose(Sender: TObject; var Action: TCloseAction);

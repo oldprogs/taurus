@@ -4,7 +4,7 @@ object SetupForm: TSetupForm
   HelpContext = 11000
   BorderStyle = bsDialog
   Caption = 'Taurus Setup'
-  ClientHeight = 452
+  ClientHeight = 450
   ClientWidth = 569
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -19,7 +19,7 @@ object SetupForm: TSetupForm
   OnCreate = FormCreate
   DesignSize = (
     569
-    452)
+    450)
   PixelsPerInch = 96
   TextHeight = 15
   object imgHeader: TImage
@@ -101,7 +101,7 @@ object SetupForm: TSetupForm
     Left = 5
     Top = 5
     Width = 130
-    Height = 442
+    Height = 440
     Anchors = [akLeft, akTop, akBottom]
     BorderWidth = 1
     HideSelection = False
@@ -132,7 +132,7 @@ object SetupForm: TSetupForm
     Left = 145
     Top = 29
     Width = 418
-    Height = 375
+    Height = 373
     Anchors = [akLeft, akTop, akRight, akBottom]
     PageIndex = 9
     TabOrder = 1
@@ -1753,7 +1753,7 @@ object SetupForm: TSetupForm
         Width = 215
         Height = 23
         Style = csDropDownList
-        ItemHeight = 15
+        ItemHeight = 0
         TabOrder = 0
       end
       object btnReloadRASEntries: TButton
@@ -2000,18 +2000,11 @@ object SetupForm: TSetupForm
       Top = 0
       HelpContext = 11096
       Caption = 'Netmail'
-      object lNetmail: TLabel
-        Left = 8
-        Top = 39
-        Width = 60
-        Height = 15
-        Caption = 'MSG folder'
-      end
       object gNetmail: TAdvGrid
         Left = 0
-        Top = 88
+        Top = 112
         Width = 418
-        Height = 287
+        Height = 261
         FixedFont.Charset = DEFAULT_CHARSET
         FixedFont.Color = clWindowText
         FixedFont.Height = -12
@@ -2034,45 +2027,50 @@ object SetupForm: TSetupForm
       end
       object cbDynamicRouting: TCheckBox
         Left = 8
-        Top = 11
+        Top = 4
         Width = 191
         Height = 17
         Caption = 'Use Dynamic Routing'
         TabOrder = 1
       end
-      object eNetmail: TEdit
-        Left = 8
-        Top = 58
-        Width = 372
-        Height = 23
-        TabOrder = 2
-      end
-      object bNetmail: TButton
-        Left = 382
-        Top = 57
-        Width = 27
-        Height = 25
-        Caption = '...'
-        TabOrder = 3
-        OnClick = bNetmailClick
-      end
       object cbScanMSG: TCheckBox
         Left = 206
-        Top = 11
+        Top = 4
         Width = 189
         Height = 17
         Caption = 'Scan MSG area'
-        TabOrder = 4
+        TabOrder = 2
         OnClick = cbScanMSGClick
       end
       object cbUnpackPKT: TCheckBox
         Left = 206
-        Top = 32
+        Top = 22
         Width = 203
         Height = 17
         Caption = 'Unpack arrived PKTs'
-        TabOrder = 5
+        TabOrder = 3
         OnClick = cbUnpackPKTClick
+      end
+      object gNetPath: TAdvGrid
+        Left = 0
+        Top = 42
+        Width = 418
+        Height = 70
+        FileNameCol = 0
+        FixedFont.Charset = DEFAULT_CHARSET
+        FixedFont.Color = clWindowText
+        FixedFont.Height = -11
+        FixedFont.Name = 'MS Sans Serif'
+        FixedFont.Style = []
+        Align = alBottom
+        ColCount = 1
+        DefaultRowHeight = 17
+        FixedCols = 0
+        RowCount = 2
+        TabOrder = 4
+        CheckBoxes = False
+        ColWidths = (
+          411)
       end
     end
     object TPage
@@ -2804,7 +2802,7 @@ object SetupForm: TSetupForm
   end
   object btnHelp: TButton
     Left = 477
-    Top = 417
+    Top = 415
     Width = 85
     Height = 25
     Anchors = [akRight, akBottom]
@@ -2814,7 +2812,7 @@ object SetupForm: TSetupForm
   end
   object btnApply: TButton
     Left = 386
-    Top = 417
+    Top = 415
     Width = 85
     Height = 25
     Anchors = [akRight, akBottom]
@@ -2824,7 +2822,7 @@ object SetupForm: TSetupForm
   end
   object btnCancel: TButton
     Left = 294
-    Top = 417
+    Top = 415
     Width = 86
     Height = 25
     Anchors = [akRight, akBottom]
@@ -2835,7 +2833,7 @@ object SetupForm: TSetupForm
   end
   object btnOK: TButton
     Left = 202
-    Top = 417
+    Top = 415
     Width = 86
     Height = 25
     Anchors = [akRight, akBottom]

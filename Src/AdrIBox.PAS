@@ -30,6 +30,8 @@ type
       procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
       procedure FormCreate(Sender: TObject);
       procedure bHelpClick(Sender: TObject);
+    procedure lAddressKeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
    private
       Activated,
          Multi: Boolean;
@@ -162,6 +164,20 @@ end;
 procedure TFidoAddressInput.bHelpClick(Sender: TObject);
 begin
    Application.HelpContext(HelpContext);
+end;
+
+procedure TFidoAddressInput.lAddressKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+var
+   i: integer;
+begin
+   case Key of
+   46:
+      begin
+         i := lAddress.ItemIndex;
+         HistoryDel(lAddress.HistoryID, lAddress.Items[i]);
+         lAddress.Items.Delete(i);
+      end;
+   end;
 end;
 
 end.

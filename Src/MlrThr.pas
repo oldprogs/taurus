@@ -1920,7 +1920,7 @@ var
 begin
    if MailerThreads <> nil then begin
       MailerThreads.Enter;
-      for i := 0 to MailerThreads.Count - 1 do begin
+      for i := 0 to CollMax(MailerThreads) do begin
          TMailerThread(MailerThreads[i]).InsertEvt(TMlrEvtPollsRecalc.Create);
       end;
       MailerThreads.Leave;
@@ -1999,7 +1999,7 @@ begin
    Result := nil;
    try
       OwnPolls.Enter;
-      for i := OwnPolls.Count - 1 downto 0 do begin
+      for i := CollMax(OwnPolls) downto 0 do begin
          PP := OwnPolls[i];
          if P = PP.Poll then begin
             Result := PP;
@@ -2065,7 +2065,7 @@ begin
       end;
       Exit;
    end;
-   for k := 0 to dc.Count - 1 do begin
+   for k := 0 to CollMax(dc) do begin
       idx := NI mod DWORD(dc.Count);
       d := dc[idx];
       Inc(NI);
@@ -2319,7 +2319,7 @@ begin
    TQ := CurFSC62Quant;
    try
       EnterFidoPolls;
-      for i := 0 to FidoPolls.Count - 1 do begin
+      for i := 0 to CollMax(FidoPolls) do begin
          p := FidoPolls[i];
          case GetPollState(AOwnPolls, P, PubInst, Mlr, SC, TQ) of
          plsPSD:
@@ -2417,7 +2417,7 @@ function NodeDataStr(ANode: TAdvNode; AddFlags: Boolean): string;
       d: TAdvNodeData;
    begin
       if C = nil then Exit;
-      for J := 0 to C.Count - 1 do begin
+      for J := 0 to CollMax(C) do begin
          D := C[J];
          if Result <> '' then Result := Result + '; ';
          if Dialup then begin
@@ -2479,9 +2479,11 @@ var
 const
    CTyp: array[TPollType] of string = ('???', 'Outb', 'MSG', 'Cron', 'Test', 'Manual', 'Outb/Imm', 'Callback', 'Mirror', 'MSG/Imm');
 begin
+   Result := False;
+   if FidoPolls = nil then exit;
    EnterFidoPolls;
    AP := nil;
-   for I := 0 to FidoPolls.Count - 1 do begin
+   for I := 0 to CollMax(FidoPolls) do begin
       P := FidoPolls[i];
       if CompareAddrs(ANode.Addr, p.Node.Addr) = 0 then begin
          AP := P;
@@ -2513,9 +2515,11 @@ begin
          P.Keep := True;
       end;
       FidoPolls.AtInsert(0, P);
-      for I := 0 to MailerThreads.Count - 1 do begin
+      MailerThreads.Enter;
+      for I := 0 to CollMax(MailerThreads) do begin
          InsertOwnPoll(TMailerThread(MailerThreads[I]).OwnPolls, P);
       end;
+      MailerThreads.Leave;
       if IPPolls <> nil then InsertOwnPoll(IPPolls.OwnPolls, P);
       AP := P;
    end;
@@ -2546,11 +2550,12 @@ end;
 
 procedure RecreatePolls(c: TOutNodeColl);
 var
-   i, j: Integer;
-   p   : TFidoPoll;
-   t   : TPollType;
-   n   : TOutNode;
-   an  : TAdvNode;
+   i,
+   j: Integer;
+   p: TFidoPoll;
+   t: TPollType;
+   n: TOutNode;
+  an: TAdvNode;
 
    procedure FreePoll_I_P;
    begin
@@ -2564,7 +2569,7 @@ var
 begin
    EnterFidoPolls;
    DirAsNormal := IniFile.DirectAsNormal;
-   for i := FidoPolls.Count - 1 downto 0 do begin
+   for i := CollMax(FidoPolls) downto 0 do begin
       p := FidoPolls[i];
       p.Keep := False;
       CurrentTime := uGetSystemTime;
@@ -2596,7 +2601,7 @@ begin
       end;
    end;
    LeaveFidoPolls;
-   for i := 0 to c.Count - 1 do begin
+   for i := 0 to CollMax(c) do begin
       n := c[i];
       if OutDial(n.FStatus, DirAsNormal) then begin
          an := FindNode(n.Address);
@@ -2621,7 +2626,7 @@ begin
    Result := False;
    try
       MailerThreads.Enter;
-      for i := 0 to MailerThreads.Count - 1 do begin
+      for i := 0 to CollMax(MailerThreads) do begin
          m := MailerThreads[i];
          if m.DialupLine then Continue;
          if m.IpIdx = idx then begin
@@ -2887,7 +2892,7 @@ begin
    Zombies.Enter;
    if (not TimerInstalled(LastZombiesPurged)) or (TimerExpired(LastZombiesPurged)) then begin
       NewTimerSecs(LastZombiesPurged, 120);
-      for i := Zombies.Count - 1 downto 0 do begin
+      for i := CollMax(Zombies) downto 0 do begin
          pi := Zombies[i];
          if not GetExitCodeProcess(pi.pi.hProcess, Code) then Code := 0;
          if Code = STILL_ACTIVE then Continue;
@@ -3127,7 +3132,7 @@ var
 begin
    Result := TColl.Create;
    EnterFidoPolls;
-   for i := 0 to FidoPolls.Count - 1 do begin
+   for i := 0 to CollMax(FidoPolls) do begin
       PP := TPollPtr.Create;
       PP.Poll := FidoPolls[I];
       Result.Insert(PP);
@@ -3141,7 +3146,7 @@ var
    p: TPollPtr;
 begin
    AOwnPolls.Enter;
-   for j := AOwnPolls.Count - 1 downto 0 do begin
+   for j := CollMax(AOwnPolls) downto 0 do begin
       p := AOwnPolls[j];
       if p.Poll = ap then AOwnPolls.AtFree(j);
    end;
@@ -3157,7 +3162,7 @@ var
       i: Integer;
       t: TMailerThread;
    begin
-      for i := 0 to MailerThreads.Count - 1 do begin
+      for i := 0 to CollMax(MailerThreads) do begin
          t := MailerThreads[i];
          if t.DialupLine then Continue;
          if m.IpIdx < t.IpIdx then begin
@@ -3190,8 +3195,7 @@ begin
       m.aType := NI.aTyp;
       m.CP.PortNumber := NI.IpPort;
       m.CP.PortIndex := NI.IpPort;
-   end else
-   begin
+   end else begin
       m.ProtCore := ptDialup;
    end;
    m.SD := TMailerThreadInitData.Create;
@@ -3444,7 +3448,7 @@ var
    Code: DWORD;
 begin
    ProcessColl := GetProcessColl;
-   for i := ProcessColl.Count - 1 downto 0 do begin
+   for i := CollMax(ProcessColl) downto 0 do begin
       ProcNfo := ProcessColl[i];
       if not GetExitCodeProcess(ProcNfo.PI.hProcess, Code) then Code := 0;
       if Code = STILL_ACTIVE then Continue;
@@ -3465,7 +3469,7 @@ begin
    TestRunningProcesses;
    ProcessColl := GetProcessColl;
    Zombies.Enter;
-   for i := 0 to ProcessColl.Count - 1 do begin
+   for i := 0 to CollMax(ProcessColl) do begin
       ProcNfo := ProcessColl[i];
       LogFmt(ltInfo, 'Process "%s" (PID=%x) is leaving in background', [ProcNfo.Name, ProcNfo.PI.dwProcessId]);
       Zombies.Insert(ProcNfo);
@@ -3725,8 +3729,6 @@ end;
 procedure TMlrEvtExecTerminal.Execute(T: TMailerThread);
 begin
    if (not AllowedMdmCmdState(T.State)) then Exit;
-   if T.SD.LastModemInitString <> #1 then T.Log(ltInfo, 'Releasing serial port');
-   T.FreeCP;
    T.SD.LastModemInitString := #1;
    T.State := msModemCmdIdle;
    PostMessage(FWndHandle, WM_STARTTERM, 0, Integer(T));
@@ -3993,7 +3995,7 @@ begin
       LeaveCS(FidoOut.CacheCS);
    end;
    MailerThreads.Enter;
-   for i := 0 to MailerThreads.Count - 1 do begin
+   for i := 0 to CollMax(MailerThreads) do begin
       FreeOwnPoll(TMailerThread(MailerThreads[I]).OwnPolls, Self);
    end;
    MailerThreads.Leave;
@@ -4682,10 +4684,12 @@ begin
    dig := ExtractWord(1, P.CustomInfo, [' ']) + psw;
    xCalcMD5(@dig[1], Length(dig), D);
    dig := DigestToStr(D);
-   if UpperCase(dig) = UpperCase(ExtractWord(2, P.CustomInfo, [' '])) then begin
+   if (psw = '-') or (UpperCase(dig) = UpperCase(ExtractWord(2, P.CustomInfo, [' ']))) then begin
       P.CustomInfo := '';
-      Log(ltInfo, 'Password-protected session (auth=CRAM-MD5)');
-      SD.PasswordProtected := True;
+      if psw <> '-' then begin
+         Log(ltInfo, 'Password-protected session (auth=CRAM-MD5)');
+         SD.PasswordProtected := True;
+      end;   
    end else begin
       P.CustomInfo := 'BAD_PASSWORD';
       LogFmt(ltGlobalErr, 'Remote presented invalid password (auth=CRAM-MD5) when "%s" is required for %s', [Psw, Addr2Str(SD.rmtPrimaryAddr)]);
@@ -4851,7 +4855,7 @@ const
 
          OurDig := KeyedMD5(OurPwd[1], Length(OurPwd), Uniq[1], Length(Uniq));
          SD.CramMD5 := True;
-         if UpperCase(OurDig) <> UpperCase(P.CustomInfo) then begin
+         if (OurPwd <> '-') and (UpperCase(OurDig) <> UpperCase(P.CustomInfo)) then begin
             LogEMSIData;
             LogFmt(ltGlobalErr, 'Remote presented invalid password (auth=CRAM-MD5) when "%s" is required for %s', [OurPwd, Addr2Str(SD.rmtPrimaryAddr)]);
             P.CustomInfo := cBadPwd;
@@ -4865,7 +4869,7 @@ const
       else
          SD.rmtPassword := P.CustomInfo;
       ChkNonEmsiPwd(P);
-      if P.CustomInfo = '' then begin
+      if (P.CustomInfo = '') and (SD.rmtPassword <> '') then begin
          for i := 0 to CollMax(SD.rmtAddrs) do begin
             n := FindNode(SD.rmtAddrs[i]);
             if n <> nil then begin
@@ -6724,7 +6728,7 @@ begin
       for i := CollMax(SD.OutFiles) downto 0 do begin
          t := SD.OutFiles[i];
          if (t.Name = r.Name) or (t.Name = r.Orig) then begin
-            SD.OutFiles.AtDelete(i);
+            SD.OutFiles.AtFree(i);
          end;
       end;
       SD.OutFiles.Leave;
@@ -9161,6 +9165,7 @@ begin
       end;
    msFinishWZ:
       begin
+         FstTic := 0;
          ScanCounter := 1;
          CommonStatx;
          SaveTarifLog(self); // visual
@@ -12486,7 +12491,7 @@ procedure TMailerThread.DoMisc;
                   end;
                end else begin
                   EnterFidoPolls;
-                  for j := 0 to FidoPolls.Count - 1 do begin
+                  for j := 0 to CollMax(FidoPolls) do begin
                      p := FidoPolls[j];
                      if MatchMaskAddressListSingle(p.Node.Addr, sc[i]) then begin
                         NewTimerSecs(p.LastTry, inifile.FPFlags.StandoffFail * 60);
@@ -14017,9 +14022,11 @@ end;
 destructor TMailerThread.Destroy;
 begin
 
+   MailerTransit.Enter;
    if MailerTransit.IndexOf(Self) > -1 then begin
       MailerTransit.Delete(Self);
    end;
+   MailerTransit.Leave;
 
    FreeHReqDelete(False);
    FreeSD;
@@ -14893,14 +14900,14 @@ begin
       CfgLeave;
       h := False;
       FidoPolls.Enter;
-      for i := 0 to FidoPolls.Count - 1 do begin
+      for i := 0 to CollMax(FidoPolls) do begin
          p := FidoPolls[i];
          h := h or (DialAllowed(RR, '', '', p.Node.Addr, s) and not p.FileSendDelayedBusy and not p.FileSendDelayedNoc and not p.FileSendDelayedFail and not p.Logged);
       end;
       FidoPolls.Leave;
       FreeObject(RR);
       MailerThreads.Enter;
-      for i := 0 to MailerThreads.Count - 1 do begin
+      for i := 0 to CollMax(MailerThreads) do begin
          m := MailerThreads[i];
          h := h or not m.DialupLine;
       end;
@@ -15249,7 +15256,7 @@ begin
    IPPolls.WaitFor;
    EndIpThreads;
    MailerThreads.Enter;
-   for i := 0 to MailerThreads.Count - 1 do begin
+   for i := 0 to CollMax(MailerThreads) do begin
       if not TMailerThread(MailerThreads[i]).DialupLine then begin
          M := TMailerThread(MailerThreads[i]);
          M.InsertEvt(TMlrEvtShutdownTerminate.Create);
@@ -15262,7 +15269,7 @@ begin
    MailerThreads.Leave;
    Application.ProcessMessages;
    MailerThreads.Enter;
-   for i := 0 to MailerThreads.Count - 1 do begin
+   for i := 0 to CollMax(MailerThreads) do begin
       if not TMailerThread(MailerThreads[i]).DialupLine then begin
          TMailerThread(MailerThreads[i]).WaitFor;
       end;
@@ -15270,7 +15277,7 @@ begin
    MailerThreads.Leave;
    Application.ProcessMessages;
    MailerThreads.Enter;
-   for i := MailerThreads.Count - 1 downto 0 do begin
+   for i := CollMax(MailerThreads) downto 0 do begin
       if not TMailerThread(MailerThreads[i]).DialupLine then MailerThreads.AtFree(i);
    end;
    FreeObject(IPPolls);
@@ -15296,7 +15303,7 @@ begin
    if FidoPolls.Count = 0 then Exit;
    FidoPollsLog('Revalidating polls');
    EnterFidoPolls;
-   for i := FidoPolls.Count - 1 downto 0 do begin
+   for i := CollMax(FidoPolls) downto 0 do begin
       p := FidoPolls[i];
       if p.Owner <> nil then begin
          p.Revalidate := True;

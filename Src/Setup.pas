@@ -318,11 +318,9 @@ type
     fdForms: TFontDialog;
     lFormsFont: TLabel;
     tmCRC: TTimer;
-    eNetmail: TEdit;
-    bNetmail: TButton;
-    lNetmail: TLabel;
     cbScanMSG: TCheckBox;
     cbUnpackPKT: TCheckBox;
+    gNetPath: TAdvGrid;
     procedure tvPagesChange(Sender: TObject; Node: TTreeNode);
     procedure FormCreate(Sender: TObject);
     procedure btnReloadRASEntriesClick(Sender: TObject);
@@ -347,7 +345,6 @@ type
     procedure cbPriorityChange(Sender: TObject);
     procedure bFormsFontClick(Sender: TObject);
     procedure tmCRCTimer(Sender: TObject);
-    procedure bNetmailClick(Sender: TObject);
     procedure cbScanMSGClick(Sender: TObject);
     procedure cbUnpackPKTClick(Sender: TObject);
     procedure gNetmailDblClick(Sender: TObject);
@@ -579,17 +576,17 @@ begin
 
 //Netmail tab
   with IniFile do begin
-    if NetmailAddrTo.Count <> 0 then begin
-      NetmailAddrTo.FreeAll;
-      NetmailAddrFrom.FreeAll;
-      NetmailPwd.FreeAll;
-    end;
-
-    for _i := 0 to gNetmail.RowCount - 2 do begin
-      gNetmail.GetData([NetmailAddrTo, NetmailAddrFrom, NetmailPwd]);
-    end;
+     if NetmailAddrTo.Count <> 0 then begin
+        NetmailAddrTo.FreeAll;
+        NetmailAddrFrom.FreeAll;
+        NetmailPwd.FreeAll;
+     end;
+     for _i := 0 to gNetmail.RowCount - 2 do begin
+        gNetmail.GetData([NetmailAddrTo, NetmailAddrFrom, NetmailPwd]);
+     end;
+     SaveGrid(gNetPath);
+     IniFile.NetmailDir := '';
   end;
-  IniFile.NetmailDir := eNetmail.Text;
 //Netmail end
 
 //Tariff tab
@@ -607,60 +604,59 @@ begin
 
 //Finalization
   if i <> inifile.lang then begin
-    i := inifile.lang;
-    ResLngBase := 0;
-    case I of
-    MaxInt :;
-    idlRussian:
-       ResLngBase := LngBaseRussian;
-    else
-       begin
-          ResLngBase := LngBaseEnglish;
-       end;
-    end;
-    if Application.MainForm <> nil then PostMessage(Application.MainForm.Handle, WM_SetLang, inifile.lang, 1);
-    _FillForm(self, rsSetupForm, ResLngBase);
-    _GridFillColLng(gNetmail, rsNetmailGrid, ResLngBase);
-    if (IniFile.OnClose > 2) or (IniFile.OnClose < 0) then cbCloseBtnAction.ItemIndex := 0
-    else cbCloseBtnAction.ItemIndex := IniFile.OnClose;
-    cbInterfaceLanguage.ItemIndex := i;
+     i := inifile.lang;
+     ResLngBase := 0;
+     case I of
+     MaxInt :;
+     idlRussian:
+        ResLngBase := LngBaseRussian;
+     else
+        begin
+           ResLngBase := LngBaseEnglish;
+        end;
+     end;
+     if Application.MainForm <> nil then PostMessage(Application.MainForm.Handle, WM_SetLang, inifile.lang, 1);
+     _FillForm(self, rsSetupForm, ResLngBase);
+     _GridFillColLng(gNetmail, rsNetmailGrid, ResLngBase);
+     _GridFillColLng(gNetPath, rsNetPathGrid, ResLngBase);
+     if (IniFile.OnClose > 2) or (IniFile.OnClose < 0) then cbCloseBtnAction.ItemIndex := 0
+     else cbCloseBtnAction.ItemIndex := IniFile.OnClose;
+     cbInterfaceLanguage.ItemIndex := i;
   end;
 
- if HomeChanged then begin
-   IniFile.HomeDir := eHome.Text;
-   IniFile.CfgDir := eConfigs.Text;
-   If not DirectoryExists(IniFile.HomeDir) then CreateDir(IniFile.HomeDir);
-   DisplayInfoLng(rsPNHdc, Handle);
-   s := '';
-   if ParamCount > 0 then begin
-     s := ParamStr(1);
-     if ParamCount > 1 then begin
-       for _i := 2 to ParamCount do s := s + ' ' + ParamStr(_i);
+  if HomeChanged then begin
+     IniFile.HomeDir := eHome.Text;
+     IniFile.CfgDir := eConfigs.Text;
+     If not DirectoryExists(IniFile.HomeDir) then CreateDir(IniFile.HomeDir);
+     DisplayInfoLng(rsPNHdc, Handle);
+     s := '';
+     if ParamCount > 0 then begin
+        s := ParamStr(1);
+        if ParamCount > 1 then begin
+           for _i := 2 to ParamCount do s := s + ' ' + ParamStr(_i);
+        end;
      end;
-   end;
-   if Pos('delay5000', s) = 0 then s := 'delay5000 ' + s;
-   ShellExecute(0, nil, PChar(ParamStr(0)),
-      PChar(s), PChar(ExtractFilePath(ParamStr(0))), sw_shownormal);
-   PostCloseMessage;
-   exit;
- end;
+     if Pos('delay5000', s) = 0 then s := 'delay5000 ' + s;
+     ShellExecute(0, nil, PChar(ParamStr(0)), PChar(s), PChar(ExtractFilePath(ParamStr(0))), sw_shownormal);
+     PostCloseMessage;
+     exit;
+  end;
 
- if ConfigsChanged then begin
-   IniFile.CfgDir := eConfigs.Text;
-   DisplayInfoLng(rsCDCh, Handle);
-   s := '';
-   if ParamCount > 0 then begin
-     s := ParamStr(1);
-     if ParamCount > 1 then begin
-       for _i := 2 to ParamCount do s := s + ' ' + ParamStr(_i);
+  if ConfigsChanged then begin
+     IniFile.CfgDir := eConfigs.Text;
+     DisplayInfoLng(rsCDCh, Handle);
+     s := '';
+     if ParamCount > 0 then begin
+        s := ParamStr(1);
+        if ParamCount > 1 then begin
+           for _i := 2 to ParamCount do s := s + ' ' + ParamStr(_i);
+        end;
      end;
-   end;
-   if Pos('delay5000', s) > 0 then s := 'delay5000 ' + s;
-   ShellExecute(0, nil, PChar(ParamStr(0)),
-      PChar('delay5000 ' + GetCommandLine), PChar(ExtractFilePath(ParamStr(0))), sw_shownormal);
-   PostCloseMessage;
-   exit;
- end;
+     if Pos('delay5000', s) > 0 then s := 'delay5000 ' + s;
+     ShellExecute(0, nil, PChar(ParamStr(0)), PChar('delay5000 ' + GetCommandLine), PChar(ExtractFilePath(ParamStr(0))), sw_shownormal);
+     PostCloseMessage;
+     exit;
+  end;
 end;
 
 procedure TSetupForm.SetData(i:integer);
@@ -857,9 +853,15 @@ begin
 //Path end
 
   GridFillColLng(gNetmail, rsNetmailGrid);
+  GridFillColLng(gNetPath, rsNetPathGrid);
   FillNetmailGrid;
 
-  eNetmail.Text := IniFile.NetmailDir;
+  if IniFile.NetmailDir <> '' then begin
+     gNetPath.Cells[0, 1] := IniFile.NetmailDir;
+  end else begin
+     IniFile.LoadGrid(gNetPath);
+  end;
+
 end;
 
 procedure TSetupForm.tvPagesChange(Sender: TObject; Node: TTreeNode);
@@ -1282,26 +1284,14 @@ begin
    inCRC := False;
 end;
 
-procedure TSetupForm.bNetmailClick(Sender: TObject);
-var
-   s: string;
-begin
-   s := Browse(Handle, eNetmail.Text);
-   if s <> '' then begin
-      eNetmail.Text := s;
-   end;
-end;
-
 procedure TSetupForm.cbScanMSGClick(Sender: TObject);
 begin
-   eNetmail.Enabled := cbScanMSG.Checked or cbUnpackPKT.Checked;
-   bNetmail.Enabled := cbScanMSG.Checked or cbUnpackPKT.Checked;
+   gNetPath.Enabled := cbScanMSG.Checked or cbUnpackPKT.Checked;
 end;
 
 procedure TSetupForm.cbUnpackPKTClick(Sender: TObject);
 begin
-   eNetmail.Enabled := cbScanMSG.Checked or cbUnpackPKT.Checked;
-   bNetmail.Enabled := cbScanMSG.Checked or cbUnpackPKT.Checked;
+   gNetPath.Enabled := cbScanMSG.Checked or cbUnpackPKT.Checked;
 end;
 
 procedure TSetupForm.gNetmailDblClick(Sender: TObject);

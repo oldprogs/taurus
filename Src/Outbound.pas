@@ -1959,6 +1959,8 @@ begin
       n.FStatus := n.FStatus + [s];
       n.FPollType := n.FPollType + [p];
       Result := InsertPoll(an, [s], p);
+   end else begin
+      FreeObject(an);
    end;
    if n.Files = nil then begin
       n.Files := TOutFileColl.Create;

@@ -1827,6 +1827,7 @@ begin
          Result := MakeNormName(D, S);
       end;
    end;
+   if Result = '' then exit;
    if Result[length(Result)] = '\' then Delete(Result, length(Result), 1);
 end;
 
@@ -1841,6 +1842,7 @@ end;
 function MakeNormName;
 begin
    Result := Path;
+   if Path = '' then exit;
    if (Result <> '') and (Result[Length(Result)] <> '\') then AddStr(Result, '\');
    Result := Result + Name;
 end;
@@ -4118,7 +4120,7 @@ procedure TSortedColl.Insert(Item: Pointer);
 var
    I: Integer;
 begin
-   if not Search(KeyOf(Item), I) or Duplicates then AtInsert(I, Item);
+   if not Search(KeyOf(Item), I) or Duplicates then AtInsert(I, Item) else FreeItem(Item);
 end;
 
 function TSortedColl.Search(Key: Pointer; var Index: Integer): Boolean;

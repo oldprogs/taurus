@@ -464,10 +464,8 @@ var
   s: string;
 begin
   if OutMsgsLocked then Exit;
-  for i := 0 to OutMsgsColl.Count - 1 do begin
+  for i := 0 to CollMax(OutMsgsColl) do begin
      s := OutMsgsColl[i];
-//    CustomInfo := s;
-//    FLogFile(Self, lfBinkPNiaE);
      for j := 1 to Length(s) do PutCharProc(Byte(s[j]));
   end;
   CP.Flsh;
@@ -610,7 +608,6 @@ begin
         Chat.Visible := False;
      end else begin
         CustomInfo := InMsg;
-{        FLogFile(Self, lfBinkPNul);}
         StartChat(LogFName, false, ChatBell);
         Chat.AddMsg(s);
      end;
@@ -947,13 +944,31 @@ begin
       State := bdWaitOK;
     bdWaitOK :
       case RxPkt of
-        pktNone : ;
-        MinErr..MaxErr : ;
-        Integer(M_ADR) : if AddrGot then State := bdUnrec else begin AddrGot := True; if Originator then begin State := bdStartWaitOK; GetAdr end else State := bdUnrec end;
-        Integer(M_OK)  : begin State := bdWaitDoneOK; InitCrypt; end;
-        Integer(M_ERR) : begin ParseOK_M_ERR; FlushPkt  end;
-        Integer(M_NUL) : begin LogNul; State := bdStartWaitOK end;
-        else if RxPktKnown then State := bdUnrec else begin FlushPkt; State := bdStartWaitOK end;
+      pktNone : ;
+      MinErr..MaxErr : ;
+      Integer(M_ADR) : if AddrGot then State := bdUnrec else begin AddrGot := True; if Originator then begin State := bdStartWaitOK; GetAdr end else State := bdUnrec end;
+      Integer(M_OK)  :
+         begin
+            State := bdWaitDoneOK;
+            if InMsg <> 'non-secure' then begin
+               if InMsg = '' then begin
+                  CustomInfo := 'Blank M_OK message';
+                  FLogFile(Self, lfDebug);
+               end;
+               InitCrypt;
+            end else begin
+               CustomInfo := 'Remote submitted insecure session';
+               FLogFile(Self, lfLog);
+               if RemoteCanCryp then begin
+                  RemoteCanCryp := False;
+                  CustomInfo := 'CRYPT option disabled by remote for insecure link';
+                  FLogFile(Self, lfLog);
+               end;
+            end;
+         end;
+      Integer(M_ERR) : begin ParseOK_M_ERR; FlushPkt  end;
+      Integer(M_NUL) : begin LogNul; State := bdStartWaitOK end;
+      else if RxPktKnown then State := bdUnrec else begin FlushPkt; State := bdStartWaitOK end;
       end;
     bdWaitDoneOK :
       begin
@@ -962,10 +977,14 @@ begin
       end;
     bdSendOKPwd :
       begin
-        SendId(M_OK);
+        CustomInfo := 'non-secure';
+        if (FiPassword <> '') and (FiPassword <> '-') then CustomInfo := 'secure';
+        SendMsg(M_OK, CustomInfo);
         SendDummy;
         State := bdStartTransfer;
-        InitCrypt;
+        if CustomInfo = 'secure' then begin
+           InitCrypt;
+        end;
         sleep(500);
       end;
     bdAllAkasBusy:
@@ -1888,7 +1907,7 @@ procedure TBinkP.InitCrypt;
 var
    i: integer;
 begin
-   RemoteCanCryp :=  RemoteCanCryp and (FiPassword <> '-') and (RemoteCanCRAM or originator);
+   RemoteCanCryp :=  RemoteCanCryp and (FiPassword <> '-') and (RemoteCanCRAM or Originator);
    if not RemoteCanCryp then exit;
    FLogFile(Self, lfCRYP);
    if Originator then begin

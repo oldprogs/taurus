@@ -11,10 +11,11 @@ type
     hDirectoryWatcherEvent: THandle;
     hOutboundWatcher,
     hHomeDirWatcher: THandle;
-    hNetmailWatcher: THandle;
     hFileFlagsWatcher: THandle;
     hNodelistsWatcher: PWOHandleArray;
+    hNetmailWatcher: PWOHandleArray;
     fSize: integer;
+    nSize: integer;
     fTime: TFileTime;
     Busy: boolean;
 //    hOutboundReader: THandle;
@@ -22,6 +23,7 @@ type
     constructor Create;
     destructor Destroy; override;
     procedure FillArray;
+    procedure FillNetm;
     procedure CheckLists;
     procedure InvokeExec; override;
     procedure InvokeDone; override;
@@ -34,7 +36,6 @@ type
                    wtOutbound,
                    wtFileFlags,
                    wtHomeDir,
-                   wtNetmail,
                    wtStopEvent
 //                   wtOutReader
                  );
@@ -49,7 +50,7 @@ function GetBuildDateStr(const fn: string): string;
 
 implementation
 
-uses Forms, SysUtils, Recs, RadIni, MlrThr, Wizard, NdlUtil;
+uses Forms, SysUtils, Recs, RadIni, MlrThr, Wizard, NdlUtil, RadSav;
 
 constructor TDirectoryWatcher.Create;
 var
@@ -75,9 +76,6 @@ begin
   Subtree := False;
   hHomeDirWatcher := FindFirstChangeNotification(PChar(JustPathName(IniFName)),
                       Bool(Integer(Subtree)), FILE_NOTIFY_CHANGE_LAST_WRITE);
-
-  hNetmailWatcher := FindFirstChangeNotification(PChar(JustPathName(IniFile.NetmailDir)),
-                      Bool(Integer(Subtree)), FILE_NOTIFY_CHANGE_FILE_NAME + FILE_NOTIFY_CHANGE_LAST_WRITE);
 
 {  hOutboundReader := CreateFile (
           PChar(FullPath(FullPath(outboundpath))),
@@ -128,21 +126,45 @@ begin
    end;
 end;
 
-destructor TDirectoryWatcher.Destroy;
-var i: integer;
+procedure TDirectoryWatcher.FillNetm;
+var
+   d: TDualColl;
+   i: integer;
 begin
-  FindCloseChangeNotification(hOutboundWatcher);
-  FindCloseChangeNotification(hFileFlagsWatcher);
-  FindCloseChangeNotification(hHomeDirWatcher);
-  FindCloseChangeNotification(hNetmailWatcher);
-  CloseHandle(hDirectoryWatcherEvent);
-  for i := 0 to fSize - 1 do begin
-     FindCloseChangeNotification(hNodelistsWatcher[i]);
-  end;
-  FreeMem(hNodelistsWatcher);
+   if hNetmailWatcher <> nil then begin
+      for i := 0 to nSize - 1 do begin
+         FindCloseChangeNotification(hNetmailWatcher[i]);
+      end;
+      FreeMem(hNetmailWatcher, nSize * SizeOf(THandle));
+   end;
+   d := IniFile.GetStrings('gNetPath');
+   nSize := d.Count;
+   GetMem(hNetmailWatcher, SizeOf(THandle) * nSize);
+   for i := 0 to nSize - 1 do begin
+      hNetmailWatcher[i] := FindFirstChangeNotification(PChar(TDualRec(d[i]^).St1^),
+                            False, FILE_NOTIFY_CHANGE_LAST_WRITE);
+   end;
+end;
+
+destructor TDirectoryWatcher.Destroy;
+var
+   i: integer;
+begin
+   FindCloseChangeNotification(hOutboundWatcher);
+   FindCloseChangeNotification(hFileFlagsWatcher);
+   FindCloseChangeNotification(hHomeDirWatcher);
+   CloseHandle(hDirectoryWatcherEvent);
+   for i := 0 to nSize - 1 do begin
+      FindCloseChangeNotification(hNetmailWatcher[i]);
+   end;
+   for i := 0 to fSize - 1 do begin
+      FindCloseChangeNotification(hNodelistsWatcher[i]);
+   end;
+   FreeMem(hNodelistsWatcher);
+   FreeMem(hNetmailWatcher);
 //  CloseHandle(hOutboundReader);
 //  ZeroHandle(hOutboundEvent);
-  inherited Destroy;
+   inherited Destroy;
 end;
 
 procedure TDirectoryWatcher.CheckLists;
@@ -178,21 +200,20 @@ end;
 
 procedure TDirectoryWatcher.InvokeExec;
 var
-  HandlesArray: PWOHandleArray;
-  WaitResult: DWORD;
-  i: integer;
-  n: integer;
- p3: TFileTime;
+   HandlesArray: PWOHandleArray;
+   WaitResult: DWORD;
+   i: integer;
+   n: integer;
+  p3: TFileTime;
 {  o: integer;
  FNI: array[0..1024] of _FILE_NOTIFY_INFORMATION;
  Ov: TOverlapped;}
 begin
-  if Terminated {or ApplicationDowned} or ExitNow then exit;
-  if hOutboundWatcher = INVALID_HANDLE_VALUE then begin Terminated := True; Exit end;
-  if hFileFlagsWatcher = INVALID_HANDLE_VALUE then begin Terminated := True; Exit end;
-  if hHomeDirWatcher = INVALID_HANDLE_VALUE then begin Terminated := True; Exit end;
-  if hDirectoryWatcherEvent = INVALID_HANDLE_VALUE then begin Terminated := True; Exit end;
-  if hNetmailWatcher = INVALID_HANDLE_VALUE then begin Terminated := True; Exit end;
+   if Terminated {or ApplicationDowned} or ExitNow then exit;
+   if hOutboundWatcher = INVALID_HANDLE_VALUE then begin Terminated := True; Exit end;
+   if hFileFlagsWatcher = INVALID_HANDLE_VALUE then begin Terminated := True; Exit end;
+   if hHomeDirWatcher = INVALID_HANDLE_VALUE then begin Terminated := True; Exit end;
+   if hDirectoryWatcherEvent = INVALID_HANDLE_VALUE then begin Terminated := True; Exit end;
 
 {  FillChar(Ov, SizeOf(Ov), #0);
   Ov.hEvent := hOutboundEvent;
@@ -202,42 +223,50 @@ begin
         hOutboundReader, @FNI, SizeOf(FNI), True, FILE_NOTIFY_CHANGE_SIZE, @o, @Ov, nil);
   end;}
 
-  if IniFile.AutoNodelist then begin
-     FillArray;
-  end;
+   if IniFile.AutoNodelist then begin
+      FillArray;
+   end;
 
-  n := Integer(wtStopEvent);
-  GetMem(HandlesArray, (n + 1 + fSize) * SizeOf(THandle));
+   FillNetm;
 
-  try
+   n := Integer(wtStopEvent);
+   GetMem(HandlesArray, (n + 1 + fSize + nSize) * SizeOf(THandle));
 
-  HandlesArray[0] := hOutboundWatcher;
-  HandlesArray[1] := hFileFlagsWatcher;
-  HandlesArray[2] := hHomeDirWatcher;
-  HandlesArray[3] := hNetmailWatcher;
-  HandlesArray[n] := hDirectoryWatcherEvent;
+   try
 
-  for i := 1 to fSize do begin
-     HandlesArray[n + i] := hNodelistsWatcher[i - 1];
-  end;
+   HandlesArray[0] := hOutboundWatcher;
+   HandlesArray[1] := hFileFlagsWatcher;
+   HandlesArray[2] := hHomeDirWatcher;
+   HandlesArray[n] := hDirectoryWatcherEvent;
 
-  Busy := False;
-  WaitResult := WaitForMultipleObjects(n + 1 + fSize, HandlesArray, False, INFINITE) - WAIT_OBJECT_0;
-  Busy := True;
+   for i := 1 to fSize do begin
+      HandlesArray[n + i] := hNodelistsWatcher[i - 1];
+   end;
 
-  if Terminated then exit;
+   n := Integer(wtStopEvent) + fSize;
 
-  if WaitResult = WAIT_FAILED then
-  begin
-    sleep(1000);
-    exit;
-  end;
+   for i := 1 to nSize do begin
+      HandlesArray[n + i] := hNetmailWatcher[i - 1];
+   end;
 
-  if Terminated then exit;
-  if IniFile = nil then exit;
+   n := Integer(wtStopEvent);
 
-  if Terminated then exit;
-  case WaitResult of
+   Busy := False;
+   WaitResult := WaitForMultipleObjects(n + 1 + fSize + nSize, HandlesArray, False, INFINITE) - WAIT_OBJECT_0;
+   Busy := True;
+
+   if Terminated then exit;
+
+   if WaitResult = WAIT_FAILED then begin
+      sleep(1000);
+      exit;
+   end;
+
+   if Terminated then exit;
+   if IniFile = nil then exit;
+
+   if Terminated then exit;
+   case WaitResult of
     0:
        begin
           if (not Terminated) and (Application <> nil) and (Application.MainForm <> nil) then begin
@@ -270,33 +299,29 @@ begin
              FindNextChangeNotification(hHomeDirWatcher);
           end;
        end;
-    3:
-       begin
-          if (not Terminated) and (Application <> nil) and (Application.MainForm <> nil) then begin
-             PostMessage(MainWinHandle, WM_CHECKNETMAIL, 0, 0);
-             FindNextChangeNotification(hNetmailWatcher);
-             FindNextChangeNotification(hNetmailWatcher);
-          end;
-       end;
 {    wtOutReader:
        begin
           ReadDirectoryChangesW(
              hOutboundReader, @FNI, SizeOf(FNI), True, FILE_NOTIFY_CHANGE_SIZE, @o, @Ov, nil);
           FindNextChangeNotification(hOutboundWatcher);
        end;}
-     4..999:
+     3..999:
        begin
          if (not Terminated) and (Application <> nil) and (Application.MainForm <> nil) and (IniFile.AutoNodelist) then begin
-            CheckLists;
+            if WaitResult <= DWORD(n + fSize) then begin
+               CheckLists;
+            end else begin
+               PostMessage(MainWinHandle, WM_CHECKNETMAIL, 0, 0);
+            end;
          end;
          exit;
        end;
-  end; {case}
-  if IniFile.AutoNodelist then CheckLists;
-  finally
-     n := Integer(wtStopEvent);
-     FreeMem(HandlesArray, (n + 1 + fSize) * SizeOf(THandle));
-  end;
+   end;
+   if IniFile.AutoNodelist then CheckLists;
+   finally
+      n := Integer(wtStopEvent);
+      FreeMem(HandlesArray, (n + 1 + fSize + nSize) * SizeOf(THandle));
+   end;
 end;
 
 procedure TDirectoryWatcher.InvokeDone;

@@ -384,6 +384,7 @@ const
   rsIpBList         = 487;
   rsMMTabSystem     = 488;
   rsMMwcSystem      = 489;
+  rsNetPathGrid     = 490;
 
   rsCDCh            = 103;
   rsNBBoNotLtd      = 104;

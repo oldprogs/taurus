@@ -55,6 +55,7 @@ object FidoAddressInput: TFidoAddressInput
       Height = 23
       HistoryID = 22
       TabOrder = 0
+      OnKeyDown = lAddressKeyDown
     end
     object bBrowse: TButton
       Left = 251

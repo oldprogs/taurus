@@ -212,11 +212,13 @@ begin
             m := StringsList.Add(n);
             StringsList.Objects[m] := Result;
             for i := 1 to s.Count do begin
-               t := ReadString('Grids', s[i - 1], '');
-               Result.Add(s[i - 1],
-                          ExtractWord(1, t, ['|']),
-                          ExtractWord(2, t, ['|']));
-            end;
+               if pos(n, s[i - 1]) > 0 then begin
+                  t := ReadString('Grids', s[i - 1], '');
+                  Result.Add(s[i - 1],
+                             ExtractWord(1, t, ['|']),
+                             ExtractWord(2, t, ['|']));
+               end;
+            end;   
             s.Free;
          finally
             Free;

@@ -112,6 +112,7 @@ procedure FinalizePKT(a: TFidoAddress; p: string);
 procedure NewMessage(a: TFidoAddress; o, u: string);
 procedure WriteLine(n: string);
 procedure EndMessage;
+procedure MergeMail(const a: TFidoAddress; const n, o: string);
 
 var
    NetmailHolder: TNetmail;
@@ -121,7 +122,7 @@ implementation
 
 uses
    RadIni, RRegExp, SysUtils, Wizard, Outbound, DateUtils,
-   Forms, Watcher, JclDateTime;
+   Forms, Watcher, JclDateTime, RadSav;
 
 procedure FreeNetmailHolder;
 begin
@@ -261,6 +262,8 @@ var
    h: _fidomsgtype;
    t: string;
    x: integer;
+   d: TDualColl;
+   p: string;
 begin
    x := 0;
    if NetmailHolder <> nil then x := NetmailHolder.MaxMSG;
@@ -276,9 +279,14 @@ begin
    h.orig_net  := IniFile.MainAddr.Net;
    h.dest_net  := a.Net;
    h.attr := Pvt or Local or KillSent;
+   d := IniFile.GetStrings('gNetPath');
+   p := '';
+   if CollMax(d) > -1 then begin
+      p := TDualRec(d[0]^).St1^;
+   end;
    repeat
       inc(x);
-      t := AddBackSlash(IniFile.NetmailDir) + IntToStr(x) + '.MSG';
+      t := AddBackSlash(p) + IntToStr(x) + '.MSG';
    until not ExistFile(t);
    s := TFileStream.Create(t, fmCreate or fmShareExclusive);
    s.Write(h, SizeOf(h));
@@ -320,6 +328,8 @@ var
    x: Integer;
    t: string;
    o: integer;
+   d: TDualColl;
+   z: string;
 begin
    x := 0;
    if NetmailHolder <> nil then x := NetmailHolder.MaxMSG;
@@ -344,14 +354,20 @@ begin
       h.orig_net  := m.From.Net;
       h.dest_net  := m.Addr.Net;
       h.date_arrived := DateTimeToDosDateTime(Date + Time);
+      h.attr := h.attr and (not Local);
       if not AddrColl.Search(@m.Addr, j) then begin
          h.attr := m.Attr or KillSent or InTransit;
       end else begin
          h.attr := m.Attr and (not InTransit);
       end;
+      d := IniFile.GetStrings('gNetPath');
+      z := '';
+      if CollMax(d) > -1 then begin
+         z := TDualRec(d[0]^).St1^;
+      end;
       repeat
          inc(x);
-         t := AddBackSlash(IniFile.NetmailDir) + IntToStr(x) + '.MSG';
+         t := AddBackSlash(z) + IntToStr(x) + '.MSG';
       until not ExistFile(t);
       s := TFileStream.Create(t, fmCreate or fmShareExclusive);
       s.Write(h, SizeOf(h));
@@ -637,9 +653,13 @@ var
    CC: integer;
    PK: TNetmailPKT;
    NN: integer;
+   PN: integer;
+   DC: TDualColl;
 begin
    if not IniFile.ScanMSG then exit;
-   FP := AddBackSlash(IniFile.NetmailDir);
+   DC := IniFile.GetStrings('gNetPath');
+   for PN := 0 to CollMax(DC) do begin
+   FP := AddBackSlash(TDualRec(DC.Items[PN]^).St1^);
    if uFindFirst(FP + '*.MSG', SR) then begin
       Application.ProcessMessages;
       NetColl.Enter;
@@ -671,6 +691,7 @@ begin
       uFindClose(SR);
       PktColl.Leave;
       NetColl.Leave;
+   end;
    end;
 end;
 
@@ -1339,6 +1360,42 @@ begin
    if h = INVALID_HANDLE_VALUE then Exit;
    ZeroHandle(h);
    inherited;
+end;
+
+procedure MergeMail(const a: TFidoAddress; const n, o: string);
+var
+   i, p: TFileStream;
+begin
+   if FidoOut.Lock(a, osBusyEx, True) then begin
+      if FidoOut.Lock(a, osBusy, True) then begin
+         if not FileExists(o) then begin
+            RenameFile(n, o);
+         end else
+         if GetPKTFileType(n) = pftFSC39 then begin
+            try
+               i := nil;
+               p := nil;
+               i := TFileStream.Create(o, fmOpenRead);
+               p := TFileStream.Create(n, fmOpenReadWrite);
+               i.Seek($3A, soFromBeginning);
+               p.Seek(-2, soFromEnd);
+               p.CopyFrom(i, i.Size - $3A);
+               FreeObject(i);
+               FreeObject(p);
+               DeleteFile(o);
+               RenameFile(n, o);
+            finally
+               FreeObject(i);
+               FreeObject(p);
+            end;
+         end else begin
+            // hope this shit never happen or
+            // PKT in a ?lo technique should be used
+         end;
+         FidoOut.Unlock(a, osBusy);
+      end;
+      FidoOut.Unlock(a, osBusyEx);
+   end;
 end;
 
 initialization

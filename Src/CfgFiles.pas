@@ -699,19 +699,16 @@ begin
   end;
 end;
 
-function TMemIniFile.ReadString(const Section, Ident,
-  Default: string): string;
+function TMemIniFile.ReadString(const Section, Ident, Default: string): string;
 var
   I: Integer;
   Strings: TStrings;
 begin
   I := FSections.IndexOf(Section);
-  if I >= 0 then
-  begin
+  if I >= 0 then begin
     Strings := TStrings(FSections.Objects[I]);
     I := Strings.IndexOfName(Ident);
-    if I >= 0 then
-    begin
+    if I >= 0 then begin
       Result := Copy(Strings[I], Length(Ident) + 2, Maxint);
       Exit;
     end;

@@ -859,7 +859,6 @@ function Char2OutStatus(c: Char): TOutStatus;
 function ValidPhnPrefix(const s: string): Boolean;
 function FindFTNDOM(const a: TFidoAddress): string; overload;
 function FindFTNDOM(const a: string): string; overload;
-procedure MergeMail(const a: TFidoAddress; const n, o: string);
 
 implementation
 
@@ -3584,41 +3583,9 @@ begin
   Result := IdentOvrItem(s, False, False) = oiPhoneNum;
 end;
 
-procedure MergeMail(const a: TFidoAddress; const n, o: string);
-var
-   i, p: TFileStream;
-begin
-   if FidoOut.Lock(a, osBusyEx, True) then begin
-      if FidoOut.Lock(a, osBusy, True) then begin
-         if not FileExists(o) then begin
-            RenameFile(n, o);
-         end else
-         if GetPKTFileType(n) = pftFSC39 then begin
-            try
-               i := nil;
-               p := nil;
-               i := TFileStream.Create(o, fmOpenRead);
-               p := TFileStream.Create(n, fmOpenReadWrite);
-               i.Seek($3A, soFromBeginning);
-               p.Seek(-2, soFromEnd);
-               p.CopyFrom(i, i.Size - $3A);
-               FreeObject(i);
-               FreeObject(p);
-               DeleteFile(o);
-               RenameFile(n, o);
-            finally
-               FreeObject(i);
-               FreeObject(p);
-            end;
-         end else begin
-            // hope this shit never happen or
-            // PKT in a ?lo technique should be used
-         end;
-         FidoOut.Unlock(a, osBusy);
-      end;
-      FidoOut.Unlock(a, osBusyEx);
-   end;
-end;
+initialization
+
+finalization
 
 end.
 

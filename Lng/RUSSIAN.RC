@@ -26,6 +26,7 @@ LANGUAGE LANG_RUSSIAN,0
 
   LngBaseRussian+rsPswGrid         "|Узлы|Пароль"
   LngBaseRussian+rsNetmailGrid     "|Через|Для узлов|Пароль"
+  LngBaseRussian+rsNetPathGrid     "Путь к нетмейлу"
   LngBaseRussian+rsPswEmptyAdr     "Пустой FTN-адрес, строка %d"
   LngBaseRussian+rsPswEmptyPwd     "Пустой пароль, строка %d"
 
