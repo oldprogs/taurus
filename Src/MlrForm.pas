@@ -3287,14 +3287,23 @@ procedure TMailerForm.UpdateView(fromcc: boolean);
             (ActiveLine.SD.Prot.Chat <> nil) then
          begin
            try
-             ChatMemo1.Text := ActiveLine.SD.Prot.Chat.Memo1Text.Text;
-             ChatMemo1.Perform(em_linescroll, 0, ChatMemo1.Lines.Count);
-             ChatMemo2.Text := ActiveLine.SD.Prot.Chat.Memo2Text.Text;
-             ChatMemo2.Perform(em_linescroll, 0, ChatMemo2.Lines.Count);
+             if ChatMemo1.Text <> ActiveLine.SD.Prot.Chat.Memo1Text.Text then begin
+                ChatMemo1.Text := ActiveLine.SD.Prot.Chat.Memo1Text.Text;
+                ChatMemo1.Perform(em_linescroll, 0, ChatMemo1.Lines.Count);
+             end;
+             if ChatMemo2.Text <> ActiveLine.SD.Prot.Chat.Memo2Text.Text then begin
+                ChatMemo2.Text := ActiveLine.SD.Prot.Chat.Memo2Text.Text;
+                ChatMemo2.Perform(em_linescroll, 0, ChatMemo2.Lines.Count);
+             end;
              ChatPan.Visible := (ActiveLine.SD.Prot.Chat <> nil) and (ActiveLine.SD.Prot.Chat.Visible);
              if ChatPan.Visible then begin
                 lChatCaption.Caption := ActiveLine.SD.Prot.Chat.Caption;
-                if not eType.Focused then eType.SetFocus;
+                if not eType.Focused and
+                   (ChatMemo1.SelLength = 0) and
+                   (ChatMemo2.SelLength = 0) then
+                begin
+                   eType.SetFocus;
+                end;   
              end;
            except
              ChatPan.Visible := false;

@@ -200,8 +200,8 @@ const
   BBSAllowed = True;
   FAXAllowed = True;
 
-  ecOurOptions   = [{ecNRQ,} ecARC, ecXMA, ecHFR {,ecFNC}];
-  ecOurProtocols = [ecHYD, ecDZA, ecZAP, ecZMO {, ecYMO}];
+  ecOurOptions   = [ecARC, ecXMA, ecHFR {,ecFNC}];
+  ecOurProtocols = [ecHYD, ecDZA, ecZAP, ecZMO];
 
   EMSI_CR_d   =  1;   {$IFDEF WS} EMSI_CR_i   =  10; {$ENDIF}
   EMSI_S3_d   =  5;   {$IFDEF WS} EMSI_S3_i   =  20; {$ENDIF}
@@ -5072,7 +5072,11 @@ begin
          for j := 0 to CollMax(n.Files) do begin
             o := n.Files[j];
             if o.fStatus in Stat then begin
-               Result.Add(o.Copy);
+               if not ((o.FStatus in [osImmedMail..osHoldMail]) and
+                  (pos('.MSG', UpperCase(o.Name)) = Length(o.Name) - 3)) then
+               begin
+                  Result.Add(o.Copy);
+               end;
             end;
          end;
       end;
@@ -15775,7 +15779,7 @@ begin
    for i := 0 to CollMax(NewNodes) do begin
       Update := True;
       n := NewNodes[i];
-      n.Files := FidoOut.GetOutbound(n.Address, n.StatusSet, nil, FileNames, FileInfos, False, False);
+      n.Files := FidoOut.GetOutbound(n.Address, n.StatusSet, n.Files, FileNames, FileInfos, False, False);
       NewC := NewC + CollMax(n.Files) + 1;
    end;
    FreeObject(FileNames);

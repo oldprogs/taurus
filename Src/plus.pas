@@ -16,7 +16,7 @@ procedure UnPrepareVariables;
 function FreeSpace(const s: string): int64;
 
 function GetFileSize(const FileName: string): Int64;
-function GetFileTime(const FileName: string): Int64;
+function GetFileTime(const FileName: string): DWORD;
 function GetDirSize(const FileName: string): Int64;
 function GetDirTime(const FileName: string): Integer;
 function GetFileList(const Dir, nam: string): TStringColl;

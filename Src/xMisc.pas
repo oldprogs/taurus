@@ -2604,11 +2604,10 @@ begin
    if DispStr = '' then exit;
    Log.Log(FormatLogStr(ltPolls, Dos2Win(DispStr), 'OurSide'));
    Memo2Text.Text := Memo2Text.Text + ExtractWord(1, Dos2Win(DispStr), [#13, #10]);
-   if wordcount(DispStr, [#10, #13]) > 1 then
-   begin
+   if wordcount(DispStr, [#10, #13]) > 1 then begin
      for i := 2 to WordCount(DispStr, [#10, #13]) do begin
        str1 := ExtractWord(i, DispStr, [#10, #13]);
-       Memo2Text.Add(str1);
+       Memo2Text.Add(Dos2Win(str1));
      end;
    end else
    if DispStr[length(DispStr)] = #$a then Memo2Text.Add('');

@@ -844,7 +844,7 @@ var
 procedure AE(const s: string);
 begin
   if PErrorMsg = nil then Exit;
-  if PErrorMsg^ <> '' then PErrorMsg^ := PErrorMsg^+', ';
+  if PErrorMsg^ <> '' then PErrorMsg^ := PErrorMsg^ + ', ';
   PErrorMsg^ := PErrorMsg^ + s;
 end;
 
@@ -1834,51 +1834,71 @@ begin
   end;
 end;
 
-procedure InsertMSGPoll(an: TAdvNode; m: TNetmailMsg);
+procedure InsertMSGPoll(a: TFidoAddress; m: TNetmailMsg);
 var
    i: integer;
    n: TOutNode;
-   s: TOutStatusSet;
+   f: TOutFile;
+   s: TOutStatus;
    p: TPollType;
+  an: TAdvNode;
 begin
-   s := [osCrashMail];
-   if not OutColl.Search(@an.Addr, i) then begin
+   an := FindNode(a);
+   if not OutColl.Search(@a, i) then begin
       n := TOutNode.Create;
       OutColl.Insert(n);
-      n.Address := an.Addr;
+      n.Address := a;
       n.Nfo.Time := GetFileTime(m.Pack);
-      n.FStatus := [osCrashMail];
    end else begin
       n := OutColl[i];
    end;
    p := ptpNetm;
    if pos('IMM', m.Flgs) > 0 then begin
-      n.FStatus := n.FStatus + [osImmedMail];
+      s := osImmedMail;
+      n.FStatus := n.FStatus + [s];
       p := ptpNmIm;
+   end else
+   if pos('DIR', m.Flgs) > 0 then begin
+      s := osDirectMail;
+      n.FStatus := n.FStatus + [s];
+   end else begin
+      s := osCrashMail;
+      n.FStatus := n.FStatus + [s];
    end;
-   s := n.StatusSet;
-   InsertPoll(an, s, p);
+   if an <> nil then begin
+      InsertPoll(an, [s], p);
+   end;
+   if n.Files = nil then begin
+      n.Files := TOutFileColl.Create;
+   end;
+   if not n.Files.FoundFName(m.Pack) then begin
+      f := TOutFile.Create;
+      f.Name := m.Pack;
+      f.Nfo.Time := GetFileTime(m.Pack);
+      f.Nfo.Size := GetFileSize(m.Pack);
+      f.FStatus := s;
+      n.Files.Add(f);
+   end;
 end;
 
 var
   fn,
-  S,
-  E,
-  T,
-  B,
+   S,
+   E,
+   T,
+   B,
   Dr,
   Nm,
   Xt: string;
-  i: DWORD;
-  a: TFidoAddress;
-  n: TOutNode;
-  m: TNetmailMsg;
+   i: DWORD;
+   a: TFidoAddress;
+   n: TOutNode;
+   m: TNetmailMsg;
   ii: Integer;
   nn: Integer;
   ni: Integer;
   SR: TuFindData;
   fb: TFileBoxCfg;
-  an: TAdvNode;
   Nfo: TFileInfo;
   fbc: TFileBoxCfgColl;
   fbdc: TFileBoxDirColl;
@@ -1971,6 +1991,9 @@ begin
      NetmailHolder.NetColl.Enter;
      for ii := 0 to CollMax(NetmailHolder.NetColl) do begin
         m := NetmailHolder.NetColl[ii];
+        if m.Fido and (pos('DIR', m.Flgs) > 0) then begin
+           InsertMSGPoll(m.Addr, m);
+        end else
         if m.Fido and (m.Attr and HoldForPickUp = 0) then begin
            for nn := 0 to IniFile.NetmailAddrTo.Count - 1 do begin
               s := IniFile.NetmailAddrTo[nn];
@@ -1984,6 +2007,16 @@ begin
                     e := e + ' ' + t;
                  end;
               until s = '';
+              repeat
+                 GetWrd(e, t, ' ');
+                 if MatchMaskAddress(m.Addr, t) then begin
+                    t := 'q';
+                    break;
+                 end;
+              until e = '';
+              if t = 'q' then begin
+                 continue;
+              end;
               b := '';
               s := IniFile.NetmailAddrFrom[nn];
               for ni := 1 to WordCount(s, [' ']) do begin
@@ -1992,30 +2025,18 @@ begin
               end;
               s := b;
               repeat
-                 GetWrd(e, t, ' ');
-                 if MatchMaskAddress(m.Addr, t) then begin
-                    break;
-                 end;
-              repeat
                  GetWrd(s, t, ' ');
                  if MatchMaskAddress(m.Addr, t) then begin
                     t := IniFile.NetmailAddrTo[nn];
                     if ParseAddress(t, a) then begin
-                       an := FindNode(a);
-                       if an <> nil then begin
-                          InsertMSGPoll(an, m);
-                       end;
+                       InsertMSGPoll(a, m);
                     end else begin
                        if MatchMaskAddress(m.Addr, t) then begin
-                          an := FindNode(m.Addr);
-                          if an <> nil then begin
-                             InsertMSGPoll(an, m);
-                          end;
+                          InsertMSGPoll(m.Addr, m);
                        end;
                     end;
                  end;
               until s = '';
-              until e = '';
            end;
         end;
      end;
@@ -2188,17 +2209,14 @@ function GetAge(Time: DWORD): string;
 var
   SysTime, Age: DWORD;
 begin
-  if Time = 0 then
-  begin
+  if Time = 0 then begin
     Result := '';
     Exit;
   end;
   SysTime := uGetSystemTime;
-  if SysTime >= Time then
-  begin
+  if SysTime >= Time then begin
     Age := SysTime - Time;
-    if Age > 2*day then Result := Format('%d days', [Age div (day)]) else
-    begin
+    if Age > 2 * day then Result := Format('%d days', [Age div (day)]) else begin
       Age := Age div 60;
       Result := Format('%2.2d:%2.2d', [Age div 60, Age mod 60]);
     end;

@@ -377,6 +377,7 @@ const
   rsMMptpiNetm      = 480;
   rsMMptNmIm        = 481;
   rsMMptpiNmIm      = 482;
+  rsMMOutNMSG       = 483;
 
   rsCDCh            = 103;
   rsNBBoNotLtd      = 104;

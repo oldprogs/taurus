@@ -150,6 +150,7 @@ LANGUAGE LANG_ENGLISH,0
   LngBaseEnglish+rsMMOutNFreq      "%s (request)"
   LngBaseEnglish+rsMMOutCBack      "%s (callback)"
   LngBaseEnglish+rsMMOutNMailPkt   "%s (mail packet)"
+  LngBaseEnglish+rsMMOutNMSG       "%s (MSG)"
   LngBaseEnglish+rsMMOutIsBusy     "%s is busy"
   LngBaseEnglish+rsMMOutCurNode    "Current Node"
   LngBaseEnglish+rsMMOutCurFile    "Current File"

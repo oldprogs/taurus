@@ -150,6 +150,7 @@ LANGUAGE LANG_RUSSIAN,0
   LngBaseRussian+rsMMOutNFreq      "%s (запрос)"
   LngBaseRussian+rsMMOutCBack      "%s (callback)"
   LngBaseRussian+rsMMOutNMailPkt   "%s (пакет)"
+  LngBaseRussian+rsMMOutNMSG       "%s (MSG)"
   LngBaseRussian+rsMMOutIsBusy     "%s занят"
   LngBaseRussian+rsMMOutCurNode    "Текущий узел"
   LngBaseRussian+rsMMOutCurFile    "Текущий файл"

@@ -743,6 +743,9 @@ begin
    if Active then begin
       if n.Fido and (pos('IMM', n.Flgs) > 0) then begin
          s := s + '.iut';
+      end else
+      if n.Fido and (pos('DIR', n.Flgs) > 0) then begin
+         s := s + '.dut';
       end else begin
          s := s + '.cut';
       end;
@@ -803,9 +806,11 @@ begin
       m := NetColl[i];
       if MatchMaskAddress(m.Addr, r) and not MatchMaskAddressListSingle(m.Addr, e) then begin
          if existfile(m.Pack) then begin
-            MoveMail(m, a, p, Active);
-            ScanActive := True;
-            ScanCounter := 1;
+            if not m.Fido or (Pos('DIR', m.Flgs) = 0) or (CompareAddrs(m.Addr, a) = 0) then begin
+               MoveMail(m, a, p, Active);
+               ScanActive := True;
+               ScanCounter := 1;
+            end;
          end else begin
             FreeMem(m.Body, m.Size);
             m.Body := nil;
