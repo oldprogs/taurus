@@ -2022,93 +2022,94 @@ end;
 
 function TFidoNode.Copy: TFidoNode;
 begin
-  Result := TFidoNode.Init;
-  Result.Addr     := Addr;
-  Result.Speed    := Speed;
-  Result.Station  := StrAsg(Station);
-  Result.Sysop    := StrAsg(Sysop);
-  Result.Phone    := StrAsg(Phone);
-  Result.Flags    := StrAsg(Flags);
-  Result.Location := StrAsg(Location);
-  Result.PrefixFlag := PrefixFlag;
+   Result := nil;
+   if self = nil then exit;
+   Result := TFidoNode.Init;
+   Result.Addr     := Addr;
+   Result.Speed    := Speed;
+   Result.Station  := StrAsg(Station);
+   Result.Sysop    := StrAsg(Sysop);
+   Result.Phone    := StrAsg(Phone);
+   Result.Flags    := StrAsg(Flags);
+   Result.Location := StrAsg(Location);
+   Result.PrefixFlag := PrefixFlag;
 end;
 
 procedure TFidoNode.FillNodelist;
 var
-  i,j,k: Integer;
-  s: ShortString;
-  sl: byte absolute s;
-  AStrL: byte absolute AStr;
-  C: Char;
+   i,
+   j,
+   k: Integer;
+   s: ShortString;
+   sl: byte absolute s;
+   AStrL: byte absolute AStr;
+   C: Char;
 begin
-  TreeItem := nil ;
-  HasPoints := False;
-  Hub     := 0;
-  Speed   := 0;
-  Station := '';
-  Location:= '';
-  Sysop   := '';
-  Phone   := '';
-  Flags   := '';
-  PrefixFlag := APrefixFlag;
-  Addr := AAddr;
-  i := 1;
-  j := 1;
-  sl := 0;
-  while i <= AStrL do
-  begin
-    C := AStr[i];
-    if (C = '_') and (J < 4) then C := ' ';
-    if (C = ',') and (J < 6) then
-    begin
-      case J of
-        1 : Station  := S;
-        2 : Location := S;
-        3 : Sysop    := S;
-        4 : Phone    := S;
-        5 : begin
-              Speed := 0;
-              for k := 1 to sl do
-              begin
-                c := s[k];
-                case c of
+   TreeItem := nil ;
+   HasPoints := False;
+   Hub     := 0;
+   Speed   := 0;
+   Station := '';
+   Location:= '';
+   Sysop   := '';
+   Phone   := '';
+   Flags   := '';
+   PrefixFlag := APrefixFlag;
+   Addr := AAddr;
+   i := 1;
+   j := 1;
+   sl := 0;
+   while i <= AStrL do begin
+      C := AStr[i];
+      if (C = '_') and (J < 4) then C := ' ';
+      if (C = ',') and (J < 6) then begin
+         case J of
+         1 : Station  := S;
+         2 : Location := S;
+         3 : Sysop    := S;
+         4 : Phone    := S;
+         5 :
+            begin
+               Speed := 0;
+               for k := 1 to sl do begin
+                  c := s[k];
+                  case c of
                   '0'..'9' : Speed := (Speed * 10) + Ord(C) - Ord('0');
                   else
-                  begin
-                    Speed := 0;
-                    Break;
+                     begin
+                        Speed := 0;
+                        Break;
+                     end;
                   end;
-                end;
-              end;
+               end;
             end;
+         end;
+         Inc(J);
+         sl := 0;
+      end else begin
+         Inc(sl); s[sl] := C;
       end;
-      Inc(J);
-      sl := 0;
-    end else
-    begin
-      Inc(sl); s[sl] := C;
-    end;
-    Inc(i);
-  end;
-  Flags := s;
+      Inc(i);
+   end;
+   Flags := s;
 end;
 
 procedure TFidoNode.FillStream(AZone, ANet: Integer; S: TxStream);
 begin
-  Addr.Zone := AZone;
-  Addr.Net := ANet;
+   Addr.Zone := AZone;
+   Addr.Net := ANet;
 {  Addr.Region := S.ReadInteger;}
-  Hub := S.ReadInteger;
-  Addr.Node := S.ReadInteger;
-  Addr.Point := S.ReadInteger;
-  Addr.Domain := S.ReadStr;
-  Byte(PrefixFlag) := S.ReadByte;
-  Station :=  S.ReadStr;
-  Sysop    :=  S.ReadStr;
-  Speed := S.ReadInteger;
-  Phone   :=  S.ReadStr;
-  Flags   :=  S.ReadStr;
-  Location :=  S.ReadStr;
+   Hub := S.ReadInteger;
+   Addr.Node := S.ReadInteger;
+   Addr.Point := S.ReadInteger;
+   Addr.Domain := S.ReadStr;
+   Byte(PrefixFlag) := S.ReadByte;
+   Station :=  S.ReadStr;
+   Sysop    :=  S.ReadStr;
+   Speed := S.ReadInteger;
+   Phone   :=  S.ReadStr;
+   Flags   :=  S.ReadStr;
+   Location :=  S.ReadStr;
 end;
 
 procedure TFidoNode._Store;
@@ -2128,19 +2129,18 @@ end;
 
 destructor  TFidoNode.Destroy;
 begin
-  inherited Destroy;
+   inherited Destroy;
 end;
 
 function TFidoNodeColl.Compare(Key1, Key2: Pointer): Integer;
 begin
-  Result := CompareAddrs(TFidoAddress(Key1^), TFidoAddress(Key2^));
+   Result := CompareAddrs(TFidoAddress(Key1^), TFidoAddress(Key2^));
 end;
 
 function TFidoNodeColl.KeyOf(Item: Pointer): Pointer;
 begin
-  Result := @TFidoNode(Item).Addr;
+   Result := @TFidoNode(Item).Addr;
 end;
-
 
 {function IdentAnsweringOpt(const S: string): TAnsweringOption;
 var
@@ -2161,182 +2161,163 @@ end;}
 
 destructor TAdvNode.Destroy;
 begin
-  FreeObject(Ext);
-  FreeObject(DialupData);
-  FreeObject(IPData);
-  inherited Destroy;
+   FreeObject(Ext);
+   FreeObject(DialupData);
+   FreeObject(IPData);
+   inherited Destroy;
 end;
 
 function TAdvNode.Copy: Pointer;
 var
-  r: TAdvNode;
+   r: TAdvNode;
 begin
-  r := TAdvNode.Create;
-  r.Speed := Speed;
-  r.Station := StrAsg(Station);
-  r.Sysop := StrAsg(Sysop);
-  r.Location := StrAsg(Location);
-  r.PrefixFlag := PrefixFlag;
-  r.Addr := Addr;
-  if DialupData <> nil then r.DialupData := DialupData.Copy;
-  if IPData <> nil then r.IPData := IPData.Copy;
-  if Ext <> nil then r.Ext := Ext.Copy;
-  Result := r;
+   r := TAdvNode.Create;
+   r.Speed := Speed;
+   r.Station := StrAsg(Station);
+   r.Sysop := StrAsg(Sysop);
+   r.Location := StrAsg(Location);
+   r.PrefixFlag := PrefixFlag;
+   r.Addr := Addr;
+   if DialupData <> nil then r.DialupData := DialupData.Copy;
+   if IPData <> nil then r.IPData := IPData.Copy;
+   if Ext <> nil then r.Ext := Ext.Copy;
+   Result := r;
 end;
 
 function TAdvNodeExtData.Copy: Pointer;
 var
-  r: TAdvNodeExtData;
+   r: TAdvNodeExtData;
 begin
-  r := TAdvNodeExtData.Create;
-  r.Opts := StrAsg(Opts);
-  r.Cmd := StrAsg(Cmd);
-  Result := r;
+   r := TAdvNodeExtData.Create;
+   r.Opts := StrAsg(Opts);
+   r.Cmd := StrAsg(Cmd);
+   Result := r;
 end;
 
 function CurFSC62Quant: TFSC62Quant;
 begin
-  Result := TFSC62Quant((uGetSystemTime mod SecsPerDay) div (60 * 30));
+   Result := TFSC62Quant((uGetSystemTime mod SecsPerDay) div (60 * 30));
 end;
 
 function IsTxyEx(const S: string; var Local: Boolean; FReq: boolean): Boolean;
 var
-  len:byte;
+   len:byte;
 begin
-  Result := False;
-  if freq and (length(s)<4) then
-  begin
-    result :=false;
-    exit;
-  end;
-  if FReq then
-  begin
-    if UpCase(s[4]) <> 'F' then exit;
-    len := 4;
-  end else len := 3;
-  if Length(S) = len then Local := False
-  else if Length(S) = len+1 then
-  begin
-    Local := True;
-    if UpCase(S[len + 1]) <> 'L' then Exit
-  end else Exit;
-  if UpCase(S[1]) <> 'T' then Exit;
-  Result := (S[2] in ['A'..'X', 'a'..'x']) and (S[3] in ['A'..'X', 'a'..'x']);
-
+   Result := False;
+   if freq and (length(s)<4) then begin
+      result :=false;
+      exit;
+   end;
+   if FReq then begin
+      if UpCase(s[4]) <> 'F' then exit;
+      len := 4;
+   end else len := 3;
+   if Length(S) = len then Local := False else
+   if Length(S) = len+1 then begin
+      Local := True;
+      if UpCase(S[len + 1]) <> 'L' then Exit
+   end else Exit;
+   if UpCase(S[1]) <> 'T' then Exit;
+   Result := (S[2] in ['A'..'X', 'a'..'x']) and (S[3] in ['A'..'X', 'a'..'x']);
 end;
 
 function IsTxy(const S: string; var Local: Boolean): Boolean;
 begin
-  result := IsTxyEX(s,local,false);
-{  Result := False;
-  case Length(S) of
-    3: Local := False;
-    4: begin Local := True; if UpCase(S[4]) <> 'L' then Exit end;
-    else Exit;
-  end;
-  if UpCase(S[1]) <> 'T' then Exit;
-  Result := (S[2] in ['A'..'X', 'a'..'x']) and (S[3] in ['A'..'X', 'a'..'x']);}
+   result := IsTxyEX(s,local,false);
 end;
 
 procedure AdjustFSC62Quant(var t: TFSC62Quant; Bias: Integer);
 var
-  i: Integer;
+   i: Integer;
 begin
-  i := Integer(t) + Bias div (60*30);
-  if i < 0 then i := 48 + i else
-  if i > 47 then i := i - 48;
-  t := TFSC62Quant(i);
+   i := Integer(t) + Bias div (60*30);
+   if i < 0 then i := 48 + i else
+   if i > 47 then i := i - 48;
+   t := TFSC62Quant(i);
 end;
 
 procedure FillFSC62Time(var t: TFSC62Time; t1, t2: TFSC62Quant);
 var
-  i: TFSC62Quant;
+   i: TFSC62Quant;
 begin
-  if t1 <= t2 then
-  begin
-    Include(t, t1);
-    if (t1 < High(TFSC62Quant)) and (t2 > Low(TFSC62Quant)) then for i := Succ(t1) to Pred(t2) do Include(t, i);
-  end else
-  begin
-    for i := t1 to High(TFSC62Quant) do Include(t, i);
-    if t2 > Low(TFSC62Quant) then for i := Low(TFSC62Quant) to Pred(t2) do Include(t, i);
-  end;
+   if t1 <= t2 then begin
+      Include(t, t1);
+      if (t1 < High(TFSC62Quant)) and (t2 > Low(TFSC62Quant)) then for i := Succ(t1) to Pred(t2) do Include(t, i);
+   end else begin
+      for i := t1 to High(TFSC62Quant) do Include(t, i);
+      if t2 > Low(TFSC62Quant) then for i := Low(TFSC62Quant) to Pred(t2) do Include(t, i);
+   end;
 end;
-
-{function NodeFSC62Time(const Flags: string; const Addr: TFidoAddress): TFSC62Time;
-begin
-  Result := NodeFSC62TimeEx(Flags, Addr, False);
-end;}
 
 function NodeFSC62LocalEx(const Flags: string;FReq: boolean): TFSC62Time;
 begin
-  Result := _NodeFSC62TimeEx(Flags, FidoAddress(-1, -1, -1, -1, ''), FReq, True);
+   Result := _NodeFSC62TimeEx(Flags, FidoAddress(-1, -1, -1, -1, ''), FReq, True);
 end;
 
 function NodeFSC62Local(const Flags: string): TFSC62Time;
 begin
-  Result := NodeFSC62LocalEx(Flags,False);
+   Result := NodeFSC62LocalEx(Flags,False);
 end;
 
 function GetTime(C: Char; var Q: TFSC62Quant): Boolean;
 var
-  i: Integer;
+   i: Integer;
 begin
-  Result := False;
-  case C of
-    'a'..'x', 'A'..'X' :;
-    else Exit;
-  end;
-  i := Ord(C)-Ord('A');
-  if i < 24 then Inc(i, i) else
-  begin
-    Dec(i, Ord('a')-Ord('A'));
-    Inc(i, i+1);
-  end;
-  Q := TFSC62Quant(I);
-  Result := True;
+   Result := False;
+   case C of
+   'a'..'x', 'A'..'X' :;
+   else Exit;
+   end;
+   i := Ord(C)-Ord('A');
+   if i < 24 then Inc(i, i) else begin
+      Dec(i, Ord('a')-Ord('A'));
+      Inc(i, i+1);
+   end;
+   Q := TFSC62Quant(I);
+   Result := True;
 end;
 
-
-
 function GetShiftedZMH(var z: string; var zone: integer): boolean; {by Alexey Asemov 2:550/555}
-var zi: integer; {*}
+var
+   zi: integer; {*}
 begin {*}
-  Result := False; {*}
-  if Length(z)<3 then exit; {*}
-  if (z[1] <> '!') and (z[1] <> '#') then exit; {*}
-  if (z[2] < '0') or (z[2] > '9') then exit; {*}
-  if (z[3] < '0') or (z[3] > '9') then exit; {*}
-  Result := True; {*}
-  zi := StrToInt(z[2]+z[3]); {*}
-  z := Copy(z, 4, Length(z)-3); {*}
-  case zi of {*}
-    1: zone := 5; {*}
-    2: zone := 2; {*}
-    8: zone := 4; {*}
-    9: zone := 1; {*}
-    18: zone := 3; {*}
-    20: zone := 6; {*}
-    else Result := False; {*}
-  end; {*}
+   Result := False; {*}
+   if Length(z)<3 then exit; {*}
+   if (z[1] <> '!') and (z[1] <> '#') then exit; {*}
+   if (z[2] < '0') or (z[2] > '9') then exit; {*}
+   if (z[3] < '0') or (z[3] > '9') then exit; {*}
+   Result := True; {*}
+   zi := StrToInt(z[2] + z[3]); {*}
+   z := Copy(z, 4, Length(z) - 3); {*}
+   case zi of {*}
+   1: zone := 5; {*}
+   2: zone := 2; {*}
+   8: zone := 4; {*}
+   9: zone := 1; {*}
+   18: zone := 3; {*}
+   20: zone := 6; {*}
+   else Result := False; {*}
+   end; {*}
 end; {*}
 
 function _NodeFSC62TimeEx(Flags: string; const Addr: TFidoAddress; FReq, ALocal: Boolean): TFSC62Time;
 var
-  z: string;
-  t1, t2: TFSC62Quant;
+   z: string;
+   t1,
+   t2: TFSC62Quant;
 
 const
-  zmh: array[1..6] of TFSC62Quant = (
-    09*2+0, // Zone 1 mail hour (09:00 - 10:00 UTC)
-    02*2+1, // Zone 2 mail hour (02:30 - 03:30 UTC)
-    18*2+0, // Zone 3 mail hour (18:00 - 19:00 UTC)
-    08*2+0, // Zone 4 mail hour (08:00 - 09:00 UTC)
-    01*2+0, // Zone 5 mail hour (01:00 - 02:00 UTC)
-    20*2+0  // Zone 6 mail hour (20:00 - 21:00 UTC)
-  );
+   zmh: array[1..6] of TFSC62Quant = (
+    09 * 2 + 0, // Zone 1 mail hour (09:00 - 10:00 UTC)
+    02 * 2 + 1, // Zone 2 mail hour (02:30 - 03:30 UTC)
+    18 * 2 + 0, // Zone 3 mail hour (18:00 - 19:00 UTC)
+    08 * 2 + 0, // Zone 4 mail hour (08:00 - 09:00 UTC)
+    01 * 2 + 0, // Zone 5 mail hour (01:00 - 02:00 UTC)
+    20 * 2 + 0  // Zone 6 mail hour (20:00 - 21:00 UTC)
+   );
 var
-   Local, u: Boolean;
+   Local,
+   u: Boolean;
    ZMHZone: Integer; {*}
 
 begin
@@ -2404,66 +2385,58 @@ end;
 
 function NodeFSC62TimeEx;
 begin
- result := _NodeFSC62TimeEx(Flags,Addr,false,ALocal)
+   result := _NodeFSC62TimeEx(Flags,Addr,false,ALocal)
 end;
-
-{ ---------------------------------------------------------------------- }
 
 function _IdentOvrItem(const Item: string; AddrMask: Boolean; ChkFlags, InverseFlags: Boolean): TOvrItemTyp;
 var
-  CS: xBase.TCharSet;
-  US, TS: string; {*}
+   CS: xBase.TCharSet;
+   US,
+   TS: string; {*}
 begin
-  Result := oiUnknown;
-  if Item = '' then Exit;
-  US := UpperCase(Item);
-  FillCharSet(US, CS);
-  if ValidSymAddr(Item) then
-    Result := oiIPSym else
-  if ValidInetAddr(Item) then Result := oiIPNum else
-  if ((':' in CS) or
-      ('/' in CS) or
-      ('.' in CS)) and (US[1] < 'A') then
-  begin
-    if AddrMask then
-    begin
-      if ValidMaskAddress(Item) then
-      begin
-        if ValidAddress(Item) then Result := oiAddress
-                              else Result := oiAddressMask;
+   Result := oiUnknown;
+   if Item = '' then Exit;
+   US := UpperCase(Item);
+   FillCharSet(US, CS);
+   if ValidSymAddr(Item) then Result := oiIPSym else
+   if ValidInetAddr(Item) then Result := oiIPNum else
+   if ((':' in CS) or
+       ('/' in CS) or
+       ('.' in CS)) and (US[1] < 'A') then
+   begin
+      if AddrMask then begin
+         if ValidMaskAddress(Item) then begin
+            if ValidAddress(Item) then Result := oiAddress
+                                  else Result := oiAddressMask;
+         end;
+      end else begin
+         if ValidAddress(Item) then Result := oiAddress;
       end;
-    end else
-    begin
-      if ValidAddress(Item) then Result := oiAddress;
-    end;
-  end else
-  if ('-' in CS) and not ('@' in CS) then
-  begin
-    if ([',', '+', '-', 'W', '0'..'9'] * CS = CS) and
-       (Pos('--', Item) = 0) and
-       (Pos('+', CopyLeft(Item, 2)) = 0) and
-       (['0'..'9'] * CS <> [])
-    then Result := oiPhoneNum;
-  end else
-  if ChkFlags then
-  begin
-    TS := Copy(US, 1, 3); {*}
-    if (TS = '!01') or (TS = '!02') or (TS = '!08') or (TS = '!09') or (TS = '!18')  or (TS = '!20') or
-       (TS = '#01') or (TS = '#02') or (TS = '#08') or (TS = '#09') or (TS = '#18')  or (TS = '#20') then {*}
-    begin {*}
-      if InverseFlags then Result := oiInvFlag else Result := oiFlag; {*}
-      exit;
-    end; {*}
-    case US[1] of
-    '!':
-      if not InverseFlags then Result := _IdentOvrItem(CopyLeft(Item, 2), AddrMask, ChkFlags, True);
-    'A'..'Z':
-      if ['.', ':', '@', '-', '0'..'9', 'A'..'Z', '_'] * CS = CS then
-      begin
-        if InverseFlags then Result := oiInvFlag else Result := oiFlag;
+   end else
+   if ('-' in CS) and not ('@' in CS) then begin
+      if ([',', '+', '-', 'W', '0'..'9'] * CS = CS) and
+         (Pos('--', Item) = 0) and
+         (Pos('+', CopyLeft(Item, 2)) = 0) and
+         (['0'..'9'] * CS <> [])
+      then Result := oiPhoneNum;
+   end else
+   if ChkFlags then begin
+      TS := Copy(US, 1, 3); {*}
+      if (TS = '!01') or (TS = '!02') or (TS = '!08') or (TS = '!09') or (TS = '!18')  or (TS = '!20') or
+         (TS = '#01') or (TS = '#02') or (TS = '#08') or (TS = '#09') or (TS = '#18')  or (TS = '#20') then {*}
+      begin {*}
+         if InverseFlags then Result := oiInvFlag else Result := oiFlag; {*}
+         exit;
+      end; {*}
+      case US[1] of
+      '!':
+         if not InverseFlags then Result := _IdentOvrItem(CopyLeft(Item, 2), AddrMask, ChkFlags, True);
+      'A'..'Z':
+         if ['.', ':', '@', '-', '0'..'9', 'A'..'Z', '_'] * CS = CS then begin
+            if InverseFlags then Result := oiInvFlag else Result := oiFlag;
+         end;
       end;
-    end;
-  end;
+   end;
 end;
 
 function IdentOvrItem(const Item: string; AddrMask: Boolean; ChkFlags: Boolean): TOvrItemTyp;

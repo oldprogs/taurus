@@ -41,7 +41,7 @@ const
   CProductMinorVersion = 00;
   CProductMajorVersion = 00;
   CProductName     = 'Taurus';
-  CReleaseSpec     = 'Election';
+  CReleaseSpec     = 'Orange';
 
   CProductNameFull = 'Taurus by Taurus (based on Radius (based on Argus))';
 
@@ -4778,251 +4778,243 @@ begin
 end;
 
 function WinDlg;
-var Caption: string;
+var
+   Caption: string;
 begin
-  if (AHandle = 0) {and (Application <> nil)} then AHandle := GetActiveWindow {Application.Handle};
-  if AHandle = 0 then Caption := '' else
-  begin
-    SetLength(Caption, 81);
-    GetWindowText(AHandle, PChar(Caption), 80);
-  end;
-  Result := WinDlgCap(S, Flags, AHandle, Caption);
+   if (AHandle = 0) {and (Application <> nil)} then AHandle := GetActiveWindow {Application.Handle};
+   if AHandle = 0 then Caption := '' else begin
+      SetLength(Caption, 81);
+      GetWindowText(AHandle, PChar(Caption), 80);
+   end;
+   Result := WinDlgCap(S, Flags, AHandle, Caption);
 end;
 
 procedure DisplayError;
 begin
-  WinDlgT(Msg);
+   WinDlgT(Msg);
 end;
 
 procedure DisplayInformation;
 begin
-  WinDlgT(Msg);
+   WinDlgT(Msg);
 end;
 
 procedure DisplayCustomInfo;
 begin
-  WinDlgT(Msg);
+   WinDlgT(Msg);
 end;
 
 procedure DisplayWarning;
 begin
-  WinDlgT(Msg);
+   WinDlgT(Msg);
 end;
 
 function YesNoWarning(const Msg: string; AHandle: DWORD): Boolean;
 begin
-  Result := WinDlg(Msg, MB_YESNO or MB_ICONWARNING, AHandle) = idYes;
+   Result := WinDlg(Msg, MB_YESNO or MB_ICONWARNING, AHandle) = idYes;
 end;
 
 function  YesNoConfirm;
 begin
-  YesNoConfirm := WinDlg(Msg, MB_YESNO or MB_ICONQUESTION, AHandle) = idYes;
+   YesNoConfirm := WinDlg(Msg, MB_YESNO or MB_ICONQUESTION, AHandle) = idYes;
 end;
 
 function  OkCancelConfirm(const Msg: string; AHandle: DWORD): Boolean;
 begin
-  Result := WinDlg(Msg, MB_OKCANCEL or MB_ICONQUESTION, AHandle) = idOK;
+   Result := WinDlg(Msg, MB_OKCANCEL or MB_ICONQUESTION, AHandle) = idOK;
 end;
 
 function DeleteEmptyDirInheritance(S: string; const StopOn: string): Integer;
 var
-  us: string;
+   us: string;
 begin
-  us := UpperCase(StopOn);
-  Result := 0;
-  while (UpperCase(S) <> us) and RemoveDirectory(PChar(S)) do
-  begin
-    Inc(Result);
-    S := ExtractFileDir(S);
-  end;
+   us := UpperCase(StopOn);
+   Result := 0;
+   while (UpperCase(S) <> us) and RemoveDirectory(PChar(S)) do begin
+      Inc(Result);
+      S := ExtractFileDir(S);
+   end;
 end;
 
 function CreateDirInheritance;
 var
-  L: DWORD;
-  z: string;
+   L: DWORD;
+   z: string;
 begin
-  ClearErrorMsg;
-  Result := True;
-  if S = '' then Exit;
-  S := ExpandFileName(S);
-  L := Length(S);
-  if L <= 3 then Exit;
-  if S[L] = '\' then SetLength(S, L - 1);
-  L := GetFileAttributes(PChar(S));
-  if L <> INVALID_HANDLE_VALUE then Result := (L and FILE_ATTRIBUTE_DIRECTORY <> 0) else
-  begin
-    case GetLastError of
+   ClearErrorMsg;
+   Result := True;
+   if S = '' then Exit;
+   S := ExpandFileName(S);
+   L := Length(S);
+   if L <= 3 then Exit;
+   if S[L] = '\' then SetLength(S, L - 1);
+   L := GetFileAttributes(PChar(S));
+   if L <> INVALID_HANDLE_VALUE then Result := (L and FILE_ATTRIBUTE_DIRECTORY <> 0) else begin
+      case GetLastError of
       ERROR_PATH_NOT_FOUND,
       ERROR_FILE_NOT_FOUND:
-        begin
-          z := ExtractFilePath(S);
-          if z = S then Result := False else
-          begin
-            Result := CreateDirInheritance(z);
-            if Result then
-            begin
-              Result := CreateDirectory(PChar(S), nil) = TRUE;
-              if not Result then SetErrorMsg(S);
+         begin
+            z := ExtractFilePath(S);
+            if z = S then Result := False else begin
+               Result := CreateDirInheritance(z);
+               if Result then begin
+                  Result := CreateDirectory(PChar(S), nil) = TRUE;
+                  if not Result then SetErrorMsg(S);
+               end;
             end;
-          end;
-        end
-      else
-      begin
-        SetErrorMsg(S);
-        Result := False;
+         end else begin
+            SetErrorMsg(S);
+            Result := False;
+         end;
       end;
-    end;
-  end;
-  S := '';
+   end;
+   S := '';
 end;
 
 function DirExists(S: string): Integer;
 var
-  L: DWORD;
+   L: DWORD;
 begin
-  S := ExpandFileName(S);
-  if StrEnds(':\', S) then
-    begin
+   S := ExpandFileName(S);
+   if StrEnds(':\', S) then begin
       if GetDriveType(PChar(S)) in [0..1] then Result := -1
                                           else Result :=  1;
       Exit;
-    end;
-  if StrEnds('\',S) then DelLC(S);
-  L := GetFileAttributes(PChar(S));
-  if L = INVALID_HANDLE_VALUE then
-  begin
-    case GetLastError of
+   end;
+   if StrEnds('\',S) then DelLC(S);
+   L := GetFileAttributes(PChar(S));
+   if L = INVALID_HANDLE_VALUE then begin
+      case GetLastError of
       ERROR_FILE_NOT_FOUND,
       ERROR_PATH_NOT_FOUND: Result := 0
       else Result := -1;
-    end;
-  end else
-  begin
-    if L and FILE_ATTRIBUTE_DIRECTORY = 0 then Result := -1
-                                          else Result :=  1;
-  end;
+      end;
+   end else begin
+      if L and FILE_ATTRIBUTE_DIRECTORY = 0 then Result := -1
+                                            else Result :=  1;
+   end;
 end;
 
 const
-  CMonths = 'JanFebMarAprMayJunJulAugSepOctNovDec';
-  Months: string[Length(CMonths)] = CMonths;
+   CMonths = 'JanFebMarAprMayJunJulAugSepOctNovDec';
+   Months: string[Length(CMonths)] = CMonths;
 
-  CMonths2 = 'JnFbMrApMyJnJlAgSpOcNvDc';
-  Months2: string[Length(CMonths2)] = CMonths2;
+   CMonths2 = 'JnFbMrApMyJnJlAgSpOcNvDc';
+   Months2: string[Length(CMonths2)] = CMonths2;
 
-  CDOWs = 'SunMonTueWedThuFriSat';
-  DOWS: string[Length(CDOWs)] = CDOWs;
+   CDOWs = 'SunMonTueWedThuFriSat';
+   DOWS: string[Length(CDOWs)] = CDOWs;
 
-  CDOWs2 = 'SuMoTuWeThFrSa';
-  DOWs2: string[Length(CDOWs2)] = CDOWs2;
+   CDOWs2 = 'SuMoTuWeThFrSa';
+   DOWs2: string[Length(CDOWs2)] = CDOWs2;
 
 function MonthE(m: Integer): string;
 begin
-  Result := Copy(Months, 1 + (m - 1) * 3, 3);
+   Result := Copy(Months, 1 + (m - 1) * 3, 3);
 end;
 
 function MonthE2(m: Integer): string;
 begin
-  Result := Copy(Months2, 1 + (m - 1) * 2, 2);
+   Result := Copy(Months2, 1 + (m - 1) * 2, 2);
 end;
 
 function DOWE(d: Integer): string;
 begin
-  Result := Copy(DOWs, 1 + d * 3, 3);
+   Result := Copy(DOWs, 1 + d * 3, 3);
 end;
 
 function DOWE2(d: Integer): string;
 begin
-  Result := Copy(DOWs2, 1 + d * 2, 2);
+   Result := Copy(DOWs2, 1 + d * 2, 2);
 end;
 
 procedure SetNormalMonths;
 var
-  i: Integer;
+   i: Integer;
 begin
-  for i := 1 to 12 do ShortMonthNames[i] := MonthE(i);
+   for i := 1 to 12 do ShortMonthNames[i] := MonthE(i);
 end;
 
 procedure GetBias;
 var
-  T, L: TFileTime;
-  a, b: DWORD;
+   T, L: TFileTime;
+   a, b: DWORD;
 begin
-  GetSystemTimeAsFileTime(T);
-  FileTimeToLocalFileTime(T, L);
-  a := uCvtGetFileTime(T.dwLowDateTime, T.dwHighDateTime);
-  b := uCvtGetFileTime(L.dwLowDateTime, L.dwHighDateTime);
-  TimeZoneBias := Integer(a) - Integer(b);
+   GetSystemTimeAsFileTime(T);
+   FileTimeToLocalFileTime(T, L);
+   a := uCvtGetFileTime(T.dwLowDateTime, T.dwHighDateTime);
+   b := uCvtGetFileTime(L.dwLowDateTime, L.dwHighDateTime);
+   TimeZoneBias := Integer(a) - Integer(b);
 end;
 
 procedure xBaseInit;
 begin
 
-  if (Win32Platform = VER_PLATFORM_WIN32_NT) then LoadNTDyn;
+   if (Win32Platform = VER_PLATFORM_WIN32_NT) then LoadNTDyn;
 
-  if Win32Platform = VER_PLATFORM_WIN32_NT then
-  begin
-    NTdyn_SetProcessShutdownParameters($3FF, 0);
-  end;
+   if Win32Platform = VER_PLATFORM_WIN32_NT then begin
+      NTdyn_SetProcessShutdownParameters($3FF, 0);
+   end;
 
-  oShutdown := CreateEvt(False);
-  oRecalcEvents := CreateEvtA;
+   oShutdown := CreateEvt(False);
+   oRecalcEvents := CreateEvtA;
 
-  InitializeCriticalSection(TrapLogCS);
+   InitializeCriticalSection(TrapLogCS);
 
-  GetBias;
+   GetBias;
 
-  SetNormalMonths;
+   SetNormalMonths;
 
 {--- Init CRCs }
-  InitCRC16PropTable;
-  InitCRC16UsdTable;
-  InitCRC32Table;
+   InitCRC16PropTable;
+   InitCRC16UsdTable;
+   InitCRC32Table;
 
-  InitRBOTable;
+   InitRBOTable;
 
-  Thr_Coll := TColl.Create('Thr_Coll');
-  if ThrTimesLog then ThreadNfoColl := TThrNfoColl.Create('ThreadNfoColl');
-  ioRecColl := TioRecColl.Create('ioRecColl');
+   Thr_Coll := TColl.Create('Thr_Coll');
+   if ThrTimesLog then ThreadNfoColl := TThrNfoColl.Create('ThreadNfoColl');
+   ioRecColl := TioRecColl.Create('ioRecColl');
 
-  Randomize;
+   Randomize;
 
-  InitEventWaiter;
+   InitEventWaiter;
 
 end;
 
 var
-  FCompleteFilter: string;
-  xRegExtensions: TStringColl;
+   FCompleteFilter: string;
+   xRegExtensions: TStringColl;
 
 function _GetCompleteFilter: string;
 const
-  ClassBufSize = 1000;
+   ClassBufSize = 1000;
 var
-  Buf: array[0..ClassBufSize] of Char;
-  ds: TDblString;
-  sc, ks: TDblStringColl;
-  SubKey,
-  Key : HKEY;
-  BufSize: DWORD;                // size of string buffer
-  s, z : string;
-  i,
-  ec,
-  cSubKeys,                      // number of subkeys
-  cchMaxSubkey,                  // longest subkey name length
-  cchMaxClass,                   // longest class string length
-  cValues,                       // number of value entries
-  cchMaxValueName,               // longest value name length
-  cbMaxValueData,                // longest value data length
-  cbSecurityDescriptor: Integer; // security descriptor length
-  ftLastWriteTime: TFileTime;    // last write time
+   Buf: array[0..ClassBufSize] of Char;
+   ds: TDblString;
+   sc,
+   ks: TDblStringColl;
+   SubKey,
+   Key : HKEY;
+   BufSize: DWORD;                // size of string buffer
+   s,
+   z : string;
+   i,
+   ec,
+   cSubKeys,                      // number of subkeys
+   cchMaxSubkey,                  // longest subkey name length
+   cchMaxClass,                   // longest class string length
+   cValues,                       // number of value entries
+   cchMaxValueName,               // longest value name length
+   cbMaxValueData,                // longest value data length
+   cbSecurityDescriptor: Integer; // security descriptor length
+   ftLastWriteTime: TFileTime;    // last write time
 begin
-  xRegExtensions := TStringColl.Create('xRegExtensions');
-  Result := '';
-  if RegOpenKeyEx(HKEY_CLASSES_ROOT, nil, 0, KEY_QUERY_VALUE or KEY_ENUMERATE_SUB_KEYS, Key) <> ERROR_SUCCESS then Exit;
-  BufSize := ClassBufSize;
-  ec := RegQueryInfoKey(
+   xRegExtensions := TStringColl.Create('xRegExtensions');
+   Result := '';
+   if RegOpenKeyEx(HKEY_CLASSES_ROOT, nil, 0, KEY_QUERY_VALUE or KEY_ENUMERATE_SUB_KEYS, Key) <> ERROR_SUCCESS then Exit;
+   BufSize := ClassBufSize;
+   ec := RegQueryInfoKey(
     Key,                        // handle of key to query
     @Buf,
     @BufSize,
@@ -5035,18 +5027,16 @@ begin
     @cbMaxValueData,
     @cbSecurityDescriptor,
     @ftLastWriteTime);
-  if ec <> ERROR_SUCCESS then
-  begin
-    RegCloseKey(Key);
-    Exit;
-  end;
-  sc := TDblStringColl.Create('');
-  sc.Duplicates := True;
-  ks := TDblStringColl.Create('');
-  for i := 0 to cSubKeys - 1 do
-  begin
-    BufSize := ClassBufSize;
-    ec := RegEnumKeyEx(
+   if ec <> ERROR_SUCCESS then begin
+      RegCloseKey(Key);
+      Exit;
+   end;
+   sc := TDblStringColl.Create('');
+   sc.Duplicates := True;
+   ks := TDblStringColl.Create('');
+   for i := 0 to cSubKeys - 1 do begin
+      BufSize := ClassBufSize;
+      ec := RegEnumKeyEx(
       Key,
       i,
       Buf,
@@ -5055,127 +5045,124 @@ begin
       nil, // address of buffer for class string
       nil, // address for size of class buffer
       @ftLastWriteTime);
-    if ec <> ERROR_SUCCESS then Continue;
-    SetString(s, Buf, BufSize);
-    if RegOpenKeyEx(
+      if ec <> ERROR_SUCCESS then Continue;
+      SetString(s, Buf, BufSize);
+      if RegOpenKeyEx(
       HKEY_CLASSES_ROOT,      // handle of an open key
       PChar(s),               // subkey name
       0,                      // Reserved
       KEY_QUERY_VALUE,
       SubKey
     ) <> ERROR_SUCCESS then Continue;
-    z := ReadRegString(SubKey, '');
-    RegCloseKey(SubKey);
-    if z = '' then Continue;
-    ds := TDblString.Create;
-    if (s <> '') and (s[1] = '.') then
-    begin
-      ds.Key := z;
-      ds.Value := s;
-      sc.Add(ds);
-      DelFC(s);
-      xRegExtensions.Ins(UpperCase(s));
-    end else
-    begin
-      ds.Key := s;
-      ds.Value := z;
-      ks.Insert(ds);
-    end;
-  end;
-  RegCloseKey(Key);
-  for i := 0 to sc.Count - 1 do
-  begin
-    ds := sc[i];
-    s := ds.Value;
-    z := ds.Key;
-    if (s = '') or (s[1] <> '.') then Continue;
-    if not ks.Search(@z, ec) then Continue;
-    ds := ks[ec];
-    z := ds.Value;
-    s := Format('%s (*%s)|*%s', [z, s, s]);
-    if Result <> '' then s := '|' + s;
-    Result := Result + s;
-    Inc(CompleteFilterIndex);
-  end;
-  FreeObject(sc);
-  FreeObject(ks);
+      z := ReadRegString(SubKey, '');
+      RegCloseKey(SubKey);
+      if z = '' then Continue;
+      ds := TDblString.Create;
+      if (s <> '') and (s[1] = '.') then begin
+         ds.Key := z;
+         ds.Value := s;
+         sc.Add(ds);
+         DelFC(s);
+         xRegExtensions.Ins(UpperCase(s));
+      end else begin
+         ds.Key := s;
+         ds.Value := z;
+         ks.Insert(ds);
+      end;
+   end;
+   RegCloseKey(Key);
+   for i := 0 to sc.Count - 1 do begin
+      ds := sc[i];
+      s := ds.Value;
+      z := ds.Key;
+      if (s = '') or (s[1] <> '.') then Continue;
+      if not ks.Search(@z, ec) then Continue;
+      ds := ks[ec];
+      z := ds.Value;
+      s := Format('%s (*%s)|*%s', [z, s, s]);
+      if Result <> '' then s := '|' + s;
+      Result := Result + s;
+      Inc(CompleteFilterIndex);
+   end;
+   FreeObject(sc);
+   FreeObject(ks);
 end;
 
 procedure UpdateCompleteFilter;
 begin
-  FCompleteFilter := _GetCompleteFilter;
-  if FCompleteFilter <> '' then FCompleteFilter := FCompleteFilter + '|';
-  FCompleteFilter := FCompleteFilter + 'All Files (*.*)|*.*';
-  Inc(CompleteFilterIndex);
+   FCompleteFilter := _GetCompleteFilter;
+   if FCompleteFilter <> '' then FCompleteFilter := FCompleteFilter + '|';
+   FCompleteFilter := FCompleteFilter + 'All Files (*.*)|*.*';
+   Inc(CompleteFilterIndex);
 end;
 
 function GetCompleteFilter: string;
 begin
-  if FCompleteFilter = '' then UpdateCompleteFilter;
-  Result := FCompleteFilter;
+   if FCompleteFilter = '' then UpdateCompleteFilter;
+   Result := FCompleteFilter;
 end;
 
 function xIsReg(Ext: string): Boolean;
 var
-  J: Integer;
+   J: Integer;
 begin
-  Result := False;
-  if (Ext = '') or (Ext[1] <> '.') then Exit;
-  DelFC(Ext); Ext := UpperCase(Ext);
-  if FCompleteFilter = '' then UpdateCompleteFilter;
-  Result := xRegExtensions.Search(@Ext, J);
+   Result := False;
+   if (Ext = '') or (Ext[1] <> '.') then Exit;
+   DelFC(Ext); Ext := UpperCase(Ext);
+   if FCompleteFilter = '' then UpdateCompleteFilter;
+   Result := xRegExtensions.Search(@Ext, J);
 end;
 
 procedure xBaseDone;
 begin
   {.$IFDEF SOFTTICKER}
-  TickThr.Terminated := True;
+   TickThr.Terminated := True;
   {.$ENDIF}
-  EventWaiterThr.Terminated := True;
-  SetEvent(EventWaiterThr.hActivate);
-  Finalize(FCompleteFilter);
-  FreeObject(xRegExtensions);
+   EventWaiterThr.Terminated := True;
+   SetEvent(EventWaiterThr.hActivate);
+   Finalize(FCompleteFilter);
+   FreeObject(xRegExtensions);
   {.$IFDEF SOFTTICKER}
-  TickThr.WaitFor;
-  FreeObject(TickThr);
+   TickThr.WaitFor;
+   FreeObject(TickThr);
   {.$ENDIF}
-  EventWaiterThr.WaitFor;
-  FreeObject(EventWaiterThr);
-  if Thr_Coll.Count <> 0 then
-    GlobalFail('xBaseDone while ThreadCount=%d', [Thr_Coll.Count]);
+   EventWaiterThr.WaitFor;
+   FreeObject(EventWaiterThr);
+   if Thr_Coll.Count <> 0 then
+      GlobalFail('xBaseDone while ThreadCount=%d', [Thr_Coll.Count]);
 //  FreeObject(ThrZombies);
-  FreeObject(Thr_Coll);
-  FreeObject(ThreadNfoColl);
-  FreeObject(ioRecColl);
-  PurgeCS(TrapLogCS);
-  ZeroHandle(oShutdown);
-  ZeroHandle(oRecalcEvents);
-  ZeroHandle(ThreadsLogFHandle);
+   FreeObject(Thr_Coll);
+   FreeObject(ThreadNfoColl);
+   FreeObject(ioRecColl);
+   PurgeCS(TrapLogCS);
+   ZeroHandle(oShutdown);
+   ZeroHandle(oRecalcEvents);
+   ZeroHandle(ThreadsLogFHandle);
 end;
 
 procedure RegisterIoRec(Typ: TAdvClass; Id: Integer);
 var
-  ioRec: TioRec;
+   ioRec: TioRec;
 begin
-  ioRec := TioRec.Create;
-  ioRec.Typ := Typ;
-  ioRec.Id := Id;
-  ioRecColl.Insert(ioRec);
+   ioRec := TioRec.Create;
+   ioRec.Typ := Typ;
+   ioRec.Id := Id;
+   ioRecColl.Insert(ioRec);
 end;
 
 type
-  EGlobalFailure = class(EAccessViolation)
-  end;
+   EGlobalFailure = class(EAccessViolation)
+   end;
 
 procedure DoFail(const AMessage: string; const AParams: array of const);
 begin
-  raise EGlobalFailure.Create('GF ' + Format(AMessage, AParams));
+   raise EGlobalFailure.Create('GF ' + Format(AMessage, AParams));
 end;
 
 function GlobalFail;
 begin
-  Result := 0;
-  DoFail(AMessage, AParams);
+   Result := 0;
+   DoFail(AMessage, AParams);
 end;
 
 {.$DEFINE ALLOW_LOCAL_MASKS}
@@ -5184,181 +5171,169 @@ end;
 
 function CompareMask(const n, m: string; SupportPercent: Boolean): Boolean;
 var
-  i: Integer;
+   i: Integer;
 begin
-  Result := False;
-  for i := 1 to Length(m) do
-  begin
-    if (m[i] = '?') then Continue;
-    if (i > Length(n)) or (n[i] <> m[i]) then
-    begin
-      if SupportPercent and (m[i] = '%') and (n[i] in ['0'..'9']) then else Exit;
-    end;
-  end;
-  Result := True;
+   Result := False;
+   for i := 1 to Length(m) do begin
+      if (m[i] = '?') then Continue;
+      if (i > Length(n)) or (n[i] <> m[i]) then begin
+         if SupportPercent and (m[i] = '%') and (n[i] in ['0'..'9']) then else Exit;
+      end;
+   end;
+   Result := True;
 end;
 
 function PosMask(const m, s: string; SupportPercent: Boolean): Integer;
 var
-  i: Integer;
+   i: Integer;
 begin
-  Result := 0;
-  for i := 1 to Length(s) - Length(m) + 1 do
-  begin
-    if CompareMask(Copy(s, i, Length(m)), m, SupportPercent) then
-    begin
-      Result := i;
-      Exit;
-    end;
-  end;
+   Result := 0;
+   for i := 1 to Length(s) - Length(m) + 1 do begin
+      if CompareMask(Copy(s, i, Length(m)), m, SupportPercent) then begin
+         Result := i;
+         Exit;
+      end;
+   end;
 end;
 
 function _MatchMaskBody(AName, AMask: string; SupportPercent: Boolean): Boolean;
 var
-  i, j: Integer;
-  Scan: Boolean;
+   i, j: Integer;
+   Scan: Boolean;
 begin
-  Result := False;
-  Scan := False;
-  while True do
-  begin
-    i := Pos('*', AMask);
-    if i = 0 then
-    begin
-      if AMask = '' then begin Result := True; Exit end;
-      j := PosMask(AMask, AName, SupportPercent);
-      if j = 0 then Exit;
-      if (j + Length(AMask)) <= Length(AName) then Exit;
-      Result := True;
-      Exit;
-    end else
-    begin
-      if i > 1 then
-      begin
-        if Scan then j := PosMask(Copy(AMask, 1, i - 1), AName, SupportPercent) else if CompareMask(AName, Copy(AMask, 1, i-1), SupportPercent) then j := i-1 else j := 0;
-        if j = 0 then Exit else Delete(AName, 1, j);
+   Result := False;
+   Scan := False;
+   while True do begin
+      i := Pos('*', AMask);
+      if i = 0 then begin
+         if AMask = '' then begin Result := True; Exit end;
+         j := PosMask(AMask, AName, SupportPercent);
+         if j = 0 then Exit;
+         if (j + Length(AMask)) <= Length(AName) then Exit;
+         Result := True;
+         Exit;
+      end else begin
+         if i > 1 then begin
+            if Scan then j := PosMask(Copy(AMask, 1, i - 1), AName, SupportPercent) else if CompareMask(AName, Copy(AMask, 1, i-1), SupportPercent) then j := i-1 else j := 0;
+            if j = 0 then Exit else Delete(AName, 1, j);
+         end;
+         Delete(AMask, 1, i);
       end;
-      Delete(AMask, 1, i);
-    end;
-    Scan := True;
-  end;
+      Scan := True;
+   end;
 end;
 
 function _MatchMaskLocal(const AName: string; AMask: string; SupportPercent: Boolean): Boolean;
 begin
-  Replace('?*', '*', AMask);
-  Replace('*?', '*', AMask);
-  Replace('**', '*', AMask);
-  Result := _MatchMaskBody(UpperCase(AName), UpperCase(AMask), SupportPercent);
+   Replace('?*', '*', AMask);
+   Replace('*?', '*', AMask);
+   Replace('**', '*', AMask);
+   Result := _MatchMaskBody(UpperCase(AName), UpperCase(AMask), SupportPercent);
 end;
 {$ENDIF}
 
 function StrQuotePartEx(const s: string; OldC, NewC, NewC1: Char): string;
 var
-  i: Integer;
-  StopC, c: Char;
-  q: Integer;
+   i: Integer;
+   StopC,
+   c: Char;
+   q: Integer;
 begin
-  StopC := #0;
-  if Pos(OldC, s) <= 0 then begin Result := s; Exit end;
-  Result := '';
-  q := 0;
-  for i := 1 to Length(s) do
-  begin
-    c := s[i];
-    case q of
+   StopC := #0;
+   if Pos(OldC, s) <= 0 then begin Result := s; Exit end;
+   Result := '';
+   q := 0;
+   for i := 1 to Length(s) do begin
+      c := s[i];
+      case q of
       0:
-        begin
-          if c = OldC then q := 1 else Result := Result + c;
-        end;
+         begin
+            if c = OldC then q := 1 else Result := Result + c;
+         end;
       1:
-        begin
-          if c = OldC then
-          begin
-            Result := Result + NewC1;
-            q := 0;
-          end else
-          begin
-            StopC := c;
-            Result := Result + NewC;
-            q := 2;
-          end;
-        end;
+         begin
+            if c = OldC then begin
+               Result := Result + NewC1;
+               q := 0;
+            end else begin
+               StopC := c;
+               Result := Result + NewC;
+               q := 2;
+            end;
+         end;
       else
-        begin
-          if c = StopC then
-          begin
-            Result := Result + NewC;
-            q := 0;
-          end else
-          begin
-            Result := Result + Hex2(Byte(c));
-          end;
-        end;
-    end;
-  end;
+         begin
+            if c = StopC then begin
+               Result := Result + NewC;
+               q := 0;
+            end else begin
+               Result := Result + Hex2(Byte(c));
+            end;
+         end;
+      end;
+   end;
 end;
 
 function _MatchMask(const AName: string; const AMask: string; SupportPercent: Boolean): Boolean;
 var
-  s, z: string;
-  HiC, c: Char;
-  i, j: Integer;
+   s,
+   z: string;
+ HiC,
+   c: Char;
+   i,
+   j: Integer;
   re: RRegExp.TPcre;
 begin
-  HiC := #0;
-  s := StrQuotePartEx(AMask, '~', #3, #4);
+   HiC := #0;
+   s := StrQuotePartEx(AMask, '~', #3, #4);
 {$IFDEF ALLOW_LOCAL_MASKS}
-  if (Pos(#3, s) = 0) then
-  begin
-    Replace(#4, '~', s);
-    Result := _MatchMaskLocal(AName, s, SupportPercent);
-    Exit;
-  end;
+   if (Pos(#3, s) = 0) then begin
+      Replace(#4, '~', s);
+      Result := _MatchMaskLocal(AName, s, SupportPercent);
+      Exit;
+   end;
 {$ENDIF}
-  j := 0;
-  z := '';
-  for i := 1 to Length(s) do
-  begin
-    c := s[i];
-    case j of
+   j := 0;
+   z := '';
+   for i := 1 to Length(s) do begin
+      c := s[i];
+      case j of
       0:
-        case c of
-          #3: j := 1;
-          #4: z := z + '~';
-          '*': z := z + '.*';
-          '?': z := z + '.';
-          '%': if SupportPercent then z := z + '\d' else z := z + c;
-          'a'..'z', 'A'..'Z', '0'..'9': z := z + c;
-          else z := z + '\x' + Hex2(Byte(c));
-        end;
+         case c of
+         #3: j := 1;
+         #4: z := z + '~';
+         '*': z := z + '.*';
+         '?': z := z + '.';
+         '%': if SupportPercent then z := z + '\d' else z := z + c;
+         'a'..'z', 'A'..'Z', '0'..'9': z := z + c;
+         else z := z + '\x' + Hex2(Byte(c));
+         end;
       1:
-        begin
-          HiC := c;
-          j := 2;
-        end;
-      2:
-        begin
-          z := z + Char(VlH(HiC + c));
-          j := 3;
-        end;
-      3:
-        begin
-          if c = #3 then j := 0 else
-          begin
+         begin
             HiC := c;
             j := 2;
-          end;
-        end;
-    end;
-  end;
+         end;
+      2:
+         begin
+            z := z + Char(VlH(HiC + c));
+            j := 3;
+         end;
+      3:
+         begin
+            if c = #3 then j := 0 else begin
+               HiC := c;
+               j := 2;
+            end;
+         end;
+      end;
+   end;
 
   //(remove this)EnterCS(RegExprCS);
 
-  RE := GetRegExpr('(?i)^' + z + '$');
-  RE.PattOptions := [poCaseLess];
-  Result := (RE.ErrPtr = 0) and (RE.Match(AName) > 0) and (RE[0] <> '');
-  RE.Unlock;
+   RE := GetRegExpr('(?i)^' + z + '$');
+   RE.PattOptions := [poCaseLess];
+   Result := (RE.ErrPtr = 0) and (RE.Match(AName) > 0) and (RE[0] <> '');
+   RE.Unlock;
 //  FreeObject(RE);
 
   //(remove this)LeaveCS(RegExprCS);
@@ -5367,49 +5342,47 @@ end;
 
 function MatchMask(const AName, AMask: string): Boolean;
 begin
-  Result := _MatchMask(AName, AMask, False);
+   Result := _MatchMask(AName, AMask, False);
 end;
 
 function UpdateDetailsBox(AB: TListView; AC: TColl): Boolean;
 var
-  I, C: Integer;
-  S: TStringColl;
-  V: TListItem;
+   I,
+   C: Integer;
+   S: TStringColl;
+   V: TListItem;
   UI: Boolean;
 
 begin
-  Result := False;
-  C := AB.Items.Count;
-  UI := True;
-  if C < AC.Count then for I := C to AC.Count - 1 do AB.Items.Add else
-  if C > AC.Count then for I := C - 1 downto AC.Count do AB.Items.Delete(I) else UI := False;
-  for I := 0 to AC.Count - 1 do
-  begin
-    S := AC[I];
-    V := AB.Items[I];
-    if UI then V.SubItems.Clear;
-    if V.SubItems.Count = 0 then
-    begin
-      Result := True;
-      for C := 1 to S.Count - 1 do V.SubItems.Add(S[C])
-    end else
-    begin
-      for C := 1 to S.Count - 1 do if V.SubItems[C - 1] <> S[C] then
-      begin
-        Result := True;
-        V.SubItems[C - 1] := S[C];
+   Result := False;
+   C := AB.Items.Count;
+   UI := True;
+   if C < AC.Count then for I := C to AC.Count - 1 do AB.Items.Add else
+   if C > AC.Count then for I := C - 1 downto AC.Count do AB.Items.Delete(I) else UI := False;
+   for I := 0 to AC.Count - 1 do begin
+      S := AC[I];
+      V := AB.Items[I];
+      if UI then V.SubItems.Clear;
+      if V.SubItems.Count = 0 then begin
+         Result := True;
+         for C := 1 to S.Count - 1 do V.SubItems.Add(S[C])
+      end else begin
+         for C := 1 to S.Count - 1 do
+         if V.SubItems[C - 1] <> S[C] then begin
+            Result := True;
+            V.SubItems[C - 1] := S[C];
+         end;
       end;
-    end;
-    if (V.Caption <> S[0]) then V.Caption := S[0];
-  end;
-  if Result then begin AB.Items.BeginUpdate; AB.Items.EndUpdate end;
+      if (V.Caption <> S[0]) then V.Caption := S[0];
+   end;
+   if Result then begin AB.Items.BeginUpdate; AB.Items.EndUpdate end;
 end;
 
 procedure AddVIntArr(var A: TvIntArr; i: Integer);
 begin
-  Inc(A.Cnt);
-  ReallocMem(A.Arr, A.Cnt * SizeOf(Integer));
-  A.Arr^[A.Cnt - 1] := i;
+   Inc(A.Cnt);
+   ReallocMem(A.Arr, A.Cnt * SizeOf(Integer));
+   A.Arr^[A.Cnt - 1] := i;
 end;
 
 {procedure DelVIntArr(var A: TvIntArr; Idx: Integer);
@@ -5434,277 +5407,270 @@ end;
 
 procedure XorStr(P: PxByteArray; Len: Integer; const S: string);
 var
-  sl, i: Integer;
+  sl,
+   i: Integer;
 begin
-  sl := Length(s); if sl = 0 then Exit;
-  for i := 0 to Len - 1 do
-  begin
-    P^[i] := P^[i] xor Byte(S[(i mod sl) + 1]);
-  end;
+   sl := Length(s); if sl = 0 then Exit;
+   for i := 0 to Len - 1 do begin
+      P^[i] := P^[i] xor Byte(S[(i mod sl) + 1]);
+   end;
 end;
 
 function GetEnvVariable(const Name: string): string;
 const
-  BufSize = 128;
+   BufSize = 128;
 var
-  Buf: array[0..BufSize] of Char;
-  I: DWORD;
+   Buf: array[0..BufSize] of Char;
+   I: DWORD;
 begin
-  I := GetEnvironmentVariable(PChar(Name), Buf, BufSize);
-  case I of
-    1..BufSize:
+   I := GetEnvironmentVariable(PChar(Name), Buf, BufSize);
+   case I of
+   1..BufSize:
       begin
-        SetLength(Result, I);
-        Move(Buf, Result[1], I);
+         SetLength(Result, I);
+         Move(Buf, Result[1], I);
       end;
-    BufSize + 1..High(I):
+   BufSize + 1..High(I):
       begin
-        SetLength(Result, I + 1);
-        GetEnvironmentVariable(PChar(Name), @Result[1], I);
-        SetLength(Result, I);
+         SetLength(Result, I + 1);
+         GetEnvironmentVariable(PChar(Name), @Result[1], I);
+         SetLength(Result, I);
       end;
-    else
+   else
       begin
-        Result := '';
+         Result := '';
       end;
    end;
 end;
 
 function ControlString(C: TControl): string;
 var
-  i: Integer;
+   i: Integer;
 begin
-  i := C.GetTextLen;
-  if i = 0 then Result := '' else
-  begin
-    SetLength(Result, i + 2);
-    C.GetTextBuf(@Result[1], i + 1);
-    SetLength(Result, i);
-  end;
+   i := C.GetTextLen;
+   if i = 0 then Result := '' else begin
+      SetLength(Result, i + 2);
+      C.GetTextBuf(@Result[1], i + 1);
+      SetLength(Result, i);
+   end;
 end;
 
 function GetHelpFile(const HomePath: string; const Lng: string): string;
 const
-  ext: array[boolean] of string = ('hlp', 'chm');
+   ext: array[boolean] of string = ('hlp', 'chm');
 begin
-  Result := MakeNormName(HomePath, Format('Taurus%s.%s', [Lng, ext[IsHtmlHelp and not HtmlHelpLibError]]));
+   Result := MakeNormName(HomePath, Format('Taurus%s.%s', [Lng, ext[IsHtmlHelp and not HtmlHelpLibError]]));
 end;
 
 function DivideDash(const S: string): string;
 begin
-  Result := S;
-  Insert('-', Result, (Length(S) div 2) + 1);
+   Result := S;
+   Insert('-', Result, (Length(S) div 2) + 1);
 end;
 
 procedure CollDeleteAll;
 begin
-  if C <> nil then C.DeleteAll;
+   if C <> nil then C.DeleteAll;
 end;
 
 procedure CollInsert;
 begin
-  if C = nil then C := TColl.Create('');
-  C.Insert(Item);
+   if C = nil then C := TColl.Create('');
+   C.Insert(Item);
 end;
 
 function CollCount;
 begin
-  if C = nil then Result := 0 else Result := C.Count;
+   if C = nil then Result := 0 else Result := C.Count;
 end;
 
 function CollMax;
 begin
-  Result := CollCount(C) - 1;
+   Result := CollCount(C) - 1;
 end;
 
 procedure FillStartupInfo(var SI: TStartupInfo; Minimized: Boolean);
 begin
-  if Minimized then
-  begin
-    SI.dwFlags := STARTF_USESHOWWINDOW;
-    SI.wShowWindow := SW_SHOWMINNOACTIVE;
-  end;
+   if Minimized then begin
+      SI.dwFlags := STARTF_USESHOWWINDOW;
+      SI.wShowWindow := SW_SHOWMINNOACTIVE;
+   end;
 end;
 
 procedure MoveColl(Src, Dst: TColl; Idx: Integer);
 begin
-  if Idx = -1 then Exit;
-  Dst.Insert(Src[Idx]);
-  Src.AtDelete(Idx);
+   if Idx = -1 then Exit;
+   Dst.Insert(Src[Idx]);
+   Src.AtDelete(Idx);
 end;
 
 function Crc32Str(const S: string; Crc32: DWORD): DWORD;
 var
-  i, j: Integer;
+   i,
+   j: Integer;
 begin
-  Result := Crc32;
-  j := Length(s);
-  Result := UpdateCrc32(j, Result);
-  for i := 1 to j do Result := UpdateCrc32(Byte(s[i]), Result);
+   Result := Crc32;
+   j := Length(s);
+   Result := UpdateCrc32(j, Result);
+   for i := 1 to j do Result := UpdateCrc32(Byte(s[i]), Result);
 end;
 
 function TempFileName(const APath, APfx: string): string;
 var
-  s: string;
+   s: string;
 begin
-  SetLength(s, 1000);
-  GetTempFileName(PChar(APath), PChar(APfx), 0, @s[1]);
-  Result := Copy(s, 1, NulSearch(s[1]));
+   SetLength(s, 1000);
+   GetTempFileName(PChar(APath), PChar(APfx), 0, @s[1]);
+   Result := Copy(s, 1, NulSearch(s[1]));
 end;
 
 function CreateTempFile(const APath, APfx: string; var FName: string): Integer;
 begin
-  FName := TempFileName(APath, APfx);
-  Result := _CreateFile(FName, [cWrite, cExisting]);
+   FName := TempFileName(APath, APfx);
+   Result := _CreateFile(FName, [cWrite, cExisting]);
 end;
 
 function DoCreateProcess;
 begin
-  Result := ExecProcess(s, PI, nil, nil, False, CREATE_SUSPENDED, ShowMode);
+   Result := ExecProcess(s, PI, nil, nil, False, CREATE_SUSPENDED, ShowMode);
 end;
 
 constructor TAdvCpOnlyObject.Load(Stream: TxStream);
 begin
-  GlobalFail('Attemp to load %s which is TAdvCpOnlyObject', [ClassName]);
+   GlobalFail('Attemp to load %s which is TAdvCpOnlyObject', [ClassName]);
 end;
 
 procedure TAdvCpOnlyObject.Store(Stream: TxStream);
 begin
-  GlobalFail('Attemp to store %s which is TAdvCpOnlyObject', [ClassName]);
+   GlobalFail('Attemp to store %s which is TAdvCpOnlyObject', [ClassName]);
 end;
 
 procedure _LogWriteStr(const AStr: string; var FHandle: DWORD);
 var
-  S: string;
-  J: DWORD;
+   S: string;
+   J: DWORD;
 begin
-  S := AStr + #13#10;
-  WriteFile(FHandle, S[1], Length(S), J, nil);
-  if StartupOptions and stoFastLog = 0 then ZeroHandle(FHandle);
+   S := AStr + #13#10;
+   WriteFile(FHandle, S[1], Length(S), J, nil);
+   if StartupOptions and stoFastLog = 0 then ZeroHandle(FHandle);
 end;
 
 function _LogOK(const Name: string; var Handle: DWORD): Boolean;
 begin
-  if (Handle = 0) or (Handle = INVALID_HANDLE_VALUE) then
-  begin
-    Handle := _CreateFileDir(Name, [cWrite, cCanPending]);
-    if Handle <> INVALID_HANDLE_VALUE then if SeekEof(Handle) = INVALID_FILE_SIZE then begin ZeroHandle(Handle); Handle := INVALID_HANDLE_VALUE end;
-  end else
-  begin
-    if StartupOptions and stoFastLog = 0 then
-    begin
-      if Handle <> INVALID_HANDLE_VALUE then GlobalFail('Log %s is already opened, Handle = %d', [Name, Handle]);
-    end;
-  end;
-  Result := (Handle <> INVALID_HANDLE_VALUE) and (Handle <> 0);
+   if (Handle = 0) or (Handle = INVALID_HANDLE_VALUE) then begin
+      Handle := _CreateFileDir(Name, [cWrite, cCanPending]);
+      if Handle <> INVALID_HANDLE_VALUE then if SeekEof(Handle) = INVALID_FILE_SIZE then begin ZeroHandle(Handle); Handle := INVALID_HANDLE_VALUE end;
+   end else begin
+      if StartupOptions and stoFastLog = 0 then begin
+         if Handle <> INVALID_HANDLE_VALUE then GlobalFail('Log %s is already opened, Handle = %d', [Name, Handle]);
+      end;
+   end;
+   Result := (Handle <> INVALID_HANDLE_VALUE) and (Handle <> 0);
 end;
 
 function TxStream.WriteA(const Buffer; Count, A: DWORD): DWORD;
 const
-  MaxA = 4;
+   MaxA = 4;
 var
-  MMod, PPos: DWORD;
-  Fill: array[0..MaxA] of Byte;
-  R: DWORD;
+   MMod,
+   PPos: DWORD;
+   Fill: array[0..MaxA] of Byte;
+   R: DWORD;
 begin
-  if A > MaxA then GlobalFail('TxStream.WriteA  A(%d) > MaxA(%d)', [A, MaxA]);
-  PPos := Position;
-  MMod := PPos mod A;
-  R := 0;
-  if MMod > 0 then
-  begin
-    Clear(Fill, MMod);
-    Inc(R, Write(Fill, MMod));
-  end;
-  Inc(R, Write(Buffer, Count));
-  Result := R;
+   if A > MaxA then GlobalFail('TxStream.WriteA  A(%d) > MaxA(%d)', [A, MaxA]);
+   PPos := Position;
+   MMod := PPos mod A;
+   R := 0;
+   if MMod > 0 then begin
+      Clear(Fill, MMod);
+      Inc(R, Write(Fill, MMod));
+   end;
+   Inc(R, Write(Buffer, Count));
+   Result := R;
 end;
 
 function TxStream.WriteA4(const Buffer; Count: DWORD): DWORD;
 begin
-  Result := WriteA(Buffer, Count, 4);
+   Result := WriteA(Buffer, Count, 4);
 end;
 
 function TxStream.GetPosition: DWORD;
 begin
-  Result := Seek(0, 1);
+   Result := Seek(0, 1);
 end;
 
 procedure TxStream.SetPosition(Pos: DWORD);
 begin
-  Seek(Pos, 0);
+   Seek(Pos, 0);
 end;
 
 function TxStream.GetSize: DWORD;
 var
-  Pos: DWORD;
+   Pos: DWORD;
 begin
-  Pos := Seek(0, 1);
-  Result := Seek(0, 2);
-  Seek(Pos, 0);
+   Pos := Seek(0, 1);
+   Result := Seek(0, 2);
+   Seek(Pos, 0);
 end;
 
 function TxStream.CopyFrom(Source: TxStream; Count: DWORD): DWORD;
 const
-  MaxBufSize = $F000;
+   MaxBufSize = $F000;
 var
-  BufSize, N: DWORD;
-  Buffer: PChar;
+   BufSize, N: DWORD;
+   Buffer: PChar;
 begin
-  if Count = 0 then
-  begin
-    Source.Position := 0;
-    Count := Source.Size;
-  end;
-  Result := Count;
-  if Count > MaxBufSize then BufSize := MaxBufSize else BufSize := Count;
-  GetMem(Buffer, BufSize);
-  try
-    while Count <> 0 do
-    begin
-      if Count > BufSize then N := BufSize else N := Count;
-      Source.Read(Buffer^, N);
-      Write(Buffer^, N);
-      Dec(Count, N);
-    end;
-  finally
-    FreeMem(Buffer, BufSize);
-  end;
+   if Count = 0 then begin
+      Source.Position := 0;
+      Count := Source.Size;
+   end;
+   Result := Count;
+   if Count > MaxBufSize then BufSize := MaxBufSize else BufSize := Count;
+   GetMem(Buffer, BufSize);
+   try
+      while Count <> 0 do begin
+         if Count > BufSize then N := BufSize else N := Count;
+         Source.Read(Buffer^, N);
+         Write(Buffer^, N);
+         Dec(Count, N);
+      end;
+   finally
+      FreeMem(Buffer, BufSize);
+   end;
 end;
 
 function TxCustomMemoryStream.GetMemory: Pointer;
 begin
-  Result := FMemory;
-  if Result = nil then GlobalFail('%s', ['TxCustomMemoryStream.GetMemory=nil']);
+   Result := FMemory;
+   if Result = nil then GlobalFail('%s', ['TxCustomMemoryStream.GetMemory=nil']);
 end;
 
 procedure TxCustomMemoryStream.SetPointer(Ptr: Pointer; Size: Integer);
 begin
-  FMemory := Ptr;
-  FSize := Size;
+   FMemory := Ptr;
+   FSize := Size;
 end;
 
 function TxCustomMemoryStream.Read(var Buffer; Count: DWORD): DWORD;
 begin
-  Result := FSize - FPosition;
-  if Result > 0 then
-  begin
-    if Result > Count then Result := Count;
-    Move(Pointer(DWORD(FMemory) + FPosition)^, Buffer, Result);
-    Inc(FPosition, Result);
-    Exit;
-  end;
-  Result := 0;
+   Result := FSize - FPosition;
+   if Result > 0 then begin
+      if Result > Count then Result := Count;
+      Move(Pointer(DWORD(FMemory) + FPosition)^, Buffer, Result);
+      Inc(FPosition, Result);
+      Exit;
+   end;
+   Result := 0;
 end;
 
 function TxCustomMemoryStream.Seek(Offset: Integer; Origin: Word): DWORD;
 begin
-  case Origin of
-    0: FPosition := Offset;
-    1: Inc(FPosition, Offset);
-    2: FPosition := DWORD(Integer(FSize) + Offset);
-  end;
-  Result := FPosition;
+   case Origin of
+   0: FPosition := Offset;
+   1: Inc(FPosition, Offset);
+   2: FPosition := DWORD(Integer(FSize) + Offset);
+   end;
+   Result := FPosition;
 end;
 
 function TxCustomMemoryStream.SaveToStream(Stream: TxStream): Boolean;
@@ -5785,22 +5751,22 @@ end;
 
 function TxMemoryStream.Realloc(var NewCapacity: DWORD): Pointer;
 begin
-  if NewCapacity > 0 then
-    NewCapacity := (NewCapacity + (MemoryDelta - 1)) and not (MemoryDelta - 1);
-  Result := FMemory;
-  if NewCapacity <> FCapacity then begin
-    if NewCapacity = 0 then begin
-      GlobalFreePtr(FMemory);
-      Result := nil;
-    end else begin
+   if NewCapacity > 0 then
+      NewCapacity := (NewCapacity + (MemoryDelta - 1)) and not (MemoryDelta - 1);
+   Result := FMemory;
+   if NewCapacity <> FCapacity then begin
+      if NewCapacity = 0 then begin
+         GlobalFreePtr(FMemory);
+         Result := nil;
+      end else begin
 {$Warnings off}
-      if Capacity = 0 then
-        Result := GlobalAllocPtr(HeapAllocFlags, NewCapacity)
-      else
-        Result := GlobalReallocPtr(FMemory, NewCapacity, HeapAllocFlags);
+         if Capacity = 0 then
+            Result := GlobalAllocPtr(HeapAllocFlags, NewCapacity)
+         else
+            Result := GlobalReallocPtr(FMemory, NewCapacity, HeapAllocFlags);
 {$Warnings on}
-    end;
-  end;
+      end;
+   end;
 end;
 
 function TxMemoryStream.Write(const Buffer; Count: DWORD): DWORD;
@@ -5996,62 +5962,63 @@ end;
 
 function NumBits(I: DWORD): DWORD; assembler;
 asm
-  bsr eax, eax
-  jz @z
-  inc eax
+   bsr eax, eax
+   jz  @z
+   inc eax
 @z:
 end;
 
 var
-  xRandSeed: DWORD;
+   xRandSeed: DWORD;
 
 procedure       Randomize;
 var
-        systemTime :
-        record
-                wYear   : Word;
-                wMonth  : Word;
-                wDayOfWeek      : Word;
-                wDay    : Word;
-                wHour   : Word;
-                wMinute : Word;
-                wSecond : Word;
-                wMilliSeconds: Word;
-                reserved        : array [0..7] of char;
-        end;
+   systemTime :
+   record
+      wYear   : Word;
+      wMonth  : Word;
+      wDayOfWeek:
+                Word;
+      wDay    : Word;
+      wHour   : Word;
+      wMinute : Word;
+      wSecond : Word;
+      wMilliSeconds:
+                Word;
+      reserved: array [0..7] of char;
+   end;
 asm
-        LEA     EAX, systemTime
-        PUSH    EAX
-        CALL    GetSystemTime
-        MOVZX   EAX, systemTime.wHour
-        IMUL    EAX, 60
-        ADD     AX,systemTime.wMinute   { sum = hours * 60 + minutes    }
-        IMUL    EAX, 60
-        XOR     EDX, EDX
-        MOV     DX, systemTime.wSecond
-        ADD     EAX, EDX                 { sum = sum * 60 + seconds              }
-        IMUL    EAX, 1000
-        MOV     DX, systemTime.wMilliSeconds
-        ADD     EAX, EDX                 { sum = sum * 1000 + milliseconds       }
-        MOV     xRandSeed, EAX
+   LEA     EAX, systemTime
+   PUSH    EAX
+   CALL    GetSystemTime
+   MOVZX   EAX, systemTime.wHour
+   IMUL    EAX, 60
+   ADD     AX,systemTime.wMinute   { sum = hours * 60 + minutes    }
+   IMUL    EAX, 60
+   XOR     EDX, EDX
+   MOV     DX, systemTime.wSecond
+   ADD     EAX, EDX                 { sum = sum * 60 + seconds              }
+   IMUL    EAX, 1000
+   MOV     DX, systemTime.wMilliSeconds
+   ADD     EAX, EDX                 { sum = sum * 1000 + milliseconds       }
+   MOV     xRandSeed, EAX
 end;
-
 
 function xRandom32: DWORD; assembler;
 asm
-  mov     eax, xRandSeed
-  mov     edx, 08088405h
-  mul     edx
-  inc     eax
-  mov     xRandSeed, eax
+   mov     eax, xRandSeed
+   mov     edx, 08088405h
+   mul     edx
+   inc     eax
+   mov     xRandSeed, eax
 end;
 
 function xRandom(a: DWORD): DWORD; assembler;
 asm
-  mov     ecx, eax
-  call    xRandom32
-  mul     ecx
-  mov     eax, edx
+   mov     ecx, eax
+   call    xRandom32
+   mul     ecx
+   mov     eax, edx
 end;
 
 
@@ -6200,16 +6167,18 @@ begin
    Result := INVALID_VALUE;
    l := Length(s);
    case l of
-    0 : Exit;
-    1 : case s[1] of
-        '0'..'9': begin Result := Ord(s[1]) - Ord('0'); Exit end;
-        else Exit;
-        end;
-    2..9 : ;
+   0 : Exit;
+   1 : case s[1] of
+       '0'..'9': begin Result := Ord(s[1]) - Ord('0'); Exit end;
+       else
+          Exit;
+       end;
+   2..9 : ;
    10 : case s[1] of
-          '0'..'1': ;
-          '2': begin Result := Vl10z2(s); Exit end;
-        else Exit;
+        '0'..'1': ;
+        '2': begin Result := Vl10z2(s); Exit end;
+        else
+           Exit;
         end;
    end;
    a := 0;
@@ -6427,51 +6396,48 @@ end;
 
 procedure FreeRegExprList;
 var
-  r: TPCRE;
+   r: TPCRE;
 begin
-  if RegExpList = nil then exit;
-  RegExpList.Enter;
-  while RegExpList.Count > 0 do
-  begin
-    r := RegExpList[0];
-    r.Lock;
-    r.Unlock;
-    RegExpList.AtFree(0);
-  end;
-  RegExpList.Leave;
-  FreeObject(RegExpList);
+   if RegExpList = nil then exit;
+   RegExpList.Enter;
+   while RegExpList.Count > 0 do begin
+      r := RegExpList[0];
+      r.Lock;
+      r.Unlock;
+      RegExpList.AtFree(0);
+   end;
+   RegExpList.Leave;
+   FreeObject(RegExpList);
 end;
 
 function GetRegExpr(const APattern: string{; AOptions: TPattOptions}): Pointer;
 var
-  i: Integer;
-  s: string;
-  r: TPCRE;
-  b: boolean;
+   i: Integer;
+   s: string;
+   r: TPCRE;
+   b: boolean;
 begin
-  result := nil;
-  EnterCS(CollCS);
-  if RegExpList = nil then RegExpList := TRegExpColl.Create('RegExpList');
-  LeaveCS(CollCS);
-  RegExpList.Enter;
-  s := APattern;
-  b := RegExpList.Search(@s, i);
-  if b then
-  begin
-    r := RegExpList[i];
-    Result := r;
-  end;
-  if (result = nil) or (not b) then
-  begin
-    Result := TPCRE.Create;
-    TPCRE(Result).Initializing := False;
-    TPCRE(Result).Pattern := APattern;
-    RegExpList.AtInsert(i, Result);
-  end;
+   result := nil;
+   EnterCS(CollCS);
+   if RegExpList = nil then RegExpList := TRegExpColl.Create('RegExpList');
+   LeaveCS(CollCS);
+   RegExpList.Enter;
+   s := APattern;
+   b := RegExpList.Search(@s, i);
+   if b then begin
+      r := RegExpList[i];
+      Result := r;
+   end;
+   if (result = nil) or (not b) then begin
+      Result := TPCRE.Create;
+      TPCRE(Result).Initializing := False;
+      TPCRE(Result).Pattern := APattern;
+      RegExpList.AtInsert(i, Result);
+   end;
 
-  RegExpList.Leave;
-  if result = nil then exit;
-  TPCRE(Result).Lock;
+   RegExpList.Leave;
+   if result = nil then exit;
+   TPCRE(Result).Lock;
 end;
 
 {function GetRegExp(const APattern: string): TPCRE;
@@ -6481,20 +6447,18 @@ end;}
 
 procedure DbgStr;
 begin
-  OutputDebugString(PChar(Format(FormatStr, Args)));;
+   OutputDebugString(PChar(Format(FormatStr, Args)));;
 end;
 
-// visual. convert nonprinting chars to hexandecimal representation with leading slash
 function EscapeChars;
 var
-  i: integer;
+   i: integer;
 begin
-  result := '';
-  for i := 1 to length(S) do
-    if (S[i] < ' ') or (S[i] > 'z') then
-      result := result + Format('\%.2x', [ord(S[i])])
-    else
-      result := result + S[i];
+   result := '';
+   for i := 1 to length(S) do begin
+      if (S[i] < ' ') or (S[i] > 'z') then result := result + Format('\%.2x', [ord(S[i])])
+                                      else result := result + S[i];
+   end;                                      
 end;
 
 {$IFDEF DEBUG_VERSION}
@@ -6522,19 +6486,19 @@ end;
 
 procedure TEnterList.SaveToFile(const N: string);
 var
-  Stream: TStream;
+   Stream: TStream;
 begin
-  if ExistFile(N) then begin
-     Stream := TFileStream.Create(N, fmOpenWrite or fmShareDenyWrite);
-  end else begin
-     Stream := TFileStream.Create(N, fmCreate or fmShareDenyWrite);
-  end;
-  try
-    SaveToStream(Stream);
-    Stream.Size := Stream.Position;
-  finally
-    Stream.Free;
-  end;
+   if ExistFile(N) then begin
+      Stream := TFileStream.Create(N, fmOpenWrite or fmShareDenyWrite);
+   end else begin
+      Stream := TFileStream.Create(N, fmCreate or fmShareDenyWrite);
+   end;
+   try
+      SaveToStream(Stream);
+      Stream.Size := Stream.Position;
+   finally
+      Stream.Free;
+   end;
 end;
 {$ENDIF}
 
@@ -6557,47 +6521,52 @@ begin
    if HotKeySet then UnregisterHotKey(MainWinHandle, 700);
 end;
 
-var date:TDateTime;
+var
+   date: TDateTime;
 
 initialization
-  TrapCatched := False;
-  if GetBuildDate(paramstr(0), date) then
-  begin
-    SetNormalMonths;
-    CProductDate     := FormatDateTime('mmm d, yyyy; hh:nn', date);
-    CProductVersion  := Format('%s/%s(%s)', [CProductVersionA, FormatDateTime('dd.mm.yyyy,hh:nn', date), CReleaseSpec]);
-  end else
-  begin
-    CProductDate     := '-unknown-';
-    CProductVersion  := Format('%s',[CProductVersionA]);
-  end;
-  ProductVersionLen := Length(CProductVersion);
-  ProductVersion   := CProductVersion;
-  ProductDateLen := Length(CProductDate);
-  ProductDate   := CProductDate;
-  ProductNameVerLen := Length(CProductNameVer);
-  ProductNameVer   := CProductNameVer;
-  ThreadNfoColl    := nil;
+   TrapCatched := False;
+   if GetBuildDate(paramstr(0), date) then begin
+      SetNormalMonths;
+      CProductDate     := FormatDateTime('mmm d, yyyy; hh:nn', date);
+      CProductVersion  := Format('%s/%s(%s)', [CProductVersionA, FormatDateTime('dd.mm.yyyy,hh:nn', date), CReleaseSpec]);
+   end else begin
+      CProductDate     := '-unknown-';
+      CProductVersion  := Format('%s',[CProductVersionA]);
+   end;
+   ProductVersionLen := Length(CProductVersion);
+   ProductVersion   := CProductVersion;
+   ProductDateLen := Length(CProductDate);
+   ProductDate   := CProductDate;
+   ProductNameVerLen := Length(CProductNameVer);
+   ProductNameVer   := CProductNameVer;
+   ThreadNfoColl    := nil;
 
-  InitializeCriticalSection(CollCS);
+   InitializeCriticalSection(CollCS);
 
-  APIMessage := RegisterWindowMessage('Radius_API');
+   APIMessage := RegisterWindowMessage('Radius_API');
 {$IFDEF DEBUG_VERSION}
-  EnterList := TEnterList.Create;
+   EnterList := TEnterList.Create;
 {$ENDIF}
-  LiveCounter := 0;
-  WindCounter := 0;
-  ScanCounter := 0;
+   LiveCounter := 0;
+   WindCounter := 0;
+   ScanCounter := 0;
 
-  HotKeySet := False;
+   HotKeySet := False;
 
-{$IFNDEF SOFTTICKER} InitializeCriticalSection(TickCS); {$ENDIF}
+{$IFNDEF SOFTTICKER}
+   InitializeCriticalSection(TickCS);
+{$ENDIF}
+
 finalization
-  PurgeCS(CollCS);
-{$IFNDEF SOFTTICKER} PurgeCS(TickCS); {$ENDIF}
-{$IFDEF DEBUG_VERSION}
-  EnterList.Free;
+   PurgeCS(CollCS);
+{$IFNDEF SOFTTICKER}
+   PurgeCS(TickCS);
 {$ENDIF}
+{$IFDEF DEBUG_VERSION}
+   EnterList.Free;
+{$ENDIF}
+
 end.
 
 
