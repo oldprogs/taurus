@@ -6,7 +6,7 @@ object MailerLineCfgForm: TMailerLineCfgForm
   BorderWidth = 6
   Caption = 'Mailer line configuration'
   ClientHeight = 269
-  ClientWidth = 400
+  ClientWidth = 465
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -19,33 +19,39 @@ object MailerLineCfgForm: TMailerLineCfgForm
   OnClose = FormClose
   OnCreate = FormCreate
   OnDestroy = FormDestroy
+  DesignSize = (
+    465
+    269)
   PixelsPerInch = 96
   TextHeight = 15
   object bOK: TButton
-    Left = 148
+    Left = 230
     Top = 238
     Width = 75
     Height = 23
+    Anchors = [akTop, akRight]
     Caption = 'OK'
     Default = True
     ModalResult = 1
     TabOrder = 1
   end
   object bCancel: TButton
-    Left = 228
+    Left = 310
     Top = 238
     Width = 75
     Height = 23
+    Anchors = [akTop, akRight]
     Cancel = True
     Caption = 'Cancel'
     ModalResult = 2
     TabOrder = 2
   end
   object bHelp: TButton
-    Left = 308
+    Left = 390
     Top = 238
     Width = 75
     Height = 23
+    Anchors = [akTop, akRight]
     Caption = 'Help'
     TabOrder = 3
     OnClick = bHelpClick
@@ -53,131 +59,133 @@ object MailerLineCfgForm: TMailerLineCfgForm
   object PageControl: TPageControl
     Left = 0
     Top = 0
-    Width = 400
+    Width = 465
     Height = 229
     ActivePage = pgGeneral
     Align = alTop
     TabOrder = 0
     object pgGeneral: TTabSheet
       Caption = 'General'
+      DesignSize = (
+        457
+        199)
       object llStation: TLabel
-        Left = 4
+        Left = 76
         Top = 40
-        Width = 81
-        Height = 13
+        Width = 38
+        Height = 15
         Alignment = taRightJustify
-        AutoSize = False
         Caption = '&Station'
         FocusControl = cbStation
       end
       object llName: TLabel
-        Left = 4
+        Left = 57
         Top = 16
-        Width = 83
-        Height = 13
+        Width = 59
+        Height = 15
         Alignment = taRightJustify
-        AutoSize = False
         Caption = 'Line &name'
         FocusControl = lName
       end
       object llPort: TLabel
-        Left = 4
+        Left = 92
         Top = 64
-        Width = 81
-        Height = 13
+        Width = 22
+        Height = 15
         Alignment = taRightJustify
-        AutoSize = False
         Caption = '&Port'
         FocusControl = cbPort
       end
       object llModem: TLabel
-        Left = 4
+        Left = 73
         Top = 88
-        Width = 81
-        Height = 13
+        Width = 41
+        Height = 15
         Alignment = taRightJustify
-        AutoSize = False
         Caption = '&Modem'
         FocusControl = cbModem
       end
       object llRestr: TLabel
-        Left = 4
+        Left = 48
         Top = 112
-        Width = 81
-        Height = 13
+        Width = 66
+        Height = 15
         Alignment = taRightJustify
-        AutoSize = False
         Caption = '&Restrictions'
         FocusControl = cbRestrict
       end
       object llLog: TLabel
-        Left = 4
-        Top = 140
-        Width = 81
-        Height = 13
+        Left = 74
+        Top = 137
+        Width = 40
+        Height = 15
         Alignment = taRightJustify
-        AutoSize = False
         Caption = '&Log file'
         FocusControl = lLog
       end
       object llFaxIn: TLabel
-        Left = 4
-        Top = 168
-        Width = 81
-        Height = 13
+        Left = 47
+        Top = 161
+        Width = 67
+        Height = 15
         Alignment = taRightJustify
-        AutoSize = False
         Caption = '&Fax inbound'
         FocusControl = lFaxIn
       end
       object cbStation: TComboBox
-        Left = 92
+        Left = 120
         Top = 36
-        Width = 289
+        Width = 330
         Height = 23
         Style = csDropDownList
+        Anchors = [akLeft, akTop, akRight]
         ItemHeight = 15
         TabOrder = 1
       end
       object lName: TEdit
-        Left = 92
+        Left = 120
         Top = 12
-        Width = 289
+        Width = 330
         Height = 23
+        Anchors = [akLeft, akTop, akRight]
         TabOrder = 0
       end
       object cbPort: TComboBox
-        Left = 92
+        Left = 120
         Top = 60
-        Width = 289
+        Width = 330
         Height = 23
         Style = csDropDownList
+        Anchors = [akLeft, akTop, akRight]
         ItemHeight = 15
         TabOrder = 2
       end
       object cbModem: TComboBox
-        Left = 92
+        Left = 120
         Top = 84
-        Width = 289
+        Width = 330
         Height = 23
         Style = csDropDownList
+        Anchors = [akLeft, akTop, akRight]
         ItemHeight = 15
         TabOrder = 3
       end
       object cbRestrict: TComboBox
-        Left = 92
+        Left = 120
         Top = 108
-        Width = 289
+        Width = 330
         Height = 23
         Style = csDropDownList
+        Anchors = [akLeft, akTop, akRight]
         ItemHeight = 15
         TabOrder = 4
       end
       object lLog: TEdit
-        Left = 92
-        Top = 136
-        Width = 289
+        Left = 120
+        Top = 132
+        Width = 330
         Height = 24
+        Anchors = [akLeft, akTop, akRight]
         Font.Charset = DEFAULT_CHARSET
         Font.Color = clWindowText
         Font.Height = -12
@@ -187,10 +195,11 @@ object MailerLineCfgForm: TMailerLineCfgForm
         TabOrder = 5
       end
       object lFaxIn: TEdit
-        Left = 92
-        Top = 164
-        Width = 289
+        Left = 120
+        Top = 157
+        Width = 330
         Height = 24
+        Anchors = [akLeft, akTop, akRight]
         Font.Charset = DEFAULT_CHARSET
         Font.Color = clWindowText
         Font.Height = -12
@@ -203,7 +212,7 @@ object MailerLineCfgForm: TMailerLineCfgForm
     object pgAdvanced: TTabSheet
       Caption = 'Events'
       object bUP: TSpeedButton
-        Left = 360
+        Left = 429
         Top = 28
         Width = 25
         Height = 25
@@ -228,7 +237,7 @@ object MailerLineCfgForm: TMailerLineCfgForm
         OnClick = bUPClick
       end
       object bDN: TSpeedButton
-        Left = 360
+        Left = 429
         Top = 56
         Width = 25
         Height = 25
@@ -253,7 +262,7 @@ object MailerLineCfgForm: TMailerLineCfgForm
         OnClick = bDNClick
       end
       object bRight: TSpeedButton
-        Left = 168
+        Left = 204
         Top = 28
         Width = 25
         Height = 25
@@ -270,7 +279,7 @@ object MailerLineCfgForm: TMailerLineCfgForm
         OnClick = bRightClick
       end
       object bLeft: TSpeedButton
-        Left = 168
+        Left = 204
         Top = 56
         Width = 25
         Height = 25
@@ -287,7 +296,7 @@ object MailerLineCfgForm: TMailerLineCfgForm
         OnClick = bLeftClick
       end
       object bEdit: TSpeedButton
-        Left = 168
+        Left = 204
         Top = 156
         Width = 25
         Height = 25
@@ -319,7 +328,7 @@ object MailerLineCfgForm: TMailerLineCfgForm
         FocusControl = lAvl
       end
       object labelLinked: TLabel
-        Left = 204
+        Left = 237
         Top = 8
         Width = 37
         Height = 15
@@ -329,7 +338,7 @@ object MailerLineCfgForm: TMailerLineCfgForm
       object lAvl: TListBox
         Left = 8
         Top = 24
-        Width = 154
+        Width = 190
         Height = 165
         ItemHeight = 15
         TabOrder = 0
@@ -338,9 +347,9 @@ object MailerLineCfgForm: TMailerLineCfgForm
         OnKeyPress = lAvlKeyPress
       end
       object lLnk: TListBox
-        Left = 200
+        Left = 235
         Top = 24
-        Width = 154
+        Width = 190
         Height = 165
         ItemHeight = 15
         TabOrder = 1

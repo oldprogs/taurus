@@ -145,9 +145,14 @@ LANGUAGE LANG_RUSSIAN,0
         "RcvBox|Прием\n"\
         "llRcvCPS|CPS\n"\
         "llRcvSize|Размер:\n"\
+        "llFileRcvTime|Время файла:\n"\
+        "llTotalRcvTime|Общее время:\n"\
+        "llSessionTime|Время сессии:\n"\
+        "llSessionCost|Стоимость:\n"\
         "PollsListView|Узел|Номера|Владелец|Статус|Занят|Не с.|Сбой|Тип\n"\
         "BWListView|Имя файла|Получено|Всего|С узла|Последняя запись\n"\
         "STListView|Линия|Состояние|Таймер\n"\
+        "EVListView|Событие|Начало|Конец\n"\
         "StatusBox| Состояние \n"\
         "GroupBox3| Статус \n"\
         "CancelButton|Отмена\n"\
@@ -221,11 +226,9 @@ LANGUAGE LANG_RUSSIAN,0
         "hlMitky|Русский (Митьки)\n"\
         "hlEnglish|Английский (Великобритания)\n"\
         "mhHelp|Как пользоваться справкой\n"\
-        "mnuWebSites|Argus-related Web Sites\n"\
-        "mhWebSite|WWW-узел поддержки Argus\n"\
-        "mnuRadiusOnWeb|Taurus Web Site\n"\
-        "mnuArgusClone|Клоны Аргуса\n"\
+        "mnuWebSite|WWW сайт поддержки\n"\
         "mhAbout|О программе\n"\
+        "mnuClock|Часы\n"\
         "ppCreatePoll|Создать\n"\
         "ppTracePoll|Информация\n"\
         "ppResetPoll|Сбросить\n"\
@@ -258,8 +261,8 @@ LANGUAGE LANG_RUSSIAN,0
         "llSessionCost|Стоимость:\n"\
         "llSessionTime|Прошло времени\n"\
         "llTotalAtInbound|Всего в инбоксе:\n"\
-        "llAvaibleAtInbound|Доступно в инбоксе:\n"\
-        "llOutboundSize|Размер буфера:\n"\
+        "llAvaibleAtInbound|     Доступно в инбоксе:   \n"\
+        "llOutboundSize|Размер буфера:   \n"\
         "SessionBox|Сессия\n"\
         "mnuDelBWZ|Удалить %s из BadWazoo\n"\
         "mnuTossBwz|Убрать pending-файлы из BadWazoo\n"\
@@ -473,7 +476,13 @@ LANGUAGE LANG_RUSSIAN,0
         "lFail|Сбой\n"\
         "gbTO|Тайм-ауты\n"\
         "lRetry|Секунд между попытками\n"\
+        "lCallMin|Секунд ожидания Carrier\n"\
         "lStandOff|Отбой, минут\n"\
+        "Label1|Отбой, минут\n"\
+        "Label2|Отбой, минут\n"\
+        "cbBusy|Недоступен\n"\
+        "cbNoc|Недоступен\n"\
+        "cbFail|Недоступен\n"\
         "lPriority|Приоритет процесса\n"\
         "cbTransmitHold|Передавать 'hold' на исходящих\n"\
         "cbDirectAsNormal|Не создавать прозвонку по флагу 'Direct'\n"\
@@ -535,9 +544,12 @@ LANGUAGE LANG_RUSSIAN,0
         "bSort|Сортировка\n"\
         "bEditNode|Редактор\n"\
         "bExplain|Объяснить...\n"\
-        "lNNTPImport|Импортировать список групп новостей из:\n"
+        "lNNTPImport|Импортировать список групп новостей из:\n"\
+        "gbCache|Кэш\n"\
+        "lCache|Объем NNTP кэша:\n"
 
  LngBaseRussian+rsSetupForm "Настройка Taurus\n"\
+        "tvPages|Главная|Система|Интерфейс|Цвета|Трей|Логи|RCC|RAS диалап|Протоколы|Нетмейл|Тарификация|Звуки|Пути\n"\
         "lblPageTitle|?\n"\
         "lOtherOptions| Другие настройки \n"\
         "lCloseBtnActn|Действие кнопки 'Закрыть':\n"\
@@ -551,6 +563,8 @@ LANGUAGE LANG_RUSSIAN,0
         "cbPlaySounds|Озвучивать события\n"\
         "cbFixedRetryTimeout|Фиксированный таймаут\n"\
         "cbDynamicOutbound|Динамич. буфер отправки\n"\
+        "cbScanMSG|Сканировать MSG фолдеры\n"\
+        "cbUnpackPKT|Распаковывать PKT\n"\
         "cbCloseBtnAction||Закрыть|Запросить|Свернуть\n"\
         "cbChatEnabled|Диалог разрешен\n"\
         "cbChatBell|Сигнал чата:\n"\
@@ -561,6 +575,8 @@ LANGUAGE LANG_RUSSIAN,0
         "lAddressOptions| Установки адреса \n"\
         "lSynchClock|Синхронизировать с:\n"\
         "lMainAKA|Основной адрес:\n"\
+        "sbMainPrev|<< Пред.\n"\
+        "sbMainNext|След. >>\n"\
         "lSessionOptions| Настройки сессии \n"\
         "lSynchShift|Смещ.узла синхр.:\n"\
         "lCPSMinBytes|CPS мин.байт:\n"\
@@ -568,19 +584,20 @@ LANGUAGE LANG_RUSSIAN,0
         "lPeriods| Периоды и таймауты \n"\
         "lMsgsAutoClose|Автозакр. сообщ.:\n"\
         "lOutbRescan|Outb. rescan:\n"\
-        "lMaxBWZAge|Max BWZ age:\n"\
-        "lMaxUDLAge|Max UDL age:\n"\
-        "lMaxBsyAge|Max BSY age:\n"\
+        "lMaxBWZAge|Max BWZ возр.:\n"\
+        "lMaxUDLAge|Max UDL возр.:\n"\
+        "lMaxBsyAge|Max BSY возр.:\n"\
         "lSystemOptions| Системные установки \n"\
-        "lMutexName|Mutex name:\n"\
-        "lActivateEventName|Activate Event Name:\n"\
+        "lMutexName|Имя mutex:\n"\
+        "lActivateEventName|Имя события активации:\n"\
         "lEMSICR|EMSI CR:\n"\
         "lWinSockVersion|Версия Winsock:\n"\
-        "lWatcherEventName|Directory Watcher Event Name:\n"\
+        "lPriority|Приоритет приложения:\n"\
+        "lWatcherEventName|Имя события Directory Watcher:\n"\
         "cbSimpleBSY|Простые BSY\n"\
         "cbCloseBWZ|Закрывать BWZ\n"\
-        "cbIncrementArcmail|Increment arcmail\n"\
-        "cbForceFAXPage|Force fax page\n"\
+        "cbIncrementArcmail|Инкрементировать аркмейл\n"\
+        "cbForceFAXPage|Принудит. стр. факса\n"\
         "cbIgnoreEndSession|Игнор. окончание сессии\n"\
         "cbUseNodelistData|Использ. инфо из нодлиста\n"\
         "cbCompileNodelist|Автокомпиляция ноделистов\n"\
@@ -634,6 +651,7 @@ LANGUAGE LANG_RUSSIAN,0
         "lipdaemon_log|ipdaemon.log:\n"\
         "lras_log|ras.log:\n"\
         "cbTariff|Использовать тарификационный лог\n"\
+        "cbTariffPerMinute|Поминутная тарификация\n"\
         "cbODBCLogging|Запись в лог ODBC\n"\
         "cbLogThreadTimes|Log thread times\n"\
         "lRCC| Настройки \n"\

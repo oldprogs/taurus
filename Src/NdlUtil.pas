@@ -309,6 +309,7 @@ var
 
 begin
 //   EnterNlCs;
+   Result := nil;
    zc := Table[Idx];
    if zc.MemPos = -1 then begin
       I := Idx;
@@ -328,9 +329,11 @@ begin
       Stream.Position := zc.ZoneData.Pos;
       Stream.Read(zc.NumNodes, 4);
       J := zc.Sz - zc.NumNodes * SizeOf(TShortNodeIdx);
+      if J < 1 then exit;
       nia := nil;
       ReallocMem(nia, zc.NumNodes * SizeOf(TShortNodeIdx));
       Stream.Read(nia^, zc.NumNodes * SizeOf(TShortNodeIdx));
+
       GetMem(P, J);
       Stream.Read(P^, J);
       ZonesBin.Write(P^, J);
@@ -1569,7 +1572,7 @@ begin
    if DaemonStarted then begin // ≈сли в оверрайде указано несколько протоколов -
                                // формируем из них очередь.
       TmpData := nil;
-      for i := 0 to IpData.Count - 1 do begin
+      for i := 0 to CollMax(IpData) do begin
          an := IpData[i];
          ga := an.IPAddr;
          s1 := an.Flags;

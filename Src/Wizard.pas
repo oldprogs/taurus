@@ -218,7 +218,7 @@ procedure SetLength(var S: String; const NewLength: Byte);
 implementation
 
 const
- DosDelimSet    : set of Char           = ['\', '/', ':', #0];
+ DosDelimSet    : set of Char           = ['\', ':', #0];
  Digits         : array[0..$F] of Char  = '0123456789ABCDEF';
 
 var

@@ -1845,6 +1845,7 @@ object MailerForm: TMailerForm
                 Top = 92
                 Width = 61
                 Height = 16
+                Anchors = [akTop, akRight]
                 Caption = 'Total time:'
                 Layout = tlCenter
                 Visible = False
@@ -1854,6 +1855,7 @@ object MailerForm: TMailerForm
                 Top = 92
                 Width = 57
                 Height = 16
+                Anchors = [akTop, akRight]
                 Caption = '00:00:00'
                 Font.Charset = DEFAULT_CHARSET
                 Font.Color = clWindowText
@@ -1994,15 +1996,17 @@ object MailerForm: TMailerForm
                 Top = 91
                 Width = 61
                 Height = 16
+                Anchors = [akTop, akRight]
                 Caption = 'Total time:'
                 Layout = tlCenter
                 Visible = False
               end
               object lTotalRcvTime: TLabel
-                Left = 236
+                Left = 234
                 Top = 91
                 Width = 57
                 Height = 16
+                Anchors = [akTop, akRight]
                 Caption = '00:00:00'
                 Font.Charset = DEFAULT_CHARSET
                 Font.Color = clWindowText

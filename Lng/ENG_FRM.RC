@@ -145,9 +145,14 @@ LANGUAGE LANG_ENGLISH,0
         "RcvBox|Receiving\n"\
         "llRcvCPS|CPS\n"\
         "llRcvSize|Size:\n"\
+        "llFileRcvTime|File time:\n"\
+        "llTotalRcvTime|Total time:\n"\
+        "llSessionTime|Session time:\n"\
+        "llSessionCost|Cost:\n"\
         "PollsListView|Node|Numbers|Owner|State|Busy|No c.|Fail|Type\n"\
         "BWListView|Filename|Temp Size|Full Size|From Node|Last Record\n"\
         "STListView|Line|State|Timer\n"\
+        "EVListView|Event|Start|End\n"\
         "StatusBox| Status \n"\
         "GroupBox3| Status \n"\
         "CancelButton|Cancel\n"\
@@ -221,11 +226,9 @@ LANGUAGE LANG_ENGLISH,0
         "hlMitky|Russian (&Mitky)\n"\
         "hlEnglish|&English (UK)\n"\
         "mhHelp|Help on &Help\n"\
-        "mnuWebSites|Argus-related Web Sites\n"\
-        "mhWebSite|Argus &Web Site (on-line)\n"\
-        "mnuRadiusOnWeb|Taurus Web Site\n"\
-        "mnuArgusClone|All Argus clones\n"\
+        "mnuWebSite|Web Site\n"\
         "mhAbout|&About\n"\
+        "mnuClock|Clock\n"\
         "ppCreatePoll|&Create\n"\
         "ppTracePoll|&Info\n"\
         "ppResetPoll|&Reset\n"\
@@ -259,9 +262,9 @@ LANGUAGE LANG_ENGLISH,0
         "llSessionTime|Total elapsed time\n"\
         "SessionBox|Session\n"\
         "llTotalAtInbound|Total at inbound:\n"\
-        "llAvaibleAtInbound|Avaible at inbound:\n"\
+        "llAvaibleAtInbound|     Available at inbound:   \n"\
         "mnuDelBWZ|Delete %s from BadWazoo\n"\
-        "llOutboundSize|Outbound size:\n"\
+        "llOutboundSize|Outbound size:   \n"\
         "mnuTossBwz|Toss BadWazoo\n"\
         "mnuPrefEx|Preferences\n"
 
@@ -471,7 +474,13 @@ LANGUAGE LANG_ENGLISH,0
         "lFail|Fail\n"\
         "gbTO|Time-outs\n"\
         "lRetry|Retry seconds\n"\
+        "lCallMin|Call seconds\n"\
         "lStandOff|Stand-off minutes\n"\
+        "Label1|Stand-off minutes\n"\
+        "Label2|Stand-off minutes\n"\
+        "cbBusy|Undialable\n"\
+        "cbNoC|Undialable\n"\
+        "cbFail|Undialable\n"\
         "cbTransmitHold|Transmit hold on outgoing\n"\
         "cbDirectAsNormal|Prevent 'Direct' from initiating a poll\n"\
         "bOK|OK\n"\
@@ -531,9 +540,12 @@ LANGUAGE LANG_ENGLISH,0
         "bSort|&Sort\n"\
         "bEditNode|Edit\n"\
         "bExplain|Explain...\n"\
-        "lNNTPImport|Files to import NEWS List from\n"
+        "lNNTPImport|Files to import NEWS List from\n"\
+        "gbCache|Cache:\n"\
+        "lCache|NNTP cache size:\n"
 
  LngBaseEnglish+rsSetupForm "Taurus Setup\n"\
+        "tvPages|Main|System|Interface|Colors|Tray|Logs|RCC|RAS DialUp|Protocols|Netmail|Tariff|Sounds|Paths\n"\
         "lblPageTitle|?\n"\
         "lOtherOptions| Other options \n"\
         "lCloseBtnActn|&Close button action:\n"\
@@ -548,6 +560,8 @@ LANGUAGE LANG_ENGLISH,0
         "cbPlaySounds|Play Sounds\n"\
         "cbFixedRetryTimeout|Fixed retry timeout\n"\
         "cbDynamicOutbound|Use Dynamic Outbound\n"\
+        "cbScanMSG|Scan MSG areas\n"\
+        "cbUnpackPKT|Unpack arrived PKTs\n"\
         "cbCloseBtnAction||Shutdown|Ask for Shutdown|Minimize to tray\n"\
         "cbChatEnabled|Chat Enabled\n"\
         "cbChatBell|Chat Bell:\n"\
@@ -558,6 +572,8 @@ LANGUAGE LANG_ENGLISH,0
         "lAddressOptions| Address options \n"\
         "lSynchClock|Synch clock with:\n"\
         "lMainAKA|Main address:\n"\
+        "sbMainPrev|<< Prev\n"\
+        "sbMainNext|Next >>\n"\
         "lSessionOptions| Session options \n"\
         "lSynchShift|Synch time shift:\n"\
         "lCPSMinBytes|CPS min bytes:\n"\
@@ -573,6 +589,7 @@ LANGUAGE LANG_ENGLISH,0
         "lActivateEventName|Activate Event Name:\n"\
         "lEMSICR|EMSI CR:\n"\
         "lWinSockVersion|Winsock version:\n"\
+        "lPriority|Application priority:\n"\
         "lWatcherEventName|Watcher Event Name:\n"\
         "cbSimpleBSY|Simple BSY\n"\
         "cbCloseBWZ|Cloze BWZ\n"\
@@ -631,6 +648,7 @@ LANGUAGE LANG_ENGLISH,0
         "lipdaemon_log|ipdaemon.log:\n"\
         "lras_log|ras.log:\n"\
         "cbTariff|Use tariffication log\n"\
+        "cbTariffPerMinute|Tariffication per minute\n"\
         "cbODBCLogging|ODBC logging\n"\
         "cbLogThreadTimes|Log thread times\n"\
         "lRCC| Options \n"\

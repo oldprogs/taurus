@@ -1844,7 +1844,11 @@ begin
    Result := Path;
    if Path = '' then exit;
    if (Result <> '') and (Result[Length(Result)] <> '\') then AddStr(Result, '\');
-   Result := Result + Name;
+   if (Name = JustFileName(Name)) or (Pos('%', Name) > 0) then begin
+      Result := Result + Name;
+   end else begin
+      Result := Name;
+   end;
 end;
 
 procedure AddStr;
@@ -4207,7 +4211,6 @@ end;
 procedure TStringColl.FillEnum(Str: string; Delim: TCharSet; Sorted: Boolean);
 var
    Z: string;
-   c: Char;
    i: integer;
    d: Char;
 begin

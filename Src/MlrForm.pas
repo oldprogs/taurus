@@ -861,8 +861,7 @@ begin
    CfgEnter;
    Lines := Pointer(Cfg.Lines.Copy);
    CfgLeave;
-   for i := 0 to Lines.Count - 1 do
-   begin
+   for i := 0 to Lines.Count - 1 do begin
       LR := Lines[i];
       if IsAutoStartLine(LR.Id) then begin
          OpenMailer(LR.Id, 0);
@@ -996,24 +995,23 @@ function TMailerForm.IsShortCut(var Message: TWMKey): Boolean;
   end;
 
 begin
-  Result := False;
-  if Message.Result = 0 then exit;
-  if Assigned(OnShortCut) then OnShortCut(Message, Result);
-  if eType.Focused or ChatMemo1.Focused or ChatMemo2.Focused then begin
+   Result := False;
+   if Message.Result = 0 then exit;
+   if Assigned(OnShortCut) then OnShortCut(Message, Result);
+   if eType.Focused or ChatMemo1.Focused or ChatMemo2.Focused then begin
         // 539885569 - CTRL+ALT+C
         // 3407873   - '.'
         // 65537     - esc
-    case Message.KeyData of
-    65537: exit;     // ESC
-    539885569: exit; // CTRL+ALT+C
-    3735553: exit;   // ' '
-    3407873: exit;   // '.'
-    1835009: exit;   // ENTER
-    else;
-    end;
-  end;
-  Result := Result or (Menu <> nil) and (Menu.WindowHandle <> 0) and
-            Menu.IsShortCut(Message) or DispatchShortCut;
+      case Message.KeyData of
+      65537: exit;     // ESC
+      539885569: exit; // CTRL+ALT+C
+      3735553: exit;   // ' '
+      3407873: exit;   // '.'
+      1835009: exit;   // ENTER
+      else;
+      end;
+   end;
+   Result := Result or (Menu <> nil) and (Menu.WindowHandle <> 0) and Menu.IsShortCut(Message) or DispatchShortCut;
 end;
 
 procedure TMailerForm.MyMenuClick(Sender: TObject);
@@ -1076,18 +1074,13 @@ var
    end;
 
 begin
-
-   if IniFile.ExtApp.Count = 0 then
-   begin
+   if IniFile.ExtApp.Count = 0 then begin
       tExternal.Insert(0, CreateMenuItem('-none-', false, 0));
       exit;
    end;
-
-   for i := 1 to IniFile.ExtApp.Count do
-   begin
+   for i := 1 to IniFile.ExtApp.Count do begin
       tExternal.Insert(i - 1, CreateMenuItem(IniFile.ExtApp.Table[i, 2], true, i));
    end;
-
 end;
 
 procedure TMailerForm.DestroyAllMenu;
@@ -1284,7 +1277,6 @@ var
    begin
       CfgEnter;
       Lines := Pointer(Cfg.Lines.Copy);
-      CfgLeave;
       for i := 0 to Lines.Count - 1 do begin
          LR := Lines[i];
          FOpen := MakeFullDir(IniFile.FlagsDir, 'open.' + LR.Name);
@@ -1317,6 +1309,7 @@ var
          end;
       end;
       FreeObject(Lines);
+      CfgLeave;
    end;
 
    procedure CheckSingleFlags;
@@ -1396,6 +1389,13 @@ var
          DeleteFile(s);
          FidoPolls.Log.LogSelf(Format('Detected %s - forced TCP/IP nodes list import', [s]));
          PostMsg(WM_IMPORTIPOVRL);
+      end;
+
+      s := MakeFullDir(IniFile.FlagsDir, 'RESCAN.NOW');
+      if _FileExists(s) then begin
+         DeleteFile(s);
+         FidoPolls.Log.LogSelf(Format('Detected %s - forced rescan', [s]));
+         ScanCounter := 99999;
       end;
 
       s := MakeFullDir(IniFile.FlagsDir, 'ROUTE.EXP');
@@ -1963,7 +1963,7 @@ begin
       if not ONode.Expanded then Continue;
       New(pa);
       pa^ := n.Address;
-      if OutMgrExpanded = nil then OutMgrExpanded := TFidoAddrColl.Create('OutMgrExpanded');
+      if OutMgrExpanded = nil then OutMgrExpanded := TFidoAddrColl.Create;
       OutMgrExpanded.Insert(pa);
    end;
 end;
@@ -4582,7 +4582,9 @@ begin
             (ActiveLine.CP as TTAPIPort).MakeCall;
          end;
          h := ActiveLine.CP.Handle;
+         (ActiveLine.CP as TSerialPort).SleepDown;
          F_OpenUniTerm(h);
+         (ActiveLine.CP as TSerialPort).WakeUp;
       end;
    end;
    InsertEvt(TMlrEvtChStatus.Create(msInit));
@@ -6885,25 +6887,31 @@ var
    i: Integer;
    n: Integer;
 begin
+   if evListView.ItemFocused = nil then exit;
    Ev := TEventColl.Create;
    Cfg.Events.AppendTo(Ev);
    i := evListView.ItemFocused.Index;
-   for n := 0 to Ev.Count - 1 do begin
-      oe := Ev[n];
-      if oe.FName = evListView.Items[i].Caption then begin
-         ne := Pointer(oe.Copy);
-         if not EditEvent(ne) then FreeObject(ne) else begin
-            Ev[n] := ne;
-            FreeObject(oe);
-            CfgEnter;
-            XChg(Integer(Cfg.Events),Integer(Ev));
-            CfgLeave;
-            StoreConfig(Handle);
-            EventsThr.DoRecalc;
+   try
+      if i > -1 then begin
+         for n := 0 to CollMax(Ev) do begin
+            oe := Ev[n];
+            if oe.FName = evListView.Items[i].Caption then begin
+               ne := Pointer(oe.Copy);
+               if not EditEvent(ne) then FreeObject(ne) else begin
+                  Ev[n] := ne;
+                  FreeObject(oe);
+                  CfgEnter;
+                  XChg(Integer(Cfg.Events), Integer(Ev));
+                  CfgLeave;
+                  StoreConfig(Handle);
+                  EventsThr.DoRecalc;
+               end;
+               exit;
+            end;
          end;
-         FreeObject(Ev);
-         exit;
       end;
+   finally
+      FreeObject(Ev);
    end;
 end;
 

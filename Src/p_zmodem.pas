@@ -2530,10 +2530,6 @@ begin
       CP.Carrier := not CP.Carrier;
       ZmodemState := AState;
       ProtocolStatus := psAbortNoCarrier;
-    end else
-    if Timeout then begin
-      ZmodemState := AState;
-      ProtocolStatus := psTimeout;
     end;
   end;
 end;

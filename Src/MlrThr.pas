@@ -3246,6 +3246,8 @@ var
    a: TEventAtom;
 begin
    Result := nil;
+   if EventsThr = nil then exit;
+   if EventsThr.Events = nil then exit;
    for k := 0 to EvtCnt - 1 do begin
       i := FindNo(EvtIds^[k], EventsThr.Events);
       if i = -1 then Continue;
@@ -6352,7 +6354,7 @@ var
                      sss := Format('%sReceived ''%s''', [CPS, fn]);
                      FreeBWZ(SD.WzRec);
                      If IniFile.UnpackMSG and (ufe = '.PKT') then begin
-                        UnpackPKT(fn); 
+                        UnpackPKT(fn, Logger);
                      end;
                   end else begin
                      ChkErrMsg;
@@ -9265,6 +9267,8 @@ var
    i: Integer;
 begin
    Result := False;
+   if SD.ActivePoll = nil then exit;
+   if SD.ActivePoll.Node = nil then exit;
    for i := 0 to CollMax(SD.rmtAddrs) do begin
       if CompareAddrs(SD.rmtAddrs[i], SD.ActivePoll.Node.Addr) = 0 then begin
          Result := True;
@@ -13230,18 +13234,19 @@ begin
       msSE_OKc:
          begin
             Log(ltWarning, 'Session completed successfully');
+            c := uGetSystemTime - SD.SessionStart;
+            Log(ltInfo, 'Session time: ' + Format('%.2d:%.2d:%.2d', [c div 3600, (c mod 3600) div 60, c mod 60]));
             if IniFile.SessionOKFlag then CreateFlag('session.ok' {+Name}); //bug report by Anton Ikonen
-//            State := msRescan;  //Читайте ru.argus.devel
             State := msInit;
             PlaySnd('Session', SoundsON);
          end;
       msSE_SessionAborted:
          begin
             Log(ltWarning, 'Session aborted');
-//            SaveTarifLog(self);
+            c := uGetSystemTime - SD.SessionStart;
+            Log(ltInfo, 'Session time: ' + Format('%.2d:%.2d:%.2d', [c div 3600, (c mod 3600) div 60, c mod 60]));
             if IniFile.SessionAbortedFlag then CreateFlag('session.fail');
             DoSE_SessionAborted;
-//            State := msRescan;  //Читайте ru.argus.devel
             State := msInit;
             PlaySnd('Aborted', SoundsON);
          end;

@@ -21,6 +21,7 @@ type
       Echo: string;
       Offs: int64;
       bOff: int64;
+      HRec: PktHeaderRec;
       Head: PackedMsgHeaderRec;
       Size: int64;
       hLen: integer;
@@ -111,17 +112,18 @@ type
 
    TNetLogger = class
       LogColl: TStringColl;
+      MLogger: TMailerThreadLogger;
    public
       constructor Create;
       destructor Destroy; override;
       procedure Log(const s: string);
-      procedure LogMSG(m: TNetmailMSG; p: string);
+      procedure LogMSG(m: TNetmailMSG; n: integer; p: string);
    end;
 
 procedure FreeNetmailHolder;
 function  ClearAttach(d: TFidoAddress; m, a: string): string;
 function  ChangAttach(m, a: string): boolean;
-procedure UnpackPKT(p: string);
+procedure UnpackPKT(p: string; l: TMailerThreadLogger);
 procedure FinalizePKT(a: TFidoAddress; p: string);
 procedure NewMessage(a: TFidoAddress; o, u: string);
 procedure WriteLine(n: string);
@@ -138,7 +140,7 @@ implementation
 
 uses
    RadIni, RRegExp, SysUtils, Wizard, Outbound, DateUtils,
-   Forms, Watcher, JclDateTime, RadSav;
+   Forms, Watcher, JclDateTime, RadSav, Recs;
 
 procedure FreeNetmailHolder;
 begin
@@ -442,7 +444,9 @@ begin
       o := m.bOff - m.Offs - SizeOf(PackedMsgHeaderRec);
       s.Write(Pointer(Integer(m.Body) + o)^, m.Size - o - 1);
       s.Free;
-      NetmailLogger.LogMSG(m, 'unpack');
+      NetmailLogger.MLogger := L;
+      NetmailLogger.LogMSG(m, x, 'unpack');
+      NetmailLogger.MLogger := nil;
       if (m.Attr and AuditRequest > 0) or
          ((m.Attr and ReturnReceiptRequest > 0) and (AddrColl.Search(@m.Addr, o))) then
       begin
@@ -486,7 +490,7 @@ begin
          FreeObject(n);
          exit;
       end;
-      NetmailLogger.LogMSG(m, 'router');
+      NetmailLogger.LogMSG(m, 0, 'router');
       if (m.Attr and AuditRequest > 0) then begin
          NewMessage(m.From, m.Frnm, 'Transit confirmation');
          WriteLine(
@@ -1145,6 +1149,7 @@ begin
          l.Offs := n.Position;
          l.Pack := pack;
          n.Read(m, sizeof(m));
+         l.HRec := h;
          l.Head := m;
          l.Lock.Zone  := h.DestZone;
          l.Lock.Net   := h.DestNet;
@@ -1506,7 +1511,7 @@ var
    t: THandle;
 begin
    LogColl.Add(s);
-   NetmailLog := IniFile.net_log;
+   NetmailLog   := MakeNormName(dLog, IniFile.net_log);
    if _LogOK(NetmailLog, t) then begin
       While LogColl.Count > 0 do begin
         _LogWriteStr(' ' + uFormat(uGetLocalTime) + ' ' + LogColl[0], t);
@@ -1517,8 +1522,32 @@ begin
 end;
 
 procedure TNetLogger.LogMSG;
+var
+   a: TFidoAddress;
+   s: string;
 begin
-   Log('[' + p + '] From: ' + m.Frnm + ' (' + Addr2Str(m.From) + '), To: ' + m.Tonm + ' (' + Addr2Str(m.Addr) + '), Subj: ' + m.Subj + ', Date: ' + m.Date + ', MsgId: ' + m.MsId);
+   if m.HRec.PktType <> 0 then begin
+      m.HRec.PktType := 0;
+      a.Zone  := m.HRec.OrigZone;
+      a.Net   := m.HRec.OrigNet;
+      a.Node  := m.HRec.OrigNode;
+      a.Point := m.HRec.OrigPoint;
+      s := Addr2Str(a) + ' => ';
+      a.Zone  := m.HRec.DestZone;
+      a.Net   := m.HRec.DestNet;
+      a.Node  := m.HRec.DestNode;
+      a.Point := m.HRec.DestPoint;
+      s := 'PKT: ' + s + Addr2Str(a);
+      Log(s);
+      if MLogger <> nil then begin
+         MLogger.Log(ltInfo, s);
+      end;
+   end;
+   s := m.Frnm + ' (' + Addr2Str(m.From) + ') => ' + m.Tonm + ' (' + Addr2Str(m.Addr) + '); Subj: ' + m.Subj + ', Date: ' + m.Date + ', MsgId: ' + m.MsId;
+   Log('[' + p + '] ' + s);
+   if MLogger <> nil then begin
+      MLogger.Log(ltInfo, '#' + IntToStr(n) + ' ' + s);
+   end;
 end;
 
 initialization

@@ -14,7 +14,7 @@ type
     tsExternal: TTabSheet;
     gPeriodical: TAdvGrid;
     gbTry: TGroupBox;
-    lBysy: TLabel;
+    lBusy: TLabel;
     lNoC: TLabel;
     lFail: TLabel;
     sBusy: TxSpinEdit;

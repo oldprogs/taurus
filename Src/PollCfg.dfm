@@ -6,7 +6,7 @@ object PollSetupForm: TPollSetupForm
   BorderWidth = 6
   Caption = 'Polls Set-up'
   ClientHeight = 275
-  ClientWidth = 532
+  ClientWidth = 561
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -21,14 +21,14 @@ object PollSetupForm: TPollSetupForm
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   DesignSize = (
-    532
+    561
     275)
   PixelsPerInch = 96
   TextHeight = 14
   object PageControl: TPageControl
     Left = 0
     Top = 0
-    Width = 532
+    Width = 561
     Height = 237
     ActivePage = tsPeriodical
     Align = alTop
@@ -48,7 +48,7 @@ object PollSetupForm: TPollSetupForm
       object gPeriodical: TAdvGrid
         Left = 0
         Top = 0
-        Width = 512
+        Width = 541
         Height = 194
         FixedFont.Charset = DEFAULT_CHARSET
         FixedFont.Color = clWindowText
@@ -71,13 +71,13 @@ object PollSetupForm: TPollSetupForm
         ColWidths = (
           31
           232
-          226)
+          266)
       end
     end
     object tsOptions: TTabSheet
       Caption = 'Options'
       object lRetry: TLabel
-        Left = 370
+        Left = 378
         Top = 149
         Width = 84
         Height = 16
@@ -85,7 +85,7 @@ object PollSetupForm: TPollSetupForm
         FocusControl = sRetry
       end
       object lCallMin: TLabel
-        Left = 370
+        Left = 378
         Top = 177
         Width = 75
         Height = 16
@@ -95,11 +95,11 @@ object PollSetupForm: TPollSetupForm
       object gbTry: TGroupBox
         Left = 12
         Top = 12
-        Width = 501
+        Width = 525
         Height = 125
         Caption = 'Try counters'
         TabOrder = 0
-        object lBysy: TLabel
+        object lBusy: TLabel
           Left = 64
           Top = 28
           Width = 30
@@ -127,7 +127,7 @@ object PollSetupForm: TPollSetupForm
           FocusControl = sFail
         end
         object lStandOff: TLabel
-          Left = 179
+          Left = 187
           Top = 28
           Width = 101
           Height = 16
@@ -136,7 +136,7 @@ object PollSetupForm: TPollSetupForm
           FocusControl = sStandOffBusy
         end
         object Label1: TLabel
-          Left = 179
+          Left = 187
           Top = 60
           Width = 101
           Height = 16
@@ -145,7 +145,7 @@ object PollSetupForm: TPollSetupForm
           FocusControl = sStandOffBusy
         end
         object Label2: TLabel
-          Left = 179
+          Left = 187
           Top = 92
           Width = 101
           Height = 16
@@ -187,7 +187,7 @@ object PollSetupForm: TPollSetupForm
           Value = 3
         end
         object sStandOffBusy: TxSpinEdit
-          Left = 289
+          Left = 297
           Top = 24
           Width = 50
           Height = 26
@@ -198,7 +198,7 @@ object PollSetupForm: TPollSetupForm
           Value = 30
         end
         object sStandOffNoc: TxSpinEdit
-          Left = 289
+          Left = 297
           Top = 56
           Width = 50
           Height = 26
@@ -208,7 +208,7 @@ object PollSetupForm: TPollSetupForm
           Value = 30
         end
         object sStandOffFail: TxSpinEdit
-          Left = 289
+          Left = 297
           Top = 88
           Width = 50
           Height = 26
@@ -218,7 +218,7 @@ object PollSetupForm: TPollSetupForm
           Value = 30
         end
         object cbBusy: TCheckBox
-          Left = 374
+          Left = 382
           Top = 28
           Width = 97
           Height = 17
@@ -228,7 +228,7 @@ object PollSetupForm: TPollSetupForm
           OnClick = cbClick
         end
         object cbNoc: TCheckBox
-          Left = 374
+          Left = 382
           Top = 60
           Width = 97
           Height = 17
@@ -238,7 +238,7 @@ object PollSetupForm: TPollSetupForm
           OnClick = cbClick
         end
         object cbFail: TCheckBox
-          Left = 374
+          Left = 382
           Top = 92
           Width = 97
           Height = 17
@@ -251,7 +251,7 @@ object PollSetupForm: TPollSetupForm
       object cbTransmitHold: TCheckBox
         Left = 12
         Top = 149
-        Width = 255
+        Width = 288
         Height = 17
         Caption = '&Transmit '#39'Hold'#39' on outgoing'
         TabOrder = 1
@@ -259,13 +259,13 @@ object PollSetupForm: TPollSetupForm
       object cbDirectAsNormal: TCheckBox
         Left = 12
         Top = 177
-        Width = 255
+        Width = 288
         Height = 17
         Caption = 'Prevent '#39'Direct'#39' from initiating a poll'
         TabOrder = 2
       end
       object sRetry: TxSpinEdit
-        Left = 301
+        Left = 309
         Top = 145
         Width = 50
         Height = 26
@@ -276,7 +276,7 @@ object PollSetupForm: TPollSetupForm
         Value = 10
       end
       object sCallMin: TxSpinEdit
-        Left = 301
+        Left = 309
         Top = 175
         Width = 50
         Height = 26
@@ -293,7 +293,7 @@ object PollSetupForm: TPollSetupForm
       object gExternal: TAdvGrid
         Left = 0
         Top = 0
-        Width = 512
+        Width = 541
         Height = 194
         FileNameCol = 3
         FixedFont.Charset = DEFAULT_CHARSET
@@ -318,7 +318,7 @@ object PollSetupForm: TPollSetupForm
           31
           134
           140
-          181)
+          227)
       end
     end
     object tsAdditional: TTabSheet
@@ -359,7 +359,7 @@ object PollSetupForm: TPollSetupForm
     end
   end
   object bOK: TButton
-    Left = 272
+    Left = 301
     Top = 247
     Width = 75
     Height = 23
@@ -370,7 +370,7 @@ object PollSetupForm: TPollSetupForm
     TabOrder = 1
   end
   object bCancel: TButton
-    Left = 352
+    Left = 381
     Top = 247
     Width = 75
     Height = 23
@@ -381,7 +381,7 @@ object PollSetupForm: TPollSetupForm
     TabOrder = 2
   end
   object bHelp: TButton
-    Left = 432
+    Left = 461
     Top = 247
     Width = 75
     Height = 23

@@ -2705,9 +2705,20 @@ begin
 end;
 
 procedure TBaseProtocol.DbgLog(const s: string);
+var
+   t: string;
 begin
-  CustomInfo := s;
-  FLogFile(Self, lfDebug);
+   if Length(s) < 128 then begin
+      CustomInfo := s;
+      FLogFile(Self, lfDebug);
+   end else begin
+      t := s;
+      while Length(t) > 0 do begin
+         CustomInfo := copy(t, 1, 57);
+         FLogFile(Self, lfDebug);
+         delete(t, 1, 57);
+      end;
+   end;
 end;
 
 procedure TBaseProtocol.DbgLogFmt(const Fmt: string; const Args: array of const);

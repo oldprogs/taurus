@@ -129,12 +129,12 @@ object SetupForm: TSetupForm
       000000000000055061746873}
   end
   object nbPages: TNotebook
-    Left = 145
+    Left = 144
     Top = 29
     Width = 418
     Height = 373
     Anchors = [akLeft, akTop, akRight, akBottom]
-    PageIndex = 4
+    PageIndex = 12
     TabOrder = 1
     object TPage
       Left = 0
@@ -1429,7 +1429,7 @@ object SetupForm: TSetupForm
       object cbAlwaysInTray: TCheckBox
         Left = 20
         Top = 38
-        Width = 193
+        Width = 350
         Height = 17
         Caption = 'Always in tray'
         TabOrder = 0
@@ -1437,7 +1437,7 @@ object SetupForm: TSetupForm
       object cbBalloon: TCheckBox
         Left = 20
         Top = 165
-        Width = 201
+        Width = 350
         Height = 17
         Caption = 'Show balloon tooltip'
         TabOrder = 3
@@ -1445,7 +1445,7 @@ object SetupForm: TSetupForm
       object cbBalloonMin: TCheckBox
         Left = 20
         Top = 189
-        Width = 313
+        Width = 350
         Height = 17
         Caption = 'Show balloon tooltip when minimized'
         TabOrder = 4
@@ -1453,7 +1453,7 @@ object SetupForm: TSetupForm
       object cbStealth: TCheckBox
         Left = 20
         Top = 63
-        Width = 173
+        Width = 350
         Height = 17
         Caption = 'Stealth mode'
         TabOrder = 1
@@ -1843,7 +1843,7 @@ object SetupForm: TSetupForm
         Transparent = False
       end
       object lRxWindow: TLabel
-        Left = 303
+        Left = 296
         Top = 32
         Width = 61
         Height = 15
@@ -1910,7 +1910,7 @@ object SetupForm: TSetupForm
         Value = 0
       end
       object seRxWindow: TxSpinEdit
-        Left = 220
+        Left = 213
         Top = 27
         Width = 73
         Height = 24
@@ -1922,15 +1922,15 @@ object SetupForm: TSetupForm
       object cbShortName: TCheckBox
         Left = 16
         Top = 58
-        Width = 170
+        Width = 180
         Height = 17
         Caption = 'Short and long name'
         TabOrder = 2
       end
       object cbOEMCharset: TCheckBox
-        Left = 220
+        Left = 213
         Top = 58
-        Width = 150
+        Width = 180
         Height = 17
         Caption = 'OEM charset'
         TabOrder = 3
@@ -1938,7 +1938,7 @@ object SetupForm: TSetupForm
       object cbDebug: TCheckBox
         Left = 16
         Top = 78
-        Width = 170
+        Width = 180
         Height = 17
         Caption = 'Debug'
         TabOrder = 4
@@ -1946,23 +1946,23 @@ object SetupForm: TSetupForm
       object cbRequestCrypt: TCheckBox
         Left = 16
         Top = 127
-        Width = 170
+        Width = 180
         Height = 17
         Caption = 'Request Crypt'
         TabOrder = 5
       end
       object cbIBNRequestList: TCheckBox
-        Left = 221
+        Left = 213
         Top = 127
-        Width = 150
+        Width = 180
         Height = 17
         Caption = 'Request File List'
         TabOrder = 6
       end
       object cbHydRequestList: TCheckBox
-        Left = 221
+        Left = 213
         Top = 78
-        Width = 150
+        Width = 180
         Height = 17
         Caption = 'Request File List'
         TabOrder = 8
@@ -1970,7 +1970,7 @@ object SetupForm: TSetupForm
       object cbChatEnabled: TCheckBox
         Left = 16
         Top = 176
-        Width = 170
+        Width = 180
         Height = 17
         Caption = 'Chat Enabled'
         TabOrder = 7
@@ -1993,9 +1993,9 @@ object SetupForm: TSetupForm
         OnClick = btnChatBellClick
       end
       object cbIgnoreCD: TCheckBox
-        Left = 221
+        Left = 213
         Top = 247
-        Width = 150
+        Width = 180
         Height = 17
         Caption = 'Ignore CD'
         TabOrder = 11
@@ -2003,7 +2003,7 @@ object SetupForm: TSetupForm
       object cbLamps: TCheckBox
         Left = 16
         Top = 247
-        Width = 170
+        Width = 180
         Height = 17
         Caption = 'Lamps in tray'
         TabOrder = 12
@@ -2118,7 +2118,7 @@ object SetupForm: TSetupForm
       object cbTariffPerMinute: TCheckBox
         Left = 21
         Top = 41
-        Width = 160
+        Width = 380
         Height = 17
         Caption = 'Tariffication per minute'
         TabOrder = 0
@@ -2608,7 +2608,7 @@ object SetupForm: TSetupForm
         Shape = bsTopLine
       end
       object lHome: TLabel
-        Left = 24
+        Left = 9
         Top = 33
         Width = 37
         Height = 15
@@ -2629,49 +2629,49 @@ object SetupForm: TSetupForm
         Transparent = False
       end
       object lConfigs: TLabel
-        Left = 24
+        Left = 9
         Top = 57
         Width = 46
         Height = 15
         Caption = 'Configs:'
       end
       object lFlags: TLabel
-        Left = 24
+        Left = 9
         Top = 81
         Width = 54
         Height = 15
         Caption = 'File-flags:'
       end
       object lTempInbound: TLabel
-        Left = 24
+        Left = 9
         Top = 105
         Width = 83
         Height = 15
         Caption = 'Temp inbound:'
       end
       object lSecureInbound: TLabel
-        Left = 24
+        Left = 9
         Top = 129
         Width = 90
         Height = 15
         Caption = 'Secure inbound:'
       end
       object lInbound: TLabel
-        Left = 24
+        Left = 9
         Top = 153
         Width = 48
         Height = 15
         Caption = 'Inbound:'
       end
       object lOutbound: TLabel
-        Left = 24
+        Left = 9
         Top = 177
         Width = 57
         Height = 15
         Caption = 'Outbound:'
       end
       object lLogs: TLabel
-        Left = 24
+        Left = 9
         Top = 201
         Width = 31
         Height = 15
