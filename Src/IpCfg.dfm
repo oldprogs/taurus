@@ -730,6 +730,7 @@ object IPcfgForm: TIPcfgForm
         ParentFont = False
         TabOrder = 0
         CheckBoxes = False
+        PasswordCol = 3
         ColWidths = (
           64
           255
@@ -763,6 +764,7 @@ object IPcfgForm: TIPcfgForm
         ParentFont = False
         TabOrder = 0
         CheckBoxes = False
+        PasswordCol = 2
         ColWidths = (
           210
           73
@@ -774,33 +776,41 @@ object IPcfgForm: TIPcfgForm
     object tsNNTP: TTabSheet
       BorderWidth = 10
       Caption = 'NNTP'
-      DesignSize = (
-        560
-        264)
       object lNNTPImport: TLabel
         Left = 0
         Top = 8
-        Width = 161
+        Width = 168
         Height = 15
-        Caption = 'File to import NEWS List from'
+        Caption = 'Files to import NEWS List from'
       end
-      object eNNTPImport: TEdit
+      object gNNTP: TAdvGrid
         Left = 0
-        Top = 32
-        Width = 444
-        Height = 23
-        Anchors = [akLeft, akTop, akRight]
+        Top = 39
+        Width = 560
+        Height = 225
+        FileNameCol = 1
+        FixedFont.Charset = DEFAULT_CHARSET
+        FixedFont.Color = clWindowText
+        FixedFont.Height = -11
+        FixedFont.Name = 'MS Sans Serif'
+        FixedFont.Style = []
+        Align = alBottom
+        ColCount = 2
+        DefaultRowHeight = 17
+        FixedCols = 0
+        RowCount = 2
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -12
+        Font.Name = 'Courier'
+        Font.Style = []
+        Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goColSizing, goEditing]
+        ParentFont = False
         TabOrder = 0
-      end
-      object bNNTPImport: TButton
-        Left = 453
-        Top = 32
-        Width = 25
-        Height = 25
-        Anchors = [akTop, akRight]
-        Caption = '...'
-        TabOrder = 1
-        OnClick = bNNTPImportClick
+        CheckBoxes = False
+        ColWidths = (
+          64
+          472)
       end
     end
   end
@@ -847,10 +857,5 @@ object IPcfgForm: TIPcfgForm
     TabOrder = 7
     Visible = False
     OnClick = bExplainClick
-  end
-  object OD: TOpenDialog
-    Options = [ofShareAware, ofEnableSizing]
-    Left = 600
-    Top = 208
   end
 end

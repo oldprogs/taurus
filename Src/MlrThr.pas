@@ -2730,12 +2730,9 @@ procedure _AddToExec(const s: string; ALogger: TAbstractLogger; PriorityClass: D
 
    function CmdPattern(const shell: string): string;
    begin
-      if (Win32Platform = VER_PLATFORM_WIN32_NT) and (shell <> 'command.com') then
-      begin
+      if (Win32Platform = VER_PLATFORM_WIN32_NT) and (shell <> 'command.com') then begin
          Result := '%s /C "%s"';
-      end
-      else
-      begin
+      end else begin
          Result := '%s /C %s';
       end;
    end;
@@ -2805,24 +2802,18 @@ begin
    es := s;
    PDir := nil;
    GetWrd(es, ff, ' ');
-   if MatchMask(ff, '*.exe') then
-   begin
+   if MatchMask(ff, '*.exe') then begin
       Dir := ExtractFileDir(ff);
       ff := 'Executing program "%s" %s/%s (PID=%x)';
       if DirExists(Dir) = 1 then PDir := PChar(Dir);
       es := s
-   end
-   else
-   begin
+   end else begin
       ff := 'Executing command "%s" %s/%s (PID=%x)';
       es := Format(CmdPattern(comspec), [Comspec, s]);
    end;
-   if not ExecProcess(es, PI, nil, Pdir, False, IDet[Detached] or PriorityClass or CREATE_SUSPENDED, ShowMode) then
-   begin
+   if not ExecProcess(es, PI, nil, Pdir, False, IDet[Detached] or PriorityClass or CREATE_SUSPENDED, ShowMode) then begin
       ALogger.ChkErrMsg;
-   end
-   else
-   begin
+   end else begin
       ALogger.LogFmt(ltInfo, ff, [s, SDet, pclass, PI.dwProcessId]);
       ProcNfo := TProcessNfo.Create;
       ProcNfo.PI := PI;
@@ -2846,15 +2837,12 @@ begin
    if s = '' then Exit;
    case s[1] of
       '?':
-         if (ShowMode = swHide) and (not Detached) then
-         begin
+         if (ShowMode = swHide) and (not Detached) then begin
             ShowMode := swMinimize;
             Detached := True;
             s := cl;
             Result := __CheckExecPrefixes(s, Priority, Detached, ShowMode);
-         end
-         else
-         begin
+         end else begin
             Result := True;
          end;
       '<', '+', '*':
@@ -2933,28 +2921,24 @@ end;
 function AddToExec(const AStr: string; ALogger: TAbstractLogger): Boolean;
 var
    Priority: DWORD;
-   Detached, SetFlag: Boolean;
+   Detached,
+    SetFlag: Boolean;
    ShowMode: TExecShowMode;
    ss: string;
 begin
    ss := AStr;
    Result := CheckExecPrefixes(ss, Priority, Detached, ShowMode, SetFlag);
-   if not Result then
-   begin
+   if not Result then begin
       ALogger.LogFmt(ltGlobalErr, 'AttToExec(%s) failed', [AStr]);
       Exit;
    end;
-   if SetFlag then
-   begin
+   if SetFlag then begin
       ALogger.LogFmt(ltInfo, 'Setting file-flag %s', [ss]);
-      if not SetFileFlag(ss) then
-      begin
+      if not SetFileFlag(ss) then begin
          SetErrorMsg(ss);
          ALogger.ChkErrMsg;
       end;
-   end
-   else
-   begin
+   end else begin
       _AddToExec(ss, ALogger, Priority, Detached, ShowMode);
    end;
 end;
@@ -2966,11 +2950,9 @@ var
    Code: DWORD;
 begin
    Zombies.Enter;
-   if (not TimerInstalled(LastZombiesPurged)) or (TimerExpired(LastZombiesPurged)) then
-   begin
+   if (not TimerInstalled(LastZombiesPurged)) or (TimerExpired(LastZombiesPurged)) then begin
       NewTimerSecs(LastZombiesPurged, 120);
-      for i := Zombies.Count - 1 downto 0 do
-      begin
+      for i := Zombies.Count - 1 downto 0 do begin
          pi := Zombies[i];
          if not GetExitCodeProcess(pi.pi.hProcess, Code) then Code := 0;
          if Code = STILL_ACTIVE then Continue;
@@ -2983,7 +2965,7 @@ begin
 end;
 
 function BirthDay: string;
-var 
+var
   y, m, d: word;
 begin
    Result := '';
@@ -3126,31 +3108,6 @@ begin
    Result := P;
 end;
 
-{function _FileRestrictionMatches(const FName: string; s: string; Single: Boolean): Boolean;
-var
-  z: string;
-  b: Boolean;
-begin
-  Result := True;
-  repeat
-    GetWrd(s, z, ' ');
-    if z = '' then Break;
-    b := MatchMask(FName, z);
-    if b = Single then
-    begin
-      Result := False;
-      Exit;
-    end;
-  until False;
-end;
-
-function FileRestrictionMatches(const FName, Rqd, Frb: string): Boolean;
-begin
-  Result := _FileRestrictionMatches(FName, Rqd, False) and
-            _FileRestrictionMatches(FName, Frb, True);
-end;
-}
-
 function GetPasswordAux(const Addr: TFidoAddress): string;
 begin
    EnterCS(AuxPwdsCS);
@@ -3171,22 +3128,20 @@ end;
 function GetPasswordEvt(const Addr: TFidoAddress; EP: TMailerThreadEventProcessor): string;
 var
    R: TColl;
-   i, j: Integer;
+   i,
+   j: Integer;
    ds: TEvParDStr;
    A: TFidoAddrColl;
    AA: TFidoAddress;
 begin
    Result := '';
    R := EP.GetAtomList(eiPassword);
-   for i := 0 to CollMax(R) do
-   begin
+   for i := 0 to CollMax(R) do begin
       ds := R[i];
       A := CreateAddrColl(ds.StrA);
-      for j := 0 to CollMax(A) do
-      begin
+      for j := 0 to CollMax(A) do begin
          AA := A[j];
-         if CompareAddrs(Addr, AA) = 0 then
-         begin
+         if CompareAddrs(Addr, AA) = 0 then begin
             Result := StrAsg(ds.StrB);
             Break;
          end;
@@ -3204,38 +3159,6 @@ begin
    if Result = '' then Result := GetPasswordGrid(Addr);
 end;
 
-(*
-function _AddrRestrictionMatches(C: TFidoAddrColl; const Addrs: string; Single: Boolean): Boolean;
-var
-  b: Boolean;
-//  r: TFidoAddrColl;
-  i, j: Integer;
-  a: TFidoAddress;
-  Found: Boolean;
-begin
-  Result := True;
-  Found := False;
-//  r := CreateAddrColl(Addrs);
-//  if r = nil then Exit;
-  for i := 0 to C.Count-1 do
-  begin
-    a := C[i];
-    for j := 0 to r.Count-1 do
-    begin
-      b := CompareAddrs(a, r[j]) = 0;
-      if b then Found := True;
-      if b = Single then
-      begin
-        Result := False;
-        if Single then Break;
-      end;
-    end;
-  end;
-  FreeObject(r);
-  if not Single then Result := Result or Found;
-end;
-*)
-
 function AddrRestrictionMatches(C: TFidoAddrColl; const Rqd, Frb: string): Boolean;
 begin
    Result := False;
@@ -3244,32 +3167,25 @@ begin
    Result := True;
 end;
 
-// --- fido polls
-
 procedure RollPoll(var ActivePoll: TFidoPoll);
 var
    an: TAdvNode;
 begin
    EnterFidoPolls;
    FidoPolls.Delete(ActivePoll);
-   if ActivePoll.Revalidate then
-   begin
+   if ActivePoll.Revalidate then begin
       ActivePoll.Revalidate := False;
       an := FindNode(ActivePoll.Node.Addr);
-      if an = nil then
-      begin
+      if an = nil then begin
          ActivePoll.Done := pdnNodeDestroyed;
          FreeObject(ActivePoll);
-      end
-      else
-      begin
+      end else begin
          XChg(ActivePoll.Node, an);
          FreeObject(an);
          ActivePoll.Reset;
       end;
    end;
-   if ActivePoll <> nil then
-   begin
+   if ActivePoll <> nil then begin
       FidoPolls.Insert(ActivePoll);
       ActivePoll.Release;
    end;
@@ -3283,8 +3199,7 @@ var
 begin
    Result := TColl.Create;
    EnterFidoPolls;
-   for i := 0 to FidoPolls.Count - 1 do
-   begin
+   for i := 0 to FidoPolls.Count - 1 do begin
       PP := TPollPtr.Create;
       PP.Poll := FidoPolls[I];
       Result.Insert(PP);
@@ -3298,8 +3213,7 @@ var
    p: TPollPtr;
 begin
    AOwnPolls.Enter;
-   for j := AOwnPolls.Count - 1 downto 0 do
-   begin
+   for j := AOwnPolls.Count - 1 downto 0 do begin
       p := AOwnPolls[j];
       if p.Poll = ap then AOwnPolls.AtFree(j);
    end;
@@ -3317,12 +3231,10 @@ var
       i: Integer;
       t: TMailerThread;
    begin
-      for i := 0 to MailerThreads.Count - 1 do
-      begin
+      for i := 0 to MailerThreads.Count - 1 do begin
          t := MailerThreads[i];
          if t.DialupLine then Continue;
-         if m.IpIdx < t.IpIdx then
-         begin
+         if m.IpIdx < t.IpIdx then begin
             MailerThreads.AtInsert(i, m);
             Exit;
          end;
@@ -3338,16 +3250,14 @@ begin
    m.TermRxData := TTermData.Create(Acw, Ach);
    m.CP := APort;
 {$IFDEF USE_TAPI}
-   if APort is TTapiPort then
-   begin
+   if APort is TTapiPort then begin
 {$IFDEF WS}
       m.DialupLine := True;
 {$ENDIF}
       m.TapiDevice := True;
    end else
 {$ENDIF}
-   if APort is TSerialPort then
-   begin
+   if APort is TSerialPort then begin
 {$IFDEF WS}
       m.DialupLine := True;
 {$ENDIF}
@@ -3357,8 +3267,7 @@ begin
    end;
    m.LineId := ALineId;
 {$IFDEF WS}
-   if NI <> nil then
-   begin
+   if NI <> nil then begin
       m.IpPort := NI.IpPort;
       m.ProtCore := NI.Prot;
       m.ipAddr := NI.Addr;
@@ -3366,20 +3275,17 @@ begin
       m.CP.DTE := Cfg.IpData.Speed;
       m.CP.PortNumber := NI.IpPort;
       m.CP.PortIndex := NI.IpPort;
-   end
-   else
+   end else
 {$ENDIF}
    begin
       m.ProtCore := ptDialup;
    end;
    m.SD := TMailerThreadInitData.Create;
 {$IFDEF WS}
-   if (NI <> nil) and (NI.Poll <> nil) then
-   begin
+   if (NI <> nil) and (NI.Poll <> nil) then begin
       NI.Poll.Owner := m;
       m.SD.ActivePoll := NI.Poll;
-   end else
-   begin
+   end else begin
       m.SD.MayRCC := True;
    end;
    FreeObject(NI);
@@ -3421,23 +3327,22 @@ end;
 
 function TAbstractEventProcessor.GetAtomListEx(ATyp: Integer; Single: Boolean): Pointer;
 var
-   i, j, k: Integer;
+   i,
+   j,
+   k: Integer;
    ol: TOlEventContainer;
    a: TEventAtom;
 begin
    Result := nil;
-   for k := 0 to EvtCnt - 1 do
-   begin
+   for k := 0 to EvtCnt - 1 do begin
       i := FindNo(EvtIds^[k], EventsThr.Events);
       if i = -1 then Continue;
       ol := EventsThr.Events[i];
       if not ol.Active then Continue;
-      for j := 0 to ol.Atoms.Count - 1 do
-      begin
+      for j := 0 to ol.Atoms.Count - 1 do begin
          a := ol.Atoms[j];
          if a.Typ <> ATyp then Continue;
-         if Single then
-         begin
+         if Single then begin
             Result := a;
             Exit;
          end;
@@ -3459,29 +3364,6 @@ begin
    Result := GetAtomListEx(ATyp, False);
    LeaveEvents;
 end;
-
-(*
-function TAbstractEventProcessor.GridValue(ATyp: Integer): TColl;
-var
-  a: TEvParGrid;
-  sl: TStringColl;
-  i: Integer;
-begin
-  Refill;
-  EnterEvents;
-  a := FindAtom(ATyp);
-  if a = nil then Result := nil else
-  begin
-    Result := TColl.Create;
-    for i := 0 to a.L.Count-1 do
-    begin
-      sl := a.L[i];
-      Result.Add(sl.Copy);
-    end;
-  end;
-  LeaveEvents;
-end;
-*)
 
 function TAbstractEventProcessor.StrValue(ATyp: Integer): string;
 var
@@ -5199,6 +5081,32 @@ begin
    end;
 end;
 
+function  GetNodeOutbound(const Addr: TFidoAddress; const Stat: TOutStatusSet; FC: TOutFileColl): TOutFileColl;
+var
+   i: integer;
+   j: integer;
+   o: TOutFile;
+   n: TOutNode;
+begin
+   EnterCS(OutMgrThread.NodesCS);
+   Result := FC;
+   if Result = nil then begin
+      Result := TOutFileColl.Create;
+   end;
+   for i := 0 to CollMax(OutMgrThread.Nodes) do begin
+      n := OutMgrThread.Nodes[i];
+      if CompareAddrs(Addr, n.Address) = 0 then begin
+         for j := 0 to CollMax(n.Files) do begin
+            o := n.Files[j];
+            if o.fStatus in Stat then begin
+               Result.Add(o.Copy);
+            end;
+         end;
+      end;
+   end;
+   LeaveCS(OutMgrThread.NodesCS);
+end;
+
 procedure TMailerThread.ScanOut;
 var
    II,
@@ -5401,7 +5309,8 @@ begin
       begin
          S := A[K];
          J := SD.OutFiles.Count;
-         SD.OutFiles := FidoOut.GetOutbound(SD.rmtAddrs[I], [S], SD.OutFiles, nil, nil, True, True);
+        // SD.OutFiles := FidoOut.GetOutbound(SD.rmtAddrs[I], [S], SD.OutFiles, nil, nil, True, True);
+         SD.OutFiles := GetNodeOutbound(SD.rmtAddrs[i], [S], SD.OutFiles);
          ChkErrMsg;
          SD.OutFiles.Enter;
          L := SD.OutFiles.Count - 1;
@@ -6603,7 +6512,6 @@ begin
       if (ProtCore = ptBinkP) and (P.TxClosed) then
       begin
          P.OutFlow := false;
-         //      ScanOut;
       end;
    end;
    Inc(D.rxBytes, P.R.D.FSize);
@@ -6636,10 +6544,6 @@ begin
       P.RecFiles.Leave;
    end;
    P.R.ClearFileInfo;
-   if (Application <> nil) and (Application.MainForm <> nil) then
-   begin
-      SendMessage(Application.MainForm.Handle, WM_OUTBOUNDALERT, 0, 0);
-   end;
 end;
 
 function TMailerThread.ChangeOrder(P: TBaseProtocol): boolean;
@@ -6680,6 +6584,7 @@ end;
 procedure TMailerThread.FinishSend(P: TBaseProtocol; Action: TTransferFileAction);
 var
     r: TOutFile;
+    t: TOutFile;
   sss,
   MoveTo,
   CPS: string;
@@ -6913,9 +6818,11 @@ begin
    if r <> nil then
    begin
       SD.OutFiles.Enter;
-      i := SD.OutFiles.IndexOf(r);
-      if i > -1 then begin
-         SD.OutFiles.AtDelete(i);
+      for i := CollMax(SD.OutFiles) downto 0 do begin
+         t := SD.OutFiles[i];
+         if (t.Orig = r.Orig) and (t.Name = r.Name) then begin
+            SD.OutFiles.AtDelete(i);
+         end;
       end;
       SD.OutFiles.Leave;
       SD.SentFiles.Enter;
@@ -6926,9 +6833,8 @@ begin
    Inc(D.txBytes, P.T.D.FSize);
    Inc(SD.cTxBytes, P.T.D.FPos - P.T.D.FOfs);
    P.T.ClearFileInfo;
-   if OA and (Application <> nil) and (Application.MainForm <> nil) then
-   begin
-      SendMessage(Application.MainForm.Handle, WM_OUTBOUNDALERT, 0, 0);
+   if OA and (Application <> nil) and (Application.MainForm <> nil) then begin
+      ScanCounter := 1;
    end;
 end;
 
@@ -8817,27 +8723,21 @@ begin
    IgnoreNextEvent := True;
    Result := True;
    j := CollMax(SD.rmtAddrs);
-   if j = -1 then
-   begin
+   if j = -1 then begin
       Result := False;
       Exit;
    end;
-   //TInf.Mesage:=Addr2Str(SD.ActivePoll.Node.Addr);
-   //TInf.Show;
    OutMgrThread.Enter;
    s := TStringList.Create;
-   for i := j downto 0 do
-   begin
+   for i := j downto 0 do begin
       a := SD.rmtAddrs[i];
-      if not LockAddr(a) then
-      begin
+      if not LockAddr(a) then begin
          Log(ltWarning, Format('Address %s is busy - removed from AKA list', [Addr2Str(a)]));
          SD.rmtAddrs.AtFree(i);
-      end else
-      begin
+      end else begin
          d := IniFile.GetStrings('gHooks');
          if d <> nil then begin
-            n := d.MatchAddr(a);
+            n := d.MatchAddr('gHooks', a);
             if n > -1 then begin
                s.Add(TDualRec(d.Items[n]^).st2^ + ' ' + Addr2Str(a));
             end;
@@ -8859,8 +8759,7 @@ begin
       PurgeZombies;
       FlushLog;
    end;
-   if CollCount(SD.rmtAddrs) = 0 then
-   begin
+   if CollCount(SD.rmtAddrs) = 0 then begin
       Log(ltWarning, 'All AKAs are busy - disconnecting');
       FreeObject(SD.rmtAddrs);
       Result := False;
@@ -10023,8 +9922,7 @@ begin
    Cfg.ExtCollA.AppendTo(ca);
    Cfg.ExtCollB.AppendTo(cb);
    CfgLeave;
-   for i := 0 to ca.Count - 1 do
-   begin
+   for i := 0 to ca.Count - 1 do begin
       s := ExpandSuperMask(Trim(ca[i]));
       cbi := Trim(cb[i]);
       if (cbi = '') then Continue;
@@ -10032,16 +9930,13 @@ begin
       Delete(cbi, 1, 1);
       Replace(';', ' ', s);
       Replace(',', ' ', s);
-      while s <> '' do
-      begin
+      while s <> '' do begin
          GetWrd(s, z, ' ');
-         if ValidMaskAddress(z) then
-         begin
-            if MatchMaskAddress(APrimaryAddr, z) then
+         if ValidMaskAddress(z) then begin
+            if MatchMaskAddress(APrimaryAddr, z) then begin
                if not en.Found(cbi) then en.Ins(cbi);
-         end
-         else
-         begin
+            end;
+         end else begin
             pa.Add(z);
             pb.Add(cbi);
          end;
@@ -10050,18 +9945,15 @@ begin
    FreeObject(ca);
    FreeObject(cb);
    cbi := ARcvdName;
-   for j := 0 to pa.Count - 1 do
-   begin
-      if MatchMask(cbi, pa[j]) then
-      begin
+   for j := 0 to pa.Count - 1 do begin
+      if MatchMask(cbi, pa[j]) then begin
          s := pb[j];
          if not en.Found(s) then en.Ins(s);
       end;
    end;
    FreeObject(pa);
    FreeObject(pb);
-   for i := 0 to en.Count - 1 do
-   begin
+   for i := 0 to en.Count - 1 do begin
       AddToExec(en[i], ALogger);
       Result := True;
    end;
@@ -10084,8 +9976,7 @@ begin
    Cfg.ExtCollA.AppendTo(ca);
    Cfg.ExtCollB.AppendTo(cb);
    CfgLeave;
-   for i := 0 to ca.Count - 1 do
-   begin
+   for i := 0 to ca.Count - 1 do begin
       s := ExpandSuperMask(Trim(ca[i]));
       cbi := Trim(cb[i]);
       if (cbi = '') then Continue;
@@ -10094,18 +9985,14 @@ begin
       end;
       Replace(';', ' ', s);
       Replace(',', ' ', s);
-      while s <> '' do
-      begin
+      while s <> '' do begin
          GetWrd(s, z, ' ');
          b := ValidMaskAddress(z);
-         if b then
-         begin
+         if b then begin
             if Sess and (APrimaryAddr.Zone <> 0) and MatchMaskAddress(APrimaryAddr, z) then begin
                if not en.Found(cbi) then en.Ins(cbi);
             end;
-         end
-         else
-         begin
+         end else begin
             pa.Add(z);
             pb.Add(cbi);
          end;
@@ -10113,13 +10000,10 @@ begin
    end;
    FreeObject(ca);
    FreeObject(cb);
-   for i := 0 to CollMax(ARcvdNames) do
-   begin
+   for i := 0 to CollMax(ARcvdNames) do begin
       cbi := ARcvdNames[i];
-      for j := 0 to pa.Count - 1 do
-      begin
-         if MatchMask(cbi, pa[j]) then
-         begin
+      for j := 0 to pa.Count - 1 do begin
+         if MatchMask(cbi, pa[j]) then begin
             s := pb[j];
             if not en.Found(s) then en.Ins(s);
          end;
@@ -10127,8 +10011,9 @@ begin
    end;
    FreeObject(pa);
    FreeObject(pb);
-   for i := 0 to en.Count - 1 do
+   for i := 0 to en.Count - 1 do begin
       AddToExec(en[i], ALogger);
+   end;
    FreeObject(en);
 end;
 
@@ -13987,6 +13872,7 @@ begin
       msSE_NoConnect:
          begin
             DoSE_NoConnect;
+            HangupModem;
             State := msInit;
          end;
       msScript:
@@ -15149,25 +15035,23 @@ end;
 
 procedure TCronThread.CheckPolls;
 var
-   i, j: Integer;
+   i,
+   j: Integer;
    c: TFidoAddrColl;
    an: TAdvNode;
    a: TFidoAddress;
    p: TPerPollRec;
    m: Boolean;
 begin
-   for i := 0 to CollMax(PerPolls) do
-   begin
+   for i := 0 to CollMax(PerPolls) do begin
       p := PerPolls[i];
       if p.CronRec.IsUTC then
          m := CronMatch(LastTimeUTC, p.CronRec)
       else
          m := CronMatch(LastTimeLocal, p.CronRec);
-      if m then
-      begin
+      if m then begin
          c := p.AddrList; //PollsAddrs[i];
-         for j := 0 to c.Count - 1 do
-         begin
+         for j := 0 to c.Count - 1 do begin
             a := c[j];
             an := FindNode(A);
             if an = nil then Continue;
@@ -15186,8 +15070,7 @@ procedure TEventsThread.InvokeExec;
 var
    ToSleep: integer;
 begin
-   if not Again then
-   begin
+   if not Again then begin
       Again := True;
       GetLocalTime(LastTimeLocal);
       GetSystemTime(LastTimeUTC);
@@ -15997,8 +15880,7 @@ begin
          NewNodes.AtFree(i);
       end;
    end;
-   for i := 0 to CollMax(NewNodes) do
-   begin
+   for i := 0 to CollMax(NewNodes) do begin
       Update := True;
       n := NewNodes[i];
       n.Files := FidoOut.GetOutbound(n.Address, n.StatusSet, nil, FileNames, FileInfos, False, False);
@@ -16018,6 +15900,9 @@ begin
       EnterCS(NodesCS);
       Xchg(Integer(Nodes), Integer(StackNodes));
       LeaveCS(NodesCS);
+      if Application.MainForm <> nil then begin
+         PostMessage(Application.MainForm.Handle, WM_OUTBOUNDALERT, 2, 0);
+      end;
       if not ApplicationDowned then begin
          PostMsg(WM_UPDOUTMGR);
       end;

@@ -157,11 +157,9 @@ const
 
   function CmdPattern(const shell:string): string;
   begin
-    if (Win32Platform = VER_PLATFORM_WIN32_NT) and (shell <> 'command.com') then
-    begin
+    if (Win32Platform = VER_PLATFORM_WIN32_NT) and (shell <> 'command.com') then begin
       Result := '%s /C "%s"';
-    end else
-    begin
+    end else begin
       Result := '%s /C %s';
     end;
   end;
@@ -173,7 +171,7 @@ begin
     2: es := gFlags.Cells[2, gFlags.row];
     3: es := gDrs.Cells[2, gDrs.row];
     4: es := gCrn.Cells[2, gCrn.row];
-    5: es := Format(CmdPattern(ComSpec), [Comspec, gExternals.Cells[2,gExternals.row]]);
+    5: es := gExternals.Cells[2, gExternals.row];
     6: es := gHooks.Cells[2, gHooks.row];
     else GlobalFail('PageControl.ActivePage.Tag = %d (out of range)', [PageControl.ActivePage.Tag]);
   end;

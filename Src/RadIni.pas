@@ -26,14 +26,15 @@ type
   TRadOutMgr = array[0..5] of integer;
 
   TDualRec = record
+     nam,
      st1,
      st2: PString;
   end;
 
   TDualColl = class(TColl)
-     procedure Add(const st1, st2: string);
+     procedure Add(const nam, st1, st2: string);
      procedure FreeItem(p: pointer); override;
-     function MatchAddr(a: TFidoAddress): integer;
+     function MatchAddr(const n: string; a: TFidoAddress): integer;
   end;
 
   TRadFidoPollsFlags = record
@@ -399,7 +400,8 @@ begin
          StringsList.Objects[m] := Result;
          for i := 1 to s.Count do begin
             t := ReadString('Grids', s[i - 1], '');
-            Result.Add(ExtractWord(1, t, ['|']),
+            Result.Add(s[i - 1],
+                       ExtractWord(1, t, ['|']),
                        ExtractWord(2, t, ['|']));
          end;
          s.Free;
@@ -1112,10 +1114,11 @@ begin
 end;
 
 procedure TDualColl.Add;
-var 
+var
   p : ^TDualRec;
 begin
    New(p);
+   p.nam := NewStr(nam);
    p.st1 := NewStr(st1);
    p.st2 := NewStr(st2);
    inherited Add(p);
@@ -1125,6 +1128,7 @@ procedure TDualColl.FreeItem;
 var 
   r : ^TDualRec absolute p;
 begin
+   DisposeStr(r.nam);
    DisposeStr(r.st1);
    DisposeStr(r.st2);
    Dispose(r);
@@ -1133,11 +1137,13 @@ end;
 function TDualColl.MatchAddr;
 var i: integer;
     s: string;
+    r:^TDualRec;
 begin
    Result := -1;
    for i := 0 to Count - 1 do begin
-      s := TDualRec(Items[i]^).st1^;
-      if MatchMaskAddressListSingle(a, s) then begin
+      r := Items[i];
+      s := r.st1^;
+      if (Pos(UpperCase(n), UpperCase(r.nam^)) = 1) and MatchMaskAddressListSingle(a, s) then begin
          Result := i;
          Break;
       end;

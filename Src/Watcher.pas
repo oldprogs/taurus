@@ -4,14 +4,11 @@ unit Watcher;
 
 interface
 
-uses Plus, Windows, xBase, Classes {$IFDEF ReadDirectoryChanges}, RadDW_NT {$ENDIF};
+uses Plus, Windows, xBase, Classes;
 
 type
   TDirectoryWatcher = class(T_Thread)
     hDirectoryWatcherEvent: THandle;
-{$IFDEF ReadDirectoryChanges}
-    FileFlagsWatcher: TRadiusNTDirWatch;
-{$ENDIF}
     hOutboundWatcher,
     hHomeDirWatcher: THandle;
     hFileFlagsWatcher: THandle;
@@ -30,9 +27,6 @@ type
     class function ThreadName: string; override;
   public
     property OutBoundWatcher: THandle read hOutboundWatcher;
-{$IFDEF ReadDirectoryChanges}
-    procedure OnFileFlagsWatcherNotify(Sender :TObject; Action :Integer; const FileName :string);
-{$ENDIF}
   end;
 
   TWatcherType = (
@@ -56,28 +50,6 @@ implementation
 
 uses Forms, SysUtils, Recs, RadIni, MlrThr, Wizard, NdlUtil;
 
-{$IFDEF ReadDirectoryChanges}
-procedure TDirectoryWatcher.OnFileFlagsWatcherNotify(Sender :TObject; Action :Integer; const FileName :string);
-var
-  P: TStringHolder;
-begin
-  case Action of
-    FILE_ACTION_ADDED,
-    FILE_ACTION_MODIFIED,
-    FILE_ACTION_RENAMED_NEW_NAME:
-      begin
-        if (not Terminated) and (Application <> nil) and (Application.MainForm <> nil) then
-        begin
-          P := TStringHolder.Create;
-          P.S := StrAsg(MakeFullDir(IniFile.FlagsDir, filename));
-          PostMessage(Application.MainForm.Handle, WM_CHECKFILEFLAGS, Integer(P), 0);
-        end;
-      end;
-    else;
-  end;{of case}
-end;
-{$ENDIF}
-
 constructor TDirectoryWatcher.Create;
 var
   Subtree: boolean;
@@ -96,24 +68,12 @@ begin
 
   Subtree := False;
 
-{$IFDEF ReadDirectoryChanges}
-  if Win32Platform = VER_PLATFORM_WIN32_NT then
-  begin
-    FileFlagsWatcher := TRadiusNTDirWatch.Create(nil);
-    FileFlagsWatcher.WatchSubTree := subtree;
-    FileFlagsWatcher.Directory := FullPath(IniFile.FlagsDir);
-    FileFlagsWatcher.OnNotify := OnFileFlagsWatcherNotify;
-    FileFlagsWatcher.Enabled := true;
-  end else
-{$ENDIF}
-  begin
   hFileFlagsWatcher := FindFirstChangeNotification(PChar(FullPath(IniFile.FlagsDir)),
-                     Bool(Integer(Subtree)), FILE_NOTIFY_CHANGE_FILE_NAME + FILE_NOTIFY_CHANGE_LAST_WRITE);
-  end;
+                      Bool(Integer(Subtree)), FILE_NOTIFY_CHANGE_FILE_NAME + FILE_NOTIFY_CHANGE_LAST_WRITE);
 
   Subtree := False;
   hHomeDirWatcher := FindFirstChangeNotification(PChar(JustPathName(IniFName)),
-                     Bool(Integer(Subtree)), FILE_NOTIFY_CHANGE_LAST_WRITE);
+                      Bool(Integer(Subtree)), FILE_NOTIFY_CHANGE_LAST_WRITE);
 
 {  hOutboundReader := CreateFile (
           PChar(FullPath(FullPath(outboundpath))),
@@ -276,8 +236,6 @@ begin
           if (not Terminated) and (Application <> nil) and (Application.MainForm <> nil) then begin
              if not IgnoreNextEvent and not IgnoreNextAlert then begin
                 ScanCounter := 1;
-             end else begin
-                ScanCounter := 0;
              end;
              if IgnoreNextAlert then begin
                 IgnoreNextAlert := False;
@@ -295,11 +253,9 @@ begin
        end;
     2:
        begin
-         if (not Terminated) and (Application <> nil) and (Application.MainForm <> nil) then
-         begin
+         if (not Terminated) and (Application <> nil) and (Application.MainForm <> nil) then begin
            getfiletime(SysUtils.FileOpen(IniFName, SysUtils.fmShareDenyNone), nil, nil, @p3);
-           if (p3.dwLowDateTime <> FTime.dwLowDateTime) or (p3.dwHighDateTime <> FTime.dwHighDateTime) then
-           begin
+           if (p3.dwLowDateTime <> FTime.dwLowDateTime) or (p3.dwHighDateTime <> FTime.dwHighDateTime) then begin
              PostMessage(Application.MainForm.Handle, WM_CFGREREAD, 0, 0);
              FTime.dwLowDateTime := p3.dwLowDateTime;
              FTime.dwHighDateTime := p3.dwHighDateTime;
@@ -336,15 +292,14 @@ end;
 
 class function TDirectoryWatcher.ThreadName: string;
 begin
-  Result := 'Directory Watcher';
+   Result := 'Directory Watcher';
 end;
 
 procedure StartWatcher;
 begin
-//  if not IniFile.EnableWatcher then exit;
-  DirectoryWatcher := TDirectoryWatcher.Create;
-  DirectoryWatcher.Priority := tpIdle;
-  DirectoryWatcher.Suspended := False;
+   DirectoryWatcher := TDirectoryWatcher.Create;
+   DirectoryWatcher.Priority := tpIdle;
+   DirectoryWatcher.Suspended := False;
 end;
 
 procedure StopWatcher;
@@ -409,8 +364,7 @@ begin
    fname.read(PEH, 248);
    fname.seek(EH.AdrPE + 248, soFrombeginning);
 
-   For n := 1 to PEH.Nobj do
-     begin
+   For n := 1 to PEH.Nobj do begin
        fname.read(RSRC, 40);
        if RSRC.ObjName = '.rsrc' then begin
          fname.seek(RSRC.PhysOffs, soFrombeginning);

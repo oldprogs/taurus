@@ -25,6 +25,7 @@ type
       Counter: integer;
       constructor Create; virtual;
       function findArt(const n: integer; const e: string): TNetmailMsg;
+      procedure SaveIdx;
    end;
 
    TNNTP = class(TInetProtocol)
@@ -114,6 +115,22 @@ begin
       end;
    end;
    Result := nil;
+end;
+
+procedure TEchoMail.SaveIdx;
+var
+   n: integer;
+   i: TFileStream;
+begin
+   if fBackup then begin
+      NetColl.Enter;
+      i := TFileStream.Create(GetOutFileName(Address, osNone) + '.idx', fmCreate);
+      for n := 0 to CollMax(NetColl) do begin
+         NetColl[n].Put(i);
+      end;
+      i.Free;
+      NetColl.Enter;
+   end;
 end;
 
 function TNNTP.GetStateStr: string;
@@ -223,6 +240,7 @@ var
    h: PktHeaderRec;
    p: PackedMsgHeaderRec;
    l: TStringList;
+   d: TDualColl;
 begin
    case State of
    bdInit:
@@ -287,7 +305,13 @@ begin
                      if fEcho = nil then begin
                         fEcho := TEchoMail.Create;
                         fEcho.Address := FiAddr;
-                        z := IniFile.ReadString('NNTP', 'EchoList', '');
+                        d := IniFile.GetStrings('gNNTP');
+                        if d <> nil then begin
+                           i := d.MatchAddr('gNNTP', FiAddr);
+                           if i > -1 then begin
+                              z := TDualRec(d[i]^).st2^;
+                           end;
+                        end;
                         if ExistFile(z) then begin
                            l := TStringList.Create;
                            l.LoadFromFile(z);
@@ -335,6 +359,8 @@ begin
       bdIdle:
          begin
             if z = 'LIST' then begin
+               CustomInfo := z + ' ' + s;
+               FLogFile(Self, lfLog);
                if s = '' then begin
                   PutString('215 List of newsgroups');
                   SendList;
@@ -416,7 +442,6 @@ begin
                         if (t.d.FName <> '') and (T.Stream <> nil) then begin
                            PutString('220 ' + s + ' <' + m.MsId + '>');
                            PutString('From: ' + m.Frnm + ' <' + Addr2Str(m.From) + '>');
-//                           PutString('Reply-To: ' + m.Frnm + ' <' + Addr2Str(m.From) + '>');
                            PutString('NewsGroups: ' + Group);
                            PutString('Subject: ' + m.Subj);
                            PutString('Date: ' + m.Date);

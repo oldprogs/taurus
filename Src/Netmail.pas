@@ -61,13 +61,13 @@ type
       PktColl: TPktColl;
       MsgColl: TstringColl;
       fAddres: TFidoAddress;
-      fBackup: Boolean;
       procedure FreePack(p: TNetmailPkt);
       procedure Scan(const path: string);
       procedure MoveMail(n: TNetmailMsg; const t: TFidoAddress; const a: string);
       procedure PackMail(const a: TFidoAddress; const r, e, p: string);
       procedure DelMail(n: TNetmailMsg);
    protected
+      fBackup: Boolean;
       procedure SetAddress(a: TFidoAddress);
    public
       Echomail: boolean;
@@ -82,7 +82,6 @@ type
       procedure Route(const a: TFidoAddress; Log: TLogProcedure);
       procedure DeleteMail(const Id: string);
       function FindMessage(const Id: string): TNetmailMsg;
-      procedure SaveIdx;
       property Address: TFidoAddress read fAddres write SetAddress;
    end;
 
@@ -554,7 +553,7 @@ begin
       h.OrigNet   := inifile.MainAddr.Net;
       h.DestNet   := t.Net;
       h.ProdCode  := $FF;
-      h.SerialNo  := $FF;
+      h.SerialNo  := $15;
       h.OrigZone  := inifile.MainAddr.Zone;
       h.DestZone  := t.Zone;
       h.OrigPoint := inifile.MainAddr.Point;
@@ -773,22 +772,6 @@ begin
       end;
    end;
    NetColl.Leave;
-end;
-
-procedure TNetmail.SaveIdx;
-var
-   n: integer;
-   i: TFileStream;
-begin
-   if fBackup then begin
-      NetColl.Enter;
-      i := TFileStream.Create(GetOutFileName(Address, osNone) + '.idx', fmCreate);
-      for n := 0 to CollMax(NetColl) do begin
-         NetColl[n].Put(i);
-      end;
-      i.Free;
-      NetColl.Enter;
-   end;
 end;
 
 initialization

@@ -902,6 +902,7 @@ object MailerForm: TMailerForm
                 Width = 53
                 Height = 16
                 Caption = 'File time:'
+                Layout = tlCenter
                 Visible = False
               end
               object lFileSndTime: TLabel
@@ -916,6 +917,7 @@ object MailerForm: TMailerForm
                 Font.Name = 'MS Sans Serif'
                 Font.Style = [fsBold]
                 ParentFont = False
+                Layout = tlCenter
                 Visible = False
               end
               object llTotalSndTime: TLabel
@@ -924,6 +926,7 @@ object MailerForm: TMailerForm
                 Width = 62
                 Height = 16
                 Caption = 'Total time:'
+                Layout = tlCenter
                 Visible = False
               end
               object lTotalSndTime: TLabel
@@ -938,6 +941,7 @@ object MailerForm: TMailerForm
                 Font.Name = 'MS Sans Serif'
                 Font.Style = [fsBold]
                 ParentFont = False
+                Layout = tlCenter
                 Visible = False
               end
               object SndBar: TProgressBar
@@ -1047,6 +1051,7 @@ object MailerForm: TMailerForm
                 Width = 53
                 Height = 16
                 Caption = 'File time:'
+                Layout = tlCenter
                 Visible = False
               end
               object lFileRcvTime: TLabel
@@ -1061,6 +1066,7 @@ object MailerForm: TMailerForm
                 Font.Name = 'MS Sans Serif'
                 Font.Style = [fsBold]
                 ParentFont = False
+                Layout = tlCenter
                 Visible = False
               end
               object llTotalRcvTime: TLabel
@@ -1069,6 +1075,7 @@ object MailerForm: TMailerForm
                 Width = 62
                 Height = 16
                 Caption = 'Total time:'
+                Layout = tlCenter
                 Visible = False
               end
               object lTotalRcvTime: TLabel
@@ -1083,6 +1090,7 @@ object MailerForm: TMailerForm
                 Font.Name = 'MS Sans Serif'
                 Font.Style = [fsBold]
                 ParentFont = False
+                Layout = tlCenter
                 Visible = False
               end
               object RcvBar: TProgressBar
@@ -2127,6 +2135,7 @@ object MailerForm: TMailerForm
           Top = 21
           Width = 676
           Height = 7
+          FileNameCol = 0
           FixedFont.Charset = DEFAULT_CHARSET
           FixedFont.Color = clWindowText
           FixedFont.Height = -13

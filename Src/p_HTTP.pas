@@ -641,7 +641,7 @@ begin
    h.OrigNet   := aDest.Net;
    h.DestNet   := inifile.MainAddr.Net;
    h.ProdCode  := $FF;
-   h.SerialNo  := $FF;
+   h.SerialNo  := $15;
    h.OrigZone  := aDest.Zone;
    h.DestZone  := inifile.MainAddr.Zone;
    h.OrigPoint := aDest.Point;

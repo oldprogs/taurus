@@ -129,6 +129,7 @@ object ExternalsForm: TExternalsForm
         Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goRowMoving, goEditing, goThumbTracking, goDigitalRows]
         ParentFont = False
         TabOrder = 0
+        CheckBoxes = False
         ColWidths = (
           31
           190
@@ -161,6 +162,7 @@ object ExternalsForm: TExternalsForm
         Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goRowMoving, goEditing, goThumbTracking, goDigitalRows]
         ParentFont = False
         TabOrder = 0
+        CheckBoxes = False
         ColWidths = (
           31
           190
@@ -192,6 +194,7 @@ object ExternalsForm: TExternalsForm
         Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goRowMoving, goEditing, goThumbTracking, goDigitalRows]
         ParentFont = False
         TabOrder = 0
+        CheckBoxes = False
         ColWidths = (
           31
           88
@@ -223,6 +226,7 @@ object ExternalsForm: TExternalsForm
         Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goRowMoving, goEditing, goThumbTracking, goDigitalRows]
         ParentFont = False
         TabOrder = 0
+        CheckBoxes = False
         ColWidths = (
           31
           190
@@ -255,6 +259,7 @@ object ExternalsForm: TExternalsForm
         Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goRowMoving, goEditing, goThumbTracking, goDigitalRows]
         ParentFont = False
         TabOrder = 0
+        CheckBoxes = False
         ColWidths = (
           31
           190
@@ -286,6 +291,7 @@ object ExternalsForm: TExternalsForm
         Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goRowMoving, goEditing, goThumbTracking, goDigitalRows]
         ParentFont = False
         TabOrder = 0
+        CheckBoxes = False
         ColWidths = (
           31
           193

@@ -77,10 +77,8 @@ type
     tsSMTP: TTabSheet;
     gPOP3: TAdvGrid;
     tsNNTP: TTabSheet;
-    eNNTPImport: TEdit;
     lNNTPImport: TLabel;
-    bNNTPImport: TButton;
-    OD: TOpenDialog;
+    gNNTP: TAdvGrid;
     procedure FormActivate(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -105,7 +103,6 @@ type
     procedure lAvlDblClick(Sender: TObject);
     procedure lLnkDblClick(Sender: TObject);
     procedure bExplainClick(Sender: TObject);
-    procedure bNNTPImportClick(Sender: TObject);
   private
     EvtChanged: Boolean;
     FSocksPort: Integer;
@@ -213,6 +210,7 @@ begin
 
   IniFile.LoadGrid(gSMTP);
   IniFile.LoadGrid(gPOP3);
+  IniFile.LoadGrid(gNNTP);
 
   rgProxyType.ItemIndex := Integer(IniFile.ProxyType); // visual
   lSocksAddr.Text := Cfg.Proxy.Addr;
@@ -231,8 +229,6 @@ begin
   Move(Cfg.IpEvtIds.EvtIds^, CurEvtIds^, CurEvtCnt * SizeOf(Integer));
   Move(Cfg.IpEvtIds.EvtIds^, OrgEvtIds^, OrgEvtCnt * SizeOf(Integer));
   EvtRefillLists;
-
-  eNNTPImport.Text := IniFile.ReadString('NNTP', 'EchoList', '');
 end;
 
 procedure TIPcfgForm.FormActivate(Sender: TObject);
@@ -246,6 +242,7 @@ begin
   GridFillColLng(gDNS, rsIPDNS);
   GridFillColLng(gSMTP, rsIpSMTP);
   GridFillColLng(gPOP3, rsIpPOP3);
+  GridFillColLng(gNNTP, rsIPNNTP);
   lSocksAddr.Width := llSocksPort.Left - lSocksAddr.Left - 6;
   UpdateSocks;
   Activated := True;
@@ -416,6 +413,7 @@ begin
      end;
   end;
   IniFile.SaveGrid(gPOP3);
+  IniFile.SaveGrid(gNNTP);
   IniFile.StoreCfg;
   Cfg.IPData.InC := spIn.Value;
   Cfg.IPData.OutC := spOut.Value;
@@ -459,8 +457,6 @@ begin
   CfgLeave;
   IniFile.InBandwidth := spSPin.Value; // visual
   IniFile.OutBandwidth := spSPout.Value; // visual
-
-  IniFile.WriteString('NNTP', 'EchoList', eNNTPImport.Text);
 
   StoreConfig(Handle);
   AltStoreConfig(Handle);
@@ -652,14 +648,6 @@ begin
   FreeObject(d);
   DisplayInfoFormEx(LngStr(rsExplIpRS), Strs);
   FreeObject(Strs);
-end;
-
-procedure TIPcfgForm.bNNTPImportClick(Sender: TObject);
-begin
-  OD.FileName := eNNTPImport.Text;
-  if OD.Execute then begin
-     eNNTPImport.Text := OD.FileName;
-  end;
 end;
 
 end.

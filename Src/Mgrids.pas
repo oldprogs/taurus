@@ -210,6 +210,7 @@ type
     FTabStops: Pointer;
     FRowHeights: Pointer;
     FCurrent: TxGridCoord;
+    fName: boolean;
     FMouseState: TxGridMouseState;
     FDefaultColWidth: Integer;
     FDefaultRowHeight: Integer;
@@ -230,6 +231,7 @@ type
     FDefaultDrawing: Boolean;
     FEditorMode: Boolean;
     FColOffset: Integer;
+    FFileNameCol: Integer;
     function CalcCoordFromPoint(X, Y: Integer;
       const DrawInfo: TxGridDrawInfo): TxGridCoord;
     procedure CalcDrawInfo(var DrawInfo: TxGridDrawInfo);
@@ -411,6 +413,7 @@ type
     procedure AdjustDefault;
     procedure WndProc(var M: TMessage); override;
   published
+    property FileNameCol: Integer read FFileNameCol write FFileNameCol default -1;
     property TabStop default True;
     property FixedFont: TFont read FFixedFont write SetFixedFont;
     property OnGetFont: TxOnGetFont read FOnGetFont write FOnGetFont;
@@ -1795,23 +1798,22 @@ var
   procedure DrawCells(ACol, ARow: Longint; StartX, StartY, StopX, StopY: Integer;
     Color: TColor; IncludeDrawState: TxGridDrawState);
   var
-    CurCol, CurRow: Longint;
+    CurCol,
+    CurRow: Longint;
     Where: TRect;
+    R: TRect;
     DrawState: TxGridDrawState;
     Focused: Boolean;
   begin
     CurRow := ARow;
     Where.Top := StartY;
-    while (Where.Top < StopY) and (CurRow < RowCount) do
-    begin
+    while (Where.Top < StopY) and (CurRow < RowCount) do begin
       CurCol := ACol;
       Where.Left := StartX;
       Where.Bottom := Where.Top + RowHeights[CurRow];
-      while (Where.Left < StopX) and (CurCol < ColCount) do
-      begin
+      while (Where.Left < StopX) and (CurCol < ColCount) do begin
         Where.Right := Where.Left + ColWidths[CurCol];
-        if RectVisible(Canvas.Handle, Where) then
-        begin
+        if RectVisible(Canvas.Handle, Where) then begin
           DrawState := IncludeDrawState;
           Focused := ValidParentForm(Self).ActiveControl = Self;
           if Focused and (CurRow = Row) and (CurCol = Col)  then
@@ -1819,11 +1821,9 @@ var
           if PointInGridRect(CurCol, CurRow, Sel) then
             Include(DrawState, gdSelected);
           if not (gdFocused in DrawState) or not (goEditing in Options) or
-            not FEditorMode or (csDesigning in ComponentState) then
-          begin
+            not FEditorMode or (csDesigning in ComponentState) then begin
             if DefaultDrawing or (csDesigning in ComponentState) then
-              with Canvas do
-              begin
+              with Canvas do begin
                 Font := Self.Font;
                 if ((gdSelected in DrawState) and
                    (not (gdFocused in DrawState) and
@@ -1839,8 +1839,7 @@ var
                 FillRect(Where);
               end;
             DrawCell(CurCol, CurRow, Where, DrawState);
-            if DefaultDrawing and (gdFixed in DrawState) and Ctl3D then
-            begin
+            if DefaultDrawing and (gdFixed in DrawState) and Ctl3D then begin
               DrawEdge(Canvas.Handle, Where, BDR_RAISEDINNER, BF_BOTTOMRIGHT);
               DrawEdge(Canvas.Handle, Where, BDR_RAISEDINNER, BF_TOPLEFT);
             end;
@@ -1848,8 +1847,13 @@ var
               (gdFocused in DrawState) and
               ([goEditing, goAlwaysShowEditor] * Options <>
               [goEditing, goAlwaysShowEditor])
-              and not (goRowSelect in Options) then
-              DrawFocusRect(Canvas.Handle, Where);
+              and not (goRowSelect in Options) then begin
+              R := Where;
+              if (CurCol = FileNameCol) and (CurRow >= FixedRows) then begin
+                 R.Right := Where.Right - Canvas.TextWidth('...') - 2;
+              end;
+              DrawFocusRect(Canvas.Handle, R);
+            end;
           end;
         end;
         Where.Left := Where.Right + DrawInfo.Horz.EffectiveLineWidth;
@@ -1863,10 +1867,8 @@ var
 begin
   UpdateRect := Canvas.ClipRect;
   CalcDrawInfo(DrawInfo);
-  with DrawInfo do
-  begin
-    if (Horz.EffectiveLineWidth > 0) or (Vert.EffectiveLineWidth > 0) then
-    begin
+  with DrawInfo do begin
+    if (Horz.EffectiveLineWidth > 0) or (Vert.EffectiveLineWidth > 0) then begin
       { Draw the grid line in the four areas (fixed, fixed), (variable, fixed),
         (fixed, variable) and (variable, variable) }
       LineColor := clSilver;
@@ -1963,6 +1965,12 @@ function TAdvCustomGrid.CalcCoordFromPoint(X, Y: Integer;
 begin
   Result.X := DoCalc(DrawInfo.Horz, X);
   Result.Y := DoCalc(DrawInfo.Vert, Y);
+  fName := False;
+  if (Result.X = FileNameCol) and (Result.Y >= FixedRows) then begin
+     if X > CellRect(Result.X, result.Y).Right - Canvas.TextWidth('...') then begin
+        fName := True;
+     end;
+  end;
 end;
 
 procedure TAdvCustomGrid.CalcDrawInfo(var DrawInfo: TxGridDrawInfo);
@@ -3123,7 +3131,7 @@ begin
       if goEditing in Options then
       begin
         if (CellHit.X = FCurrent.X) and (CellHit.Y = FCurrent.Y) and (not (Button = mbRight)) then
-          ShowEditor
+          if not fName then ShowEditor else
         else
         begin
           MoveCurrent(CellHit.X, CellHit.Y, True, True);
@@ -4842,6 +4850,15 @@ begin
    CalcDrawInfo(DrawInfo);
    Tx := CalcCoordFromPoint(X, Y, DrawInfo);
    if (X > 2) and (X < 18) then RowChecked[Tx.Y] := not RowChecked[Tx.Y];
+   if fName then begin
+      with TOpenDialog.Create(Self) do begin
+         FileName := Cells[Tx.X, Tx.Y];
+         if Execute then begin
+            Cells[Tx.X, Tx.Y] := FileName;
+         end;
+         Free;
+      end;
+   end;
 end;
 
 procedure TAdvGrid.ImportTable(const FileName: string;divider: char);
@@ -5042,6 +5059,7 @@ var
 begin
   inherited Create(AOwner);
   PasswordCol := -1;
+  FileNameCol := -1;
   FRightMargin := xDefRightMargin;
   Initialize;
   fCheckl := TImageList.CreateSize(16, 16);
@@ -5188,6 +5206,7 @@ procedure TAdvGrid.DrawCell(ACol, ARow: Longint; ARect: TRect;
   var
     S: string;
     L: integer;
+    R: TRect;
   begin
     Canvas.Font := GetFontAt(ACol, ARow);
     S := Cells[ACol, ARow];
@@ -5195,6 +5214,7 @@ procedure TAdvGrid.DrawCell(ACol, ARow: Longint; ARect: TRect;
        (ARow >= FixedRows) and
        (S <> '') then FillChar(S[1], Length(S), '*');
     L := ARect.Left + 2;
+    R := ARect;
     if fCheckBoxes and (ACol = 0) then begin
        if ARow >= FixedRows then begin
           if RowChecked[ARow] then begin
@@ -5202,11 +5222,24 @@ procedure TAdvGrid.DrawCell(ACol, ARow: Longint; ARect: TRect;
           end else begin
              fCheckl.Draw(Canvas, L, ARect.Top + 1, 1);
           end;
-       end;   
+       end;
        L := ARect.Left + 20;
     end;
+    if (FileNameCol = ACol) and (ARow >= FixedRows) then begin
+       Dec(R.Right, Canvas.TextWidth('...'));
+    end;
     ExtTextOut(Canvas.Handle, L, ARect.Top + 1, ETO_CLIPPED {or
-      ETO_OPAQUE}, @ARect, PChar(S), Length(S), nil);
+      ETO_OPAQUE}, @R, PChar(S), Length(S), nil);
+    if (FileNameCol = ACol) and (ARow >= FixedRows) then begin
+       Canvas.Brush.Color := FixedColor;
+       R := ARect;
+       R.Left := R.Right - Canvas.TextWidth('...');
+       Canvas.FillRect(R);
+       DrawEdge(Canvas.Handle, R, BDR_RAISEDINNER, BF_BOTTOMRIGHT);
+       DrawEdge(Canvas.Handle, R, BDR_RAISEDINNER, BF_TOPLEFT);
+       ExtTextOut(Canvas.Handle, R.Left, ARect.Top + 1, ETO_CLIPPED {or
+         ETO_OPAQUE}, @R, '...', 3, nil);
+    end;
   end;
 
 begin

@@ -27,8 +27,6 @@ var
   Term : boolean;
   StartTime: DWORD;
 
-  Watcher: boolean;
-
 type
   TProtCore = (ptUndefined, ptDialup, ptifcico, ptTelnet, ptBinkP{$IFDEF EXTREME}, ptFTP, ptHTTP, ptSMTP, ptPOP3, ptGATE, ptNNTP{$ENDIF});
   TSessionCore = (scUndefined, scFTS1, scEmsiWz, scBinkP{$IFDEF EXTREME}, scFTP, scHTTP, scSMTP, scPOP3, scGATE, scNNTP{$ENDIF});
@@ -1311,7 +1309,7 @@ begin
   if ScanCounter > 20 * 3 then begin
      ScanCounter := 0;
      if Application.MainForm <> nil then begin
-        PostMessage(Application.MainForm.Handle, WM_OUTBOUNDALERT, 0, 0);
+        PostMessage(Application.MainForm.Handle, WM_OUTBOUNDALERT, 1, 0);
      end;
   end;
   Sleep(50);

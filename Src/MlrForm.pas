@@ -4688,11 +4688,13 @@ var
    i: integer;
    t: TMailerThread;
 begin
-try
-   if OutMgrThread <> nil then begin
-      OutMgrThread.HandUpdate := True;
-      SetEvt(OutMgrThread.oEvt);
-   end;
+   if M.WParam = 1 then begin
+      if OutMgrThread <> nil then begin
+         OutMgrThread.HandUpdate := True;
+         SetEvt(OutMgrThread.oEvt);
+      end;
+   end else
+   if M.WParam = 2 then begin
    if MailerThreads = nil then exit;
    if MailerThreads.Count = 0 then exit;
    if inifile = nil then exit;
@@ -4711,9 +4713,7 @@ try
       t.NeedRescan := True;
    end;
    MailerThreads.Leave;
-finally
-   Watcher := False;
-end;
+   end;
 end;
 
 function CurrentOnline: integer;
