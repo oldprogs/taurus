@@ -791,12 +791,12 @@ object IPcfgForm: TIPcfgForm
         FileNameCol = 1
         FixedFont.Charset = DEFAULT_CHARSET
         FixedFont.Color = clWindowText
-        FixedFont.Height = -11
-        FixedFont.Name = 'MS Sans Serif'
+        FixedFont.Height = -12
+        FixedFont.Name = 'Arial'
         FixedFont.Style = []
         Align = alBottom
         ColCount = 2
-        DefaultRowHeight = 17
+        DefaultRowHeight = 18
         FixedCols = 0
         RowCount = 2
         Font.Charset = DEFAULT_CHARSET

@@ -1548,7 +1548,7 @@ var
   j: Integer;
 begin
   Enter;
-  SC := TStringColl.Create;
+  SC := TStringColl.Create('SC (PurgeDuplicates)');
   SC.IgnoreCase := True;
   for i := 0 to Count - 1 do
   begin

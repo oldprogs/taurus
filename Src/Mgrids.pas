@@ -355,6 +355,7 @@ type
     procedure ColumnMoved(FromIndex, ToIndex: Longint); dynamic;
     procedure MoveRow(FromIndex, ToIndex: Longint);
     procedure RowMoved(FromIndex, ToIndex: Longint); dynamic;
+    function DrawButton(X, Y: integer; Pressed: boolean): TRect;
     procedure DrawCell(ACol, ARow: Longint; ARect: TRect;
       AState: TxGridDrawState); virtual; abstract;
     procedure DefineProperties(Filer: TFiler); override;
@@ -1226,8 +1227,8 @@ begin
     FOnGetFont(Self, ACol, ARow, Result);
   end else
   begin
-    if (ACol<FixedCols) or (ARow<FixedRows) then Result := FixedFont else
-                                                 Result := Font;
+    if (ACol < FixedCols) or (ARow < FixedRows) then Result := FixedFont else
+                                                     Result := Font;
   end;
 end;
 
@@ -1850,7 +1851,7 @@ var
               and not (goRowSelect in Options) then begin
               R := Where;
               if (CurCol = FileNameCol) and (CurRow >= FixedRows) then begin
-                 R.Right := Where.Right - Canvas.TextWidth('...') - 2;
+                 R.Right := DrawButton(CurCol, CurRow, False).Left - 4;
               end;
               DrawFocusRect(Canvas.Handle, R);
             end;
@@ -1966,8 +1967,9 @@ begin
   Result.X := DoCalc(DrawInfo.Horz, X);
   Result.Y := DoCalc(DrawInfo.Vert, Y);
   fName := False;
-  if (Result.X = FileNameCol) and (Result.Y >= FixedRows) then begin
-     if X > CellRect(Result.X, result.Y).Right - Canvas.TextWidth('...') then begin
+  if (Result.X <> -1) and (Result.X = FileNameCol) and (Result.Y >= FixedRows) then begin
+     Canvas.Font := FixedFont;
+     if X > CellRect(Result.X, result.Y).Right - Canvas.TextWidth('...') * 2 then begin
         fName := True;
      end;
   end;
@@ -4735,8 +4737,6 @@ begin
   GlobalFail('%s', ['TxStringGridStrings.Delete']);
 end;
 
-
-
 procedure TxStringGridStrings.SetUpdateState(Updating: Boolean);
 begin
   FGrid.SetUpdateState(Updating);
@@ -4852,6 +4852,7 @@ begin
    if (X > 2) and (X < 18) then RowChecked[Tx.Y] := not RowChecked[Tx.Y];
    if fName then begin
       with TOpenDialog.Create(Self) do begin
+         DrawButton(Tx.X, Tx.Y, True);
          FileName := Cells[Tx.X, Tx.Y];
          if Execute then begin
             Cells[Tx.X, Tx.Y] := FileName;
@@ -5199,6 +5200,30 @@ begin
   inherited SetEditText(ACol, ARow, Value);
 end;
 
+function TAdvCustomGrid.DrawButton;
+var
+   R: TRect;
+   O: DWORD;
+   W: integer;
+begin
+   Canvas.Font := FixedFont;
+   Canvas.Brush.Color := FixedColor;
+   R := CellRect(X, Y);
+   W := Canvas.TextWidth('...');
+   R.Left := R.Right - W * 2;
+   InfLateRect(R, -1, -1);
+   Canvas.FillRect(R);
+   O := DFCS_BUTTONPUSH;
+   if Pressed then begin
+      O := O or DFCS_PUSHED;
+   end;
+   DrawFrameControl(Canvas.Handle, R, DFC_BUTTON, O);
+   InflateRect(R, -1, -1);
+   ExtTextOut(Canvas.Handle, R.Left + W div 4, R.Top - 4, ETO_CLIPPED {or
+     ETO_OPAQUE}, @R, '...', 3, nil);
+   Result := R;
+end;
+
 procedure TAdvGrid.DrawCell(ACol, ARow: Longint; ARect: TRect;
   AState: TxGridDrawState);
 
@@ -5231,14 +5256,7 @@ procedure TAdvGrid.DrawCell(ACol, ARow: Longint; ARect: TRect;
     ExtTextOut(Canvas.Handle, L, ARect.Top + 1, ETO_CLIPPED {or
       ETO_OPAQUE}, @R, PChar(S), Length(S), nil);
     if (FileNameCol = ACol) and (ARow >= FixedRows) then begin
-       Canvas.Brush.Color := FixedColor;
-       R := ARect;
-       R.Left := R.Right - Canvas.TextWidth('...');
-       Canvas.FillRect(R);
-       DrawEdge(Canvas.Handle, R, BDR_RAISEDINNER, BF_BOTTOMRIGHT);
-       DrawEdge(Canvas.Handle, R, BDR_RAISEDINNER, BF_TOPLEFT);
-       ExtTextOut(Canvas.Handle, R.Left, ARect.Top + 1, ETO_CLIPPED {or
-         ETO_OPAQUE}, @R, '...', 3, nil);
+       DrawButton(ACol, ARow, False);
     end;
   end;
 

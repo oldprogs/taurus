@@ -25,6 +25,7 @@ type
       Size: int64;
       Line: integer;
       Addy: integer;
+      Numb: dword;
       Body: Pointer;
       Dele: boolean;
       function IChr: string;
@@ -38,6 +39,12 @@ type
       Pack: string;
       Mark: cardinal;
    end;
+
+   TGroup = record
+      base,
+      numb: dword;
+   end;
+   PGroup =^TGroup;
 
    TPktColl = class(TColl)
       function  FindName(const n: string): integer;
@@ -60,7 +67,6 @@ type
    private
       PktColl: TPktColl;
       MsgColl: TstringColl;
-      fAddres: TFidoAddress;
       procedure FreePack(p: TNetmailPkt);
       procedure Scan(const path: string);
       procedure MoveMail(n: TNetmailMsg; const t: TFidoAddress; const a: string);
@@ -68,7 +74,6 @@ type
       procedure DelMail(n: TNetmailMsg);
    protected
       fBackup: Boolean;
-      procedure SetAddress(a: TFidoAddress);
    public
       Echomail: boolean;
       NetWait: TRTLCriticalSection;
@@ -82,7 +87,6 @@ type
       procedure Route(const a: TFidoAddress; Log: TLogProcedure);
       procedure DeleteMail(const Id: string);
       function FindMessage(const Id: string): TNetmailMsg;
-      property Address: TFidoAddress read fAddres write SetAddress;
    end;
 
 procedure FreeNetmailHolder;
@@ -170,6 +174,7 @@ begin
    s.Write(Size, SizeOf(Size));
    s.Write(Addy, SizeOf(Addy));
    s.Write(Line, SizeOf(Line));
+   s.Write(Numb, SizeOf(Numb));
 end;
 
 procedure TNetmailMSG.Get;
@@ -197,6 +202,7 @@ begin
    s.Read(Size, SizeOf(Size));
    s.Read(Addy, SizeOf(Addy));
    s.Read(Line, SizeOf(Line));
+   s.Read(Numb, SizeOf(Numb));
 end;
 
 function TPktColl.FindName;
@@ -250,8 +256,15 @@ begin
 end;
 
 destructor TNetmail.Destroy;
+var
+   r: PGroup;
+   i: integer;
 begin
    FreeObject(NetColl);
+   for i := 0 to LstColl.Count - 1 do begin
+      r := Pointer(LstColl.Objects[i]);
+      FreeMem(r, SizeOf(TGroup));
+   end;
    LstColl.Free;
    FilColl.Free;
    FreeObject(MsgColl);
@@ -382,6 +395,7 @@ var
    s: int64;
    g: TNetmailMSG;
    d: integer;
+   r: PGroup;
 
    procedure SetValue(var a: integer; const b: integer);
    begin
@@ -455,7 +469,15 @@ begin
                      GetWrd(t, z, #13);
                      l.Echo := z;
                      j := LstColl.Add(z);
-                     LstColl.Objects[j] := Pointer(Integer(LstColl.Objects[j]) + 1);
+                     r := Pointer(LstColl.Objects[j]);
+                     if r = nil then begin
+                        GetMem(r, SizeOf(TGroup));
+                        r.base := 0;
+                        r.numb := 0;
+                     end;
+                     inc(r.numb);
+                     l.Numb := r.numb;
+                     LstColl.Objects[j] := Pointer(r);
                   end else
                   if copy(t, 2, 9) = '* Origin:' then begin
                      z := ExtractWord(1, ExtractWord(WordCount(t, ['(']), t, ['(']), [')']);
@@ -724,37 +746,6 @@ begin
    end;
    FillChar(n.Addr, sizeof(n.Addr), 0);
    NetColl.Leave;
-end;
-
-procedure TNetmail.SetAddress;
-var
-   i: TFileStream;
-   m: TNetmailMsg;
-   n: string;
-   j: integer;
-begin
-   if CompareAddrs(a, fAddres) <> 0 then begin
-      fAddres := a;
-      n := GetOutFileName(a, osNone) + '.idx';
-      if ExistFile(n) then begin
-         fBackup := False;
-         NetColl.Enter;
-         NetColl.FreeAll;
-         FilColl.Clear;
-         LstColl.Clear;
-         i := TFileStream.Create(n, fmOpenRead);
-         while i.Position < i.Size do begin
-            m := TNetmailMSG.Create;
-            m.Get(i);
-            NetColl.Add(m);
-            FilColl.Add(m.Pack);
-            j := LstColl.Add(m.Echo);
-            LstColl.Objects[j] := Pointer(Integer(LstColl.Objects[j]) + 1);
-         end;
-         i.Free;
-         NetColl.Leave;
-      end;
-   end;
 end;
 
 function TNetmail.FindMessage;

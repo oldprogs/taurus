@@ -3,9 +3,12 @@ unit p_NNTP;
 interface
 
 uses xMisc, Types, Windows, xBase, SysUtils, Menus,
-     Controls, Forms, Classes, xIP, Netmail;
+     Controls, Forms, Classes, xIP, Netmail, xFido;
 
 function CreateNNTPProtocol(CP: Pointer): Pointer;
+
+const
+   IdxVer = $0001;
 
 type
 
@@ -23,9 +26,14 @@ type
 
    TEchomail = class(TNetmail)
       Counter: integer;
+      fAddres: TFidoAddress;
       constructor Create; virtual;
       function findArt(const n: integer; const e: string): TNetmailMsg;
       procedure SaveIdx;
+   protected
+      procedure SetAddress(a: TFidoAddress);
+   public
+      property Address: TFidoAddress read fAddres write SetAddress;
    end;
 
    TNNTP = class(TInetProtocol)
@@ -53,6 +61,7 @@ type
       fCode: TCoding;
       fEcho: TEchomail;
       Group: string;
+      fBase: integer;
       fNumb: integer;
       fArea: string;
       fChrs: string;
@@ -64,8 +73,8 @@ type
 implementation
 
 uses
-   Wizard, WSock, Outbound, Plus, Recs, xFido, RadIni,
-   UStr, xDES, DateUtils, Crypt;
+   Wizard, WSock, Outbound, Plus, Recs, RadIni, UStr, xDES,
+   DateUtils, Crypt;
 
 function CreateNNTPProtocol;
 begin
@@ -83,7 +92,7 @@ begin
       h := EchoMailHolder[i];
       if CompareAddrs(h.Address, a) = 0 then begin
          Result := h;
-         exit;
+         break;
       end;
    end;
    EchoMailHolder.Leave;
@@ -117,18 +126,106 @@ begin
    Result := nil;
 end;
 
+procedure TEchomail.SetAddress;
+var
+   i: TFileStream;
+   m: TNetmailMsg;
+   n: string;
+   j: integer;
+   k: integer;
+   l: integer;
+   r: PGroup;
+   s: string;
+   b: byte;
+begin
+   if CompareAddrs(a, fAddres) <> 0 then begin
+      fAddres := a;
+      n := GetOutFileName(a, osNone) + '.idx';
+      if ExistFile(n) then begin
+         NetColl.Enter;
+         NetColl.FreeAll;
+         FilColl.Clear;
+         LstColl.Clear;
+         i := TFileStream.Create(n, fmOpenRead);
+         j := 0;
+         i.Read(j, 2);
+         if j = $1111 then begin
+            i.Read(j, 2);
+            if j = IdxVer then begin
+               i.Read(j, 2);
+               for k := 0 to j - 1 do begin
+                  i.Read(b, 1);
+                  SetLength(s, b);
+                  i.Read(s[1], b);
+                  GetMem(r, SizeOf(TGroup));
+                  i.Read(r.base, SizeOf(r.base));
+                  r.numb := 0;
+                  l := LstColl.Add(s);
+                  LstColl.Objects[l] := Pointer(r);
+               end;
+            end else begin
+               i.Free;
+               NetColl.Leave;
+               exit;
+            end;
+         end else begin
+            i.Position := 0;
+         end;
+         while i.Position < i.Size do begin
+            m := TNetmailMSG.Create;
+            m.Get(i);
+            NetColl.Add(m);
+            FilColl.Add(m.Pack);
+            j := LstColl.Add(m.Echo);
+            r := Pointer(LstColl.Objects[j]);
+            if r = nil then begin
+               GetMem(r, SizeOf(TGroup));
+               r.base := m.Numb - 1;
+               r.numb := 0;
+            end;
+            inc(r.numb);
+            LstColl.Objects[j] := Pointer(r);
+         end;
+         i.Free;
+         NetColl.Leave;
+      end;
+   end;
+end;
+
 procedure TEchoMail.SaveIdx;
 var
    n: integer;
    i: TFileStream;
+   s: string;
+   b: byte;
+   r: PGroup;
 begin
    if fBackup then begin
       NetColl.Enter;
       i := TFileStream.Create(GetOutFileName(Address, osNone) + '.idx', fmCreate);
+      n := $1111;
+      i.Write(n, 2);
+      n := IdxVer;
+      i.Write(n, 2);
+      n := LstColl.Count;
+      i.Write(n, 2);
+      for n := 0 to LstColl.Count - 1 do begin
+         s := LstColl[n];
+         b := Length(s);
+         i.Write(b, 1);
+         i.Write(s[1], b);
+         r := Pointer(LstColl.Objects[n]);
+         if r <> nil then begin
+            i.Write(r.base, SizeOf(r.base));
+         end else begin
+            i.Write(r, SizeOf(r.base));
+         end;
+      end;
       for n := 0 to CollMax(NetColl) do begin
          NetColl[n].Put(i);
       end;
       i.Free;
+      fBackup := False;
       NetColl.Enter;
    end;
 end;
@@ -157,8 +254,6 @@ begin
 end;
 
 destructor TNNTP.Destroy;
-var
-   e: TEchoMail;
 begin
    Dec(fEcho.Counter);
    if fEcho.Counter = 0 then begin
@@ -241,6 +336,7 @@ var
    p: PackedMsgHeaderRec;
    l: TStringList;
    d: TDualColl;
+   g: PGroup;
 begin
    case State of
    bdInit:
@@ -380,8 +476,15 @@ begin
                i := fEcho.LstColl.IndexOf(s);
                if i > -1 then begin
                   Group := s;
-                  fNumb := Integer(fEcho.LstColl.Objects[i]);
-                  s := '211 ' + IntToStr(MaxD(1, fNumb)) + ' ' + IntToStr(MinD(1, fNumb)) + ' ' + IntToStr(fNumb) + ' ' + s;
+                  g := Pointer(fEcho.LstColl.Objects[i]);
+                  if g <> nil then begin
+                     fBase := g.base;
+                     fNumb := g.numb;
+                  end else begin
+                     fBase := 0;
+                     fNumb := 0;
+                  end;
+                  s := '211 ' + IntToStr(fNumb) + ' ' + IntToStr(fBase + 1) + ' ' + IntToStr(fBase + fNumb) + ' ' + s;
                   PutString(s);
                   CustomInfo := s;
                   FLogFile(Self, lfLog);

@@ -2419,11 +2419,20 @@ var
    procedure DoFill(const Strs: array of string); overload;
    var
       i: Integer;
+      w: integer;
+      t: integer;
       s: string;
       c: Twcs;
    begin
-      if gNfo.ColWidths[0] <> gNfo.Width then begin
-         gNfo.ColWidths[0] := gNfo.Width;
+      w := gNfo.Width;
+      for i := 0 to 7 do begin
+         t := gNfo.Canvas.TextWidth(gNfo.Cells[0, i]) + 10;
+         if t > w then begin
+            w := t;
+         end;
+      end;
+      if gNfo.ColWidths[0] <> w then begin
+         gNfo.ColWidths[0] := w;
       end;
       for i := Low(Strs) to High(Strs) do
       begin

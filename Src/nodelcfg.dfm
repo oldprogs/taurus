@@ -94,6 +94,7 @@ object NodeListCfgForm: TNodeListCfgForm
           Top = 0
           Width = 480
           Height = 279
+          FileNameCol = 1
           FixedFont.Charset = DEFAULT_CHARSET
           FixedFont.Color = clWindowText
           FixedFont.Height = -12

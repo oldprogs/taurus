@@ -176,7 +176,7 @@ object MailerForm: TMailerForm
           Align = alClient
           BevelOuter = bvNone
           ParentBackground = False
-          TabOrder = 3
+          TabOrder = 2
           Visible = False
           EraseBackGround = True
           object MainDaemonPanel: TTransPan
@@ -414,7 +414,7 @@ object MailerForm: TMailerForm
           Align = alClient
           BevelOuter = bvNone
           ParentBackground = False
-          TabOrder = 2
+          TabOrder = 1
           Visible = False
           EraseBackGround = True
           object SplitterAPanel: TSplitter
@@ -652,7 +652,7 @@ object MailerForm: TMailerForm
           Align = alClient
           BevelOuter = bvNone
           ParentBackground = False
-          TabOrder = 1
+          TabOrder = 3
           Visible = False
           EraseBackGround = True
           object SplitterBPanel: TSplitter
@@ -1123,6 +1123,7 @@ object MailerForm: TMailerForm
                 Height = 16
                 Alignment = taRightJustify
                 Caption = 'Total elapsed time:'
+                Layout = tlCenter
                 Visible = False
               end
               object lSessionTime: TLabel
@@ -1137,6 +1138,7 @@ object MailerForm: TMailerForm
                 Font.Name = 'MS Sans Serif'
                 Font.Style = [fsBold]
                 ParentFont = False
+                Layout = tlCenter
                 Visible = False
               end
               object llSessionCost: TLabel
@@ -1147,6 +1149,7 @@ object MailerForm: TMailerForm
                 Alignment = taRightJustify
                 Anchors = [akTop, akRight]
                 Caption = 'Cost:'
+                Layout = tlCenter
               end
               object lSessionCost: TLabel
                 Left = 295
@@ -1161,6 +1164,7 @@ object MailerForm: TMailerForm
                 Font.Name = 'MS Sans Serif'
                 Font.Style = [fsBold]
                 ParentFont = False
+                Layout = tlCenter
               end
             end
           end

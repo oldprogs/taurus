@@ -15839,8 +15839,7 @@ var
 
 begin
    if Terminated then exit;
-   if exitnow then
-   begin
+   if exitnow then begin
      terminated := true;
      exit;
    end;
@@ -15867,12 +15866,10 @@ begin
    FileNames.IgnoreCase := True;
    FileInfos := TFileInfoColl.Create;
    NewC := 0;
-   for i := CollMax(NewNodes) downto 0 do
-   begin
+   for i := CollMax(NewNodes) downto 0 do begin
       n := NewNodes[i];
       NewC := NewC + n.Nfo.Size + 1;
-      if n.StatusSet = [osNone] then
-      begin
+      if n.StatusSet = [osNone] then begin
          FileNames.AtInsert(FileNames.Count, NewStr(StrAsg(n.Name)));
          New(Nfo);
          Nfo^ := n.Nfo;
@@ -15884,6 +15881,7 @@ begin
       Update := True;
       n := NewNodes[i];
       n.Files := FidoOut.GetOutbound(n.Address, n.StatusSet, nil, FileNames, FileInfos, False, False);
+      NewC := NewC + CollMax(n.Files) + 1;
    end;
    FreeObject(FileNames);
    FreeObject(FileInfos);
@@ -15891,8 +15889,7 @@ begin
       NetmailHolder := TNetmail.Create;
    end;
    if inifile.DynamicRouting then NetmailHolder.ScanMail;
-   if Update then
-   begin
+   if Update then begin
       if NewNodes = nil then
          FreeObject(StackNodes)
       else
@@ -15900,9 +15897,6 @@ begin
       EnterCS(NodesCS);
       Xchg(Integer(Nodes), Integer(StackNodes));
       LeaveCS(NodesCS);
-      if Application.MainForm <> nil then begin
-         PostMessage(Application.MainForm.Handle, WM_OUTBOUNDALERT, 2, 0);
-      end;
       if not ApplicationDowned then begin
          PostMsg(WM_UPDOUTMGR);
       end;
@@ -15917,6 +15911,9 @@ begin
 
    if ChangeFlag then begin
      _RecalcPolls(False);
+      if Application.MainForm <> nil then begin
+         PostMessage(Application.MainForm.Handle, WM_OUTBOUNDALERT, 2, 0);
+      end;
       if not ApplicationDowned then begin
          PostMsg(WM_UPDATEVIEW);
       end;

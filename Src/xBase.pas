@@ -4037,7 +4037,7 @@ begin
 {$IFDEF DEBUG_VERSION}
    if (IniFile <> nil) and IniFile.logWaitEvt then begin
       EnterList.Enter;
-      s := IntToStr(GetCurrentThread) + ', ' + ClassName + ', ' + Name + ', ' + DebugInfo(3);
+      s := IntToStr(GetCurrentThread) + ', ' + ClassName + ', ' + fName + ', ' + DebugInfo(3);
       EnterList.Add(Pad('Enter', 19) + ': ' + s);
       Debug.Add(s);
       if (EntrLogFName <> '') then begin
