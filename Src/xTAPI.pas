@@ -639,6 +639,9 @@ begin
          StorLine(IntToStr(c) + ' call handle', False);
       end;
    end;
+//   if c <> 0 then begin
+//      fAnswer := False;
+//   end;
 end;
 
 procedure TTAPIPort.CheckOpens;

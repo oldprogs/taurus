@@ -1261,7 +1261,7 @@ type
     procedure LogUnexpEMSI(Seq: TEMSISeq);
     procedure LogNoNiagara;
     function TossSingleBWZ(BWZ: TBWZRec; var s: string): Boolean;
-    procedure RunPostProcessors;
+    procedure RunPostProcessors(const Sess: boolean);
     procedure SetStatusMsg(Id: DWORD; const Param: string);
     function NoAnyValidAddrs: Boolean;
     function GetOutAKAs(const Addr: TFidoAddress): string;
@@ -5125,7 +5125,7 @@ begin
             if ProtCore <> ptFTP then
             Log(ltInfo, 'RECE: End of batch');
             if inifile.DynamicOutbound then begin
-               RunPostProcessors;
+               RunPostProcessors(False);
             end;
          end;
       lf1Prog:
@@ -7025,7 +7025,7 @@ begin
          for i := SD.OutFiles.Count - 1 downto 0 do
          begin
             f := SD.OutFiles[i];
-            if SD.SentFiles.Found(f) then begin
+            if SD.SentFiles.Found(f) and not (f.Status in [osImmedMail..osHoldMail]) then begin
                SD.OutFiles.AtFree(i);
             end;
          end;
@@ -10068,7 +10068,7 @@ begin
    FreeObject(en);
 end;
 
-procedure RunPostProcessorsEx(ARcvdNames: TStringColl; const APrimaryAddr: TFidoAddress; ALogger: TAbstractLogger);
+procedure RunPostProcessorsEx(ARcvdNames: TStringColl; const APrimaryAddr: TFidoAddress; ALogger: TAbstractLogger; const Sess: boolean);
 var
    ca, cb, pa, pb, en: TStringColl;
    cbi, s, z: string;
@@ -10100,8 +10100,9 @@ begin
          b := ValidMaskAddress(z);
          if b then
          begin
-            if MatchMaskAddress(APrimaryAddr, z) then
+            if Sess and (APrimaryAddr.Zone <> 0) and MatchMaskAddress(APrimaryAddr, z) then begin
                if not en.Found(cbi) then en.Ins(cbi);
+            end;
          end
          else
          begin
@@ -10133,7 +10134,7 @@ end;
 
 procedure TMailerThread.RunPostProcessors;
 begin
-   RunPostProcessorsEx(SD.RcvdNames, SD.rmtPrimaryAddr, Logger);
+   RunPostProcessorsEx(SD.RcvdNames, SD.rmtPrimaryAddr, Logger, Sess);
    FreeObject(SD.RcvdNames);
 end;
 
@@ -10193,7 +10194,7 @@ begin
    for i := 0 to CollMax(L) do
    begin
       AL := L[i];
-      RunPostProcessorsEx(AL, AL.Addr, Logger);
+      RunPostProcessorsEx(AL, AL.Addr, Logger, False);
    end;
    FreeObject(L);
 end;
@@ -13376,7 +13377,7 @@ begin
             end;
             FreeHReqDelete(True);
             PollDone;
-            RunPostProcessors;
+            RunPostProcessors(True);
 {$IFDEF WS}
             if not DialupLine then LogDaemonStatus;
 {$ENDIF}
