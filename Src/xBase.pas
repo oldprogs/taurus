@@ -3804,7 +3804,6 @@ var
 {$ENDIF}
 begin
    if CS.DebugInfo = nil then begin
-      CS.DebugInfo := nil;
       exit;
    end;
 {$IFDEF DEBUG_VERSION}

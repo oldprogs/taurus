@@ -96,7 +96,7 @@ type
       procedure FillMSG(const n: TStream; var l: TNetmailMsg);
       procedure ScanMesage(const pack: string);
       procedure ScanPacket(const pack: string);
-      procedure Route(const a: TFidoAddress; Active: boolean; Log: TLogProcedure);
+      procedure Route(const a: TFidoAddress; w: string; Active: boolean; Log: TLogProcedure);
       procedure DeleteMail(const Id: string);
       function FindMessage(const Id: string): TNetmailMsg;
    end;
@@ -1252,6 +1252,7 @@ begin
             end;
             s := b;
             p := IniFile.NetmailPwd[i];
+            if p = '' then p := w;
             repeat
                GetWrd(s, t, ' ');
                if (o = t) then begin
@@ -1445,6 +1446,7 @@ var
    t: THandle;
 begin
    LogColl.Add(s);
+   NetmailLog := IniFile.net_log;
    if _LogOK(NetmailLog, t) then begin
       While LogColl.Count > 0 do begin
         _LogWriteStr(' ' + uFormat(uGetLocalTime) + ' ' + LogColl[0], t);

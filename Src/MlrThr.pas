@@ -3006,8 +3006,7 @@ var
       var
          Security: TSecurityAttributes;
       begin
-         with Security do
-         begin
+         with Security do begin
             nLength := SizeOf(TSecurityAttributes);
             lpSecurityDescriptor := nil;
             bInheritHandle := True;
@@ -3499,14 +3498,12 @@ var
    TFileTime;
    a, b, c: DWORD;
 begin
-   if not GetExitCodeProcess(PI.hProcess, ExitCode) then
-   begin
+   if not GetExitCodeProcess(PI.hProcess, ExitCode) then begin
       SetErrorMsg(Format('PID %x', [PI.dwProcessId]));
       Exit;
    end;
 
-   if ExitCode = STILL_ACTIVE then
-   begin
+   if ExitCode = STILL_ACTIVE then begin
       LogFmt(ltGlobalErr, 'PID %x is still active', [PI.dwProcessId]);
       Exit;
    end;
@@ -3517,23 +3514,15 @@ begin
       a := FileTimeToMsecs(lExitTime);
       b := FileTimeToMsecs(lUserTime);
       c := FileTimeToMsecs(lKernelTime);
-      if PostProcess then
-      begin
+      if PostProcess then begin
          LogFmt(ltInfo, '"%s" (PID=%x) exit code = %d. Times (run/user/kernel) = %s/%s/%s msec.', [ProcessName, PI.dwProcessId, ExitCode, Int2Str(a), Int2Str(b), Int2Str(c)]);
-      end
-      else
-      begin
+      end else begin
          LogFmt(ltInfo, 'Exit code = %d. Times (run/user/kernel) = %s/%s/%s msec.', [ExitCode, Int2Str(a), Int2Str(b), Int2Str(c)]);
       end;
-   end
-   else
-   begin
-      if PostProcess then
-      begin
+   end else begin
+      if PostProcess then begin
          LogFmt(ltInfo, '"%s" (PID=%x) exit code = %d', [ProcessName, PI.dwProcessId, ExitCode]);
-      end
-      else
-      begin
+      end else begin
          LogFmt(ltInfo, 'Exit code = %d', [ExitCode]);
       end;
    end;
@@ -3559,19 +3548,16 @@ var
    i: integer;
 begin
    if trycount > 255 then GlobalFail('Couldn''t write to %s. TryCount exceeded 255.', [s]);
-   for i := 0 to trycount do
-   begin
-      if UpperCase(ErrLogFile.Strings[i]) = UpperCase(s) then
-      begin
-         if _logok(s, n) then
-         begin
+   for i := 0 to trycount do begin
+      if UpperCase(ErrLogFile.Strings[i]) = UpperCase(s) then begin
+         if _logok(s, n) then begin
             _LogWriteStr(ErrLogString.Strings[i], n);
             dec(trycount);
             ErrLogFile.Delete(i);
             ErrLogString.Delete(i);
-         end
-         else
+         end else begin
             break;
+         end;
       end;
       if trycount <= i then break;
    end;
@@ -3582,14 +3568,11 @@ var
    LogStr: string;
 begin
    logstr := FormatLogStr(CurTag, CurStr, 'Cron');
-   if _LogOK(CronThr.ProcsLogFName, CronThr.ProcsLogFHandle) then
-   begin
+   if _LogOK(CronThr.ProcsLogFName, CronThr.ProcsLogFHandle) then begin
       if trycount > -1 then TryWriteAgain(CronThr.ProcsLogFName, CronThr.ProcsLogFHandle);
       _LogWriteStr(LogStr, CronThr.ProcsLogFHandle);
       ZeroHandle(CronThr.ProcsLogFHandle);
-   end
-   else
-   begin
+   end else begin
       inc(trycount);
       ErrLogFile.Add(CronThr.ProcsLogFName);
       ErrLogString.Add(LogStr);
@@ -5233,7 +5216,7 @@ begin
       end;
       if (IniFile.DynamicRouting or IniFile.ScanMSG) and
          (SD.PasswordProtected or (SD.ActivePoll <> nil)) and
-         (NetmailHolder <> nil) and not (SD.SessionCore in [scNNTP]) then NetmailHolder.Route(SD.rmtAddrs[n], SD.ActivePoll <> nil, Log);
+         (NetmailHolder <> nil) and not (SD.SessionCore in [scNNTP]) then NetmailHolder.Route(SD.rmtAddrs[n], SD.rmtPassword, SD.ActivePoll <> nil, Log);
    end;
    N := 0;
    TransmitHold := SD.ActivePoll = nil;
@@ -7336,7 +7319,6 @@ var
          if EP.VoidFound(eiLogEMSI) then begin
             EMSILogFHandle := 0;
             logstr := '= ' + uFormat(uGetLocalTime) + ' < ' + S;
-{            if _LogOK(EMSILogFName, EMSILogFHandle) then}
             _EMSILogFName := ExtractFilePath(LogFName) + 'emsi-' + ExtractFileName(LogFName);
             if _LogOK(_EMSILogFName, EMSILogFHandle) then begin
                if trycount > -1 then TryWriteAgain(_EMSILogFName, EMSILogFHandle);
@@ -7347,7 +7329,7 @@ var
                ErrLogFile.Add(_EMSILogFName);
                ErrLogString.Add(LogStr);
             end;
-         end; //Log(ltEMSI, '< '+S);
+         end;
          if not ParseEMSILine(S, EMSI, '}') then Exit;
          if EMSI.Count < 9 then Exit;
          S := EMSI.FingerPrint;
@@ -7367,7 +7349,6 @@ var
             not Hex2EMSI(s3) or
             not Hex2EMSI(s4) then Exit;
 
-         //  if s = 'ifcico' then Include(SD.RemoteMailerFlags, rmfForceZRQInit);
          if s = 'Bink/+' then Include(SD.rmtMailerFlags, rmfNoFileDelay);
 
          SD.rmtMailerName := s;
@@ -7384,17 +7365,16 @@ var
             eaIDENT:
                begin
                   ParseEMSILine(S, L, ']');
-                  for I := MinI(5, L.Count - 1) downto 0 do
-                  begin
+                  for I := MinI(5, L.Count - 1) downto 0 do begin
                      S := L[I];
                      if not Hex2EMSI(S) then Exit;
                      case I of
-                        0: DS.rmtStationName := S;
-                        1: DS.rmtLocation := S;
-                        2: DS.rmtSysOpName := S;
-                        3: DS.rmtPhone := S;
-                        4: spd := S;
-                        5: DS.rmtFlags := S;
+                     0: DS.rmtStationName := S;
+                     1: DS.rmtLocation := S;
+                     2: DS.rmtSysOpName := S;
+                     3: DS.rmtPhone := S;
+                     4: spd := S;
+                     5: DS.rmtFlags := S;
                      end;
                   end;
                   DS.rmtFlags := spd + ',' + DS.rmtFlags;
@@ -7412,12 +7392,9 @@ var
                   SD.rmtTRX := VlH(S);
                   if SD.rmtTRX = INVALID_VALUE then Exit;
                   if SD.rmtAddrs <> nil then
-                     if SD.rmtAddrs.Count > 0 then
-                     begin
-                        for j := 0 to SD.rmtAddrs.Count - 1 do
-                        begin
-                           if Addr2Str(SD.rmtAddrs.Addresses[j]) = Addr2Str(IniFile.Synch) then
-                           begin
+                     if SD.rmtAddrs.Count > 0 then begin
+                        for j := 0 to SD.rmtAddrs.Count - 1 do begin
+                           if Addr2Str(SD.rmtAddrs.Addresses[j]) = Addr2Str(IniFile.Synch) then begin
                               TimeDiff := uGetSystemTime;
                               DateTimeToSystemTime(uDelphiTime(SD.rmtTRX), SystemTime);
                               SystemTime.wHour := SystemTime.wHour + IniFile.TimeShift;
@@ -7442,8 +7419,7 @@ var
                begin
                   if not Hex2EMSI(S) then Exit;
                   if SD.EMSI_Addons = nil then SD.EMSI_Addons := TStringColl.Create;
-                  if ((S2 = 'XDATETIME') or (S2 = 'TZUTC')) and (not IniFile.HydraUTCDefault) then
-                  begin
+                  if ((S2 = 'XDATETIME') or (S2 = 'TZUTC')) and (not IniFile.HydraUTCDefault) then begin
                     shift := copy(S, length(S) - 5, 5);
                     if IsOldMailer(DS.rmtSoft) then
                       SD.tzshift := 0
@@ -7705,10 +7681,6 @@ begin
    if (not SD.GotNak) and (SD.ActivePoll <> nil) then B := EMSI_INQ + EMSI_CR + B;
    if (SD.NiagaraAllowed) and (SD.ActivePoll <> nil) then B := EMSI_TZP + EMSI_CR + B;
    SendStr(B);
-   // It is recommended by FTS-56 that the inbound data buffer should
-   // be purged between transmission of the <data_pkt> and <crc16> fields
-   // to prevent accidental EMSI_NAK sequences, etc.
-   // But we dont beleive it's a good idea, especially over TCP/IP :-)
    B := Hex4(CRC) + EMSI_CR;
    iCRC := CRC;
    SendStr(B);
@@ -7717,7 +7689,7 @@ end;
 function TMailerThread.GotExtApp: Boolean;
 var
    ca, cb: TStringColl;
-   s, cod: string; // visual
+   s, cod: string;
    i: Integer;
    ds: TEvParDStr;
    R: TColl;
@@ -7777,7 +7749,7 @@ procedure TMailerThread.DoHSh;
 
    function CheckYooHooChar: Boolean;
    var
-      YC,
+     YC,
       I: Integer;
       C: Char;
    begin
@@ -8331,8 +8303,7 @@ begin
       for j := 0 to SD.rmtAddrs.Count - 1 do begin
          if Addr2Str(SD.rmtAddrs.Addresses[j]) = Addr2Str(IniFile.Synch) then begin
             REP := GetRegExpr('\D{3},\s\d{2}\s\D{3}\s\d{4}\s\d{2}:\d{2}:\d{2}\s(\+|\-)\d{4}');
-            if (REP.ErrPtr = 0) and (REP.Match(SD.rmtTime) > 0) then
-            begin
+            if (REP.ErrPtr = 0) and (REP.Match(SD.rmtTime) > 0) then begin
                dt := EmsiXDateTimeToDateTime(SD.rmtTime, localt);
                if dt = -1 then
                   Log(ltInfo, 'Local time was NOT synchronized with ' + Addr2Str(IniFile.Synch))
@@ -8391,7 +8362,8 @@ procedure TMailerThread.FilterProtocols(const AFlags: string);
    end;
 
 var
-   s, z: string;
+   s,
+   z: string;
 begin
    s := AFlags;
    while s <> '' do begin
@@ -8592,8 +8564,7 @@ begin
    c.FilesRcv := SD.FilesReceived;
    c.FilesSnt := SD.FilesSent;
    EnterCS(CommonStatxCS);
-   if _LogOK(CommonStatxFName, CommonStatxHandle) then
-   begin
+   if _LogOK(CommonStatxFName, CommonStatxHandle) then begin
       WriteFile(CommonStatxHandle, c, SizeOf(c), Actually, nil);
       if StartupOptions and stoFastLog = 0 then ZeroHandle(CommonStatxHandle);
    end;

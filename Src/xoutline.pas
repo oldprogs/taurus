@@ -2538,6 +2538,7 @@ begin
       ChangeBitmap(nil, Item);
   FOldBitmaps := [];
   SetHorzScrollBar;
+  if IniFile = nil then exit;
   Font.Name := IniFile.ReadString('interface', 'formsfontname', 'Arial');
   Font.Size := IniFile.ReadInteger('interface', 'formsfontsize', 8);
 end;

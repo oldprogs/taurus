@@ -2138,13 +2138,11 @@ begin
    MailerForm.UpdateTabs;
    MailerForm.MainTabControlChange(nil);
    MailerForms.Insert(MailerForm);
-   if DoShow then
-   begin
+   if DoShow then begin
       MailerForm.MainTabControlChange(nil);
       MailerForm.Show;
    end;
-   if Cfg.UpgStrings <> nil then
-   begin
+   if Cfg.UpgStrings <> nil then begin
       if WinDlgCap(FormatLng(rsMMNewCfgItems, [ProductNameFull, ProductVersion, Cfg.UpgStrings.LongString]), MB_YESNO or MB_ICONQUESTION, MailerForm.Handle, LngStr(rsMMCfgUpd)) = idYes then BackupConfig(MailerForm.Handle);
       FreeObject(Cfg.UpgStrings);
       StoreConfig(MailerForm.Handle);
