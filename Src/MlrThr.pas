@@ -4629,10 +4629,11 @@ function TMailerThread.SendModemString(const AStr: string): boolean;
 
 var
    CC: Char;
-   I, SL: Integer;
+    I,
+   SL: Integer;
    DT: EventTimer;
    ToSleep: DWORD;
-   s: string;
+    s: string;
 begin
    if CP = nil then begin
       Result := True;
