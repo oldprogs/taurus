@@ -25,7 +25,7 @@ LANGUAGE LANG_RUSSIAN,0
   LngBaseRussian+rsAdrInNoMulti    "Список FTN-адресов не допустим в \"%s\""
 
   LngBaseRussian+rsPswGrid         "|Узлы|Пароль"
-  LngBaseRussian+rsNetmailGrid     "|Через|От узлов|Пароль"
+  LngBaseRussian+rsNetmailGrid     "|Через|Для узлов|Пароль"
   LngBaseRussian+rsPswEmptyAdr     "Пустой FTN-адрес, строка %d"
   LngBaseRussian+rsPswEmptyPwd     "Пустой пароль, строка %d"
 
@@ -84,6 +84,7 @@ LANGUAGE LANG_RUSSIAN,0
   LngBaseRussian+rsMMptBack        "Callback"
   LngBaseRussian+rsMMptImm         "Outb/Imm"
   LngBaseRussian+rsMMptRCC         "Mirror"
+  LngBaseRussian+rsMMptNetm        "Mail"
   LngBaseRussian+rsMMptNone        "нет"
   LngBaseRussian+rsMMptExtApp      "Внешн."
   LngBaseRussian+rsMMRedirect      "Redirect traffic to %s"
@@ -138,6 +139,7 @@ LANGUAGE LANG_RUSSIAN,0
   LngBaseRussian+rsMMptpiBack      "This is a callback poll created by system and will ignore node on-line time and status"
   LngBaseRussian+rsMMptpiImm       "This is an immediate poll created by outbound packet and will ignore node on-line time and status"
   LngBaseRussian+rsMMptpiRCC       "This is an RCC poll created by system operator and will ignore node on-line time and status"
+  LngBaseRussian+rsMMptpiNetm      "Эта прозвонка создана нетмейлом (MSG) и будет учитывать рабочее время узла"
   LngBaseRussian+rsMMPollNfoC      "Информация о прозвонке - %s"
   LngBaseRussian+rsMMOutNBusy      "%s (занят)"
   LngBaseRussian+rsMMOutNCusy      "%s (вызов)"

@@ -155,7 +155,6 @@ type
     lCPSMinSecs: TLabel;
     lPeriods: TLabel;
     lMsgsAutoClose: TLabel;
-    lOutbRescan: TLabel;
     lMaxBWZAge: TLabel;
     lMaxBsyAge: TLabel;
     eMainAKA: TEdit;
@@ -165,7 +164,6 @@ type
     seCPSMinSecs: TxSpinEdit;
     seMaxBsyAge: TxSpinEdit;
     seMaxBWZAge: TxSpinEdit;
-    seOutbRescan: TxSpinEdit;
     seMsgsAutoClose: TxSpinEdit;
     MainPan2: TPanel;
     Bevel1: TBevel;
@@ -246,7 +244,6 @@ type
     seMaxUDLAge: TxSpinEdit;
     cbIBNRequestList: TCheckBox;
     gNetmail: TAdvGrid;
-    lDynamicRoutingTable: TLabel;
     cbDynamicRouting: TCheckBox;
     cbHydRequestList: TCheckBox;
     cbTariffPerMinute: TCheckBox;
@@ -399,8 +396,7 @@ begin
   end;
   {$ENDIF}
   Result := SetupForm.ShowModal = mrOK;
-  if result and SetupForm.btnApply.Enabled then
-  begin
+  if result and SetupForm.btnApply.Enabled then begin
      SetupForm.GetData;
      IniFile.StoreCFG;
   end;
@@ -430,7 +426,6 @@ begin
   IniFile.MaxBSYAge := seMaxBSYAge.Value;
   IniFile.MaxBWZAge := seMaxBWZAge.Value;
   IniFile.MaxUDLAge := seMaxUDLAge.Value;
-  IniFile.WaitSecRescan := seOutbRescan.Value;
   IniFile.WinDlgTWait := seMsgsAutoClose.Value;
   IniFile.FreeSpaceLmt := seMinFreeSpace.Value;
   IniFile.OnClose := cbCloseBtnAction.ItemIndex;
@@ -475,14 +470,11 @@ begin
 {$IFDEF RASDIAL}
 //RAS tab
   IniFile.iEntryName := cbEntryList.Text;
-  if (IniFile.RASEnabled <> cbRasEnabled.Checked) then
-  begin
+  if (IniFile.RASEnabled <> cbRasEnabled.Checked) then begin
     IniFile.RASEnabled := cbRasEnabled.Checked;
-    if IniFile.RASEnabled then
-    begin
+    if IniFile.RASEnabled then begin
       RasThrd.StartRas;
-    end else
-    begin
+    end else begin
       RasThrd.FinishRas;
     end;
   end;
@@ -525,21 +517,20 @@ begin
   IniFile.lang := cbInterfaceLanguage.ItemIndex;
 //  IniFile.HelpLang:=LangNames[TLangName(cbHelpLanguage.ItemIndex)];
   case cbHelpLanguage.ItemIndex of
-    0: begin
-         Application.HelpFile := GetHelpFile(HomeDir, LangNames[lnEnglish]);
-         HelpLanguageId := HelpLanguageEnglish;
-         SetRegHelpLng(LangNames[lnEnglish]);
-       end;
-    1: begin
-         Application.HelpFile := GetHelpFile(HomeDir, LangNames[lnRussian]);
-         HelpLanguageId := HelpLanguageRussian;
-         SetRegHelpLng(LangNames[lnRussian]);
-       end;
+  0: begin
+       Application.HelpFile := GetHelpFile(HomeDir, LangNames[lnEnglish]);
+       HelpLanguageId := HelpLanguageEnglish;
+       SetRegHelpLng(LangNames[lnEnglish]);
+     end;
+  1: begin
+       Application.HelpFile := GetHelpFile(HomeDir, LangNames[lnRussian]);
+       HelpLanguageId := HelpLanguageRussian;
+       SetRegHelpLng(LangNames[lnRussian]);
+     end;
   end;{of case}
 
   IniFile.GridInBWZ := cbGridBWZ.Checked;
   IniFile.GridInPV := cbGridPV.Checked;
-{$IFDEF EXTREME}
   IniFile.FormsFontSize := fdForms.Font.Size;
   IniFile.FormsFontName := fdForms.Font.Name;
   IniFile.FormsFontAttr[1] := inttostr(integer(fsBold in fdForms.Font.Style))[1];
@@ -548,7 +539,6 @@ begin
   IniFile.FormsFontAttr[4] := inttostr(integer(fsStrikeOut in fdForms.Font.Style))[1];
   TMailerForm(MailerForms[0]).Font.Assign(fdForms.Font);
   TMailerForm(MailerForms[0]).OutMgrOutLine.ItemHeight := Abs(fdForms.Font.Height) + 4;
-{$ENDIF}
   IniFile.LoggerFontSize := fdLogger.Font.Height;
   IniFile.LoggerFontName := fdLogger.Font.Name;
   IniFile.LoggerFontAttr[1] := inttostr(integer(fsBold in fdLogger.Font.Style))[1];
@@ -589,17 +579,14 @@ begin
 //Protocols end
 
 //Netmail tab
-  with IniFile do
-  begin
-    if NetmailAddrTo.Count <> 0 then
-    begin
+  with IniFile do begin
+    if NetmailAddrTo.Count <> 0 then begin
       NetmailAddrTo.FreeAll;
       NetmailAddrFrom.FreeAll;
       NetmailPwd.FreeAll;
     end;
 
-    for _i := 0 to gNetmail.RowCount - 2 do
-    begin
+    for _i := 0 to gNetmail.RowCount - 2 do begin
       gNetmail.GetData([NetmailAddrTo, NetmailAddrFrom, NetmailPwd]);
     end;
   end;
@@ -619,22 +606,18 @@ begin
 //Paths end
 
 //Finalization
-  if i <> inifile.lang then
-  begin
+  if i <> inifile.lang then begin
     i := inifile.lang;
     ResLngBase := 0;
     case I of
-      MaxInt :;
-      {$IFDEF LNG_SPANISH} idlSpanish: ResLngBase := LngBaseSpanish; {$ENDIF}
-      {$IFDEF LNG_DUTCH}   idlDutch:   ResLngBase := LngBaseDutch;   {$ENDIF}
-      {$IFDEF LNG_GERMAN}  idlGerman:  ResLngBase := LngBaseGerman;  {$ENDIF}
-      {$IFDEF LNG_DANISH}  idlDanish:  ResLngBase := LngBaseDanish;  {$ENDIF}
-      {$IFDEF LNG_RUSSIAN} idlRussian: ResLngBase := LngBaseRussian; {$ENDIF}
-      else
-        begin
+    MaxInt :;
+    idlRussian:
+       ResLngBase := LngBaseRussian;
+    else
+       begin
           ResLngBase := LngBaseEnglish;
-        end;
-    end;{of case}
+       end;
+    end;
     if Application.MainForm <> nil then PostMessage(Application.MainForm.Handle, WM_SetLang, inifile.lang, 1);
     _FillForm(self, rsSetupForm, ResLngBase);
     _GridFillColLng(gNetmail, rsNetmailGrid, ResLngBase);
@@ -643,42 +626,40 @@ begin
     cbInterfaceLanguage.ItemIndex := i;
   end;
 
- if HomeChanged then
- begin
+ if HomeChanged then begin
    IniFile.HomeDir := eHome.Text;
    IniFile.CfgDir := eConfigs.Text;
    If not DirectoryExists(IniFile.HomeDir) then CreateDir(IniFile.HomeDir);
    DisplayInfoLng(rsPNHdc, Handle);
    s := '';
-   if ParamCount > 0 then
-   begin
+   if ParamCount > 0 then begin
      s := ParamStr(1);
-     if ParamCount > 1 then
-       for _i := 2 to ParamCount do s := s + ' ' + ParamStr(_i)
+     if ParamCount > 1 then begin
+       for _i := 2 to ParamCount do s := s + ' ' + ParamStr(_i);
+     end;
    end;
    if Pos('delay5000', s) = 0 then s := 'delay5000 ' + s;
    ShellExecute(0, nil, PChar(ParamStr(0)),
       PChar(s), PChar(ExtractFilePath(ParamStr(0))), sw_shownormal);
    PostCloseMessage;
-   exit
+   exit;
  end;
 
- if ConfigsChanged then
- begin
+ if ConfigsChanged then begin
    IniFile.CfgDir := eConfigs.Text;
    DisplayInfoLng(rsCDCh, Handle);
    s := '';
-   if ParamCount > 0 then
-   begin
+   if ParamCount > 0 then begin
      s := ParamStr(1);
-     if ParamCount > 1 then
-       for _i := 2 to ParamCount do s := s + ' ' + ParamStr(_i)
+     if ParamCount > 1 then begin
+       for _i := 2 to ParamCount do s := s + ' ' + ParamStr(_i);
+     end;
    end;
    if Pos('delay5000', s) > 0 then s := 'delay5000 ' + s;
    ShellExecute(0, nil, PChar(ParamStr(0)),
       PChar('delay5000 ' + GetCommandLine), PChar(ExtractFilePath(ParamStr(0))), sw_shownormal);
    PostCloseMessage;
-   exit
+   exit;
  end;
 end;
 
@@ -698,7 +679,6 @@ begin
   seMaxBSYAge.Value := IniFile.MaxBSYAge;
   seMaxBWZAge.Value := IniFile.MaxBWZAge;
   seMaxUDLAge.Value := IniFile.MaxUDLAge;
-  seOutbRescan.Value := IniFile.WaitSecRescan;
   seMsgsAutoClose.Value := IniFile.WinDlgTWait;
   seMinFreeSpace.Value := IniFile.FreeSpaceLmt;
   cbSessionOK.Checked := IniFile.SessionOKFlag;
@@ -752,7 +732,8 @@ begin
     NORMAL_PRIORITY_CLASS: n := 1;
     HIGH_PRIORITY_CLASS: n := 2;
     REALTIME_PRIORITY_CLASS: n := 3;
-  else n := 1;
+  else
+    n := 1;
   end;
   cbPriority.ItemIndex := n;
 //System end
@@ -846,12 +827,11 @@ begin
 {$IFDEF RASDIAL}
 //RAS tab
   cbRASEnabled.Checked := IniFile.RASEnabled;
-  if (IniFile.RASEnabled)then
-  begin
-    if RasThread = nil then StartRas;
-    cbEntryList.Items.AddStrings(RasThread.AllEntries);
-    n := cbEntryList.Items.IndexOf(IniFile.iEntryName);
-    cbEntryList.ItemIndex := n;
+  if (IniFile.RASEnabled)then begin
+     if RasThread = nil then StartRas;
+     cbEntryList.Items.AddStrings(RasThread.AllEntries);
+     n := cbEntryList.Items.IndexOf(IniFile.iEntryName);
+     cbEntryList.ItemIndex := n;
   end;
 //RAS end
 {$ENDIF}
@@ -893,33 +873,31 @@ end;
 procedure TSetupForm.tvPagesChange(Sender: TObject; Node: TTreeNode);
 begin
   {$IFNDEF RASDIAL}
-  if Node.Index = 6 {RAS} then
-  begin
-    WinDlgCap(LngStr(rsNoRASMsg), MB_OK or MB_ICONINFORMATION, handle, 'Information');
-    tvPages.Select(tvPages.Items.GetFirstNode);
-    exit;
+  if Node.Index = 6 {RAS} then begin
+     WinDlgCap(LngStr(rsNoRASMsg), MB_OK or MB_ICONINFORMATION, handle, 'Information');
+     tvPages.Select(tvPages.Items.GetFirstNode);
+     exit;
   end;
   {$ENDIF}
-  if Node.Parent = nil then
-  begin
+  if Node.Parent = nil then begin
     case Node.Index of
-      0: nbPages.PageIndex := 0;
-      1: nbPages.PageIndex := 1;
-      2: nbPages.PageIndex := 2;
-      3: nbPages.PageIndex := 4;
-      4: nbPages.PageIndex := 5;
-      5: nbPages.PageIndex := 6;
-      6: nbPages.PageIndex := 7;
-      7: nbPages.PageIndex := 8;
-      8: nbPages.PageIndex := 9;
+      0: nbPages.PageIndex := 00;
+      1: nbPages.PageIndex := 01;
+      2: nbPages.PageIndex := 02;
+      3: nbPages.PageIndex := 04;
+      4: nbPages.PageIndex := 05;
+      5: nbPages.PageIndex := 06;
+      6: nbPages.PageIndex := 07;
+      7: nbPages.PageIndex := 08;
+      8: nbPages.PageIndex := 09;
       9: nbPages.PageIndex := 10;
      10: nbPages.PageIndex := 11;
      11: nbPages.PageIndex := 12;
      12: nbPages.PageIndex := 13;
-      else GlobalFail('Node.Index = %d', [Node.Index]);
+    else
+     GlobalFail('Node.Index = %d', [Node.Index]);
     end;{of case}
-  end else
-  begin
+  end else begin
     if Node.Parent.Index = 2 then nbPages.PageIndex := 3
     else GlobalFail('Node.Parent.Index = %d', [Node.Parent.Index]);
   end;
@@ -975,23 +953,20 @@ begin
 end;
 
   procedure _FlashWindow(winobject: TEdit);
-  var i:integer;
+  var i: integer;
   begin//                    $rrggbb
     winobject.Color := clWhite and $FF00FF;
-    for i := 0 to $FF do
-    begin
+    for i := 0 to $FF do begin
       winobject.Color := winobject.Color + $100;
       sleep(1);
       Application.ProcessMessages;
     end;
-    for i := $FF downto 0 do
-    begin
+    for i := $FF downto 0 do begin
       winobject.Color := winobject.Color - $100;
       sleep(1);
       Application.ProcessMessages;
     end;
-    for i := 0 to $FF do
-    begin
+    for i := 0 to $FF do begin
       winobject.Color := winobject.Color + $100;
       sleep(1);
       Application.ProcessMessages;
@@ -1005,16 +980,13 @@ var
 begin
   if (sender <> nil) and (ModalResult <> mrOK) then Exit;
   canClose := ParseAddress(eMainAKA.Text, FidoAddr1);
-  if canClose then
-  begin
+  if canClose then begin
     canClose := ParseAddress(eSynchClock.Text, FidoAddr2);
-    if not canClose then
-    begin
+    if not canClose then begin
       DisplayErrorLng(rsAdrInNoValidAdr, Handle);
       _FlashWindow(eSynchClock)
     end;
-  end
-  else begin
+  end else begin
     DisplayErrorLng(rsAdrInNoValidAdr, Handle);
     _FlashWindow(eMainAKA)
   end;
@@ -1030,7 +1002,7 @@ end;
 procedure TSetupForm.sbSynchClockBrowseClick(Sender: TObject);
 begin
   if InputSingleAddress(LngStr(rsMMBrsNdlAt), FidoAddr2, nil) then
-    eSynchClock.Text := Addr2Str(FidoAddr2);
+     eSynchClock.Text := Addr2Str(FidoAddr2);
 end;
 
 procedure TSetupForm.btnHomeClick(Sender: TObject);
@@ -1099,7 +1071,7 @@ begin
       end;
     else GlobalFail('TSetupForm.sbDefGaugeClick, (Sender as TComponent).Tag = %d', [(Sender as TComponent).Tag]);
   end; {of case}
-end;    
+end;
 
 procedure TSetupForm.sbSysGaugeClick(Sender: TObject);
 begin
@@ -1139,20 +1111,21 @@ begin
         cbMail28Fore.Selected := clWindowText;
         cbMail28Back.Selected := clWindow;
       end;
-    else GlobalFail('TSetupForm.sbSysGaugeClick, TButton(Sender).Tag = %d', [TButton(Sender).Tag]);
+    else
+      GlobalFail('TSetupForm.sbSysGaugeClick, TButton(Sender).Tag = %d', [TButton(Sender).Tag]);
   end;{of case}
 end;
 
 procedure TSetupForm.btnApplyClick(Sender: TObject);
 var
-  Action: TCloseAction;
+   Action: TCloseAction;
 begin
-  Action := caFree;
-  FormClose(nil, Action);
-  if Action = caNone then exit;
-  SetupForm.GetData;
-  IniFile.StoreCFG;
-  wdCRC := 0;
+   Action := caFree;
+   FormClose(nil, Action);
+   if Action = caNone then exit;
+   SetupForm.GetData;
+   IniFile.StoreCFG;
+   wdCRC := 0;
 end;
 
 procedure TSetupForm.eHomeChange(Sender: TObject);
@@ -1183,35 +1156,31 @@ end;
 
 procedure TSetupForm.bFormsFontClick(Sender: TObject);
 begin
-{$IFDEF EXTREME}
-  fdForms.Font.Assign(Font);
-  if fdForms.Execute then
-  begin
-    Font.Assign(fdForms.Font);
-    lFormsFont.Caption := Format('%s (%d Pts)',[Font.Name, Font.Size]);
-  end;
-{$ENDIF}  
+   fdForms.Font.Assign(Font);
+   if fdForms.Execute then begin
+      Font.Assign(fdForms.Font);
+      lFormsFont.Caption := Format('%s (%d Pts)',[Font.Name, Font.Size]);
+   end;
 end;
 
 procedure TSetupForm.bLoggerFontClick(Sender: TObject);
 begin
-  fdLogger.Font.Color := cbLoggerFore.Selected;
-  if fdLogger.Execute then
-  begin
-    cbLoggerFore.Selected := fdLogger.Font.Color;
-    lLoggerFont.Caption := Format('%s (%d Pts)',[fdLogger.Font.Name, fdLogger.Font.Size]);
-  end;
+   fdLogger.Font.Color := cbLoggerFore.Selected;
+   if fdLogger.Execute then begin
+      cbLoggerFore.Selected := fdLogger.Font.Color;
+      lLoggerFont.Caption := Format('%s (%d Pts)',[fdLogger.Font.Name, fdLogger.Font.Size]);
+   end;
 end;
 
 procedure TSetupForm.btnChatBellClick(Sender: TObject);
 begin
-  if not odChatBell.Execute then exit;
-  eChatBell.Text := odChatBell.FileName
+   if not odChatBell.Execute then exit;
+   eChatBell.Text := odChatBell.FileName;
 end;
 
 procedure TSetupForm.FillNetmailGrid;
 begin
-  gNetmail.SetData([IniFile.NetmailAddrTo, IniFile.NetmailAddrFrom, IniFile.NetmailPwd]);
+   gNetmail.SetData([IniFile.NetmailAddrTo, IniFile.NetmailAddrFrom, IniFile.NetmailPwd]);
 end;
 
 procedure TSetupForm.Button1Click(Sender: TObject);
@@ -1236,11 +1205,12 @@ end;
 procedure TSetupForm.cbPriorityChange(Sender: TObject);
 begin
    case cbPriority.ItemIndex of
-     0: IniFile.Priority := IDLE_PRIORITY_CLASS;
-     1: IniFile.Priority := NORMAL_PRIORITY_CLASS;
-     2: IniFile.Priority := HIGH_PRIORITY_CLASS;
-     3: IniFile.Priority := REALTIME_PRIORITY_CLASS;
-   else IniFile.Priority := NORMAL_PRIORITY_CLASS; //GlobalFail ??
+   0: IniFile.Priority := IDLE_PRIORITY_CLASS;
+   1: IniFile.Priority := NORMAL_PRIORITY_CLASS;
+   2: IniFile.Priority := HIGH_PRIORITY_CLASS;
+   3: IniFile.Priority := REALTIME_PRIORITY_CLASS;
+   else
+      IniFile.Priority := NORMAL_PRIORITY_CLASS; //GlobalFail ??
    end; {of case}
    SetPriorityClass(GetCurrentProcess, IniFile.Priority);
 end;

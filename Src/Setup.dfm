@@ -128,7 +128,7 @@ object SetupForm: TSetupForm
     Top = 27
     Width = 356
     Height = 319
-    PageIndex = 2
+    PageIndex = 9
     TabOrder = 1
     object TPage
       Left = 0
@@ -160,261 +160,6 @@ object SetupForm: TSetupForm
         Width = 320
         Height = 5
         Shape = bsTopLine
-      end
-      object MainPan1: TPanel
-        Left = 0
-        Top = 0
-        Width = 356
-        Height = 257
-        BevelOuter = bvNone
-        TabOrder = 0
-        object Bevel6: TBevel
-          Left = 15
-          Top = 146
-          Width = 320
-          Height = 5
-          Shape = bsTopLine
-        end
-        object Bevel2: TBevel
-          Left = 15
-          Top = 76
-          Width = 320
-          Height = 5
-          Shape = bsTopLine
-        end
-        object Bevel4: TBevel
-          Left = 15
-          Top = 16
-          Width = 320
-          Height = 5
-          Shape = bsTopLine
-        end
-        object lAddressOptions: TLabel
-          Left = 25
-          Top = 10
-          Width = 99
-          Height = 14
-          Caption = ' Address options '
-          Font.Charset = DEFAULT_CHARSET
-          Font.Color = clWindowText
-          Font.Height = -11
-          Font.Name = 'Arial'
-          Font.Style = [fsBold]
-          ParentFont = False
-          Transparent = False
-        end
-        object sbMainAKABrowse: TSpeedButton
-          Left = 147
-          Top = 42
-          Width = 23
-          Height = 20
-          Caption = '. . .'
-          Flat = True
-          OnClick = sbMainAKABrowseClick
-        end
-        object sbSynchClockBrowse: TSpeedButton
-          Left = 312
-          Top = 42
-          Width = 23
-          Height = 20
-          Caption = '. . .'
-          Flat = True
-          OnClick = sbSynchClockBrowseClick
-        end
-        object lSynchClock: TLabel
-          Left = 181
-          Top = 24
-          Width = 92
-          Height = 15
-          Caption = 'Synch clock with:'
-        end
-        object lMainAKA: TLabel
-          Left = 16
-          Top = 24
-          Width = 78
-          Height = 15
-          Caption = 'Main address:'
-        end
-        object lSessionOptions: TLabel
-          Left = 25
-          Top = 70
-          Width = 96
-          Height = 14
-          Caption = ' Session options '
-          Font.Charset = DEFAULT_CHARSET
-          Font.Color = clWindowText
-          Font.Height = -11
-          Font.Name = 'Arial'
-          Font.Style = [fsBold]
-          ParentFont = False
-          Transparent = False
-        end
-        object lSynchShift: TLabel
-          Left = 16
-          Top = 88
-          Width = 89
-          Height = 15
-          Caption = 'Synch time shift:'
-        end
-        object lCPSMinBytes: TLabel
-          Left = 126
-          Top = 88
-          Width = 84
-          Height = 15
-          Caption = 'CPS min bytes:'
-        end
-        object lCPSMinSecs: TLabel
-          Left = 236
-          Top = 88
-          Width = 79
-          Height = 15
-          Caption = 'CPS min secs'
-        end
-        object lPeriods: TLabel
-          Left = 25
-          Top = 140
-          Width = 125
-          Height = 14
-          Caption = ' Periods and timeouts '
-          Font.Charset = DEFAULT_CHARSET
-          Font.Color = clWindowText
-          Font.Height = -11
-          Font.Name = 'Arial'
-          Font.Style = [fsBold]
-          ParentFont = False
-          Transparent = False
-        end
-        object lMsgsAutoClose: TLabel
-          Left = 16
-          Top = 205
-          Width = 90
-          Height = 15
-          Caption = 'Msgs autoclose:'
-        end
-        object lOutbRescan: TLabel
-          Left = 128
-          Top = 204
-          Width = 73
-          Height = 15
-          Caption = 'Outb. rescan:'
-        end
-        object lMaxBWZAge: TLabel
-          Left = 126
-          Top = 158
-          Width = 77
-          Height = 15
-          Caption = 'Max BWZ age:'
-        end
-        object lMaxBsyAge: TLabel
-          Left = 16
-          Top = 158
-          Width = 74
-          Height = 15
-          Caption = 'Max BSY age:'
-        end
-        object lMaxUDLAge: TLabel
-          Left = 235
-          Top = 158
-          Width = 76
-          Height = 15
-          Caption = 'Max UDL age:'
-        end
-        object eMainAKA: TEdit
-          Left = 16
-          Top = 41
-          Width = 129
-          Height = 23
-          TabOrder = 0
-          Text = '2:5012/38.1'
-        end
-        object eSynchClock: TEdit
-          Left = 181
-          Top = 41
-          Width = 129
-          Height = 23
-          TabOrder = 1
-          Text = '2:5012/38.0'
-        end
-        object seSynchShift: TxSpinEdit
-          Left = 16
-          Top = 105
-          Width = 90
-          Height = 24
-          MaxValue = 0
-          MinValue = 0
-          TabOrder = 2
-          Value = 0
-        end
-        object seCPSMinBytes: TxSpinEdit
-          Left = 126
-          Top = 105
-          Width = 90
-          Height = 24
-          MaxValue = 0
-          MinValue = 0
-          TabOrder = 3
-          Value = 0
-        end
-        object seCPSMinSecs: TxSpinEdit
-          Left = 236
-          Top = 105
-          Width = 90
-          Height = 24
-          MaxValue = 0
-          MinValue = 0
-          TabOrder = 4
-          Value = 0
-        end
-        object seMaxBsyAge: TxSpinEdit
-          Left = 16
-          Top = 175
-          Width = 90
-          Height = 24
-          MaxValue = 0
-          MinValue = 0
-          TabOrder = 5
-          Value = 0
-        end
-        object seMaxBWZAge: TxSpinEdit
-          Left = 126
-          Top = 175
-          Width = 90
-          Height = 24
-          MaxValue = 0
-          MinValue = 0
-          TabOrder = 6
-          Value = 0
-        end
-        object seOutbRescan: TxSpinEdit
-          Left = 126
-          Top = 221
-          Width = 90
-          Height = 24
-          MaxValue = 0
-          MinValue = 0
-          TabOrder = 7
-          Value = 0
-        end
-        object seMsgsAutoClose: TxSpinEdit
-          Left = 16
-          Top = 221
-          Width = 90
-          Height = 24
-          MaxValue = 0
-          MinValue = 0
-          TabOrder = 8
-          Value = 0
-        end
-        object seMaxUDLAge: TxSpinEdit
-          Left = 236
-          Top = 175
-          Width = 90
-          Height = 24
-          MaxValue = 99999999
-          MinValue = 0
-          TabOrder = 9
-          Value = 0
-        end
       end
       object MainPan2: TPanel
         Left = 0
@@ -575,6 +320,244 @@ object SetupForm: TSetupForm
           Height = 17
           Caption = 'Auto compile nodelist'
           TabOrder = 10
+        end
+      end
+      object MainPan1: TPanel
+        Left = 0
+        Top = 0
+        Width = 356
+        Height = 257
+        BevelOuter = bvNone
+        TabOrder = 0
+        object Bevel6: TBevel
+          Left = 15
+          Top = 146
+          Width = 320
+          Height = 5
+          Shape = bsTopLine
+        end
+        object Bevel2: TBevel
+          Left = 15
+          Top = 76
+          Width = 320
+          Height = 5
+          Shape = bsTopLine
+        end
+        object Bevel4: TBevel
+          Left = 15
+          Top = 16
+          Width = 320
+          Height = 5
+          Shape = bsTopLine
+        end
+        object lAddressOptions: TLabel
+          Left = 25
+          Top = 10
+          Width = 99
+          Height = 14
+          Caption = ' Address options '
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Arial'
+          Font.Style = [fsBold]
+          ParentFont = False
+          Transparent = False
+        end
+        object sbMainAKABrowse: TSpeedButton
+          Left = 147
+          Top = 42
+          Width = 23
+          Height = 20
+          Caption = '. . .'
+          Flat = True
+          OnClick = sbMainAKABrowseClick
+        end
+        object sbSynchClockBrowse: TSpeedButton
+          Left = 312
+          Top = 42
+          Width = 23
+          Height = 20
+          Caption = '. . .'
+          Flat = True
+          OnClick = sbSynchClockBrowseClick
+        end
+        object lSynchClock: TLabel
+          Left = 181
+          Top = 24
+          Width = 92
+          Height = 15
+          Caption = 'Synch clock with:'
+        end
+        object lMainAKA: TLabel
+          Left = 16
+          Top = 24
+          Width = 78
+          Height = 15
+          Caption = 'Main address:'
+        end
+        object lSessionOptions: TLabel
+          Left = 25
+          Top = 70
+          Width = 96
+          Height = 14
+          Caption = ' Session options '
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Arial'
+          Font.Style = [fsBold]
+          ParentFont = False
+          Transparent = False
+        end
+        object lSynchShift: TLabel
+          Left = 16
+          Top = 88
+          Width = 89
+          Height = 15
+          Caption = 'Synch time shift:'
+        end
+        object lCPSMinBytes: TLabel
+          Left = 126
+          Top = 88
+          Width = 84
+          Height = 15
+          Caption = 'CPS min bytes:'
+        end
+        object lCPSMinSecs: TLabel
+          Left = 236
+          Top = 88
+          Width = 79
+          Height = 15
+          Caption = 'CPS min secs'
+        end
+        object lPeriods: TLabel
+          Left = 25
+          Top = 140
+          Width = 125
+          Height = 14
+          Caption = ' Periods and timeouts '
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Arial'
+          Font.Style = [fsBold]
+          ParentFont = False
+          Transparent = False
+        end
+        object lMsgsAutoClose: TLabel
+          Left = 16
+          Top = 205
+          Width = 90
+          Height = 15
+          Caption = 'Msgs autoclose:'
+        end
+        object lMaxBWZAge: TLabel
+          Left = 126
+          Top = 158
+          Width = 77
+          Height = 15
+          Caption = 'Max BWZ age:'
+        end
+        object lMaxBsyAge: TLabel
+          Left = 16
+          Top = 158
+          Width = 74
+          Height = 15
+          Caption = 'Max BSY age:'
+        end
+        object lMaxUDLAge: TLabel
+          Left = 235
+          Top = 158
+          Width = 76
+          Height = 15
+          Caption = 'Max UDL age:'
+        end
+        object eMainAKA: TEdit
+          Left = 16
+          Top = 41
+          Width = 129
+          Height = 23
+          TabOrder = 0
+          Text = '2:5012/38.1'
+        end
+        object eSynchClock: TEdit
+          Left = 181
+          Top = 41
+          Width = 129
+          Height = 23
+          TabOrder = 1
+          Text = '2:5012/38.0'
+        end
+        object seSynchShift: TxSpinEdit
+          Left = 16
+          Top = 105
+          Width = 90
+          Height = 24
+          MaxValue = 0
+          MinValue = 0
+          TabOrder = 2
+          Value = 0
+        end
+        object seCPSMinBytes: TxSpinEdit
+          Left = 126
+          Top = 105
+          Width = 90
+          Height = 24
+          MaxValue = 0
+          MinValue = 0
+          TabOrder = 3
+          Value = 0
+        end
+        object seCPSMinSecs: TxSpinEdit
+          Left = 236
+          Top = 105
+          Width = 90
+          Height = 24
+          MaxValue = 0
+          MinValue = 0
+          TabOrder = 4
+          Value = 0
+        end
+        object seMaxBsyAge: TxSpinEdit
+          Left = 16
+          Top = 175
+          Width = 90
+          Height = 24
+          MaxValue = 0
+          MinValue = 0
+          TabOrder = 5
+          Value = 0
+        end
+        object seMaxBWZAge: TxSpinEdit
+          Left = 126
+          Top = 175
+          Width = 90
+          Height = 24
+          MaxValue = 0
+          MinValue = 0
+          TabOrder = 6
+          Value = 0
+        end
+        object seMsgsAutoClose: TxSpinEdit
+          Left = 16
+          Top = 221
+          Width = 90
+          Height = 24
+          MaxValue = 0
+          MinValue = 0
+          TabOrder = 7
+          Value = 0
+        end
+        object seMaxUDLAge: TxSpinEdit
+          Left = 236
+          Top = 175
+          Width = 90
+          Height = 24
+          MaxValue = 99999999
+          MinValue = 0
+          TabOrder = 8
+          Value = 0
         end
       end
     end
@@ -2010,18 +1993,11 @@ object SetupForm: TSetupForm
       Top = 0
       HelpContext = 11096
       Caption = 'Netmail'
-      object lDynamicRoutingTable: TLabel
-        Left = 8
-        Top = 38
-        Width = 131
-        Height = 15
-        Caption = 'Dynamic Routing Table:'
-      end
       object gNetmail: TAdvGrid
         Left = 8
-        Top = 56
+        Top = 40
         Width = 338
-        Height = 254
+        Height = 270
         FixedFont.Charset = DEFAULT_CHARSET
         FixedFont.Color = clWindowText
         FixedFont.Height = -12
@@ -2041,7 +2017,7 @@ object SetupForm: TSetupForm
           95)
       end
       object cbDynamicRouting: TCheckBox
-        Left = 16
+        Left = 8
         Top = 11
         Width = 169
         Height = 17

@@ -373,6 +373,8 @@ const
   rsIpNNTP          = 476;
   rsPause           = 477;
   rsUnPause         = 478;
+  rsMMptNetm        = 479;
+  rsMMptpiNetm      = 480;
 
   rsCDCh            = 103;
   rsNBBoNotLtd      = 104;

@@ -11,6 +11,7 @@ type
     hDirectoryWatcherEvent: THandle;
     hOutboundWatcher,
     hHomeDirWatcher: THandle;
+    hNetmailWatcher: THandle;
     hFileFlagsWatcher: THandle;
     hNodelistsWatcher: PWOHandleArray;
     fSize: integer;
@@ -33,13 +34,13 @@ type
                    wtOutbound,
                    wtFileFlags,
                    wtHomeDir,
+                   wtNetmail,
                    wtStopEvent
 //                   wtOutReader
                  );
 var
   DirectoryWatcher: TDirectoryWatcher;
   IgnoreNextEvent: boolean;
-  IgnoreNextAlert: boolean;
 
 procedure StartWatcher;
 procedure StopWatcher;
@@ -74,6 +75,9 @@ begin
   Subtree := False;
   hHomeDirWatcher := FindFirstChangeNotification(PChar(JustPathName(IniFName)),
                       Bool(Integer(Subtree)), FILE_NOTIFY_CHANGE_LAST_WRITE);
+
+  hNetmailWatcher := FindFirstChangeNotification(PChar(JustPathName(IniFile.NetmailDir)),
+                      Bool(Integer(Subtree)), FILE_NOTIFY_CHANGE_FILE_NAME + FILE_NOTIFY_CHANGE_LAST_WRITE);
 
 {  hOutboundReader := CreateFile (
           PChar(FullPath(FullPath(outboundpath))),
@@ -130,6 +134,7 @@ begin
   FindCloseChangeNotification(hOutboundWatcher);
   FindCloseChangeNotification(hFileFlagsWatcher);
   FindCloseChangeNotification(hHomeDirWatcher);
+  FindCloseChangeNotification(hNetmailWatcher);
   CloseHandle(hDirectoryWatcherEvent);
   for i := 0 to fSize - 1 do begin
      FindCloseChangeNotification(hNodelistsWatcher[i]);
@@ -187,6 +192,7 @@ begin
   if hFileFlagsWatcher = INVALID_HANDLE_VALUE then begin Terminated := True; Exit end;
   if hHomeDirWatcher = INVALID_HANDLE_VALUE then begin Terminated := True; Exit end;
   if hDirectoryWatcherEvent = INVALID_HANDLE_VALUE then begin Terminated := True; Exit end;
+  if hNetmailWatcher = INVALID_HANDLE_VALUE then begin Terminated := True; Exit end;
 
 {  FillChar(Ov, SizeOf(Ov), #0);
   Ov.hEvent := hOutboundEvent;
@@ -208,6 +214,7 @@ begin
   HandlesArray[0] := hOutboundWatcher;
   HandlesArray[1] := hFileFlagsWatcher;
   HandlesArray[2] := hHomeDirWatcher;
+  HandlesArray[3] := hNetmailWatcher;
   HandlesArray[n] := hDirectoryWatcherEvent;
 
   for i := 1 to fSize do begin
@@ -234,12 +241,10 @@ begin
     0:
        begin
           if (not Terminated) and (Application <> nil) and (Application.MainForm <> nil) then begin
-             if not IgnoreNextEvent and not IgnoreNextAlert then begin
+             if not IgnoreNextEvent then begin
                 ScanCounter := 1;
              end;
-             if IgnoreNextAlert then begin
-                IgnoreNextAlert := False;
-             end;
+             IgnoreNextEvent := False;
              FindNextChangeNotification(hOutboundWatcher);
              FindNextChangeNotification(hOutboundWatcher);
           end;
@@ -248,6 +253,7 @@ begin
        begin
          if (not Terminated) and (Application <> nil) and (Application.MainForm <> nil) then begin
             PostMessage(Application.MainForm.Handle, WM_CHECKFILEFLAGS, 0, 0);
+            FindNextChangeNotification(hFileFlagsWatcher);
             FindNextChangeNotification(hFileFlagsWatcher);
          end;
        end;
@@ -261,6 +267,15 @@ begin
              FTime.dwHighDateTime := p3.dwHighDateTime;
            end;
            FindNextChangeNotification(hHomeDirWatcher);
+           FindNextChangeNotification(hHomeDirWatcher);
+         end;
+       end;
+    3:
+       begin
+         if (not Terminated) and (Application <> nil) and (Application.MainForm <> nil) then begin
+            PostMessage(MainWinHandle, WM_CHECKNETMAIL, 0, 0);
+            FindNextChangeNotification(hNetmailWatcher);
+            FindNextChangeNotification(hNetmailWatcher);
          end;
        end;
 {    wtOutReader:

@@ -308,6 +308,7 @@ const
   WM_CONNECT       = WM__ARGUS + 61;
   WM_LASTIN        = WM__ARGUS + 62;
   WM_LASTOUT       = WM__ARGUS + 63;
+  WM_CHECKNETMAIL  = WM__ARGUS + 64;
 
 {$IFDEF WS}
   WM_NEWSOCKPORT   = WM__ARGUS + 100;
@@ -1153,6 +1154,7 @@ var
   LiveCounter: DWORD;
   WindCounter: DWORD;
   ScanCounter: DWORD;
+  ScanActive : boolean;
 
 //  TimeZoneBias: Integer;
 
@@ -1306,11 +1308,12 @@ begin
   if (LiveCounter > 20 * 60 * 2) or (WindCounter > 20 * 60 * 2) and IniFile.UseAntiHang then begin
      GlobalFail('Taurus hanged up: %d %d', [LiveCounter, WindCounter]);
   end;
-  if ScanCounter > 20 * 3 then begin
-     ScanCounter := 0;
+  if ScanCounter > 20 * 5 then begin
      if Application.MainForm <> nil then begin
         PostMessage(Application.MainForm.Handle, WM_OUTBOUNDALERT, 1, 0);
+        beep;
      end;
+     ScanCounter := 0;
   end;
   Sleep(50);
 end;
