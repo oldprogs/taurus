@@ -2174,6 +2174,12 @@ object MailerForm: TMailerForm
               AutoSize = True
               BevelOuter = bvNone
               Align = alClient
+              Font.Charset = DEFAULT_CHARSET
+              Font.Color = clWindowText
+              Font.Height = -14
+              Font.Name = 'Arial'
+              Font.Style = []
+              ParentFont = False
             end
           end
         end
@@ -2418,7 +2424,7 @@ object MailerForm: TMailerForm
   end
   object MainMenu: TMainMenu
     Images = ilMainMenu
-    Left = 394
+    Left = 396
     Top = 266
     object mSystem: TMenuItem
       Caption = '&System'
@@ -2919,7 +2925,7 @@ object MailerForm: TMailerForm
     Images = ilMainMenu
     OwnerDraw = True
     OnPopup = OutMgrPopupPopup
-    Left = 286
+    Left = 264
     Top = 266
     object ompHelp: TMenuItem
       Caption = 'Help on SmartMenu'
@@ -3136,7 +3142,7 @@ object MailerForm: TMailerForm
     MenuAnimation = [maLeftToRight, maTopToBottom]
     OwnerDraw = True
     OnPopup = pBWZPopup
-    Left = 343
+    Left = 331
     Top = 266
     object mnuDelBWZ: TMenuItem
       Caption = 'Delete %s from BadWazoo'

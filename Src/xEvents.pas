@@ -49,133 +49,130 @@ implementation uses EvtEdit, xBase, LngTools;
 
 function SetupEvents: Boolean;
 var
-  EventsForm: TEventsForm;
+   EventsForm: TEventsForm;
 begin
-  EventsForm := TEventsForm.Create(Application);
-  EventsForm.SetData;
-  Result := EventsForm.ShowModal = mrOK;
-  RecalcEvents := Result;
-  FreeObject(EventsForm);
-  if RecalcEvents then SetEvt(oRecalcEvents);
+   EventsForm := TEventsForm.Create(Application);
+   EventsForm.SetData;
+   Result := EventsForm.ShowModal = mrOK;
+   RecalcEvents := Result;
+   FreeObject(EventsForm);
+   if RecalcEvents then SetEvt(oRecalcEvents);
 end;
 
 procedure TEventsForm.SetData;
 begin
-  Cfg.Events.AppendTo(Events);
-  RefillList;
+   Cfg.Events.AppendTo(Events);
+   RefillList;
 end;
 
 procedure TEventsForm.bNewClick(Sender: TObject);
 var
-  e: TEventContainer;
+   e: TEventContainer;
 begin
-  e := TEventContainer.Create;
-  if not EditEvent(e) then FreeObject(e) else
-  begin
-    e.Id := Events.GetUnusedId;
-    Events.Insert(e);
-    RefillList;
-    if Events.Count = 1 then DisplayInfoLng(rsLinkEvt, Handle);
-  end;
+   e := TEventContainer.Create;
+   if not EditEvent(e) then FreeObject(e) else begin
+      e.Id := Events.GetUnusedId;
+      Events.Insert(e);
+      RefillList;
+      if Events.Count = 1 then DisplayInfoLng(rsLinkEvt, Handle);
+   end;
 end;
 
 procedure TEventsForm.bEditClick(Sender: TObject);
 var
-  oe, ne: TEventContainer;
-  i: Integer;
+  oe,
+  ne: TEventContainer;
+   i: Integer;
 begin
-  if not bEdit.Enabled then Exit;
-  i := lv.ItemFocused.Index;
-  oe := Events[i];
-  ne := Pointer(oe.Copy);
-  if not EditEvent(ne) then FreeObject(ne) else
-  begin
-    Events[i] := ne;
-    FreeObject(oe);
-    RefillList;
-  end;
+   if not bEdit.Enabled then Exit;
+   i := lv.ItemFocused.Index;
+   oe := Events[i];
+   ne := Pointer(oe.Copy);
+   if not EditEvent(ne) then FreeObject(ne) else begin
+      Events[i] := ne;
+      FreeObject(oe);
+      RefillList;
+   end;
 end;
 
 procedure TEventsForm.bCopyClick(Sender: TObject);
 var
-  e: TEventContainer;
+   e: TEventContainer;
 begin
-  e := TAdvCpObject(Events[lv.ItemFocused.Index]).Copy;
-  e.Id := Events.GetUnusedId;
-  Events.Insert(e);
-  RefillList;
+   e := TAdvCpObject(Events[lv.ItemFocused.Index]).Copy;
+   e.Id := Events.GetUnusedId;
+   Events.Insert(e);
+   RefillList;
 end;
 
 procedure TEventsForm.bDeleteClick(Sender: TObject);
 begin
-  Events.AtFree(lv.ItemFocused.Index);
-  RefillList;
+   Events.AtFree(lv.ItemFocused.Index);
+   RefillList;
 end;
 
 procedure TEventsForm.FormCreate(Sender: TObject);
 begin
-  FillForm(Self, rsEventsForm);
-  Events := TEventColl.Create;
+   FillForm(Self, rsEventsForm);
+   Events := TEventColl.Create;
 end;
 
 procedure TEventsForm.FormDestroy(Sender: TObject);
 begin
-  FreeObject(Events);
+   FreeObject(Events);
 end;
 
 procedure TEventsForm.RefillList;
 var
-  i: Integer;
-  e: TEventContainer;
+   i: Integer;
+   e: TEventContainer;
 begin
-  lv.Items.Clear;
-  for i := 0 to Events.Count-1 do
-  begin
-    e := Events[i];
-    with lv.Items.Add do
-    begin
-      Caption := e.FName;
-      SubItems.Add(e.Cron);
-      SubItems.Add(EvtLenDesc(e.Len, e.Permanent));
-      SubItems.Add(IntToStr(e.Atoms.Count));
-    end;
-  end;
-  UpdateButtons;
+   lv.Items.Clear;
+   for i := 0 to Events.Count - 1 do begin
+      e := Events[i];
+      with lv.Items.Add do begin
+         Caption := e.FName;
+         SubItems.Add(e.Cron);
+         SubItems.Add(EvtLenDesc(e.Len, e.Permanent));
+         SubItems.Add(IntToStr(e.Atoms.Count));
+      end;
+   end;
+   UpdateButtons;
 end;
 
 
 procedure TEventsForm.UpdateButtons;
 var
-  e: Boolean;
+   e: Boolean;
 begin
-  e := lv.ItemFocused <> nil;
-  bEdit.Enabled := e;
-  bCopy.Enabled := e;
-  bDelete.Enabled := e; 
+   e := lv.ItemFocused <> nil;
+   bEdit.Enabled := e;
+   bCopy.Enabled := e;
+   bDelete.Enabled := e;
 end;
 
 procedure TEventsForm.lvChange(Sender: TObject; Item: TListItem; Change: TItemChange);
 begin
-  UpdateButtons;
+   UpdateButtons;
 end;
 
 procedure TEventsForm.lvClick(Sender: TObject);
 begin
-  UpdateButtons;
+   UpdateButtons;
 end;
 
 procedure TEventsForm.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
-  if ModalResult <> mrOK then Exit;
-  CfgEnter;
-  XChg(Integer(Cfg.Events),Integer(Events)); 
-  CfgLeave;
-  StoreConfig(Handle);
+   if ModalResult <> mrOK then Exit;
+   CfgEnter;
+   XChg(Integer(Cfg.Events),Integer(Events));
+   CfgLeave;
+   StoreConfig(Handle);
 end;
 
 procedure TEventsForm.bHelpClick(Sender: TObject);
 begin
-  Application.HelpContext(HelpContext);
+   Application.HelpContext(HelpContext);
 end;
 
 end.

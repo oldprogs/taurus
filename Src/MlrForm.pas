@@ -609,6 +609,7 @@ type
     procedure evListViewClick(Sender: TObject);
     procedure evListViewCompare(Sender: TObject; Item1, Item2: TListItem;
       Data: Integer; var Compare: Integer);
+    procedure New1Click(Sender: TObject);
   private
     OutBSize: int64;
     aOutbound: TAnimate;
@@ -6977,6 +6978,26 @@ begin
    if Item1.Caption     > Item2.Caption     then Compare := +1 else
    if Item1.Caption     < Item2.Caption     then Compare := -1 else
                                                  Compare := 00;
+end;
+
+procedure TMailerForm.New1Click(Sender: TObject);
+var
+   e: TEventContainer;
+  ev: TEventColl;
+begin
+   Ev := TEventColl.Create;
+   Cfg.Events.AppendTo(Ev);
+   e := TEventContainer.Create;
+   if not EditEvent(e) then FreeObject(e) else begin
+      e.Id := Ev.GetUnusedId;
+      Ev.Insert(e);
+      CfgEnter;
+      XChg(Integer(Cfg.Events),Integer(Ev));
+      CfgLeave;
+      StoreConfig(Handle);
+      EventsThr.DoRecalc;
+   end;
+   FreeObject(Ev);
 end;
 
 end.

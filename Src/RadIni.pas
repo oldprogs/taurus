@@ -143,6 +143,7 @@ type
             ChatIgnoreFile: string;
             IgnoreCD: boolean;
             TrayLamps: boolean;
+            ClockVisible: boolean;
 
             OldMail7Fore: integer;
             OldMail14Fore: integer;
@@ -434,6 +435,7 @@ begin
       ChatIgnoreFile := ReadString(main, 'ChatIgnoreFile', '');
       IgnoreCD := ReadBool(main, 'IgnoreCD', False);
       TrayLamps := ReadBool(main, 'TrayLamps', False);
+      ClockVisible := ReadBool(main, 'ClockVisible', False);
       UseSpace := ReadBool(main, 'UseSpace', true);
       UseNodelistData := ReadBool(main, 'UseNodelistData', false);
       PlaySounds := ReadBool(main, 'PlaySounds', false);
@@ -652,6 +654,7 @@ begin
      DeleteKey(main, 'WaitCDDrop');
      WriteBool(main, 'IgnoreCD', IgnoreCD);
      WriteBool(main, 'TrayLamps', TrayLamps);
+     WriteBool(main, 'ClockVisible', ClockVisible);
 
      WriteString(colors, 'GaugeFore', IntToHex(GaugeFore, 6));
      WriteString(colors, 'GaugeBack', IntToHex(GaugeBack, 6));

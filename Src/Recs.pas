@@ -1187,8 +1187,7 @@ var
   s: TxMemoryStream;
   b: TCBCEncryptedCfgBlock;
 begin
-  if MasterKey = 0 then PutObjects(Stream) else
-  begin
+  if MasterKey = 0 then PutObjects(Stream) else begin
     s := GetMemoryStream;
     PutObjects(s);
     b := TCBCEncryptedCfgBlock.Create;
@@ -2701,6 +2700,10 @@ var
    i: integer;
 begin
    a := CreateAddrColl(Data.Address);
+   if AddrColl = nil then begin
+      AddrColl := TFidoAddrColl.Create;
+      AddrColl.Duplicates := False;
+   end;
    AddrColl.Enter;
    for i := 0 to a.Count - 1 do begin
       AddrColl.Ins(a[i]);
@@ -6016,14 +6019,13 @@ end;
 
 procedure TossItems(CA, CB: TColl; Items: TElementColl; var A: PIntArray; var Cnt: Integer);
 var
-  l: TLineRec;
+   l: TLineRec;
   AR: array[Boolean] of TColl;
 begin
   PurgeIdColl(Items, A, Cnt);
   AR[False] := CA;
   AR[True] := CB;
-  while Items.Count > 0 do
-  begin
+  while Items.Count > 0 do begin
     l := Items[0];
     AR[WithinIntArr(l.Id, A, Cnt)].Insert(l);
     Items.AtDelete(0);
@@ -6041,8 +6043,7 @@ begin
   ii := l.ItemIndex;
   l.Items.Clear;
   li := c.Count - 1;
-  for i := 0 to li do
-  begin
+  for i := 0 to li do begin
     r := c[i];
     l.Items.Add(r.Name);
   end;

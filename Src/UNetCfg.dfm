@@ -38,6 +38,7 @@ object NetCfg: TNetCfg
     ParentFont = False
     TabOrder = 0
     CheckBoxes = False
+    PasswordCol = 3
     ColWidths = (
       31
       157

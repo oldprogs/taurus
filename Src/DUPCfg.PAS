@@ -5,7 +5,7 @@ unit DUPCfg;
 interface
 
 uses
-  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, 
+  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms,
   StdCtrls, ComCtrls, Recs, mGrids, Menus, ImgList;
 
 type
@@ -98,8 +98,7 @@ function DialupSetup(APageIndex: Integer): Boolean;
 implementation
 
 uses xBase, MLineCfg, DevCfg, ModemCfg, DialRest, FidoStat,
-     xFido, LngTools, OvrExpl
-     {$IFDEF USE_TAPI} , xTAPI {$ENDIF};
+     xFido, LngTools, OvrExpl, xTAPI;
 
 {$R *.DFM}
 
@@ -114,8 +113,7 @@ begin
   end;
   MainConfigForm.SetData;
   Result := MainConfigForm.ShowModal = mrOK;
-  if Result and MainConfigForm.EvtChanged then
-  begin
+  if Result and MainConfigForm.EvtChanged then begin
     RecalcEvents := True;
     SetEvt(oRecalcEvents);
   end;
@@ -157,15 +155,11 @@ var
   l: TLineRec;
 begin
   lLines.Items.Clear;
-//  di := C.Lines.DefaultIdx;
-  for i := 0 to C.Lines.Count - 1 do
-  begin
+  for i := 0 to C.Lines.Count - 1 do begin
     l := C.Lines[I];
-    with lLines.Items.Add do
-    begin
+    with lLines.Items.Add do begin
       Caption := l.Name;
       SubItems.Add(C.Station.GetRecById(l.d.StationId).Name);
-      {$IFDEF USE_TAPI}
       if TPortRec(C.Ports.GetRecById(l.d.PortId)).d.Port >= MaxComPorts then begin
          if TPortRec(C.Ports.GetRecById(l.d.PortId)).n <> '' then begin
             SubItems.Add(TPortRec(C.Ports.GetRecById(l.d.PortId)).n);
@@ -173,11 +167,8 @@ begin
             SubItems.Add(GetLineName(TPortRec(C.Ports.GetRecById(l.d.PortId)).d.Port - MaxComPorts));
          end;
       end else begin
-      {$ENDIF}
          SubItems.Add(ComName(TPortRec(C.Ports.GetRecById(l.d.PortId)).d.Port));
-      {$IFDEF USE_TAPI}
       end;
-      {$ENDIF}
       SubItems.Add(C.Modems.GetRecById(l.d.ModemId) .Name);
     end;
   end;
@@ -185,16 +176,15 @@ end;
 
 procedure UpdateStations;
 var
-  i,di: Integer;
-  s: TStationRec;
+   i,
+  di: Integer;
+   s: TStationRec;
 begin
   lStation.Items.Clear;
   di := C.Station.DefaultIdx;
-  for i := 0 to C.Station.Count - 1 do
-  begin
+  for i := 0 to C.Station.Count - 1 do begin
     s := C.Station[I];
-    with lStation.Items.Add do
-    begin
+    with lStation.Items.Add do begin
       Caption := s.Name;
       if i = di then ImageIndex := 1;
       SubItems.Add(s.Data.Station);
@@ -205,18 +195,16 @@ end;
 
 procedure UpdatePorts;
 var
-  i,di: Integer;
-  p: TPortRec;
+   i,
+  di: Integer;
+   p: TPortRec;
 begin
   lPorts.Items.Clear;
   di := C.Ports.DefaultIdx;
-  for i := 0 to C.Ports.Count - 1 do
-  begin
+  for i := 0 to C.Ports.Count - 1 do begin
     p := C.Ports[I];
-    with lPorts.Items.Add do
-    begin
+    with lPorts.Items.Add do begin
       if i = di then ImageIndex := 1;
-      {$IFDEF USE_TAPI}
       if p.d.Port >= MaxComPorts then begin
          if p.n <> '' then begin
             Caption := p.n;
@@ -224,30 +212,26 @@ begin
             Caption := GetLineName(p.d.Port - MaxComPorts);
          end;
       end else begin
-      {$ENDIF}
          Caption := ComName(p.d.Port);
          SubItems.Add(IntToStr(p.d.BPS));
          SubItems.Add(p.FlowStr);
          SubItems.Add(GetLineBits(p.d.Data, p.d.Parity, p.d.Stop));
-      {$IFDEF USE_TAPI}
       end;
-      {$ENDIF}
     end;
   end;
 end;
 
 procedure UpdateModems;
 var
-  i,di: Integer;
-  m: TModemRec;
+   i,
+  di: Integer;
+   m: TModemRec;
 begin
   lModems.Items.Clear;
   di := C.Modems.DefaultIdx;
-  for i := 0 to C.Modems.Count - 1 do
-  begin
+  for i := 0 to C.Modems.Count - 1 do begin
     m := C.Modems[I];
-    with lModems.Items.Add do
-    begin
+    with lModems.Items.Add do begin
       Caption := m.Name;
       if i = di then ImageIndex := 1;
     end;
@@ -256,16 +240,15 @@ end;
 
 procedure UpdateRestrictions;
 var
-  i, di: Integer;
-  r: TRestrictionRec;
+   i,
+  di: Integer;
+   r: TRestrictionRec;
 begin
   lRestrictions.Items.Clear;
   di := C.Restrictions.DefaultIdx;
-  for i := 0 to C.Restrictions.Count - 1 do
-  begin
+  for i := 0 to C.Restrictions.Count - 1 do begin
     r := C.Restrictions[I];
-    with lRestrictions.Items.Add do
-    begin
+    with lRestrictions.Items.Add do begin
       Caption := r.Name;
       if i = di then ImageIndex := 1;
       SubItems.Add(FormatLng(rsDCItems, [r.Data.Required.Count]));
@@ -304,12 +287,12 @@ end;
 
 procedure TMainConfigForm.FormCreate(Sender: TObject);
   procedure Ins(P: Pointer); begin C.Insert(P) end;
-var i: Integer;
+var
+  i: Integer;
 begin
   FillForm(Self, rsMainConfigForm);
-  C := TMainCfgColl.Create('');
-  for i := 0 to 1 do
-  begin
+  C := TMainCfgColl.Create;
+  for i := 0 to 1 do begin
     Ins(TLineColl.Create);
     Ins(TStationColl.Create);
     Ins(TPortColl.Create);
@@ -317,7 +300,7 @@ begin
     Ins(TRestrictColl.Create);
   end;
   Img.ResourceLoad(rtBitmap, 'MARK_DEFAULT', clLtGray);
-  Ovr := TDialupNodeOvrColl.Create('Ovr');
+  Ovr := TDialupNodeOvrColl.Create;
 end;
 
 
@@ -341,9 +324,10 @@ end;
 
 procedure TMainConfigForm.UpdateButtons;
 var
-  IsDef, s: Boolean;
+  IsDef,
+   s: Boolean;
   cn: Integer;
-  p: TListItem;
+   p: TListItem;
 
 procedure SetAllVisible(V: Boolean);
 begin
@@ -362,8 +346,7 @@ end;
 begin
   if C = nil then Exit;
   cn := CurNo;
-  if cn = 5 then SetAllVisible(False) else
-  begin
+  if cn = 5 then SetAllVisible(False) else begin
     SetAllVisible(True);
     p := List(cn).ItemFocused;
     s := p <> nil;
@@ -421,7 +404,7 @@ begin
   cl := C[cn];
   ne := ec[cn].Create;
   ne.SetDefault;
-  ne.Id := GetFreeNo([cl, C[cn+5]]);
+  ne.Id := GetFreeNo([cl, C[cn + 5]]);
   cl.Insert(ne);
   evc := False;
   case CurNo of
@@ -433,13 +416,11 @@ begin
     else b := Boolean(GlobalFail('TMainConfigForm.bNewClick CurNo=%d', [CurNo]));
   end;
   EvtChanged := EvtChanged or evc;
-  if b then
-  begin
+  if b then begin
     Changed := True;
     UpdatePage(CurNo); if CurNo <> 0 then UpdatePage(0);
     UpdateButtons;
-  end else
-  begin
+  end else begin
     cl.Delete(ne);
     FreeObject(ne);
   end;
@@ -460,8 +441,7 @@ begin
     else b := Boolean(GlobalFail('TMainConfigForm.bEditClick CurNo=%d', [CurNo]));
   end;
   EvtChanged := EvtChanged or evc;
-  if b then
-  begin
+  if b then begin
     Changed := True;
     UpdatePage(CurNo); if CurNo <> 0 then UpdatePage(0);
     UpdateButtons;
@@ -477,7 +457,7 @@ begin
   cn := CurNo;
   cl := C[cn];
   ne := TAdvCpObject(cl[List(cn).ItemFocused.Index]).Copy;
-  ne.Id := GetFreeNo([cl, C[cn+5]]);
+  ne.Id := GetFreeNo([cl, C[cn + 5]]);
   cl.Insert(ne);
   UpdatePage(cn); if cn <> 0 then UpdatePage(0);
   UpdateButtons;
@@ -498,14 +478,15 @@ end;
 
 procedure TMainConfigForm.bDeleteClick(Sender: TObject);
 var
-  fi,cn: Integer;
+  fi,
+  cn: Integer;
   cl: TElementColl;
 begin
   Changed := True;
   cn := CurNo;
   cl := C[cn];
   fi := List(cn).ItemFocused.Index;
-  C.GetElement(cn+5).Insert(cl[fi]);
+  C.GetElement(cn + 5).Insert(cl[fi]);
   cl.AtDelete(fi);
   cl.InvalidateId;
   UpdatePage(cn); if cn <> 0 then UpdatePage(0);
@@ -514,13 +495,13 @@ end;
 
 procedure TMainConfigForm.bUndeleteClick(Sender: TObject);
 var
-  i, cn: Integer;
+   i,
+  cn: Integer;
   cl: TElementColl;
 begin
   cn := CurNo;
   cl := C[cn+5];
-  for i := 0 to cl.Count-1 do
-  begin
+  for i := 0 to cl.Count - 1 do begin
     C.GetElement(cn).Insert(cl[i]);
   end;
   cl.DeleteAll;
@@ -572,16 +553,15 @@ end;
 
 procedure TMainConfigForm.bEditNodeClick(Sender: TObject);
 var
-  C: TColl;
-  Msg, Item: string;
-  Idx: Integer;
+   C: TColl;
+ Msg, Item: string;
+ Idx: Integer;
 begin
   if not NdOvrVld then Exit;
-  Idx := gOvr.Row-1;
+  Idx := gOvr.Row - 1;
   if (Idx < 0) or (Idx >= Ovr.Count) then Exit;
   C := ParseOverride(TNodeOvr(Ovr[Idx]).Ovr, Msg, Item, True);
-  if CollCount(C) > 0 then
-  begin
+  if CollCount(C) > 0 then begin
     if EditOverrideEx(C, True, TNodeOvr(Ovr[Idx]).Addr) then gOvr[2, gOvr.Row] := OvrColl2Str(C);
   end;
   FreeObject(C);
@@ -590,7 +570,7 @@ end;
 procedure TMainConfigForm.mPopupClick(Sender: TObject);
 var
   cn: Integer;
-  p: TPoint;
+   p: TPoint;
   li: TListItem;
   lv: TListView;
 begin

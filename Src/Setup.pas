@@ -368,9 +368,9 @@ var
 
 implementation
 
-uses LngTools, RadIni, xFido, PathNmEx, CfgFiles
-     {$IFDEF RASDIAL}, RasThrd, {$ENDIF} AdrIBox, Recs, ShellApi
-     {$IFDEF EXTREME}, RCCUnit {$ENDIF}, MlrThr, MlrForm, UNetCfg;
+uses LngTools, RadIni, xFido, PathNmEx, CfgFiles, RasThrd,
+     AdrIBox, Recs, ShellApi, RCCUnit, MlrThr, MlrForm,
+     UNetCfg;
 
 var
    FidoAddr1: TFidoAddress;
@@ -472,7 +472,6 @@ begin
 
 //System end
 
-{$IFDEF RASDIAL}
 //RAS tab
   IniFile.iEntryName := cbEntryList.Text;
   if (IniFile.RASEnabled <> cbRasEnabled.Checked) then begin
@@ -484,7 +483,6 @@ begin
     end;
   end;
 //RAS end
-{$ENDIF}
 
 //Tray tab
   IniFile.AlwaysInTray := cbAlwaysInTray.Checked;
@@ -504,12 +502,8 @@ begin
   IniFile.Polls_log := epolls_log.Text;
   IniFile.Cronapps_log := ecronapps_log.Text;
   IniFile.tariff_log := etariff_log.Text;
-{$IFDEF WS}
   IniFile.IPDaemon_log := eipdaemon_log.Text;
-{$ENDIF}
-{$IFDEF RASDIAL}
   IniFile.ras_log := eras_log.Text;
-{$ENDIF}
 //logs end;
 
 //Remote tab
@@ -812,12 +806,8 @@ begin
   epolls_log.Text := IniFile.Polls_log;
   ecronapps_log.Text := IniFile.Cronapps_log;
   etariff_log.Text := IniFile.tariff_log;
-{$IFDEF WS}
   eipdaemon_log.Text := IniFile.IPDaemon_log;
-{$ENDIF}
-{$IFDEF RASDIAL}
   eras_log.Text := IniFile.ras_log;
-{$ENDIF}
 //logs end
 
 //RCC tab
@@ -826,7 +816,6 @@ begin
   cbCryptRCCPwd.Checked := IniFile.Remote_EncPwd;
 //RCC end
 
-{$IFDEF RASDIAL}
 //RAS tab
   cbRASEnabled.Checked := IniFile.RASEnabled;
   if (IniFile.RASEnabled)then begin
@@ -836,7 +825,6 @@ begin
      cbEntryList.ItemIndex := n;
   end;
 //RAS end
-{$ENDIF}
 
 //Protocols tab
   cbDebug.Checked := IniFile.HydraDebug;
@@ -941,7 +929,6 @@ begin
 end;
 
 procedure TSetupForm.btnReloadRASEntriesClick(Sender: TObject);
-{$IFDEF RASDIAL}
 var
    s: string;
 begin
@@ -951,9 +938,6 @@ begin
    cbEntryList.Items.Clear;
    cbEntryList.Items.AddStrings(RasThread.AllEntries);
    cbEntryList.ItemIndex := cbEntryList.Items.IndexOf(s)
-{$ELSE}
-begin
-{$ENDIF}
 end;
 
   procedure _FlashWindow(winobject: TEdit);
@@ -1018,19 +1002,19 @@ var
   _Sender: TEdit;
 begin
   _Sender := nil;// to avoid uninitialized warning;
-  case TButton(Sender).Tag of
-    0: _Sender := eHome;
-    1: _Sender := eConfigs;
-    2: _Sender := eFlags;
-    3: _Sender := eTempInbound;
-    4: _Sender := eSecureInbound;
-    5: _Sender := eInbound;
-    6: _Sender := eOutbound;
-    7: _Sender := eLogs;
-    else GlobalFail('TSetupForm.btnHomeClick, TButton(Sender).Tag = %d', [TButton(Sender).Tag]);
-  end; {of case}
-  s := Browse(Handle, _Sender.Text);
-  if s <> '' then _Sender.Text := s;
+   case TButton(Sender).Tag of
+   0: _Sender := eHome;
+   1: _Sender := eConfigs;
+   2: _Sender := eFlags;
+   3: _Sender := eTempInbound;
+   4: _Sender := eSecureInbound;
+   5: _Sender := eInbound;
+   6: _Sender := eOutbound;
+   7: _Sender := eLogs;
+   else GlobalFail('TSetupForm.btnHomeClick, TButton(Sender).Tag = %d', [TButton(Sender).Tag]);
+   end; {of case}
+   s := Browse(Handle, _Sender.Text);
+   if s <> '' then _Sender.Text := s;
 end;
 
 procedure TSetupForm.btnHelpClick(Sender: TObject);
@@ -1040,44 +1024,44 @@ end;
 
 procedure TSetupForm.sbDefGaugeClick(Sender: TObject);
 begin
-  case (Sender as TComponent).Tag of
-    0:
+   case (Sender as TComponent).Tag of
+   0:
       begin
-        cbGaugeFore.Selected := clBlack;
-        cbGaugeBack.Selected := clYellow;
+         cbGaugeFore.Selected := clBlack;
+         cbGaugeBack.Selected := clYellow;
       end;
-    1:
+   1:
       begin
-        cbLoggerBack.Selected := clBtnFace;
-        cbLoggerFore.Selected := clWindowText;
+         cbLoggerBack.Selected := clBtnFace;
+         cbLoggerFore.Selected := clWindowText;
       end;
-    2:
+   2:
       begin
-        cbBadWazooBack.Selected := clYellow;
-        cbBadWazooFore.Selected := clBlack;
+         cbBadWazooBack.Selected := clYellow;
+         cbBadWazooFore.Selected := clBlack;
       end;
-    3:
+   3:
       begin
-        cbMail7Fore.Selected := clRed;
-        cbMail7Back.Selected := clWindow;
+         cbMail7Fore.Selected := clRed;
+         cbMail7Back.Selected := clWindow;
       end;
-    4:
+   4:
       begin
-        cbMail14Fore.Selected := clRed;
-        cbMail14Back.Selected := clWindow;
+         cbMail14Fore.Selected := clRed;
+         cbMail14Back.Selected := clWindow;
       end;
-    5:
+   5:
       begin
-        cbMail21Fore.Selected := clRed;
-        cbMail21Back.Selected := clWindow;
+         cbMail21Fore.Selected := clRed;
+         cbMail21Back.Selected := clWindow;
       end;
-    6:
+   6:
       begin
-        cbMail28Fore.Selected := clRed;
-        cbMail28Back.Selected := clWindow;
+         cbMail28Fore.Selected := clRed;
+         cbMail28Back.Selected := clWindow;
       end;
-    else GlobalFail('TSetupForm.sbDefGaugeClick, (Sender as TComponent).Tag = %d', [(Sender as TComponent).Tag]);
-  end; {of case}
+   else GlobalFail('TSetupForm.sbDefGaugeClick, (Sender as TComponent).Tag = %d', [(Sender as TComponent).Tag]);
+   end; {of case}
 end;
 
 procedure TSetupForm.sbSysGaugeClick(Sender: TObject);

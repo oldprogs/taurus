@@ -1487,130 +1487,130 @@ end;
 
 function MatchMaskAddress(const Addr: TFidoAddress; const AMask: string): Boolean;
 var
-  a: Ta4s;
-  b: TFidoAddress;
-  HiC: Char;
-  i,
-  j,
-  m: Integer;
-  s,
-  z,
-  k,
-  n: string;
-  c: Char;
+   a: Ta4s;
+   b: TFidoAddress;
+ HiC: Char;
+   i,
+   j,
+   m: Integer;
+   s,
+   z,
+   k,
+   n: string;
+   c: Char;
   RE: TPCRE;
   ok: Boolean;
   fc: TFidoNodeColl;
 begin
-  HiC := #0;
-  fc := nil;
-  Result := (AMask = '*:*/*.*') or (AMask = '*:*/*') or
-            (AMask = '*:*/*.*@*') or (AMask = '*:*/*@*');
-  if Result then Exit;
-  k := StrQuotePartEx(AMask, '~', #3, #4);
-  if (Pos(#3, k) <= 0) then begin
-    Replace(#4, '~', k);
-    if not SplitAddress(k, a, True) then Exit;
-    try
-    for i := 1 to 4 do begin
-      s := IntToStr(Addr.arr[i]);
-      z := a[i];
-      if z[Length(z)] = '*' then begin
-        DelLC(z);
-        SetLength(s, Length(z));
-      end else
-      if (i = 2) and (a[3] = '#') then begin
-         b.Zone   := StrToInt(a[1]);
-         b.Net    := StrToInt(a[2]);
-         b.Node   := 0;
-         b.Point  := 0;
-         b.Domain := a[5];
-         fc := GetScope(b);
-         if fc = nil then exit;
-         b := Addr;
-         b.Point := 0;
-         try
-            if fc.Search(@b, j) then begin
-               break;
+   HiC := #0;
+   fc := nil;
+   Result := (AMask = '*:*/*.*') or (AMask = '*:*/*') or
+             (AMask = '*:*/*.*@*') or (AMask = '*:*/*@*');
+   if Result then Exit;
+   k := StrQuotePartEx(AMask, '~', #3, #4);
+   if (Pos(#3, k) <= 0) then begin
+      Replace(#4, '~', k);
+      if not SplitAddress(k, a, True) then Exit;
+      try
+         for i := 1 to 4 do begin
+            s := IntToStr(Addr.arr[i]);
+            z := a[i];
+            if z[Length(z)] = '*' then begin
+               DelLC(z);
+               SetLength(s, Length(z));
+            end else
+            if (i = 2) and (a[3] = '#') then begin
+               b.Zone   := StrToInt(a[1]);
+               b.Net    := StrToInt(a[2]);
+               b.Node   := 0;
+               b.Point  := 0;
+               b.Domain := a[5];
+               fc := GetScope(b);
+               if fc = nil then exit;
+               b := Addr;
+               b.Point := 0;
+               try
+                  if fc.Search(@b, j) then begin
+                     break;
+                  end;
+               finally
+                  fc.DeleteAll;
+                  FreeObject(fc);
+               end;
+            end else
+            if (i = 3) and (a[4] = '#') then begin
+               b.Zone   := StrToInt(a[1]);
+               b.Net    := StrToInt(a[2]);
+               b.Node   := StrToInt(a[3]);
+               b.Point  := -1;
+               b.Domain := a[5];
+               fc := GetScope(b);
+               if fc = nil then exit;
+               b := Addr;
+               b.Point := 0;
+               try
+                  if fc.Search(@b, j) then begin
+                     break;
+                  end;
+               finally
+                  fc.DeleteAll;
+                  FreeObject(fc);
+               end;
             end;
-         finally
-            fc.DeleteAll;
-            FreeObject(fc);
+            if s <> z then Exit;
          end;
-      end else
-      if (i = 3) and (a[4] = '#') then begin
-         b.Zone   := StrToInt(a[1]);
-         b.Net    := StrToInt(a[2]);
-         b.Node   := StrToInt(a[3]);
-         b.Point  := 0;
-         b.Domain := a[5];
-         fc := GetScope(b);
-         if fc = nil then exit;
-         b := Addr;
-         b.Point := 0;
-         try
-            if fc.Search(@b, j) then begin
-               break;
+         if inifile.D5Out then begin
+            if a[5] <> '*' then begin
+               if a[5] <> Addr.Domain then Exit;
             end;
-         finally
+         end;
+      finally
+         if fc <> nil then begin
             fc.DeleteAll;
             FreeObject(fc);
          end;
       end;
-      if s <> z then Exit;
-    end;
-    if inifile.D5Out then begin
-       if a[5] <> '*' then begin
-          if a[5] <> Addr.Domain then Exit;
-       end;
-    end;
-    finally
-       if fc <> nil then begin
-          fc.DeleteAll;
-          FreeObject(fc);
-       end;
-    end;
-  end else begin
-    j := 0;
-    if not SplitAddressEx(k, a, True, True) then Exit;
-    for i := 1 to 4 do begin
-      k := a[i];
-      n := '';
-      for m := 1 to Length(k) do begin
-        c := k[m];
-        case j of
-          0:
-            case c of
+   end else begin
+      j := 0;
+      if not SplitAddressEx(k, a, True, True) then Exit;
+      for i := 1 to 4 do begin
+         k := a[i];
+         n := '';
+         for m := 1 to Length(k) do begin
+            c := k[m];
+            case j of
+            0:
+               case c of
                #3: j := 3;
                #4: Exit;
-              '*': n := n + '\d*';
-              '?': n := n + '\d';
-              '0'..'9': n := n + c;
-              else Exit;
-            end;
+               '*': n := n + '\d*';
+               '?': n := n + '\d';
+               '0'..'9': n := n + c;
+               else Exit;
+               end;
 {          1:
             begin
               HiC := c;
               j := 2;
             end;}
-          2:
-            begin
-              n := n + Char(VlH(HiC+c));
-              j := 3;
+            2:
+               begin
+                  n := n + Char(VlH(HiC+c));
+                  j := 3;
+               end;
+            3:
+               begin
+                  if c = #3 then j := 0 else begin HiC := c; j := 2 end;
+               end;
             end;
-          3:
-            begin
-              if c = #3 then j := 0 else begin HiC := c; j := 2 end;
-            end;
-        end;
+         end;
+         RE := GetRegExpr('^' + n + '$');
+         ok := (RE.ErrPtr = 0) and (RE.Match(IntToStr(Addr.arr[i])) > 0) and (RE[0] <> '');
+         RE.Unlock;
+         if not ok then Exit;
       end;
-      RE := GetRegExpr('^' + n + '$');
-      ok := (RE.ErrPtr = 0) and (RE.Match(IntToStr(Addr.arr[i])) > 0) and (RE[0] <> '');
-      RE.Unlock;
-      if not ok then Exit;
-    end;
-  end;
-  Result := True;
+   end;
+   Result := True;
 end;
 
 function MatchMaskAddressListMultiple(Addrs: TFidoAddrColl; const AMaskList: string): Boolean;
@@ -3594,15 +3594,22 @@ begin
             RenameFile(n, o);
          end else
          if GetPKTFileType(n) = pftFSC39 then begin
-            i := TFileStream.Create(o, fmOpenRead);
-            p := TFileStream.Create(n, fmOpenReadWrite);
-            i.Seek($3A, soFromBeginning);
-            p.Seek(-2, soFromEnd);
-            p.CopyFrom(i, i.Size - $3A);
-            i.Free;
-            p.Free;
-            DeleteFile(o);
-            RenameFile(n, o);
+            try
+               i := nil;
+               p := nil;
+               i := TFileStream.Create(o, fmOpenRead);
+               p := TFileStream.Create(n, fmOpenReadWrite);
+               i.Seek($3A, soFromBeginning);
+               p.Seek(-2, soFromEnd);
+               p.CopyFrom(i, i.Size - $3A);
+               FreeObject(i);
+               FreeObject(p);
+               DeleteFile(o);
+               RenameFile(n, o);
+            finally
+               FreeObject(i);
+               FreeObject(p);
+            end;
          end else begin
             // hope this shit never happen or
             // PKT in a ?lo technique should be used

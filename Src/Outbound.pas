@@ -22,7 +22,8 @@ type
      TOutFileColl = class(TColl)
        function Copy: Pointer; override;
        function GetNamesColl: TStringColl;
-       function FoundFName(const FName: string): Boolean;
+       function FoundFName(const FName: string): Boolean; overload;
+       function FoundFName(const FName: string; var Index: integer): Boolean; overload;
        procedure PurgeDuplicates; overload;
        procedure PurgeDuplicates(var txMail, txFile: dword); overload;
        function Found(o: TOutFile): boolean;
@@ -40,6 +41,7 @@ type
        Twin: string;
        fMSG: boolean;
        fATT: boolean;
+       Stat: boolean;
        Nfo: TFileInfo;
        function Status: TOutStatus; virtual; abstract;
        function StatusSet: TOutStatusset; virtual; abstract;
@@ -662,7 +664,7 @@ begin
    if DS = nil then Exit;
    L := TStringColl.Create('');
    L.LoadFromStream(DS);
-   FoundFiles := TStringColl.Create('FoundFiles');
+   FoundFiles := TStringColl.Create;
    AddNew := False;
    for i := 0 to L.Count - 1 do begin
       S := L[i];
@@ -1640,7 +1642,7 @@ end;
 
 function TOutFileColl.Copy: Pointer;
 begin
-   Result := TOutFileColl.Create('TOutFileColl');
+   Result := TOutFileColl.Create;
    CopyItemsTo(TOutFileColl(Result));
 end;
 
@@ -1656,6 +1658,25 @@ begin
       r := At(i);
       if us = UpperCase(r.Name) then begin
          Result := True;
+         Exit;
+      end;
+   end;
+end;
+
+function TOutFileColl.FoundFName(const FName: string; var Index: integer): boolean;
+var
+  us: string;
+   i: Integer;
+   r: TOutFile;
+begin
+   us := UpperCase(FName);
+   Result := False;
+   Index := -1;
+   for i := 0 to Count - 1 do begin
+      r := At(i);
+      if us = UpperCase(r.Name) then begin
+         Result := True;
+         Index := i;
          Exit;
       end;
    end;
@@ -2266,12 +2287,12 @@ function TOutbound._GetOutCollP(const Single, AFull, Scan: Boolean; const Addr: 
    end;
 
 begin
-   CfgEnter;
    if not Cfg.FileBoxes.Copied then begin
+      CfgEnter;
       FreeObject(FFileBoxes);
       FFileBoxes := Cfg.FileBoxes.Copy;
+      CfgLeave;
    end;
-   CfgLeave;
    if not Scan then begin
       Result := GetIt;
    end else begin
@@ -2309,6 +2330,7 @@ begin
    f.Address := Address;
    f.fMSG := fMSG;
    f.fATT := fATT;
+   f.Stat := Stat;
    Result := f;
 end;
 

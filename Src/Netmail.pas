@@ -966,14 +966,12 @@ var
    t: string;
 begin
    if not ExistFile(pack) then exit;
-   NetColl.Enter;
    n := TMemStream.Create;
    if n <> nil then begin
       try
          n.LoadFromFile(pack);
       except
          n.Free;
-         NetColl.Leave;
          exit;
       end;
       if n.Size > SizeOf(h) then begin
@@ -1020,7 +1018,6 @@ begin
       end;
       n.Free;
    end;
-   NetColl.Leave;
 end;
 
 procedure TNetmail.ScanPacket;

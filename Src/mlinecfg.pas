@@ -106,10 +106,10 @@ begin
   C.Restrictions.FillCombo(cbRestrict, rsRecsDefaultR, Line.d.RestrictId);
   CurEvtCnt := Line.EvtCnt;
   OrgEvtCnt := Line.EvtCnt;
-  GetMem(CurEvtIds, CurEvtCnt*SizeOf(Integer));
-  GetMem(OrgEvtIds, OrgEvtCnt*SizeOf(Integer));
-  Move(Line.EvtIds^, CurEvtIds^, CurEvtCnt*SizeOf(Integer));
-  Move(Line.EvtIds^, OrgEvtIds^, OrgEvtCnt*SizeOf(Integer));
+  GetMem(CurEvtIds, CurEvtCnt * SizeOf(Integer));
+  GetMem(OrgEvtIds, OrgEvtCnt * SizeOf(Integer));
+  Move(Line.EvtIds^, CurEvtIds^, CurEvtCnt * SizeOf(Integer));
+  Move(Line.EvtIds^, OrgEvtIds^, OrgEvtCnt * SizeOf(Integer));
   RefillLists;
 end;
 
@@ -118,14 +118,11 @@ var
   i: Integer;
 begin
   CurEvtCnt := LnkEvts.Count;
-  ReallocMem(CurEvtIds, CurEvtCnt*SizeOf(Integer));
-  for i := 0 to CurEvtCnt-1 do
-  begin
+  ReallocMem(CurEvtIds, CurEvtCnt * SizeOf(Integer));
+  for i := 0 to CurEvtCnt - 1 do begin
     CurEvtIds^[i] := TElement(LnkEvts[i]).Id;
   end;
 end;
-
-
 
 procedure TMailerLineCfgForm.FormClose(Sender: TObject; var Action: TCloseAction);
 
@@ -149,26 +146,19 @@ var
   i: Integer;
 begin
   UpdateEvt;
-  if Line.EvtCnt>0 then FreeMem(Line.EvtIds, Line.EvtCnt*SizeOf(Integer));
-
-  if not EvtChanged then
-  begin
-    if CurEvtCnt <> OrgEvtCnt then EvtChanged := True else
-    begin
-      for i := 0 to CurEvtCnt-1 do
-      begin
-        if CurEvtIds^[i] <> OrgEvtIds^[i] then
-        begin
+  if Line.EvtCnt > 0 then FreeMem(Line.EvtIds, Line.EvtCnt * SizeOf(Integer));
+  if not EvtChanged then begin
+    if CurEvtCnt <> OrgEvtCnt then EvtChanged := True else begin
+      for i := 0 to CurEvtCnt - 1 do begin
+        if CurEvtIds^[i] <> OrgEvtIds^[i] then begin
           EvtChanged := True;
           Break;
         end;
       end;
     end;
   end;
-
   Line.EvtCnt := CurEvtCnt; CurEvtCnt := 0;
   Line.EvtIds := CurEvtIds; CurEvtIds := nil;
-
 end;
 
 begin
@@ -185,8 +175,7 @@ end;
 procedure TMailerLineCfgForm.bEditClick(Sender: TObject);
 begin
   UpdateEvt;
-  if SetupEvents then
-  begin
+  if SetupEvents then begin
     RefillLists;
     EvtChanged := True;
   end;
@@ -203,8 +192,8 @@ procedure TMailerLineCfgForm.FormDestroy(Sender: TObject);
 begin
   FreeObject(AvlEvts);
   FreeObject(LnkEvts);
-  if CurEvtIds <> nil then FreeMem(CurEvtIds, CurEvtCnt*SizeOf(Integer));
-  if OrgEvtIds <> nil then FreeMem(OrgEvtIds, OrgEvtCnt*SizeOf(Integer));
+  if CurEvtIds <> nil then FreeMem(CurEvtIds, CurEvtCnt * SizeOf(Integer));
+  if OrgEvtIds <> nil then FreeMem(OrgEvtIds, OrgEvtCnt * SizeOf(Integer));
 end;
 
 procedure TMailerLineCfgForm.UpdateLists;
@@ -216,10 +205,10 @@ end;
 
 procedure TMailerLineCfgForm.UpdateButtons;
 begin
-  bRight.Enabled := AvlEvts.Count>0;
-  bLeft.Enabled := LnkEvts.Count>0;
+  bRight.Enabled := AvlEvts.Count > 0;
+  bLeft.Enabled := LnkEvts.Count > 0;
   bUP.Enabled := lLnk.ItemIndex > 0;
-  bDN.Enabled := (lLnk.ItemIndex<>-1) and (lLnk.ItemIndex<lLnk.Items.Count-1);
+  bDN.Enabled := (lLnk.ItemIndex <> -1) and (lLnk.ItemIndex<lLnk.Items.Count - 1);
 end;
 
 procedure TMailerLineCfgForm.RefillLists;
@@ -256,9 +245,6 @@ procedure TMailerLineCfgForm.bDNClick(Sender: TObject);
 begin
   {}
 end;
-
-
-
 
 procedure TMailerLineCfgForm.lAvlKeyPress(Sender: TObject; var Key: Char);
 begin

@@ -416,8 +416,8 @@ begin
                   CustomInfo := '- ' + s;
                   FLogFile(Self, lfBinkPPwd);
                   if CustomInfo = '' then begin
-                     DummyNextFile := True;
-                     FGetNextFile(Self);
+//                     DummyNextFile := True;
+//                     FGetNextFile(Self);
                      T.d.State := bsIdle;
                      R.d.State := bsIdle;
                      PutString('281 Authorization OK');

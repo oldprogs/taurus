@@ -456,6 +456,7 @@ type
      ChatBuf             : string;
      ListBuf             : TStringColl;
      TRSList             : TStringColl;
+     OutList             : TOutFileColl;
      TransitRequested    : boolean;    
      Chat                : TChat;
      ChatOpened          : boolean;
@@ -3407,6 +3408,31 @@ var
 begin
    s := l;
    GetWrd(s, z, ' ');
+   t := s;
+   GetWrd(t, z, ' ');
+   if z = 'ACK' then begin
+      GetWrd(t, z, ' ');
+      if z = 'DEL' then begin
+         i := RemFiles.Matched(t);
+         if i > -1 then begin
+            RemFiles.AtFree(i);
+         end;
+      end else
+      if z = 'MOV' then begin
+      end;
+   end else
+   if z = 'DEL' then begin
+      CustomInfo := t;
+      FLogFile(Self, lfDelete);
+      if CustomInfo = '' then begin
+         ListBuf.Add('LST ACK DEL ' + t);
+      end else begin
+         ListBuf.Add('LST NAK DEL ' + t);
+      end;
+   end else
+   if z = 'MOV' then begin
+      ListBuf.Add('LST NAK MOV ' + t);
+   end else
    while trim(s) <> '' do begin
       GetWrd(s, z, ' ');
       if UpperCase(z) = 'CLR' then begin

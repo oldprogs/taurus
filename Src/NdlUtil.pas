@@ -1660,7 +1660,7 @@ begin
    if n.Addr.Point <> 0 then exit;
    Result := True;
    if n.Hub = a.Node then exit;
-   if a.Node = 0 then exit;
+   if (a.Node = 0) and (a.Point = 0) then exit;
    Result := False;
 end;
 
@@ -1673,16 +1673,19 @@ var
    o: TFidoNode;
    a: TFidoAddress;
    c: TFidoNodeColl;
+   t: TFidoAddress;
 begin
    Result := nil;
-   o := GetListedNode(Addr);
+   t := Addr;
+   if t.Point = -1 then t.Point := 0;
+   o := GetListedNode(t);
    if o = nil then exit;
-   a := Addr;
+   a := t;
    r := o.Region;
    if r = o.Addr.Net then begin
-      if (Addr.Domain = 'fidonet') or
-        ((Addr.Domain = '') and (Addr.Zone in [1..7])) then begin
-         a.Net := Addr.Zone;
+      if (t.Domain = 'fidonet') or
+        ((t.Domain = '') and (t.Zone in [1..7])) then begin
+         a.Net := t.Zone;
       end else begin
          a.Net := 0;
       end;
@@ -1693,9 +1696,9 @@ begin
       Result := TFidoNodeColl.Create;
       for i := 0 to z.Count - 1 do begin
          n := z[i];
-         a.Domain := Addr.Domain;
-         a.Zone   := Addr.Zone;
-         a.Net    := Addr.Net;
+         a.Domain := t.Domain;
+         a.Zone   := t.Zone;
+         a.Net    := t.Net;
          a.Node   := n.Addr.Node;
          a.Point  := n.Addr.Point;
          o := GetListedNode(a);
@@ -1704,16 +1707,16 @@ begin
          end;
       end;
    end;
-   if Addr.Node <> 0 then exit;
+   if t.Node <> 0 then exit;
    for i := 0 to NodeController.Table.Count - 1 do begin
       if i >= NodeController.Table.Count then break;
       z := NodeController.Table[i];
-      if (z.ZoneData.Domain = Addr.Domain) and
-         (z.ZoneData.Zone = Addr.Zone) and
-         (z.ZoneData.Region = Addr.Net) then
+      if (z.ZoneData.Domain = t.Domain) and
+         (z.ZoneData.Zone = t.Zone) and
+         (z.ZoneData.Region = t.Net) then
       begin
-         a.Domain := Addr.Domain;
-         a.Zone := Addr.Zone;
+         a.Domain := t.Domain;
+         a.Zone := t.Zone;
          a.Net := z.ZoneData.Net;
          a.Node := 0;
          a.Point := 0;

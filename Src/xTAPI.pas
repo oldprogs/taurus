@@ -493,8 +493,9 @@ begin
    end else begin
       StorLine('Request failed (' + cn + '): ' + TapiCheck(RC), False);
    end;
-   if DWORD(RC) = LINEERR_INVALLINEHANDLE then
+   if DWORD(RC) = LINEERR_INVALLINEHANDLE then begin
       Line := 0;
+   end;   
 end;
 
 procedure TTapiPort.StorLine;

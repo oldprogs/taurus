@@ -326,50 +326,47 @@ end;
 
 procedure TResolveThread.HostResolveComplete(Idx, lParam: Integer);
 var
-  a: packed record buflen, err: word end absolute lParam;
-  i,
-  j: Integer;
-  r: TResolveAsyncStruc;
-  req: TResolveRequest;
-  rsp: TResolveResponse;
-  phe: PHostEnt;
+   a: packed record buflen, err: word end absolute lParam;
+   i,
+   j: Integer;
+   r: TResolveAsyncStruc;
+ req: TResolveRequest;
+ rsp: TResolveResponse;
+ phe: PHostEnt;
 begin
-  for i := 0 to Async.Count - 1 do
-  begin
-    r := Async[i];
-    if r.MsgIdx = Idx then
-    begin
-      for j := Resp.Count - 1 downto 0 do
-      begin
-        rsp := Resp[j];
-        if rsp.HostName = r.HostName then Resp.AtFree(j);
-      end;
+   for i := 0 to Async.Count - 1 do begin
+      r := Async[i];
+      if r.MsgIdx = Idx then begin
+         for j := Resp.Count - 1 downto 0 do begin
+            rsp := Resp[j];
+            if rsp.HostName = r.HostName then Resp.AtFree(j);
+         end;
 
-      phe := @r.HostBuf;
+         phe := @r.HostBuf;
 
-      Rsp := TResolveResponse.Create;
-      Rsp.HostName := StrAsg(r.HostName);
-      Rsp.Error := a.err;
-      if a.err = 0 then begin
-        if phe^.h_addr_list <> nil then begin
-          Rsp.Addr := PDwordArray(phe^.h_addr_list^)^[0];
-        end else begin
-          Rsp.Error := -199;
-        end;
+         Rsp := TResolveResponse.Create;
+         Rsp.HostName := StrAsg(r.HostName);
+         Rsp.Error := a.err;
+         if a.err = 0 then begin
+            if phe^.h_addr_list <> nil then begin
+               Rsp.Addr := PDwordArray(phe^.h_addr_list^)^[0];
+            end else begin
+               Rsp.Error := -199;
+            end;
+         end;
+         Resp.Insert(Rsp);
+         for j := OutReq.Count - 1 downto 0 do begin
+            req := OutReq[j];
+            if r.HostName = req.HostName then begin
+               SetEvt(req.oEvt);
+               OutReq.AtFree(j);
+            end;
+         end;
+         if Async.Count = WM__NUMRESOLVE then SetEvt(oAsyncAvail);
+         Async.AtFree(i);
+         Break;
       end;
-      Resp.Insert(Rsp);
-      for j := OutReq.Count - 1 downto 0 do begin
-        req := OutReq[j];
-        if r.HostName = req.HostName then begin
-          SetEvt(req.oEvt);
-          OutReq.AtFree(j);
-        end;
-      end;
-      if Async.Count = WM__NUMRESOLVE then SetEvt(oAsyncAvail);
-      Async.AtFree(i);
-      Break;
-    end;
-  end;
+   end;
 end;
 
 function TResolveThread.AsyncIdxFound(Idx: Integer): Boolean;
@@ -1542,40 +1539,39 @@ end;
 
 function CoolResolve(const Addr: string; oBlk: DWORD; var Error: Integer): DWORD;
 var
-  i: Integer;
+   i: Integer;
   ia: DWORD;
   aa: string;
-  req: TResolveRequest;
-  rsp: TResolveResponse;
+ req: TResolveRequest;
+ rsp: TResolveResponse;
 begin
-  ia := Inet2Addr(Addr);
-  if ia = INADDR_NONE then
-  begin
-    aa := Sym2Addr(Addr);
-    if aa <> '' then begin
-       req := TResolveRequest.Create;
-       req.HostName := StrAsg(aa);
-       req.oEvt := oBlk;
-       EnterCS(ResolveThr.CS);
-       ResolveThr.InReq.Insert(req);
-       SetEvt(ResolveThr.oStartResolve);
-       LeaveCS(ResolveThr.CS);
-       WaitEvtInfinite(oBlk);
-       ResetEvt(oBlk);
-       EnterCS(ResolveThr.CS);
-       for i := 0 to ResolveThr.Resp.Count - 1 do begin
-         rsp := ResolveThr.Resp[i];
-         if rsp.HostName = aa then begin
-           if rsp.Error = 0 then ia := rsp.Addr else begin
-             ia := INADDR_NONE;
-             Error := rsp.Error;
-           end;
+   ia := Inet2Addr(Addr);
+   if ia = INADDR_NONE then begin
+      aa := Sym2Addr(Addr);
+      if aa <> '' then begin
+         req := TResolveRequest.Create;
+         req.HostName := StrAsg(aa);
+         req.oEvt := oBlk;
+         EnterCS(ResolveThr.CS);
+         ResolveThr.InReq.Insert(req);
+         SetEvt(ResolveThr.oStartResolve);
+         LeaveCS(ResolveThr.CS);
+         WaitEvtInfinite(oBlk);
+         ResetEvt(oBlk);
+         EnterCS(ResolveThr.CS);
+         for i := 0 to ResolveThr.Resp.Count - 1 do begin
+            rsp := ResolveThr.Resp[i];
+            if rsp.HostName = aa then begin
+               if rsp.Error = 0 then ia := rsp.Addr else begin
+                  ia := INADDR_NONE;
+                  Error := rsp.Error;
+               end;
+            end;
          end;
-       end;
-       LeaveCS(ResolveThr.CS);
-    end;
-  end;
-  Result := ia;
+         LeaveCS(ResolveThr.CS);
+      end;
+   end;
+   Result := ia;
 end;
 
 function Socks4Request(AHandle, AAddr, APort: DWORD; ReadOL, WriteOL: POverlapped; Method: byte; FBindAddr: string): Integer;
@@ -1592,8 +1588,7 @@ begin
   Error := False;
   result := 0;
 
-  if Method <> SOCKS_ACCEPT then
-  begin
+  if Method <> SOCKS_ACCEPT then begin
 
     Clear(r, cszr);
     r.VN := SOCKS_VERSION_4;
