@@ -1021,12 +1021,9 @@ uses Forms, SysUtils, MClasses, mGrids, LngTools, NdlUtil, xIP, Import,
 
 function DefaultZone: Integer;
 begin
-//  CfgEnter;
   Result := 0;
   if IniFile = nil then exit;
   Result := IniFile.MainAddr.Zone;
-//  Result := IniFile.DefaultZone;//Cfg.PathNames.DefaultZone;
-//  CfgLeave;
 end;
 
 function DefaultDomain: string;
@@ -3363,7 +3360,6 @@ var
   FHandle: THandle;
   FStream: TDosStream;
 begin
-//  Result := False;
   CfgEnter;
   TmpDir := StrAsg(FullPath(IniFile.InTemp));
   CfgLeave;
@@ -3373,8 +3369,7 @@ begin
   OpenBWZFile(s, FHandle, DoReadFile, True);
   BWZColl.FName := s;
   BWZColl.FHandle := FHandle;
-  if DoReadFile then
-  begin
+  if DoReadFile then begin
     FStream := TDosStream.Create(FHandle);
     T := CreateTextReaderByStream(FStream);
     if T = nil then GlobalFail('OpenBWZLog (%s) CreateTextReaderByStream (Error %d ??)', [BWZColl.FName, GetLastError]);
@@ -3413,8 +3408,7 @@ begin
       begin
         FreeObject(R);
         DeleteFile(FName);
-      end else
-      begin
+      end else begin
         BWZColl.Insert(R);
       end;
 
@@ -3442,14 +3436,12 @@ begin
   uf := UpperCase(FName);
   r := nil;
   BWZColl.Enter;
-  for i := 0 to BWZColl.Count - 1 do
-  begin
+  for i := 0 to BWZColl.Count - 1 do begin
     r := BWZColl.At(i);
     if Match and (CompareAddrs(r.Addr, Addr) = 0) then Break else r := nil;
   end;
   if (r = nil) and (CollMax(AddrList) >= 0) then
-  for i := 0 to BWZColl.Count - 1 do
-  begin
+  for i := 0 to BWZColl.Count - 1 do begin
     r := BWZColl.At(i);
     if Match and (AddrList.Search(@Addr, j)) then Break else r := nil;
   end;
@@ -3474,99 +3466,83 @@ function MoveFileSmart(const S1: string; var S2: string; ReplaceExisting: Boolea
 
 procedure DoIt;
 var
-  dr, nm, ex: string;
-  TN: string;
-  AlreadExists: Boolean;
-  flags: DWORD;
+   dr,
+   nm,
+   ex: string;
+   TN: string;
+   AlreadExists: Boolean;
+   flags: DWORD;
 begin
-  Overwritten := False;
-
-  if (Win32Platform = VER_PLATFORM_WIN32_NT) then
-  begin
-//09.01.2001 - DV - different drives!!!
-//--//--//
-    if s1[1] <> s2[1] then flags := MOVEFILE_COPY_ALLOWED
-    else flags := 0;
-    Result := MoveFileEx(PChar(S1), PChar(S2), flags)
-//--//--//
-  end else
-  begin
-    Result := MoveFile(PChar(S1), PChar(S2));
-// Will it fail?
-//    Result := MoveFileEx(PChar(S1), PChar(S2), flags)
-// yes it fails :(
-  end;
-  if Result then Exit;
-  if not ReplaceExisting then
-  begin
-    if IniFile.IncrementArcmail then
-    begin
-      FSplit(S2, dr, nm, ex);
-      if (Length(ex) = 4) and (IsArcmailExt(ex)) then
-      begin
-        case ex[4] of
-          '0'..'8',
-          'a'..'y', 'A'..'Y':
-            Inc(ex[4]);
-          '9':
-            ex[4] := 'a';
-          else begin
-            Result := False;
-            SetErrorMsg('Invalid extension to increment: ' + ex);
-            exit;
-          end;
-        end;
-        S2 := dr + nm + ex;
-        Result := MoveFileSmart(S1, S2, ReplaceExisting, Overwritten);
-      end;
-    end;
-    Exit;
-  end;
-  case GetLastError of
-    ERROR_FILE_EXISTS,
-    ERROR_ALREADY_EXISTS: AlreadExists := True;
-    else AlreadExists := False;
-  end;
-  if (not AlreadExists) and (FileExists(S1)) and (FileExists(S2)) then AlreadExists := True;
-  if AlreadExists then
-  begin
-    if (Win32Platform = VER_PLATFORM_WIN32_NT) then
-    begin
-      Result := MoveFileEx(PChar(S1), PChar(S2), MOVEFILE_REPLACE_EXISTING);
-      if Result then Overwritten := True;
-    end else
-    begin
-      TN := Format('%s%x.%x', [ExtractFilePath(S2), GetTickCount xor xRandom32, xRandom32 and $FFF]);
-      if not MoveFile(PChar(S2), PChar(TN)) then Exit;
-      Overwritten := True;
+   Overwritten := False;
+   if (Win32Platform = VER_PLATFORM_WIN32_NT) then begin
+      if s1[1] <> s2[1] then flags := MOVEFILE_COPY_ALLOWED
+                        else flags := 0;
+      Result := MoveFileEx(PChar(S1), PChar(S2), flags)
+   end else begin
       Result := MoveFile(PChar(S1), PChar(S2));
-      if Result then
-      begin
-        DeleteFile(TN);
-      end else
-      begin
-        Result := MoveFile(PChar(TN), PChar(S2));
-//        MoveFileEx(PChar(TN), PChar(S2), flags)
+   end;
+   if Result then Exit;
+   if not ReplaceExisting then begin
+      if IniFile.IncrementArcmail then begin
+         FSplit(S2, dr, nm, ex);
+         if (Length(ex) = 4) and (IsArcmailExt(ex)) then begin
+            case ex[4] of
+            '0'..'8',
+            'a'..'y', 'A'..'Y':
+               Inc(ex[4]);
+            '9':
+               ex[4] := 'a';
+            else
+               begin
+                  Result := False;
+                  SetErrorMsg('Invalid extension to increment: ' + ex);
+                  exit;
+               end;
+            end;
+            S2 := dr + nm + ex;
+            Result := MoveFileSmart(S1, S2, ReplaceExisting, Overwritten);
+         end;
       end;
-    end;
-  end;
+      Exit;
+   end;
+   case GetLastError of
+   ERROR_FILE_EXISTS,
+   ERROR_ALREADY_EXISTS: AlreadExists := True;
+   else AlreadExists := False;
+   end;
+   if (not AlreadExists) and (FileExists(S1)) and (FileExists(S2)) then AlreadExists := True;
+   if AlreadExists then begin
+      if (Win32Platform = VER_PLATFORM_WIN32_NT) then begin
+         Result := MoveFileEx(PChar(S1), PChar(S2), MOVEFILE_REPLACE_EXISTING);
+         if Result then Overwritten := True;
+      end else begin
+         TN := Format('%s%x.%x', [ExtractFilePath(S2), GetTickCount xor xRandom32, xRandom32 and $FFF]);
+         if not MoveFile(PChar(S2), PChar(TN)) then Exit;
+         Overwritten := True;
+         Result := MoveFile(PChar(S1), PChar(S2));
+         if Result then begin
+            DeleteFile(TN);
+         end else begin
+            Result := MoveFile(PChar(TN), PChar(S2));
+         end;
+      end;
+   end;
 end;
 
 begin
-  Result := False;
-  if (S1 = '') or (S2 = '') then Exit;
-  DoIt;
-  if not Result then
-  begin
-    case GetLastError of
+   Result := False;
+   if (S1 = '') or (S2 = '') then Exit;
+   DoIt;
+   if not Result then begin
+      case GetLastError of
       ERROR_FILE_EXISTS,
       ERROR_ALREADY_EXISTS:;
       else
-      begin
-        SetErrorMsg(Format('%s -> %s', [S1, S2]));
+         begin
+            SetErrorMsg(Format('%s -> %s', [S1, S2]));
+         end;
       end;
-    end;
-  end;
+   end;
 end;
 
 function TBWZRec.Toss;
@@ -4463,176 +4439,146 @@ end;
 
 function GetNodeOvrData(const Addr: TFidoAddress; {$IFDEF WS}Dialup: Boolean; {$ENDIF}ALNode: TFidoNode): TColl;
 var
-  o: TNodeOvr;
+   o: TNodeOvr;
   OC: TAbsNodeOvrColl;
-  i,
-  fcp: Integer;
-  s,
-  z,
+   i,
+ fcp: Integer;
+   s,
+   z,
   ss: string;
   fc: TStringColl;
   OvrColl: TColl;
   OvrData: TOvrData;
   dn: TFidoNode;
   an: TAdvNodeData;
-  Msg,
-  Item: string;
+ Msg,
+Item: string;
   TS: string; {*}
 
 procedure DoAdd;
 begin
-  an := TAdvNodeData.Create;
-  {$IFDEF WS}if not Dialup then an.IpAddr := s else{$ENDIF} an.Phone := s;
-  an.Flags := z;
-  InsUA(Result, an);
+   an := TAdvNodeData.Create;
+   if not Dialup then an.IpAddr := s else an.Phone := s;
+   an.Flags := z;
+   InsUA(Result, an);
 end;
 
 begin
-  dn := nil;
-  Result := nil;
-  s := '';
+   dn := nil;
+   Result := nil;
+   s := '';
 
-  if s = '' then
-  begin
-    {$IFDEF WS}if Dialup then{$ENDIF}
-    begin
-      EnterCS(AuxDialupNodeOverridesCS);
-      OC := AuxDialupNodeOverrides;
-    end
-    {$IFDEF WS}
-    else
-    begin
-      EnterCS(AuxIpNodeOverridesCS);
-      OC := AuxIpNodeOverrides;
-    end{$ENDIF};
+   if s = '' then begin
+      if Dialup then begin
+         EnterCS(AuxDialupNodeOverridesCS);
+         OC := AuxDialupNodeOverrides;
+      end else begin
+         EnterCS(AuxIpNodeOverridesCS);
+         OC := AuxIpNodeOverrides;
+      end;
+      for i := 0 to CollMax(OC) do begin
+         o := OC[i];
+         if CompareAddrs(Addr, o.Addr) = 0 then begin s := o.Ovr; Break end;
+      end;
+      if Dialup then begin
+         LeaveCS(AuxDialupNodeOverridesCS);
+      end else begin
+         LeaveCS(AuxIpNodeOverridesCS);
+      end;
+   end;
 
-    for i := 0 to CollMax(OC) do
-    begin
-      o := OC[i];
-      if CompareAddrs(Addr, o.Addr) = 0 then begin s := o.Ovr; Break end;
-    end;
-    {$IFDEF WS}if Dialup then{$ENDIF}
-    begin
-      LeaveCS(AuxDialupNodeOverridesCS);
-    end
-    {$IFDEF WS}
-    else
-    begin
-      LeaveCS(AuxIpNodeOverridesCS);
-    end{$ENDIF};
-  end;
+   if s = '' then begin
+      CfgEnter;
+      if Dialup then OC := Cfg.DialupNodeOverrides else OC := Cfg.IPNodeOverrides;
+      for i := 0 to OC.Count - 1 do begin
+         o := OC[i];
+         if CompareAddrs(Addr, o.Addr) = 0 then begin s := StrAsg(o.Ovr); Break end;
+      end;
+      CfgLeave;
+   end;
 
-  if s = '' then
-  begin
-    CfgEnter;
-    if {$IFDEF WS}Dialup{$ELSE}True{$ENDIF} then OC := Cfg.DialupNodeOverrides {$IFDEF WS}else OC := Cfg.IPNodeOverrides{$ENDIF};
-    for i := 0 to OC.Count - 1 do
-    begin
-      o := OC[i];
-      if CompareAddrs(Addr, o.Addr) = 0 then begin s := StrAsg(o.Ovr); Break end;
-    end;
-    CfgLeave;
-  end;
+   if (s = '') and (Addr.Zone = $FFFF) then begin
+      s := IniFile.ReadString('Grids', 'gSMTP' + IntToStr(Addr.Point), '');
+      if s <> '' then begin
+         s := '"' + ExtractWord(2, s, ['|']) + '",CM,POP';
+      end;
+   end;
 
-  if (s = '') and (Addr.Zone = $FFFF) then begin
-     s := IniFile.ReadString('Grids', 'gSMTP' + IntToStr(Addr.Point), '');
-     if s <> '' then begin
-        s := '"' + ExtractWord(2, s, ['|']) + '",CM,POP';
-     end;
-  end;
+   if s = '' then Exit;
 
-  if s = '' then Exit;
-
-  OvrColl := ParseOverride(s, Msg, Item, {$IFDEF WS}Dialup{$ELSE}True{$ENDIF});
-  if OvrColl = nil then Exit;
-  for i := 0 to OvrColl.Count - 1 do
-  begin
-    OvrData := OvrColl[i];
-    s := OvrData.PhoneDirect;
-    if s = '' then
-    begin
-      dn := GetListedNode(OvrData.PhoneNodelist);
-      if dn <> nil then begin
-         if {$IFDEF WS} Dialup {$ELSE} true {$ENDIF}then s := dn.Phone
-                   else
-         begin
-            s := FindIPAddr(dn);
+   OvrColl := ParseOverride(s, Msg, Item, Dialup);
+   if OvrColl = nil then Exit;
+   for i := 0 to OvrColl.Count - 1 do begin
+      OvrData := OvrColl[i];
+      s := OvrData.PhoneDirect;
+      if s = '' then begin
+         dn := GetListedNode(OvrData.PhoneNodelist);
+         if dn <> nil then begin
+            if Dialup then s := dn.Phone else begin
+               s := FindIPAddr(dn);
+            end;
          end;
       end;
-    end;
-    if s <> '' then
-    begin
-      if TransportMatch(s, {$IFDEF WS}Dialup{$ELSE}True{$ENDIF}) then
-      begin
-        if dn <> nil then ss := dn.Flags else
-        if ALNode <> nil then ss := ALNode.Flags else ss := '';
-        z := OvrData.Flags;
-        fc := TStringColl.Create;
-        if Pos(',!ALL,', ',' + UpperCase(z) + ',') = 0 then
-        begin
-          fc.FillEnum(ss, ',', False);
-          if (Pos(',!CM,', ',' + UpperCase(z) + ',') <> 0) or
-             (Pos(',CM,', ',' + UpperCase(z) + ',') <> 0) or
-             (NodeFSC62Local(z) <> []) then
-          begin
-            PurgeTimeFlags(fc);
-          end;
-        end;
-        while z <> '' do
-        begin
-          GetWrd(z, ss, ',');
-          if ss = '' then Continue;
-          if ss[1] = '!' then
-          begin
-            if (TS = '!01') or (TS = '!02') or (TS = '!08') or (TS = '!09') or (TS = '!18') or (TS = '!20') then {*}
-            begin {*}
-              if not fc.FoundUC(ss) then fc.Add(ss);
-            end else {*}
-            begin {*}
-              DelFC(ss);
-              if UpperCase(ss) <> 'ALL' then
-              begin
-                fcp := fc.IdxOfUC(ss);
-                if fcp <> -1 then fc.AtFree(fcp);
-              end;
-            end;
-          end else
-          begin
-            if not fc.FoundUC(ss) then fc.Add(ss);
-          end;
-        end;
-        z := fc.LongStringD(',');
-//        z := OvrData.Flags;
-        FreeObject(fc);
-        if TransportFlagsMatch(s, z, {$IFDEF WS}Dialup{$ELSE}True{$ENDIF}) then DoAdd else
-        begin
-          if{$IFDEF WS}Dialup{$ELSE}True{$ENDIF} then
-          begin
+      if s <> '' then begin
+         if TransportMatch(s, Dialup) then begin
+            if dn <> nil then ss := dn.Flags else
+            if ALNode <> nil then ss := ALNode.Flags else ss := '';
+            z := OvrData.Flags;
             fc := TStringColl.Create;
-            fc.FillEnum(z, ',', False);
-            PurgeIpFlags(fc);
+            if Pos(',!ALL,', ',' + UpperCase(z) + ',') = 0 then begin
+               fc.FillEnum(ss, ',', False);
+               if (Pos(',!CM,', ',' + UpperCase(z) + ',') <> 0) or
+                  (Pos(',CM,', ',' + UpperCase(z) + ',') <> 0) or
+                  (NodeFSC62Local(z) <> []) then
+               begin
+                  PurgeTimeFlags(fc);
+               end;
+            end;
+            while z <> '' do begin
+               GetWrd(z, ss, ',');
+               if ss = '' then Continue;
+               if ss[1] = '!' then begin
+                  if (TS = '!01') or (TS = '!02') or (TS = '!08') or (TS = '!09') or (TS = '!18') or (TS = '!20') then begin
+                     if not fc.FoundUC(ss) then fc.Add(ss);
+                  end else begin
+                     DelFC(ss);
+                     if UpperCase(ss) <> 'ALL' then begin
+                        fcp := fc.IdxOfUC(ss);
+                        if fcp <> -1 then fc.AtFree(fcp);
+                     end;
+                  end;
+               end else begin
+                  if not fc.FoundUC(ss) then fc.Add(ss);
+               end;
+            end;
             z := fc.LongStringD(',');
-//            if TransportFlagsMatch(s, z , {$IFDEF WS}Dialup{$ELSE}True{$ENDIF}) then
-             DoAdd;
             FreeObject(fc);
-          end;
-        end;
+            if TransportFlagsMatch(s, z, Dialup) then DoAdd else begin
+               if Dialup then begin
+                  fc := TStringColl.Create;
+                  fc.FillEnum(z, ',', False);
+                  PurgeIpFlags(fc);
+                  z := fc.LongStringD(',');
+                  DoAdd;
+                  FreeObject(fc);
+               end;
+            end;
+         end;
       end;
-    end;
-  end;
-  FreeObject(OvrColl);
+   end;
+   FreeObject(OvrColl);
 end;
 
 procedure PostCloseMessage;
 begin
-  wmclose := true;
-  if Application.MainForm <> nil then _PostMessage(Application.MainForm.Handle, WM_CLOSE, 0, 0);
-  ExitNow := True;
+   wmclose := true;
+   if Application.MainForm <> nil then _PostMessage(Application.MainForm.Handle, WM_CLOSE, 0, 0);
+   ExitNow := True;
 end;
 
 var
-  zePos, rePos, nePos, pePos:byte;
-  ImportMainAddr: TFidoAddress;
+   zePos, rePos, nePos, pePos:byte;
+   ImportMainAddr: TFidoAddress;
 
 function GetEndCodes(var SAddr:ShortString):Boolean;assembler;
 asm

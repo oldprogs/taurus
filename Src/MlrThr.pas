@@ -13,9 +13,7 @@ type
     mcVersion,
     mcShell,
     mcOutbound,
-{$IFDEF WS}
     mcDaemon,
-{$ENDIF}
     mcHelp,
     mcExit    
   );
@@ -186,13 +184,12 @@ const
 {$ENDIF}
 
   MaxLogStrings = 200;
-{$IFDEF WS}
   PollOwnerDaemon  = Pointer($FFFFFFFC);
   PanelOwnerDaemon = Pointer($FFFFFFFD);
-{$ENDIF}
   PollOwnerExtApp  = Pointer($FFFFFFFE);
   PanelOwnerPolls  = Pointer($FFFFFFFF);
   PanelOwnerOutMgr = Pointer($FFFFFFFB);
+  PanelOwnerSystem = Pointer($FFFFFFFA);
 
 var
   RASInvoked: boolean = False;
@@ -210,7 +207,6 @@ type
 
   TFidoPoll = class;
 
-  {$IFDEF WS}
   TNewIpLineData = class
     Poll: TFidoPoll;
     IpPort: DWORD;
@@ -218,7 +214,6 @@ type
     aTyp: DWORD;
     Addr: string;
   end;
-  {$ENDIF}
 
   TFaxMode = (fmdNone, fmdFAX);
 
@@ -340,11 +335,9 @@ type
      msIdle,
      msIdleA,
      msIdleA_Expired,
-{$IFDEF USE_TAPI}
      msIdle_TAPI,
      msStartIdle_TAPI,
      msIdleT_Expired,
-{$ENDIF}
      msModemCmdIdle,
      msStartAnswer,
      msAnswerFailed,
@@ -512,14 +505,12 @@ type
     procedure Refill; override;
   end;
 
-{$IFDEF WS}
   TDaemonEventProcessor = class(TAbstractEventProcessor)
     CS: TRTLCriticalSection;
     constructor Create;
     destructor Destroy; override;
     procedure Refill; override;
   end;
-{$ENDIF}
 
   TMailerThread = class;
   TCronThread = class;
@@ -545,7 +536,6 @@ type
     function GetProcessColl: Pointer; override;
   end;
 
-  {$IFDEF WS}
   TDaemonThreadLogger = class(TAbstractLogger)
     LogCS: TRTLCriticalSection;
     procedure Log(CurTag: TLogTag; const CurStr: string); override;
@@ -553,7 +543,6 @@ type
     constructor Create;
     destructor Destroy; override;
   end;
-  {$ENDIF}
 
   TMlrEvt = class
     procedure Execute(T: TMailerThread); virtual; abstract;
@@ -1053,7 +1042,6 @@ type
     TimeDiff: integer; //Разница во времени между состоянием
                        //до синхронизации часов и после
     SkipNextTic, RejectNextTic: boolean;
-  {$IFDEF WS}
     toEMSI_CR,
     toEMSI_S3,
     toEMSI_Block,
@@ -1062,7 +1050,6 @@ type
     IpIdx: DWORD;
     iCRC: DWORD;
     CurrentIPFlag: TLockFile;
-  {$ENDIF}
     ProtCore: TProtCore;
     __FName: string;
     __LineNumber: DWORD;
@@ -1209,17 +1196,13 @@ type
     function HangupModem: Boolean;
 //    procedure ChkFileFlags;
     procedure LogPoll(const S: string);
-    {$IFDEF WS}
     procedure LogDaemon(const S: string);
-    {$ENDIF}
     procedure LogBinkPNul(const S: string);
     function ChkNonEmsiPwd(P: TBaseProtocol): Boolean;
     function FindPassword(const A: TFidoAddress; P: TBaseProtocol): boolean;
     function ChkBinkPAdr(const S: string; P: TBaseProtocol): Boolean;
     function GetBinkPPwd(const A: TFidoAddress): string;
-    {$IFDEF WS}
     procedure CopyIpStation;
-    {$ENDIF}
     procedure DoCopyDialupStation;
     procedure GetAddrs(const S: string);
     function GetPortName: string;
@@ -1264,12 +1247,8 @@ type
     procedure DoRescan;
 {2}public
     DU_InGr, DU_OutGr: array[0..TCPIP_GrDataSz] of Integer;
-    {$IFDEF WS}
     DialupLine: Boolean;
-    {$IFDEF USE_TAPI}
     TapiDevice: Boolean;
-    {$ENDIF}
-    {$ENDIF}
     CP_CS: TRTLCriticalSection;
     fsttic,
     timeonline: cardinal;
@@ -1279,6 +1258,8 @@ type
 
     State: TMailerState;
     OwnPolls: TColl;
+
+    StatusMsg: string;
 
     AnswerAfterInit,
     SessionIsOn,
@@ -1309,6 +1290,7 @@ type
 
     OldInC: string;
 
+    function GetState: string;
     function GetThrErrorMsg: string; override;
     procedure TossBWZ(Manual: boolean);
     procedure ScanOut(Wait: boolean);
@@ -1401,8 +1383,6 @@ type
 
   TPollState = (plsUNK, plsBSY, plsAVL, plsN_A, plsPUB, plsFRB, plsPSD, plsHld);
 
-
-{$IFDEF WS}
   TIPPollsThread = class(T_Thread)
     oSleep: DWORD;
     DaemonExtPollThreads: TColl;
@@ -1417,7 +1397,6 @@ type
     procedure BurnOutLine(p: TFidoPoll);
     class function ThreadName: string; override;
   end;
-{$ENDIF}
 
 const
   yhY_DIETIFNA = $0001;
@@ -1437,9 +1416,7 @@ var
   MailerTransit: TColl;
   OutMgrThread: TOutMgrThread;
   CronThr: TCronThread;
-{$IFDEF WS}
   IPPolls: TIPPollsThread;
-{$ENDIF}
 
 function OpenMailerThread(APort: TPort; ALineId: DWORD{$IFDEF WS}; NI: TNewIPLineData{$ENDIF}; ACW, ACH: Integer): TMailerThread;
 procedure ShowIt(const S: String; ShowBalloonTT: boolean);
@@ -1448,10 +1425,8 @@ procedure _RecreatePolls;
 procedure  RecreatePolls(c: TOutNodeColl);
 procedure InitMailers;
 procedure DoneMailers;
-{$IFDEF WS}
 procedure _RunDaemon;
 procedure _ShutdownDaemon;
-{$ENDIF}
 procedure FidoPollsLog(const s: string);
 function NodeDataStr(ANode: TAdvNode; AddFlags: Boolean): string;
 function NodeFlags(ANode: TAdvNode; Dialup: boolean): string;
@@ -1482,15 +1457,8 @@ uses
    LngTools, NdlUtil, Forms, ShellApi, Ras, p_Zmodem, p_Hydra,
    p_Binkp, FTS1, xNiagara, tarif, AltRecs, Plus,
    p_RCC, p_FTP, p_HTTP, p_SMTP, p_POP3, p_GATE, p_NNTP,
-   MlrForm {$IFDEF RASDIAL}, RasThrd {$ENDIF},
-   Netmail, RadIni, Wizard, SysUtils, mmSystem, Reader
-   {$IFDEF WS}
-   , xIP
-   {$ENDIF}
-   {$IFDEF USE_TAPI}
-   , xTAPI
-   {$ENDIF}
-   ;
+   MlrForm, RasThrd, Netmail, RadIni, Wizard, SysUtils, mmSystem,
+   Reader, xIP, xTAPI, RadSav;
 
 procedure ShowIt(const S: string; ShowBalloonTT: boolean);
 var
@@ -1570,7 +1538,6 @@ begin
   if not defined then result := IniFile.ChatBell;
   CloseFile(FileID);
 end;
-
 
 type
    TCommonLog = class
@@ -1721,11 +1688,9 @@ const
       'msIdle',
       'msIdleA',
       'msIdleA_Expired',
-{$IFDEF USE_TAPI}
       'msIdle_TAPI',
       'msStartIdle_TAPI',
       'msIdleT_Expired',
-{$ENDIF}
       'msModemCmdIdle',
       'msStartAnswer',
       'msAnswerFailed',
@@ -1873,10 +1838,8 @@ var
    EventsThr: TEventsThread;
    Zombies: TColl;
    LastZombiesPurged: EventTimer;
-{$IFDEF WS}
    DaemonEvents: TDaemonEventProcessor;
    DaemonActiveFlag: TLockFile;
-{$ENDIF}
 
    // --- Service routines
 
@@ -2109,16 +2072,14 @@ var
 
 begin
    Result := False;
-   // find our poll
    if SC = nil then
       NI := PP.Idx
    else
       NI := 0;
-{$IFDEF WS}
    if not Dialup then
       dc := P.Node.IPData
    else
-{$ENDIF}dc := P.Node.DialupData;
+      dc := P.Node.DialupData;
    if dc = nil then begin
       if P.Node.Ext = nil then begin
          if SC <> nil then SC.Add(' ? ' + LngStr(rsMMpiNoData));
@@ -2132,11 +2093,9 @@ begin
       idx := NI mod DWORD(dc.Count);
       d := dc[idx];
       Inc(NI);
-{$IFDEF WS}
       if not Dialup then
          s := d.IPAddr
       else
-{$ENDIF}
          s := WipePhoneNumber(d.Phone);
       if not DialAllowed(Restriction, d.Flags, s, P.Node.Addr, m) then begin
          if SC <> nil then LogThis('*', FormatLng(rsMMpiRA, [m]));
@@ -4418,10 +4377,18 @@ end;
 {$ENDIF}
 
 procedure TMailerThread.SetStatusMsg(Id: DWORD; const Param: string);
+var
+   s: string;
 begin
    D.StatusMsg := Id;
    DS.StatusParam := Param;
    DisplayData;
+   if pos(';', Param) = 0 then
+      s := FormatLng(Id, [Param])
+   else
+      s := FormatLng(Id, [Wizard.ExtractWord(1, Param, [';']), Wizard.ExtractWord(2, Param, [';'])]);
+   ShowIt(s, True);
+   StatusMsg := s;
 end;
 
 procedure TMailerThread.DoInvokeExec;
@@ -5045,11 +5012,11 @@ const
             end;
             TRSList.Add(P.CustomInfo);
          end else begin
-            P.CustomInfo := 'NAK'
+            P.CustomInfo := 'NAK';
+            FreeObject(n);
          end;
-         FreeObject(n);
       end else begin
-         P.CustomInfo := 'NAK'
+         P.CustomInfo := 'NAK';
       end;
    end;
 
@@ -5299,10 +5266,10 @@ begin
       SD.rmtAddrs := TFidoAddrColl.Create;
       SD.rmtAddrs.Add(SD.ActivePoll.Node.Addr);
    end;
-   CfgEnter;
    for n := 0 to SD.rmtAddrs.Count - 1 do begin
       if IniFile.D5out then begin
          OK := False;
+         CfgEnter;
          for i := 0 to CollMax(Cfg.IpDomA) do begin
             if MatchMaskAddressListSingle(SD.rmtAddrs[n], Cfg.IpDomA[i]) then begin
                if (AltCfg.IpDomC[i] = '') and
@@ -5314,8 +5281,10 @@ begin
                OK := True;
             end;
          end;
+         CfgLeave;
          if not OK then begin
             sss := LowerCase(SD.rmtAddrs[n].Domain);
+            CfgEnter;
             i := AltCfg.IpDomC.IdxOf(sss);
             if i = -1 then begin
                if SD.rmtAddrs[n].Domain <> '' then begin
@@ -5328,13 +5297,13 @@ begin
                StoreConfigAfter := True;
                Cfg.IpDomA[i] := Cfg.IpDomA[i] + ' ' + IntToStr(SD.rmtAddrs[n].Zone) + ':*/*';
             end;
+            CfgLeave;
          end;
       end;
       if (IniFile.DynamicRouting or IniFile.ScanMSG) and
          (SD.PasswordProtected or (SD.ActivePoll <> nil)) and
          (NetmailHolder <> nil) and not (SD.SessionCore in [scNNTP]) then NetmailHolder.Route(SD.rmtAddrs[n], SD.ActivePoll <> nil, Log);
    end;
-   CfgLeave;
    N := 0;
    TransmitHold := SD.ActivePoll = nil;
    if not TransmitHold then begin
@@ -6797,7 +6766,7 @@ begin
                   MergeMail(r.Address, r.Name, r.Orig);
                end;
             end;
-         aaSysError: ;
+         aaSysError,
          aaAbort:
             begin
                LogFmt(ltWarning, 'Protocol aborted while sending ''%s''', [P.T.D.FName]);
@@ -6913,8 +6882,7 @@ begin
    end;
    try
    SD.OutFiles.Enter;
-{$IFDEF WS}LogHandshakeStart;
-{$ENDIF}
+   LogHandshakeStart;
    P.T.D.State := bsActive;
    P.T.D.ErrPos := 0;
    P.T.D.FName := '';
@@ -7153,6 +7121,11 @@ begin
    finally
       SD.OutFiles.Leave;
    end;
+end;
+
+function TMailerThread.GetState: string;
+begin
+   Result := MlrThreadStateName[State];
 end;
 
 function TMailerThread.GetThrErrorMsg: string;
@@ -8033,13 +8006,10 @@ begin
          // timeout
          sc := SD.LoginScript[3];
          s := sc[SD.LoginStep];
-         if s = '' then
-         begin
+         if s = '' then begin
             if SD.LoginStep > 0 then Dec(SD.LoginStep);
             State := msHSh_Login_1;
-         end
-         else
-         begin
+         end else begin
             SendModemString(s);
             State := msHSh_Login_2;
          end;
@@ -8050,13 +8020,11 @@ begin
          SetTmr1(toEMSI_CR, msHSh_s1t);
          //visual. Send <CR> until ANY character is received.
          if SD.MayRCC then SendStr(EMSI_RCC) else
-         if length(SD.InB) > 0 then
-         begin
+         if length(SD.InB) > 0 then begin
             SD.Tries := 0;
             SetTmr1(1, msHSh_s1t);
             State := msHSh_s1t;
-         end
-         else
+         end else
          if SD.MayEMSI then SendStr(EMSI_CR) else
          if SD.MayYooHoo then SendStr(ccYooHoo);
          State := msHSh_sw;
@@ -8067,7 +8035,7 @@ begin
       begin
          seq := IdentEMSISeq(SD.InB, iCRC);
          case seq of
-            es_None:
+         es_None:
             begin
 {               if SD.MayRCC then begin
                   Log(ltGlobalErr, 'No RCC protocol at remote, disconnecting');
@@ -9329,6 +9297,7 @@ begin
       begin
          // protocol checks for an abort by local console (Prot.CancelRequested)
          // and carrier (CP.DCD)
+         StatusMsg := 'Session (' + SD.Prot.Name + ') with ' + Addr2Str(SD.rmtPrimaryAddr);
          if NeedRescan then DoRescan;
          if SD.FileRefuse then begin
             SD.Prot.FileRefuse := True;
@@ -10953,11 +10922,11 @@ var
       if SC = nil then Exit;
       result := _AttachFiles(SC, A, Status, Action);
       FreeObject(SC);
-      if Poll then
-      begin
+      if Poll then begin
          an := FindNode(A);
-         if an <> nil then
+         if an <> nil then begin
             InsertPoll(an, [], ptpManual);
+         end;
       end;
       if Application.MainForm <> nil then PostMessage(Application.MainForm.Handle, WM_REREADOUTB, 0, 0);
    end;
@@ -10972,33 +10941,28 @@ begin
          end;
       msOC_1:
          begin
-            if TimerInstalled(D.TmrPublic) then
-            begin
+            if TimerInstalled(D.TmrPublic) then begin
                sleep(100);
-               if TimerExpired(D.TmrPublic) then
-               begin
+               if TimerExpired(D.TmrPublic) then begin
                   state := msRemCtrlTimeOut;
                   LogFmt(ltInfo, 'Remote Control Timeout', []);
                end
-            end
-            else
+            end else begin
                SetTmrPublic(180, msRemCtrlTimeOut);
+            end;
 
             CmdAccepted := False;
             _read_in;
             if length(RemCtrlBuf) = 0 then exit;
             for i := Low(OutboundCmd) to High(OutboundCmd) do
-               if UpperCase(RemCtrlBuf)[1] = txOutMenu[OutboundCmd(i)][1] then
-               begin
-                  DoRemoteOutbCmd(i);
-                  CmdAccepted := True;
-                  break;
-               end;
+            if UpperCase(RemCtrlBuf)[1] = txOutMenu[OutboundCmd(i)][1] then begin
+               DoRemoteOutbCmd(i);
+               CmdAccepted := True;
+               break;
+            end;
 
-            if (length(trim(RemCtrlBuf)) > 0) then
-            begin
-               if not CmdAccepted then
-               begin
+            if (length(trim(RemCtrlBuf)) > 0) then begin
+               if not CmdAccepted then begin
                   SendStrLn(CRLF +
                      'Incorrect command'
 {$IFDEF USEANSI}
@@ -11007,10 +10971,9 @@ begin
                      );
                   State := msOC_0;
                end;
-            end
-            else
+            end else begin
                State := msOC_0;
-            {end else _read_in;}
+            end;
             Delete(SD.InB, 1, length(SD.InB));
          end;
 
@@ -11024,15 +10987,13 @@ begin
       msOCOutForNode_1:
          begin
             CRPOS := Pos(#13, SD.InB);
-            if CRPOS > 0 then
-            begin
+            if CRPOS > 0 then begin
                CmdAccepted := False;
                REP := GetRegExpr('^\d{1,5}\:\d{1,5}\/\d{1,5}\.?\d{0,5}$');
                b := (REP.ErrPtr = 0) and (REP.Match(trim(RemCtrlBuf)) > 0);
                REP.Unlock;
                SendStr(CRLF + CRLF);
-               if b then
-               begin
+               if b then begin
                   Address.Zone := StrToInt(ExtractWord(1, Trim(RemCtrlBuf), [':']));
                   Address.Net := StrToInt(ExtractWord(2, Trim(RemCtrlBuf), [':', '/']));
                   Address.Node := StrToInt(ExtractWord(3, Trim(RemCtrlBuf), [':', '/', '.']));
@@ -11040,28 +11001,27 @@ begin
                   filec := FidoOut.GetOutbound(Address, [osError, osBusy, osImmedMail, osCrashMail, osDirectMail, osNormalMail, osHoldMail,
                      osImmed, osCrash, osDirect, osNormal, osHold, osBusyEx], nil, nil, nil, False, True);
                   if filec <> nil then
-                     if filec.Count > 0 then
-                        for _i := 0 to filec.Count - 1 do
-                        begin
-                           case TOutFile(filec.At(_i)).KillAction of
-                              kaBsoNothingAfter: SendStr('[NA] ');
-                              kaBsoKillAfter, kaFbKillAfter: SendStr('[KA] ');
-                              kaBsoTruncateAfter: SendStr('[TA] ');
-                              kaFbMoveAfter: SendStr('[MA] ');
-                           else
-                              SendStr('[  ] ');
-                           end; {case}
-                           case TOutFile(filec.At(_i)).FStatus of
-                              osImmed:  SendStr('[I] ');
-                              osCrash:  SendStr('[C] ');
-                              osDirect: SendStr('[D] ');
-                              osNormal: SendStr('[N] ');
-                              osHold:   SendStr('[H] ');
-                           else
-                              SendStr('[ ] ')
-                           end; {case}
-                           SendStrLn(StrAsg(TOutFile(filec.At(_i)).Name));
-                        end;
+                  if filec.Count > 0 then
+                  for _i := 0 to filec.Count - 1 do begin
+                     case TOutFile(filec.At(_i)).KillAction of
+                     kaBsoNothingAfter: SendStr('[NA] ');
+                     kaBsoKillAfter, kaFbKillAfter: SendStr('[KA] ');
+                     kaBsoTruncateAfter: SendStr('[TA] ');
+                     kaFbMoveAfter: SendStr('[MA] ');
+                     else
+                        SendStr('[  ] ');
+                     end; {case}
+                     case TOutFile(filec.At(_i)).FStatus of
+                     osImmed:  SendStr('[I] ');
+                     osCrash:  SendStr('[C] ');
+                     osDirect: SendStr('[D] ');
+                     osNormal: SendStr('[N] ');
+                     osHold:   SendStr('[H] ');
+                     else
+                        SendStr('[ ] ')
+                     end; {case}
+                     SendStrLn(StrAsg(TOutFile(filec.At(_i)).Name));
+                  end;
                   LogFmt(ltInfo, 'Remote Control: user looked up outbound for %s', [remctrlbuf]);
                   CmdAccepted := True;
                   filec.free;
@@ -11069,9 +11029,9 @@ begin
                end;
                if (not CmdAccepted) and (length(trim(RemCtrlBuf)) > 0) then SendStrLn(CRLF + 'Incorrect input');
                State := msOC_0;
-            end
-            else
+            end else begin
                _read_in;
+            end;
             Delete(SD.InB, 1, length(SD.InB));
          end;
 
@@ -11085,15 +11045,13 @@ begin
       msOCAttach_1:
          begin
             CRPOS := Pos(#13, SD.InB);
-            if CRPOS > 0 then
-            begin
+            if CRPOS > 0 then begin
                CmdAccepted := False;
                REP := GetRegExpr('^\d{1,5}\:\d{1,5}\/\d{1,5}\.?\d{0,5}$');
                b := (REP.ErrPtr = 0) and (REP.Match(trim(RemCtrlBuf)) > 0);
                REP.Unlock;
                SendStr(CRLF + CRLF);
-               if b then
-               begin
+               if b then begin
                   TempAddress.Zone := StrToInt(ExtractWord(1, Trim(RemCtrlBuf), [':']));
                   TempAddress.Net := StrToInt(ExtractWord(2, Trim(RemCtrlBuf), [':', '/']));
                   TempAddress.Node := StrToInt(ExtractWord(3, Trim(RemCtrlBuf), [':', '/', '.']));
@@ -11101,67 +11059,57 @@ begin
                   CmdAccepted := True;
                   State := msOC_0;
                end;
-               if (not CmdAccepted) and (length(trim(RemCtrlBuf)) > 0) then
-               begin
+               if (not CmdAccepted) and (length(trim(RemCtrlBuf)) > 0) then begin
                   SendStrLn(CRLF + 'Incorrect input');
                   State := msOC_0;
-               end
-               else
-                  if (length(trim(RemCtrlBuf)) > 0) then
-                  begin
-                     SendStrLn('Attach Status:');
-                     SendStr(CRLF);
-                     for i2 := Low(AttachCmd) to High(AttachCmd) do
-                     begin
-                        SendStrLn(Pad(txAttachMenu[i2], 20));
-                     end;
-                     SendStr('Command:');
-                     State := msOCAttach_2;
-                     prevremctrlbuf := remctrlbuf;
-                     remctrlbuf := '';
-                  end
-                  else
-                     State := msOC_0;
-            end
-            else
+               end else
+               if (length(trim(RemCtrlBuf)) > 0) then begin
+                  SendStrLn('Attach Status:');
+                  SendStr(CRLF);
+                  for i2 := Low(AttachCmd) to High(AttachCmd) do begin
+                     SendStrLn(Pad(txAttachMenu[i2], 20));
+                  end;
+                  SendStr('Command:');
+                  State := msOCAttach_2;
+                  prevremctrlbuf := remctrlbuf;
+                  remctrlbuf := '';
+               end else begin
+                  State := msOC_0;
+               end;
+            end else begin
                _read_in;
+            end;
             Delete(SD.InB, 1, length(SD.InB));
          end;
       msOCAttach_2:
          begin
-            if TimerInstalled(D.TmrPublic) then
-            begin
+            if TimerInstalled(D.TmrPublic) then begin
                sleep(100);
-               if TimerExpired(D.TmrPublic) then
-               begin
+               if TimerExpired(D.TmrPublic) then begin
                   state := msRemCtrlTimeOut;
                   LogFmt(ltInfo, 'Remote Control Timeout', []);
                end
-            end
-            else
+            end else begin
                SetTmrPublic(180, msRemCtrlTimeOut);
+            end;
 
             CmdAccepted := False;
             _read_in;
             if length(RemCtrlBuf) = 0 then exit;
             for i2 := Low(AttachCmd) to High(AttachCmd) do
-               if UpperCase(RemCtrlBuf)[1] = txAttachMenu[AttachCmd(i2)][1] then
-               begin
-                  CmdAccepted := True;
-                  PrevRemCtrlBuf := PrevRemCtrlBuf + '|' + txAttachMenu[AttachCmd(i2)][1];
-                  break;
-               end;
+            if UpperCase(RemCtrlBuf)[1] = txAttachMenu[AttachCmd(i2)][1] then begin
+               CmdAccepted := True;
+               PrevRemCtrlBuf := PrevRemCtrlBuf + '|' + txAttachMenu[AttachCmd(i2)][1];
+               break;
+            end;
 
-            if UpperCase(RemCtrlBuf)[1] = txAttachMenu[AttachCmd(acEscape)][1] then
-            begin
+            if UpperCase(RemCtrlBuf)[1] = txAttachMenu[AttachCmd(acEscape)][1] then begin
                LogFmt(ltInfo, 'Remote Control: user escaped from Outbound -> AttachMenu', []);
                RemCtrlBuf := '';
             end;
 
-            if (length(trim(RemCtrlBuf)) > 0) then
-            begin
-               if not CmdAccepted then
-               begin
+            if (length(trim(RemCtrlBuf)) > 0) then begin
+               if not CmdAccepted then begin
                   SendStrLn(CRLF +
                      'Incorrect command'
 {$IFDEF USEANSI}
@@ -11169,9 +11117,7 @@ begin
 {$ENDIF}
                      );
                   State := msOC_0;
-               end
-               else
-               begin
+               end else begin
                   SendStr(CRLF);
                   SendStrLn('On sent:');
                   SendStr(CRLF);
@@ -11184,49 +11130,43 @@ begin
                   RemCtrlBuf := '';
                   State := msOCAttach_3;
                end;
-            end
-            else
+            end else begin
                State := msOC_0;
+            end;
             {end else _read_in;}
             Delete(SD.InB, 1, length(SD.InB));
          end;
       msOCAttach_3:
          begin
-            if TimerInstalled(D.TmrPublic) then
-            begin
+            if TimerInstalled(D.TmrPublic) then begin
                sleep(100);
-               if TimerExpired(D.TmrPublic) then
-               begin
+               if TimerExpired(D.TmrPublic) then begin
                   state := msRemCtrlTimeOut;
                   LogFmt(ltInfo, 'Remote Control Timeout', []);
                end
-            end
-            else
+            end else begin
                SetTmrPublic(180, msRemCtrlTimeOut);
+            end;
 
             CmdAccepted := False;
             _read_in;
             if length(RemCtrlBuf) = 0 then exit;
             for i3 := Low(txOnSentMenu) to High(txOnSentMenu) do
-               if UpperCase(RemCtrlBuf)[1] = txOnSentMenu[OnSentCmd(i3)][1] then
-               begin
-                  CmdAccepted := True;
-                  PrevRemCtrlBuf := PrevRemCtrlBuf + '|' + txOnSentMenu[OnSentCmd(i3)][1];
-                  break;
-               end;
+            if UpperCase(RemCtrlBuf)[1] = txOnSentMenu[OnSentCmd(i3)][1] then begin
+               CmdAccepted := True;
+               PrevRemCtrlBuf := PrevRemCtrlBuf + '|' + txOnSentMenu[OnSentCmd(i3)][1];
+               break;
+            end;
 
             if (length(trim(RemCtrlBuf)) > 0) then
-               if UpperCase(RemCtrlBuf)[1] = txOnSentMenu[OnSentCmd(se_cEscape)][1] then
-               begin
-                  LogFmt(ltInfo, 'Remote Control: user escaped from Outbound -> Attach -> OnSentMenu', []);
-                  State := msOC_0;
-                  exit;
-               end;
+            if UpperCase(RemCtrlBuf)[1] = txOnSentMenu[OnSentCmd(se_cEscape)][1] then begin
+               LogFmt(ltInfo, 'Remote Control: user escaped from Outbound -> Attach -> OnSentMenu', []);
+               State := msOC_0;
+               exit;
+            end;
 
-            if (length(trim(RemCtrlBuf)) > 0) then
-            begin
-               if not CmdAccepted then
-               begin
+            if (length(trim(RemCtrlBuf)) > 0) then begin
+               if not CmdAccepted then begin
                   SendStrLn(CRLF +
                      'Incorrect command'
 {$IFDEF USEANSI}
@@ -11234,45 +11174,41 @@ begin
 {$ENDIF}
                      );
                   State := msOC_0;
-               end
-               else
-               begin
+               end else begin
                   sendstr(CRLF);
                   sendstr('File: ');
                   RemCtrlBuf := '';
                   State := msOCAttach_4;
                end;
-            end
-            else
+            end else begin
                State := msOC_0;
+            end;
             {end else _read_in;}
             Delete(SD.InB, 1, length(SD.InB));
          end;
       msOCAttach_4:
          begin
             CRPOS := Pos(#13, SD.InB);
-            if CRPOS > 0 then
-            begin
+            if CRPOS > 0 then begin
                CmdAccepted := False;
                b := fileexists(remctrlbuf);
                SendStr(CRLF);
-               if b then
-               begin
+               if b then begin
                   s := ExtractWord(2, prevremctrlbuf, ['|']);
                   poll := false;
                   Status := osnormal;
                   Action := kabsonothingafter;
                   case s[1] of
-                     'H': Status := oshold;
-                     'N': Status := osnormal;
-                     'D': Status := osdirect;
-                     'C': Status := oscrash;
-                     'I': Status := osimmed;
-                     'P':
-                        begin
-                           Status := oscrash;
-                           Poll := true;
-                        end;
+                  'H': Status := oshold;
+                  'N': Status := osnormal;
+                  'D': Status := osdirect;
+                  'C': Status := oscrash;
+                  'I': Status := osimmed;
+                  'P':
+                     begin
+                        Status := oscrash;
+                        Poll := true;
+                     end;
                   else
                      GlobalFail('AttachStatusLetter = %s', [s[1]]);
                   end; {case}
@@ -11286,17 +11222,16 @@ begin
                   end; {case}
                   CmdAccepted := AttachFiles(tempAddress, ExpandFileName(remctrlbuf), Poll, Status, Action);
                end;
-               if (not CmdAccepted) and (length(trim(RemCtrlBuf)) > 0) then
-                  SendStrLn(CRLF + 'Operation failed')
-               else
-               begin
+               if (not CmdAccepted) and (length(trim(RemCtrlBuf)) > 0) then begin
+                  SendStrLn(CRLF + 'Operation failed');
+               end else begin
                   s := ExtractWord(1, prevremctrlbuf, ['|']);
                   LogFmt(ltInfo, 'Remote Control: user attached file %s to %s', [remctrlbuf, s]);
                end;
                State := msOC_0;
-            end
-            else
+            end else begin
                _read_in;
+            end;
             Delete(SD.InB, 1, length(SD.InB));
          end;
 
@@ -11310,15 +11245,13 @@ begin
       msOCFreq_1:
          begin
             CRPOS := Pos(#13, SD.InB);
-            if CRPOS > 0 then
-            begin
+            if CRPOS > 0 then begin
                CmdAccepted := False;
                REP := GetRegExpr('^\d{1,5}\:\d{1,5}\/\d{1,5}\.?\d{0,5}$');
                b := (REP.ErrPtr = 0) and (REP.Match(trim(RemCtrlBuf)) > 0);
                REP.Unlock;
                SendStr(CRLF + CRLF);
-               if b then
-               begin
+               if b then begin
                   TempAddress.Zone := StrToInt(ExtractWord(1, Trim(RemCtrlBuf), [':']));
                   TempAddress.Net := StrToInt(ExtractWord(2, Trim(RemCtrlBuf), [':', '/']));
                   TempAddress.Node := StrToInt(ExtractWord(3, Trim(RemCtrlBuf), [':', '/', '.']));
@@ -11326,70 +11259,60 @@ begin
                   CmdAccepted := True;
                   State := msOC_0;
                end;
-               if (not CmdAccepted) and (length(trim(RemCtrlBuf)) > 0) then
-               begin
+               if (not CmdAccepted) and (length(trim(RemCtrlBuf)) > 0) then begin
                   SendStrLn(CRLF + 'Incorrect input');
                   State := msOC_0;
-               end
-               else
-                  if (length(trim(RemCtrlBuf)) > 0) then
-                  begin
-                     SendStrLn('FReq Status:');
-                     SendStr(CRLF);
-                     for i2 := Low(AttachCmd) to High(AttachCmd) do
-                     begin
-                        SendStrLn(Pad(txAttachMenu[i2], 20));
-                     end;
-                     SendStr('Command:');
-                     State := msOCFreq_2;
-                     prevremctrlbuf := remctrlbuf;
-                     remctrlbuf := '';
-                  end
-                  else
-                     State := msOC_0;
-            end
-            else
+               end else
+               if (length(trim(RemCtrlBuf)) > 0) then begin
+                  SendStrLn('FReq Status:');
+                  SendStr(CRLF);
+                  for i2 := Low(AttachCmd) to High(AttachCmd) do begin
+                     SendStrLn(Pad(txAttachMenu[i2], 20));
+                  end;
+                  SendStr('Command:');
+                  State := msOCFreq_2;
+                  prevremctrlbuf := remctrlbuf;
+                  remctrlbuf := '';
+               end else begin
+                  State := msOC_0;
+               end;
+            end else begin
                _read_in;
+            end;
             Delete(SD.InB, 1, length(SD.InB));
          end;
       msOCFreq_2: State := msOCFreq_3;
       msOCFreq_3:
          begin
-            if TimerInstalled(D.TmrPublic) then
-            begin
+            if TimerInstalled(D.TmrPublic) then begin
                sleep(100);
-               if TimerExpired(D.TmrPublic) then
-               begin
+               if TimerExpired(D.TmrPublic) then begin
                   state := msRemCtrlTimeOut;
                   LogFmt(ltInfo, 'Remote Control Timeout', []);
                end
-            end
-            else
+            end else begin
                SetTmrPublic(180, msRemCtrlTimeOut);
+            end;
 
             CmdAccepted := False;
             _read_in;
             if length(RemCtrlBuf) = 0 then exit;
             for i2 := Low(txAttachMenu) to High(txAttachMenu) do
-               if UpperCase(RemCtrlBuf)[1] = txAttachMenu[AttachCmd(i2)][1] then
-               begin
-                  CmdAccepted := True;
-                  PrevRemCtrlBuf := PrevRemCtrlBuf + '|' + txAttachMenu[AttachCmd(i2)][1];
-                  break;
-               end;
+            if UpperCase(RemCtrlBuf)[1] = txAttachMenu[AttachCmd(i2)][1] then begin
+               CmdAccepted := True;
+               PrevRemCtrlBuf := PrevRemCtrlBuf + '|' + txAttachMenu[AttachCmd(i2)][1];
+               break;
+            end;
 
             if (length(trim(RemCtrlBuf)) > 0) then
-               if UpperCase(RemCtrlBuf)[1] = txAttachMenu[AttachCMD(acEscape)][1] then
-               begin
-                  LogFmt(ltInfo, 'Remote Control: user escaped from Outbound -> Attach -> OnSentMenu', []);
-                  State := msOC_0;
-                  exit;
-               end;
+            if UpperCase(RemCtrlBuf)[1] = txAttachMenu[AttachCMD(acEscape)][1] then begin
+               LogFmt(ltInfo, 'Remote Control: user escaped from Outbound -> Attach -> OnSentMenu', []);
+               State := msOC_0;
+               exit;
+            end;
 
-            if (length(trim(RemCtrlBuf)) > 0) then
-            begin
-               if not CmdAccepted then
-               begin
+            if (length(trim(RemCtrlBuf)) > 0) then begin
+               if not CmdAccepted then begin
                   SendStrLn(CRLF +
                      'Incorrect command'
 {$IFDEF USEANSI}
@@ -11397,25 +11320,22 @@ begin
 {$ENDIF}
                      );
                   State := msOC_0;
-               end
-               else
-               begin
+               end else begin
                   sendstr(CRLF);
                   sendstr('File: ');
                   RemCtrlBuf := '';
                   State := msOCFreq_4;
                end;
-            end
-            else
+            end else begin
                State := msOC_0;
+            end;
             {end else _read_in;}
             Delete(SD.InB, 1, length(SD.InB));
          end;
       msOCFreq_4:
          begin
             CRPOS := Pos(#13, SD.InB);
-            if CRPOS > 0 then
-            begin
+            if CRPOS > 0 then begin
                //           CmdAccepted:=False;
                //           b:=fileexists(remctrlbuf);
                SendStr(CRLF);
@@ -11425,29 +11345,25 @@ begin
                poll := false;
                Status := osnormal;
                case s[1] of
-                  'H': Status := oshold;
-                  'N': Status := osnormal;
-                  'D': Status := osdirect;
-                  'C': Status := oscrash;
-                  'I': Status := osimmed;
-                  'P':
-                     begin
-                        Status := oscrash;
-                        Poll := true;
-                     end;
+               'H': Status := oshold;
+               'N': Status := osnormal;
+               'D': Status := osdirect;
+               'C': Status := oscrash;
+               'I': Status := osimmed;
+               'P':
+                  begin
+                     Status := oscrash;
+                     Poll := true;
+                  end;
                else
                   GlobalFail('AttachStatusLetter = %s', [s[1]]);
                end; {case}
                fhandle := _CreateFileDir(GetOutFileName(TempAddress, Status), [cWrite, cEnsureNew]);
-               if fhandle <> INVALID_HANDLE_VALUE then
-               begin
+               if fhandle <> INVALID_HANDLE_VALUE then begin
                   cmdaccepted := true;
-               end
-               else
-               begin
+               end else begin
                   cmdaccepted := true;
-                  if GetErrorNum <> ERROR_FILE_EXISTS then
-                  begin
+                  if GetErrorNum <> ERROR_FILE_EXISTS then begin
                      cmdaccepted := false;
                      SetErrorMsg(remctrlbuf);
                      ChkErrMsg;
@@ -11457,8 +11373,7 @@ begin
                //end;
                if (not CmdAccepted) and (length(trim(RemCtrlBuf)) > 0) then
                   SendStrLn(CRLF + 'Operation failed')
-               else
-               begin
+               else begin
                   ZeroHandle(fhandle);
                   fname := GetOutFileName(TempAddress, osRequest);
 {$I-}
@@ -11470,19 +11385,19 @@ begin
                   writeln(f, remctrlbuf);
                   close(f);
 {$I+}
-                  if Poll then
-                  begin
+                  if Poll then begin
                      an := FindNode(TempAddress);
-                     if an <> nil then
+                     if an <> nil then begin
                         InsertPoll(an, [], ptpManual);
+                     end;
                   end;
                   s := ExtractWord(1, prevremctrlbuf, ['|']);
                   LogFmt(ltInfo, 'Remote Control: user requested file %s from %s', [remctrlbuf, s]);
                end;
                State := msOC_0;
-            end
-            else
+            end else begin
                _read_in;
+            end;
             Delete(SD.InB, 1, length(SD.InB));
          end;
 
@@ -11952,11 +11867,9 @@ begin
             SetTmrPublic(180, msInit);
             Log(ltInfo, 'Carrier detected by CONNECT string');
             State := msCN_ConnectString;
-            {$IFDEF USE_TAPI}
             if (CP <> nil) and TapiDevice then begin
               (CP as TTAPIPort).NeedDrop := True;
             end;
-            {$ENDIF}
          end;
       msCN_ConnectDCD_A:
          begin
@@ -12004,12 +11917,9 @@ begin
 
             if DoConnectStart then begin
                SetTmrPublic(MaxD(RemainingTimeSecs(D.TmrPublic), toEMSI_Timeout), msHandshakeTimeout);
-{$IFDEF WS}
                if not DialupLine then
                   State := msCN_HandshakeOK
-               else
-{$ENDIF}
-               begin
+               else begin
                   SetTmr1(1, msCN_HandshakeOK);
                   NewTimer(SD.Tmr1, 1); //1/20 sec
                   State := msCN_HandshakeDelay;
@@ -13129,7 +13039,6 @@ begin
          end;
       msStartIdle:
          begin
-            ShowIt('Idle', false);
             ClearTmr1;
             State := msIdle;
             SD.RingsDone := 0;
@@ -13164,7 +13073,6 @@ begin
                end;
             end;
             {$ENDIF}
-            ShowIt('Idle', false);
             if not TimerInstalled(SD.TmrReInit) then
                NewTimerAvg(SD.TmrReInit, CReinitTime)
             else
@@ -13197,7 +13105,6 @@ begin
                FidoPollsLog('RAS event invoked, but RAS is disabled. Dropping event');
             end
          end;
-{$IFDEF USE_TAPI}
       msStartIdle_TAPI:
          begin
             if (CP as TTAPIPort).RealOwner then SetTmr1(10, msIdleT_Expired);
@@ -13242,15 +13149,12 @@ begin
             State := msIdleA_Expired;
             (CP as TTAPIPort).Answer := False;
          end;
-{$ENDIF}
       msModemCmdIdle:
          begin
             ShowIt('Idle', false);
          end;
       msStartDial:
          begin
-            {        ShowIt(Format( 'Calling %s', [Addr2Str(SD.ActivePoll.Node.Addr)]), false);}
-            {$IFDEF USE_TAPI}
             if (CP <> nil) and TapiDevice then begin
                if (CP as TTAPIPort).Answer then begin
                   SD.ActivePoll.Release;
@@ -13259,12 +13163,8 @@ begin
                   exit;
                end;
             end;
-            {$ENDIF}
             SD.ConnectSpeedGot := False;
             ClearTmr1;
-            if (SD.ActivePoll <> nil) and (SD.ActivePoll.Node <> nil) then begin
-               ShowIt('C: ' + Addr2Str(SD.ActivePoll.Node.Addr), false);
-            end;
             if SD.ActivePoll.Node.Ext = nil then begin
                LogFmt(ltInfo, 'Calling %s (%s)', [Addr2Str(SD.ActivePoll.Node.Addr), SD.ActivePoll.DialupPhone]);
                State := msStartDialPhone;
@@ -14327,7 +14227,6 @@ begin
          ClearTmrPublic;
          ClearTimer(TmrNextDial);
          SetStatusMsg(rsMMIdle, '');
-         //      ShowIt('Idle', false);
          Exit;
       end;
       SetStatusMsg(rsMMOutChk, '');
@@ -14367,7 +14266,6 @@ begin
          end;
          if PubInst then begin
             SetStatusMsg(rsMMWaitDial, Addr2Str(p.Node.Addr));
-            ShowIt('W: ' + Addr2Str(p.Node.Addr), false);
             if TimerInstalled(D.TmrPublic) then begin
                NewTimerSecs(SD.TmrReinit, RemainingTimeSecs(D.TmrPublic) + 5)
             end else begin
@@ -14377,7 +14275,6 @@ begin
             ClearTmrPublic;
             ClearTimer(TmrNextDial);
             SetStatusMsg(rsMMIdle, '');
-            //        ShowIt('Idle',false);
          end;
       end;
    except
@@ -15056,14 +14953,11 @@ var
 begin
    Sleep(100);
    AppStr := p.Node.Ext.Cmd;
-   if RunExtApp(nil, IpPolls.Logger, 'TCP/IP Daemon', p, p.Node, AppStr, Nfo, nil, False) then
-   begin
+   if RunExtApp(nil, IpPolls.Logger, 'TCP/IP Daemon', p, p.Node, AppStr, Nfo, nil, False) then begin
       ResumeThread(Nfo.hThread);
       WaitForExtProcess(Nfo.hProcess, p, IpPolls.Logger);
       FinalizeExtApp(Nfo, IpPolls.Logger, p);
-   end
-   else
-   begin
+   end else begin
       IpPolls.Logger.ChkErrMsg;
       if (p <> nil) and (p.Node.Ext <> nil) then FinalizeExtPoll(p, 0);
    end;

@@ -350,6 +350,7 @@ type
     procedure bNetmailClick(Sender: TObject);
     procedure cbScanMSGClick(Sender: TObject);
     procedure cbUnpackPKTClick(Sender: TObject);
+    procedure gNetmailDblClick(Sender: TObject);
   private
     { Private declarations }
     Edits: array[0..12] of TSoundRec;
@@ -369,7 +370,7 @@ implementation
 
 uses LngTools, RadIni, xFido, PathNmEx, CfgFiles
      {$IFDEF RASDIAL}, RasThrd, {$ENDIF} AdrIBox, Recs, ShellApi
-     {$IFDEF EXTREME}, RCCUnit {$ENDIF}, MlrThr, MlrForm;
+     {$IFDEF EXTREME}, RCCUnit {$ENDIF}, MlrThr, MlrForm, UNetCfg;
 
 var
    FidoAddr1: TFidoAddress;
@@ -1317,6 +1318,19 @@ procedure TSetupForm.cbUnpackPKTClick(Sender: TObject);
 begin
    eNetmail.Enabled := cbScanMSG.Checked or cbUnpackPKT.Checked;
    bNetmail.Enabled := cbScanMSG.Checked or cbUnpackPKT.Checked;
+end;
+
+procedure TSetupForm.gNetmailDblClick(Sender: TObject);
+var
+   f: TNetCfg;
+begin
+   f := TNetCfg.Create(nil);
+   if f.ShowModal = mrOK then begin
+      gNetmail.RowCount := 2;
+      gNetmail.SetData([IniFile.NetmailAddrTo, IniFile.NetmailAddrFrom, IniFile.NetmailPwd]);
+      btnApplyClick(nil);
+   end;
+   f.Free;
 end;
 
 end.

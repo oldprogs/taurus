@@ -4,7 +4,7 @@ unit RadIni;
 
 interface
 
-uses Windows, Classes, xFido, Recs, xBase, Menus, MGrids, CfgFiles;
+uses Windows, Classes, xFido, Recs, xBase, Menus, MGrids, CfgFiles, RadSav;
 
 const
   IniConfig = 'Taurus.ini';
@@ -25,18 +25,6 @@ type
   end;
   TRadOutMgr = array[0..5] of integer;
 
-  TDualRec = record
-     nam,
-     st1,
-     st2: PString;
-  end;
-
-  TDualColl = class(TColl)
-     procedure Add(const nam, st1, st2: string);
-     procedure FreeItem(p: pointer); override;
-     function MatchAddr(const n: string; a: TFidoAddress): integer;
-  end;
-
   TRadFidoPollsFlags = record
     Busy : DWORD;
     NoC : DWORD;
@@ -51,7 +39,7 @@ type
     TimeDial : DWORD;
   end;
 
-  TConfig = class
+  TConfig = class(TRadSav)
             _startras: integer;
 
             StatxPurgeData: boolean;
@@ -67,12 +55,8 @@ type
             Cronapps_log: string;
             tariff_log: string;
             PerMinute: boolean;
-{$IFDEF WS}
             IPDaemon_log: string;
-{$ENDIF}
-{$IFDEF RASDIAL}
             ras_log: string;
-{$ENDIF}
             ODBCLogging: boolean;
             CloseBWZFile: boolean;
             ForceAddFaxPage: boolean;
@@ -105,14 +89,10 @@ type
             AllViaProxy: boolean;
             GridInPV: Boolean;
             TimeShift: integer;
-{$IFDEF RASDIAL}
             RASEnabled: Boolean;
             iEntryName:  string;
-{$ENDIF}
-{$IFDEF USE_TAPI}
             TAPIDebug: boolean;
             TAPIConnect: DWORD;
-{$ENDIF}
             HomeDir:  string;
             CfgDir:   string;
             InTemp:   string;
@@ -210,38 +190,15 @@ type
             SplitA,
             SplitB: integer;
 
-            CS: TRTLCriticalSection;
-
             logDelete: boolean;
             logWaitEvt: boolean;
             SaveWaits: boolean;
 
-            StringsList: TStringList;
-
-            constructor Create;
+            constructor Create(const fn: string); override;
             destructor Destroy; override;
             procedure ReadConfig;
             procedure WriteConfig;
             procedure StoreCfg;
-
-            procedure Enter;
-            procedure Leave;
-
-            function ReadString(Sect, Line: string): string; overload;
-            function ReadString(Sect, Line, Def: string): string; overload;
-            procedure WriteString(Sect, Line, Val: string);
-            function ReadBool(Sect, Line: string): boolean; overload;
-            function ReadBool(Sect, Line: string; Def: boolean): boolean; overload;
-            procedure WriteBool(Sect, Line: string; Val: boolean);
-            function ReadInteger(Sect, Line: string): integer; overload;
-            function ReadInteger(Sect, Line: string; Def: integer): integer; overload;
-            procedure WriteInteger(Sect, Line: string; Val: integer);
-            function ReadSection(Sect, Line: string): TStringList;
-            function GetStrings(n: string): TDualColl;
-            procedure LoadGrid(g: TAdvGrid); overload;
-            procedure LoadGrid(s: string; g: TAdvGrid); overload;
-            procedure SaveGrid(g: TAdvGrid); overload;
-            procedure SaveGrid(s: string; g: TAdvGrid); overload;
       end;
 
 procedure LoadIni;
@@ -281,7 +238,8 @@ const
 
 procedure LoadIni;
 begin
-   IniFile := TConfig.Create;
+   IniFile := TConfig.Create(IniFName);
+   SavFile := TRadSav.Create(ChangeFileExt(IniFName, '.sav'));
    IniFile.ReadConfig;
 end;
 
@@ -291,345 +249,19 @@ begin
    IniFile := nil;
 end;
 
-procedure TConfig.Enter;
-begin
-   EnterCS(CS);
-   Inc(IniFileCCC);
-end;
-
-procedure TConfig.Leave;
-begin
-   Dec(IniFileCCC);
-   LeaveCS(CS);
-end;
-
-function TConfig.ReadString(Sect, Line: string): string;
-begin
-   Result := ReadString(Sect, Line, Line);
-end;
-
-function TConfig.ReadString(Sect, Line, Def: string): string;
-begin
-   Enter;
-   try
-      with TIniFile.Create(IniFName) do begin
-         Result := ReadString(Sect, Line, Def);
-         Free;
-      end;
-   finally
-      Leave;
-   end;
-end;
-
-function TConfig.ReadBool(Sect, Line: string; Def: boolean): boolean;
-begin
-   Enter;
-   try
-      with TIniFile.Create(IniFName) do begin
-         Result := ReadBool(Sect, Line, Def);
-         Free;
-      end;
-   finally
-      Leave;
-   end;
-end;
-
-function TConfig.ReadBool(Sect, Line: string): boolean;
-begin
-   Result := ReadBool(Sect, Line, True);
-end;
-
-procedure TConfig.WriteBool;
-begin
-   Enter;
-   try
-      with TMemIniFile.Create(IniFName) do begin
-         WriteBool(Sect, Line, Val);
-         UpdateFile;
-         Free;
-      end;
-   finally
-      Leave;
-   end;
-end;
-
-function TConfig.ReadInteger(Sect, Line: string): integer;
-begin
-   Result := ReadInteger(Sect, Line, 0);
-end;
-
-procedure TConfig.WriteInteger;
-begin
-   Enter;
-   try
-      with TMemIniFile.Create(IniFName) do begin
-         WriteInteger(sect, Line, Val);
-         UpdateFile;
-         Free;
-      end;
-   finally
-      Leave;
-   end;
-end;
-
-function TConfig.ReadInteger(Sect, Line: string; Def: integer): integer;
-begin
-   Enter;
-   try
-      with TIniFile.Create(IniFName) do begin
-         Result := ReadInteger(Sect, Line, Def);
-         Free;
-      end;
-   finally
-      Leave;
-   end;
-end;
-
-procedure TConfig.WriteString;
-begin
-   Enter;
-   try
-      with TMemIniFile.Create(IniFName) do begin
-         WriteString(Sect, Line, Val);
-         UpdateFile;
-         Free;
-      end;
-   finally
-      Leave;
-   end;
-end;
-
-function TConfig.ReadSection;
-var
-   i: integer;
-begin
-   Enter;
-   try
-      with TIniFile.Create(IniFName) do begin
-         try
-            Result := TStringList.Create;
-            ReadSection('Grids', Result);
-         finally
-            Free;
-         end;
-      end;
-      for i := Result.Count - 1 downto 0 do begin
-         if Pos(UpperCase(Line), UpperCase(Result[i])) = 0 then begin
-            Result.Delete(i);
-         end;
-      end;
-      if Result.Count = 0 then begin
-         Result.Free;
-         Result := nil;
-      end;
-   finally
-      Leave;
-   end;
-end;
-
-function TConfig.GetStrings;
-var
-   i: integer;
-   s: TStringList;
-   t: string;
-   m: integer;
-begin
-   i := StringsList.IndexOf(n);
-   if i > -1 then begin
-      Result := StringsList.Objects[i] as TDualColl;
-      exit;
-   end;
-   Enter;
-   try
-      with TIniFile.Create(IniFName) do begin
-         try
-            s := TStringList.Create;
-            ReadSection('Grids', s);
-            Result := TDualColl.Create;
-            m := StringsList.Add(n);
-            StringsList.Objects[m] := Result;
-            for i := 1 to s.Count do begin
-               t := ReadString('Grids', s[i - 1], '');
-               Result.Add(s[i - 1],
-                          ExtractWord(1, t, ['|']),
-                          ExtractWord(2, t, ['|']));
-            end;
-            s.Free;
-         finally
-            Free;
-         end;
-      end;
-   finally
-      Leave;
-   end;      
-end;
-
-procedure TConfig.LoadGrid(g: TAdvGrid);
-var
-   s: TStringList;
-   i: integer;
-   n: integer;
-   r: integer;
-   t: string;
-   c: string;
-begin
-   Enter;
-   try
-      with TIniFile.Create(IniFName) do begin
-         try
-            s := TStringList.Create;
-            ReadSection('Grids', s);
-            r := 1;
-            for i := 1 to s.Count do begin
-               if pos(g.Name, s[i - 1]) > 0 then begin
-                  g.AddLine;
-                  t := ReadString('Grids', s[i - 1], '');
-                  for n := 1 to WordCount(t, ['|']) do begin
-                     c := ExtractWord(n, t, ['|']);
-                     if c = '-' then c := '';
-                     g.Cells[g.FixedCols - 1 + n, r] := c;
-                  end;
-                  inc(r);
-               end;
-            end;
-            g.DelLine;
-            s.Free;
-         finally
-            Free;
-         end;
-      end;
-   finally
-      Leave;
-   end;
-end;
-
-procedure TConfig.LoadGrid(s: string; g: TAdvGrid);
-var
-   l: TStringList;
-   i: integer;
-begin
-   Enter;
-   try
-      with TMemIniFile.Create(IniFName) do begin
-         try
-            l := TStringList.Create;
-            ReadSection(s, l);
-            for i := 0 to l.Count - 1 do begin
-               if g.RowCount <= i + 1 then begin
-                  g.RowCount := i + 2;
-               end;
-               g.Cells[1, i + 1] := l[i];
-               g.Cells[2, i + 1] := ReadString(s, l[i], '');
-            end;
-            l.Free;
-         finally
-            Free;
-         end;
-      end;
-   finally
-      Leave;
-   end;
-end;
-
-procedure TConfig.SaveGrid(g: TAdvGrid);
-var
-   i: integer;
-   n: integer;
-   s: string;
-   c: string;
-   p: TDualColl;
-   l: TStringList;
-begin
-   Enter;
-   try
-      with TMemIniFile.Create(IniFName) do begin
-         try
-            l := TStringList.Create;
-            ReadSection('Grids', l);
-            for i := l.Count - 1 downto 0 do begin
-               if pos(g.Name, l[i]) > 0 then begin
-                  DeleteKey('Grids', l[i]);
-               end;
-            end;
-            l.Free;
-         finally
-            UpdateFile;
-            Free;
-         end;
-      end;
-      for i := 1 to g.RowCount - 1 do begin
-         s := '';
-         for n := g.FixedCols to g.ColCount - 1 do begin
-            c := g.Cells[n, i];
-            if c = '' then c := '-';
-            s := s + c + '|';
-         end;
-         WriteString('Grids', g.Name + IntToStr(i), s);
-      end;
-      i := StringsList.IndexOf(g.Name);
-      if i > - 1 then begin
-         p := StringsList.Objects[i] as TDualColl;
-         FreeObject(p);
-         StringsList.Delete(i);
-      end;
-   finally
-      Leave;
-   end;
-end;
-
-procedure TConfig.SaveGrid(s: string; g: TAdvGrid);
-var
-   l: TStringList;
-   i: integer;
-begin
-   Enter;
-   try
-      with TMemIniFile.Create(IniFName) do begin
-         try
-            l := TStringList.Create;
-            ReadSection(s, l);
-            for i := 0 to l.Count - 1 do begin
-                DeleteKey(s, l[i]);
-            end;
-            l.Free;
-            for i := 0 to g.RowCount - 2 do begin
-               WriteString(s, g.Cells[1, i + 1], g.Cells[2, i + 1]);
-            end;
-         finally
-            UpdateFile;
-            Free;
-         end;
-      end;
-   finally
-      Leave;
-   end;
-end;
-
 constructor TConfig.Create;
 begin
-   InitializeCriticalSection(CS);
+   inherited;
    NetmailAddrTo := TStringColl.Create;
    NetmailAddrFrom := TStringColl.Create;
    NetmailPwd := TStringColl.Create;
-   StringsList := TStringList.Create;
 end;
 
 destructor TConfig.Destroy;
-var
-   d: TDualColl;
-   i: integer;
 begin
-   PurgeCS(CS);
    FreeObject(NetmailAddrTo);
    FreeObject(NetmailAddrFrom);
    FreeObject(NetmailPwd);
-   if StringsList <> nil then begin
-      for i := 0 to StringsList.Count - 1 do begin
-         d := StringsList.Objects[i] as TDualColl;
-         FreeObject(d);
-      end;
-      StringsList.Free;
-   end;
    inherited Destroy;
 end;
 
@@ -676,7 +308,7 @@ var
    s: string;
    i: byte;
 begin
-   s := ini.ReadString(sizes, 'BWZListView', '133,60,60,63,57');
+   s := SavFile.ReadString(sizes, 'BWZListView', '133,60,60,63,57');
    for i := 0 to 4 do result[i] := StrToIntDef(ExtractWord(i + 1, s, [',']), 70);
 end;
 
@@ -685,7 +317,7 @@ var
    s: string;
    i: byte;
 begin
-   s := ini.ReadString(sizes, 'OutMgrHdr', '349,142,81,53,70,80');
+   s := SavFile.ReadString(sizes, 'OutMgrHdr', '349,142,81,53,70,80');
    for i := 0 to 5 do result[i] := StrToIntDef(ExtractWord(i + 1, s, [',']), 70);
 end;
 
@@ -693,7 +325,7 @@ function GetMF: TRadMFRec;
 var
    s: string;
 begin
-   s := Ini.ReadString(sizes, 'MainForm', '223,1,700,621,0');
+   s := SavFile.ReadString(sizes, 'MainForm', '223,1,700,621,0');
    result.Bounds[0] := StrToIntDef(ExtractWord(1, s, [',']), 223);
    result.Bounds[1] := StrToIntDef(ExtractWord(2, s, [',']), 005);
    result.Bounds[2] := StrToIntDef(ExtractWord(3, s, [',']), 700);
@@ -708,7 +340,7 @@ function GetNB: TRadMFRec;
 var
    s: string;
 begin
-   s := Ini.ReadString(sizes, 'NodeBrws', '391,12,619,470,0');
+   s := SavFile.ReadString(sizes, 'NodeBrws', '391,12,619,470,0');
    result.Bounds[0] := StrToIntDef(ExtractWord(1, s,[',']), 138);
    result.Bounds[1] := StrToIntDef(ExtractWord(2, s,[',']), 194);
    result.Bounds[2] := StrToIntDef(ExtractWord(3, s,[',']), 617);
@@ -720,7 +352,7 @@ function GetPolls: TRadPolls;
 var
    s: string;
 begin
-   s := ini.ReadString(sizes, 'PollsListView', '141,298,77,54,54,53,48,49');
+   s := SavFile.ReadString(sizes, 'PollsListView', '141,298,77,54,54,53,48,49');
    result[0] := StrToIntDef(ExtractWord(1, s,[',']), 100);
    result[1] := StrToIntDef(ExtractWord(2, s,[',']), 170);
    result[2] := StrToIntDef(ExtractWord(3, s,[',']),  80);
@@ -748,7 +380,7 @@ end;
 
 begin
    Enter;
-   ini := TMemIniFile.Create(IniFName);
+   ini := TMemIniFile.Create(FileName);
    Leave;
    with ini do
    try
@@ -770,12 +402,8 @@ begin
       Polls_log := ReadString(LogNames, 'polls.log', 'polls.log');
       Tariff_log := ReadString(LogNames, 'tariff.log', 'tariff.log');
       Cronapps_log := ReadString(LogNames, 'cronapps.log', 'cronapps.log');
-{$IFDEF WS}
       IPDaemon_log := ReadString(LogNames, 'ipdaemon.log', 'ipdaemon.log');
-{$ENDIF}
-{$IFDEF RASDIAL}
       ras_log := ReadString(LogNames, 'ras.log', 'ras.log');
-{$ENDIF}
 
       CPS_MinBytes := ReadInteger(main, 'CPS_MinBytes', $100);
       CPS_MinSecs := ReadInteger(main, 'CPS_MinSecs', 10);
@@ -867,13 +495,11 @@ begin
 
       if length(LoggerFontAttr) < 4 then LoggerFontAttr := PadCh(LoggerFontAttr, '0', 4 - length(LoggerFontAttr));
 
-{$IFDEF RASDIAL}
       _StartRas := -1;
       if RASEnabled <> ReadBool(_RasDial, 'RASEnabled', True) then begin
          RASEnabled := not RASEnabled;
       end;
       iEntryName := ReadString(_RasDial, 'EntryName', 'Connection');
-{$ENDIF}
       RequestCRYPT := ReadBool(binkp, 'RequestCRYPT', false);
       ibnRequestLIST := ReadBool(binkp, 'RequestLIST', false);
       RequestTRS := ReadBool(binkp, 'RequestTRS', false);
@@ -896,10 +522,8 @@ begin
 
       FTPDebug := ReadBool(FTP, 'FTPDebug', false);
 
-{$IFDEF USE_TAPI}
       TAPIDebug := ReadBool(_tapi, 'TAPIDebug', False);
       TAPIConnect := DWORD(ReadInteger(_tapi, 'TAPIConnect', 57600));
-{$ENDIF}
 
       ExtApp := GetExtApp;
 
@@ -945,8 +569,8 @@ begin
       end;
       l.Free;
 
-      SplitA := StrToInt(ExtractWord(1, ReadString(sizes, 'Splitters', '375,320'), [',']));
-      SplitB := StrToInt(ExtractWord(2, ReadString(sizes, 'Splitters', '375,320'), [',']));
+      SplitA := StrToInt(ExtractWord(1, SavFile.ReadString(sizes, 'Splitters', '375,320'), [',']));
+      SplitB := StrToInt(ExtractWord(2, SavFile.ReadString(sizes, 'Splitters', '375,320'), [',']));
 
       logDelete := ReadBool(main, 'LogDelete', False);
       logWaitEvt := ReadBool(main, 'LogWaitEvt', False);
@@ -987,13 +611,13 @@ var
    s: string;
 begin
    try
-      if not DirectoryExists(ExtractFilePath(IniFName)) then CreateDir(ExtractFilePath(IniFName));
+      if not DirectoryExists(ExtractFilePath(FileName)) then CreateDir(ExtractFilePath(FileName));
    except
       exit;
    end;
    Enter;
    try
-   with TMemIniFile.Create(IniFName) do begin
+   with TMemIniFile.Create(FileName) do begin
      WriteInteger(main, 'CPS_MinBytes', CPS_MinBytes);
      WriteInteger(main, 'CPS_MinSecs', CPS_MinSecs);
      WriteInteger(main, 'FlagsCheckPeriod', FlagsCheckPeriod);
@@ -1052,11 +676,7 @@ begin
      WriteBool(_system, 'SimpleBSY', SimpleBSY);
      WriteBool(_system, 'IgnoreBWZSize', IgnoreBWZSize);
      WriteBool(_system, 'AutoNodelist', AutoNodelist);
-    {$IFDEF EXTREME}
      WriteBool(_system, 'UseAntiHang', true);
-    {$ELSE}
-     WriteBool(_system, 'UseAntiHang', false);
-    {$ENDIF}
 
      WriteBool(polls, 'TransmitHold', TransmitHold);
      WriteBool(polls, 'DirectAsNormal', DirectAsNormal);
@@ -1095,17 +715,10 @@ begin
      WriteString(LogNames, 'polls.log', Polls_log);
      WriteString(LogNames, 'cronapps.log', Cronapps_log);
      WriteString(LogNames, 'tariff.log', tariff_log);
-{$IFDEF WS}
      WriteString(LogNames, 'ipdaemon.log', IPDaemon_log);
-{$ENDIF}
-{$IFDEF RASDIAL}
      WriteString(LogNames, 'ras.log', ras_log);
-{$ENDIF}
-
-{$IFDEF RASDIAL}
      WriteBool(_RasDial, 'RASEnabled', RASEnabled);
      WriteString(_RasDial, 'EntryName', iEntryName);
-{$ENDIF}
 
      WriteBool(tariff, 'LogTariff', not DontLogTariff);
      WriteBool(tariff, 'PerMinute', PerMinute);
@@ -1124,10 +737,8 @@ begin
 
      WriteBool(FTP, 'FTPDebug', FTPDebug);
 
-{$IFDEF USE_TAPI}
      WriteBool(_tapi, 'TAPIDebug', TAPIDebug);
      WriteInteger(_tapi, 'TAPIConnect', TAPIConnect);
-{$ENDIF}
 
      WriteBool(remote, 'enabled', Remote_Enabled);
      WriteBool(remote, 'EncPwd', Remote_EncPwd);
@@ -1155,7 +766,8 @@ begin
      WriteBool(polls, 'uStandOffNoc', FPFlags.uStandOffNoc);
      WriteBool(polls, 'uStandOffFail', FPFlags.uStandOffFail);
 
-     WriteString(sizes, 'PollsListView', IntToStr(RadPolls[0]) + ',' +
+     SavFile.WriteString(sizes, 'PollsListView',
+                                         IntToStr(RadPolls[0]) + ',' +
                                          IntToStr(RadPolls[1]) + ',' +
                                          IntToStr(RadPolls[2]) + ',' +
                                          IntToStr(RadPolls[3]) + ',' +
@@ -1163,35 +775,34 @@ begin
                                          IntToStr(RadPolls[5]) + ',' +
                                          IntToStr(RadPolls[6]) + ',' +
                                          IntToStr(RadPolls[7]));
-
-
-     WriteString(sizes, 'MainForm',      IntToStr(RadMF.Bounds[0]) + ',' +
+     SavFile.WriteString(sizes, 'MainForm',
+                                         IntToStr(RadMF.Bounds[0]) + ',' +
                                          IntToStr(RadMF.Bounds[1]) + ',' +
                                          IntToStr(RadMF.Bounds[2]) + ',' +
                                          IntToStr(RadMF.Bounds[3]) + ',' +
                                          IntToStr(RadMF.Maximized));
-
-     WriteString(sizes, 'NodeBrws',      IntToStr(RadNB.Bounds[0]) + ',' +
+     SavFile.WriteString(sizes, 'NodeBrws',
+                                         IntToStr(RadNB.Bounds[0]) + ',' +
                                          IntToStr(RadNB.Bounds[1]) + ',' +
                                          IntToStr(RadNB.Bounds[2]) + ',' +
                                          IntToStr(RadNB.Bounds[3]) + ',' +
                                          IntToStr(RadNB.Maximized));
-
-     WriteString(sizes, 'BWZListView',   IntToStr(RadBWZ[0]) + ',' +
+     SavFile.WriteString(sizes, 'BWZListView',
+                                         IntToStr(RadBWZ[0]) + ',' +
                                          IntToStr(RadBWZ[1]) + ',' +
                                          IntToStr(RadBWZ[2]) + ',' +
                                          IntToStr(RadBWZ[3]) + ',' +
                                          IntToStr(RadBWZ[4]));
-
-     WriteString(sizes, 'OutMgrHdr',     IntToStr(RadOut[0]) + ',' +
+     SavFile.WriteString(sizes, 'OutMgrHdr',
+                                         IntToStr(RadOut[0]) + ',' +
                                          IntToStr(RadOut[1]) + ',' +
                                          IntToStr(RadOut[2]) + ',' +
                                          IntToStr(RadOut[3]) + ',' +
                                          IntToStr(RadOut[4]) + ',' +
                                          IntToStr(RadOut[5]));
-
-     WriteString(sizes, 'Splitters', IntToStr(SplitA) + ',' +
-                                     IntToStr(SplitB));
+     SavFile.WriteString(sizes, 'Splitters',
+                                         IntToStr(SplitA) + ',' +
+                                         IntToStr(SplitB));
 
      EraseSection(ExtApps);
      EraseSection(Netmail);
@@ -1229,8 +840,8 @@ begin
         WriteString (IP, 'ProxyPassword', ProxyPassword);
      end;
      WriteBool   (IP, 'AllViaProxy', AllViaProxy);
-     s := ChangeFileExt(IniFName, '.BAK');
-     if CopyFile(PChar(IniFName), PChar(s), False) then begin
+     s := ChangeFileExt(FileName, '.BAK');
+     if CopyFile(PChar(FileName), PChar(s), False) then begin
         UpdateFile;
      end;
      Free;
@@ -1243,44 +854,6 @@ end;
 procedure TConfig.StoreCFG;
 begin
    WriteConfig;
-end;
-
-procedure TDualColl.Add;
-var
-   p : ^TDualRec;
-begin
-   New(p);
-   p.nam := NewStr(nam);
-   p.st1 := NewStr(st1);
-   p.st2 := NewStr(st2);
-   inherited Add(p);
-end;
-
-procedure TDualColl.FreeItem;
-var
-   r : ^TDualRec absolute p;
-begin
-   DisposeStr(r.nam);
-   DisposeStr(r.st1);
-   DisposeStr(r.st2);
-   Dispose(r);
-end;
-
-function TDualColl.MatchAddr;
-var
-   i: integer;
-   s: string;
-   r:^TDualRec;
-begin
-   Result := -1;
-   for i := 0 to Count - 1 do begin
-      r := Items[i];
-      s := r.st1^;
-      if (Pos(UpperCase(n), UpperCase(r.nam^)) = 1) and MatchMaskAddressListSingle(a, s) then begin
-         Result := i;
-         Break;
-      end;
-   end;
 end;
 
 end.

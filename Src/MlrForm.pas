@@ -1,7 +1,6 @@
 unit MlrForm;
 
 {$I DEFINE.INC}
-{.$DEFINE KILLALT}
 
 interface
 
@@ -9,7 +8,8 @@ uses
    Classes, Menus, Forms, MClasses, ComCtrls, ExtCtrls, mGrids,
    Controls, StdCtrls, Windows, xFido, MlrThr, Outbound,
    Graphics, xMisc, Messages, xBase, SysUtils, Buttons,
-   Dialogs, ImgList, RemoteUnit, xOutline, Netmail;
+   Dialogs, ImgList, RemoteUnit, xOutline, Netmail, JvComponent,
+   JvAnalogClock;
 
 type
 
@@ -85,12 +85,14 @@ type
       wcb_TopPage2,
       wcb_TopPage3,
       wcb_TopPage4,
+      wcb_TopPage5,
 
       wcb_BtmPage0,
       wcb_BtmPage1,
       wcb_BtmPage2,
       wcb_BtmPage3,
       wcb_BtmPage4,
+      wcb_BtmPage5,
 
       wcb_Rescan,
 
@@ -256,7 +258,6 @@ type
     DialupInfoPanel: TTransPan;
     StatusCarrier: TTransPan;
     StatusBox: TGroupBox;
-    Panel1: TTransPan;
     MailerBPanel: TTransPan;
     Panel2: TTransPan;
     SndBox: TGroupBox;
@@ -304,10 +305,12 @@ type
     DaemonBtnPanel: TTransPan;
     OutMgrPopup: TPopupMenu;
     OutMgrPanel: TTransPan;
+    SystemPanel: TTransPan;
     OutMgrHeader: THeaderControl;
     OutMgrBevel: TBevel;
     OutMgrOutline: TxOutlin;
     OutMgrBtnPanel: TTransPan;
+    SystemBtnPanel: TTransPan;
     bReread: TSpeedButton;
     bDeleteAllPolls: TSpeedButton;
     bTracePoll: TSpeedButton;
@@ -392,7 +395,6 @@ type
     eaNone: TMenuItem;
     Panel4: TTransPan;
     GroupBox2: TGroupBox;
-    Panel5: TTransPan;
     Panel11: TTransPan;
     bwListView: TListView;
     pBWZ: TPopupMenu;
@@ -462,6 +464,14 @@ type
     N28: TMenuItem;
     mtViewLogs: TMenuItem;
     LName: TMenuItem;
+    StatusLine: TTransPan;
+    GroupLine: TGroupBox;
+    TransPan1: TTransPan;
+    TransPan2: TTransPan;
+    Clock: TJvAnalogClock;
+    TransPan3: TTransPan;
+    GroupBox1: TGroupBox;
+    stListView: TListView;
     procedure MainTabControlChange(Sender: TObject);
     procedure bAbortClick(Sender: TObject);
     procedure bStartClick(Sender: TObject);
@@ -606,8 +616,8 @@ type
     wcs: array[Twcs] of string;
     wci: array[Twci] of Integer;
     wcb: set of Twcb;
-    TopPagePanels: array[wcb_TopPage0..wcb_TopPage4] of TTransPan;
-    BtmPagePanels: array[wcb_BtmPage0..wcb_BtmPage4] of TTransPan;
+    TopPagePanels: array[wcb_TopPage0..wcb_TopPage5] of TTransPan;
+    BtmPagePanels: array[wcb_BtmPage0..wcb_BtmPage5] of TTransPan;
     OutMgrExpanded: TFidoAddrColl;
     OutMgrNodes: TOutNodeColl;
     FirstOutMgrNode,
@@ -739,19 +749,11 @@ var
 implementation
 
 uses
-   igHHint, {$IFDEF RASDIAL} RasUnit, rasthrd, {$ENDIF}
-   MdmCmd, Recs, NdlUtil, FileBox, NodeWiz, ActnList,
-   xIP, LngTools, PathName, {$IFNDEF KILLALT} AltRecs, {$ENDIF}
-   DupCfg, FidoPwd, NodeBrws, StupCfg, NodeLCfg, wizard, plus, util,
-   RadIni, tarif,
-
-{$IFDEF WS}
-   IPCfg,
-{$ENDIF}
-
-   ShellAPI, TracePl, Extrnls, PollCfg, xEvents, FreqCfg,
-   SinglPwd, EncLinks, AdrIBox, FreqEdit, Attach, xDES,
-   PwdInput, Setup, LogView;
+   igHHint, RasUnit, RasThrd, MdmCmd, Recs, NdlUtil, FileBox, NodeWiz,
+   ActnList, xIP, LngTools, PathName, AltRecs, DupCfg, FidoPwd, NodeBrws,
+   StupCfg, NodeLCfg, Wizard, Plus, Util, RadIni, tarif, IPCfg, ShellAPI,
+   TracePl, Extrnls, PollCfg, xEvents, FreqCfg, SinglPwd, EncLinks,
+   AdrIBox, FreqEdit, Attach, xDES, PwdInput, Setup, LogView, RadSav;
 
 {$R *.DFM}
 
@@ -964,7 +966,7 @@ begin
          a := r.AddrList[m];
          if MatchMaskAddress(a, '*:*/*.0@*') then begin
             g.Add(Pad(Addr2Str(a), n + 1) + ' <=  ' + Addr2Str(a));
-         end;   
+         end;
       end;
    end;
    g.SaveToFile(S^);
@@ -982,46 +984,43 @@ type
       constructor Create;
       destructor Destroy; override;
       procedure WndProc(var Msg: TMessage);
-      {.$IFDEF THRLOG}
       procedure AppMessage(var Msg: TMsg; var Handled: Boolean);
-      {.$ENDIF}
    end;
 
 function TMailerForm.IsShortCut(var Message: TWMKey): Boolean;
 
   function DispatchShortCut: Boolean;
   var
-    I: Integer;
+     I: Integer;
   begin
-    if FActionLists <> nil then
-      for I := 0 to FActionLists.Count - 1 do
-        if TCustomActionList(FActionLists[I]).IsShortCut(Message) then
-        begin
-          Result := True;
-          Exit;
-        end;
-    Result := False;
+     if FActionLists <> nil then
+     for I := 0 to FActionLists.Count - 1 do
+     if TCustomActionList(FActionLists[I]).IsShortCut(Message) then begin
+        Result := True;
+        Exit;
+     end;
+     Result := False;
   end;
 
 begin
   Result := False;
   if Message.Result = 0 then exit;
   if Assigned(OnShortCut) then OnShortCut(Message, Result);
-  if eType.Focused or ChatMemo1.Focused or ChatMemo2.Focused then
-  begin //539885569 - CTRL+ALT+C
-        //3407873 - '.'
-        //65537 - esc
+  if eType.Focused or ChatMemo1.Focused or ChatMemo2.Focused then begin
+        // 539885569 - CTRL+ALT+C
+        // 3407873   - '.'
+        // 65537     - esc
     case Message.KeyData of
-      65537: exit;     // ESC
-      539885569: exit; // CTRL+ALT+C
-      3735553: exit;   // ' '
-      3407873: exit;   // '.'
-      1835009: exit;   // ENTER
-      else;
+    65537: exit;     // ESC
+    539885569: exit; // CTRL+ALT+C
+    3735553: exit;   // ' '
+    3407873: exit;   // '.'
+    1835009: exit;   // ENTER
+    else;
     end;
   end;
   Result := Result or (Menu <> nil) and (Menu.WindowHandle <> 0) and
-    Menu.IsShortCut(Message) or DispatchShortCut;
+            Menu.IsShortCut(Message) or DispatchShortCut;
 end;
 
 procedure TMailerForm.MyMenuClick(Sender: TObject);
@@ -1042,21 +1041,18 @@ begin
    BWZColl.Update;
    bwListView.Items.BeginUpdate;
    bwListView.Items.Clear;
-   for i := 0 to BWZColl.Count - 1 do
-   begin
+   for i := 0 to BWZColl.Count - 1 do begin
       r := BWZColl[i];
-      if FileExists(r.GetBWZFName) then
-      begin
+      if FileExists(r.GetBWZFName) then begin
          newitem := bwListView.Items.Add;
          newitem.Caption := r.FName;
          newitem.SubItems.Add(Int2StrK(r.TmpSize));
          newitem.SubItems.Add(Int2StrK(r.FSize));
          newitem.SubItems.Add(Addr2Str(r.Addr));
          age := FileAge(r.GetBWZFName);
+         date := SysUtils.Date;
          if age > -1 then begin
             date := FileDateToDateTime(age);
-         end else begin
-            date := Date;
          end;
          st := formatdatetime('dd-mmm-yyyy hh:nn:ss', date);
          newitem.SubItems.Add(st);
@@ -1553,8 +1549,9 @@ end;
 
 procedure ChkFlFlg(forced: boolean; const filename: string);
 begin
-   if not forced then
+   if not forced then begin
       if TimerInstalled(FlFlgTimer) and not TimerExpired(FlFlgTimer) then Exit;
+   end;
    NewTimerSecs(FlFlgTimer, 5{inifile.FlagsCheckPeriod});
    CheckFileFlags(filename);
 end;
@@ -1569,8 +1566,7 @@ begin
    CfgEnter;
    Lines := Pointer(Cfg.Lines.Copy);
    CfgLeave;
-   for i := 0 to Lines.Count - 1 do
-   begin
+   for i := 0 to Lines.Count - 1 do begin
       LR := Lines[i];
       s := MakeFullDir(IniFile.FlagsDir, 'active.' + LR.Name);
       if FileExists(s) then DeleteFile(s);
@@ -1600,21 +1596,14 @@ var
           l: TLineRec;
           s: string;
          cd: TCopyDataStruct;
-{$IFDEF RASDIAL}
    LinesCnt: integer;
-{$ENDIF}
 begin
    LiveCounter := 0;
-   if (Msg.Msg in [WM_QUERYENDSESSION, WM_ENDSESSION]) and (IniFile.IgnoreEndSession) then
-   begin
+   if (Msg.Msg in [WM_QUERYENDSESSION, WM_ENDSESSION]) and (IniFile.IgnoreEndSession) then begin
       MSG.Result := 1;
       exit;
    end;
-   {Because RASCS_Disconnect event is not passed to a callback
-    in case of occasional linedrop}
-{$IFDEF RASDIAL}
    if RASConnect and (RASThread <> nil) then RASThread.CheckConnection;
-{$ENDIF}
    if Cfg = nil then Exit;
    try
       if ExitNow then PostCloseMessage;
@@ -1850,7 +1839,6 @@ begin
             begin
                ExportRoute(Msg.WParam);
             end;
-{$IFDEF WS}
          WM_RESOLVE..WM_RESOLVE + WM__NUMRESOLVE - 1: HostResolveComplete(Msg.Msg - WM_RESOLVE, Msg.lParam);
          WM_ADDDAEMONLOG: AddSpcLogStr(Msg.lParam, PanelOwnerDaemon);
          WM_NEWSOCKPORT: NewInIPLine(Msg.lParam);
@@ -1860,7 +1848,6 @@ begin
                msg.Result := IniFile.WinDlgTWait;
                exit;
             end;
-{$IFDEF RASDIAL}
          WM_RASDIALEVENT:
             begin
                UpdateViewAll;
@@ -1955,8 +1942,6 @@ begin
                   end;
                end;
             end;
-{$ENDIF}
-{$ENDIF}
       else
          begin
             Msg.Result := DefWindowProc(MainWinHandle, Msg.Msg, Msg.wParam, Msg.lParam);
@@ -2101,8 +2086,7 @@ var
 begin
    FillBWListBox;
    j := 0;
-   for i := wcb_TopPage0 to wcb_TopPage4 do
-   begin
+   for i := wcb_TopPage0 to wcb_TopPage5 do begin
       SetVisible(TopPagePanels[i], i, j = Idx);
       Inc(j);
    end;
@@ -2114,8 +2098,7 @@ var
    j: Integer;
 begin
    j := 0;
-   for i := wcb_BtmPage0 to wcb_BtmPage4 do
-   begin
+   for i := wcb_BtmPage0 to wcb_BtmPage5 do begin
       SetVisible(BtmPagePanels[i], i, j = Idx);
       Inc(j);
    end;
@@ -2256,9 +2239,7 @@ begin
    ic := MainTabControl.Tabs.Count;
    for i := 0 to MailerThreads.Count - 1 do begin
       m := MailerThreads.At(i);
-{$IFDEF WS}
       if not m.DialupLine then Continue;
-{$ENDIF}
       if ActiveLine = m then ti := c;
       DoAdd(m.Name);
    end;
@@ -2267,7 +2248,8 @@ begin
    DoAdd(LngStr(rsMMTabPolls));
    if ActiveLine = PanelOwnerOutMgr then ti := c;
    DoAdd(LngStr(rsMMTabOutbound));
-{$IFDEF WS}
+   if ActiveLine = PanelOwnerSystem then ti := c;
+   DoAdd(LngStr(rsMMTabSystem));
    if DaemonStarted then begin
       if ActiveLine = PanelOwnerDaemon then ti := c;
       DoAdd(LngStr(rsMMTabDaemon));
@@ -2278,7 +2260,6 @@ begin
          DoAdd(m.Name);
       end;
    end;
-{$ENDIF}
    while ic > c do begin
       Dec(ic);
       MainTabControl.Tabs.Delete(ic)
@@ -2362,8 +2343,8 @@ const
 var
    a,
    b: Integer;
-   ela: DWORD;
-   bs: TBatchState;
+ ela: DWORD;
+  bs: TBatchState;
 
    procedure SetSndSize(B: Boolean);
    begin
@@ -2405,14 +2386,14 @@ var
       gLst.Width  := gNfo.Left + gNfo.Width;
       gLst.Height := gNfo.Height;
       case gTabCnt.Tabs.Count of
-        0: begin
-             gTabCnt.Tabs.Add('Info');
-             gTabCnt.Tabs.Add('Files');
-           end;
-        1:
-           begin
-             gTabCnt.Tabs.Add('Files');
-           end;
+      0: begin
+           gTabCnt.Tabs.Add('Info');
+           gTabCnt.Tabs.Add('Files');
+         end;
+      1:
+         begin
+           gTabCnt.Tabs.Add('Files');
+         end;
       end;
       if List.Count > 0 then begin
          gLst.RowCount := List.Count + 1;
@@ -2420,8 +2401,7 @@ var
          gLst.Cells[1, 1] := '';
          gLst.Cells[2, 1] := '';
       end;
-      for i := 0 to CollMax(List) do
-      begin
+      for i := 0 to CollMax(List) do begin
          c := TWcs(i + 1 + Integer(wcsGrd1));
          s := List[i];
          if c <= wcslSessionCost then begin
@@ -2454,8 +2434,7 @@ var
       if gNfo.ColWidths[0] <> w then begin
          gNfo.ColWidths[0] := w;
       end;
-      for i := Low(Strs) to High(Strs) do
-      begin
+      for i := Low(Strs) to High(Strs) do begin
          c := TWcs(i + Integer(wcsGrd1));
          s := Strs[i];
          if wcs[c] = s then Continue;
@@ -2515,42 +2494,30 @@ var
    begin
       if (IniFile.DontLogTariff) or (not (ActiveLine is TMailerThread)) then exit;
 
-      with OperTimeItem do
-      begin
-{$IFDEF WS}
+      with OperTimeItem do begin
          if ActiveLine.DialupLine then
-{$ENDIF}    ConnType := ctDial
-{$IFDEF WS}
+            ConnType := ctDial
          else
             ConnType := ctIP;
 
          if not ActiveLine.DialupLine then
-            if ActiveLine.SD <> nil then begin
-               if ActiveLine.SD.ActivePoll = nil then
-               begin
-                  Direction := dirIn;
-                  PhoneNumber := ActiveLine.PublicDS.ConnectString;
-                  PhoneNumber := copy(PhoneNumber, 6, pos('#', PhoneNumber) - 7);
-               end
-               else
-               begin
-                  Direction := dirOUT;
-                  PhoneNumber := ActiveLine.PublicDS.ConnectString;
-                  PhoneNumber := copy(PhoneNumber, 4, pos('#', PhoneNumber) - 5);
-               end
+         if ActiveLine.SD <> nil then begin
+            if ActiveLine.SD.ActivePoll = nil then begin
+               Direction := dirIn;
+               PhoneNumber := ActiveLine.PublicDS.ConnectString;
+               PhoneNumber := copy(PhoneNumber, 6, pos('#', PhoneNumber) - 7);
+            end else begin
+               Direction := dirOUT;
+               PhoneNumber := ActiveLine.PublicDS.ConnectString;
+               PhoneNumber := copy(PhoneNumber, 4, pos('#', PhoneNumber) - 5);
             end
-         else
-{$ENDIF}
-{$IFNDEF WS};{$ENDIF}
+         end else
          if not (ActiveLine is TMailerThread) then exit;
-         if ActiveLine.SD = nil then exit; 
-         if ActiveLine.SD.ActivePoll = nil then
-         begin
+         if ActiveLine.SD = nil then exit;
+         if ActiveLine.SD.ActivePoll = nil then begin
             Direction := dirIn;
             PhoneNumber := ActiveLine.PublicDS.rmtPhone;
-         end
-         else
-         begin
+         end else begin
             Direction := dirOUT;
             PhoneNumber := ActiveLine.SD.ActivePoll.DialupPhone
          end;
@@ -2574,7 +2541,6 @@ var
       SetLabel(lSessionCost, wcslSessionCost, Format('%5.2f', [Cost]));
       SetSessionCost(True)
    end;
-   // visual }
 
    procedure SetRcvTot(const B: Boolean);
    begin
@@ -2614,9 +2580,10 @@ var
 begin
 
    if (ActiveLine = PanelOwnerPolls) or
-      (ActiveLine = PanelOwnerOutMgr)
-{$IFDEF WS} or (ActiveLine = PanelOwnerDaemon){$ENDIF}
-   or (MailerThreads.IndexOf(ActiveLine) = -1) then Exit;
+      (ActiveLine = PanelOwnerOutMgr) or
+      (ActiveLine = PanelOwnerDaemon) or
+      (ActiveLine = PanelOwnerSystem) or
+      (MailerThreads.IndexOf(ActiveLine) = -1) then Exit;
 
    if ApplicationDowned then exit;
    if ActiveLine.SD = nil then exit;
@@ -2823,7 +2790,6 @@ begin
    end else begin
       SetSndTot(True);
       SetSndGauge(b, a);
-      // visual {
       if (TxCPS > 0) then begin
          SetSndTotalTime(True);
          Seconds := (DWORD(a) - MinD(DWORD(a), b)) div DWORD(TxCPS);
@@ -2849,13 +2815,11 @@ begin
    SetTopPageIndex(1);
 end;
 
-{$IFDEF RASDIAL}
 procedure TMailerForm.UpdateRas(const D: string; const DS: string);
 begin
    lTimeCon.Caption := d;
    lStatus2.Caption := ds;
 end;
-{$ENDIF}
 
 procedure TMailerForm.UpdateDial(const D: TDisplayData; const DS: TDisplayStringData);
 var
@@ -2915,16 +2879,17 @@ var
 procedure TMailerForm.UpdateLamps;
 var
    j: Integer;
-   OK: Boolean;
-   bm: TBitMap;
-   im: TBitMap;
-   TR: TRect;
-   II: TIconInfo;
+  OK: Boolean;
+  bm: TBitMap;
+  im: TBitMap;
+  TR: TRect;
+  II: TIconInfo;
 begin
    if (ActiveLine = PanelOwnerPolls) or
-      (ActiveLine = PanelOwnerOutMgr)
-{$IFDEF WS} or (ActiveLine = PanelOwnerDaemon){$ENDIF}
-   or (MailerThreads.IndexOf(ActiveLine) = -1) then
+      (ActiveLine = PanelOwnerOutMgr) or
+      (ActiveLine = PanelOwnerDaemon) or
+      (ActiveLine = PanelOwnerSystem) or
+      (MailerThreads.IndexOf(ActiveLine) = -1) then
    begin
       if (Application.MainForm <> nil) and ((Application.MainForm as TMailerForm).TrayIcon <> nil) then begin
          (Application.MainForm as TMailerForm).TrayIcon.Icon := Application.Icon;
@@ -3273,14 +3238,7 @@ procedure TMailerForm.UpdateView(fromcc: boolean);
       SetEnabledO(bRefuse, wcb_bRefuse, B);
       SetEnabledO(mlAnswer, wcb_mlAnswer, D.CanAnswer);
       SetEnabledO(bAnswer, wcb_bAnswer, D.CanAnswer);
-      if bwListView.Selected = nil then
-         B := false
-      else
-         b := true;
-      SetEnabledO(bKillBWZ, wcb_bKillBWZ, B);
    end;
-
-{$IFDEF RASDIAL}
 
    procedure UpdateRasDial;
    begin
@@ -3289,7 +3247,6 @@ procedure TMailerForm.UpdateView(fromcc: boolean);
          UpDateRas(uFormatDateTime('hh:mm:ss', RasThread.Lasts div 1000), RasThread.ResultString);
       end;
    end;
-{$ENDIF}
 
    function ShowTime: string;
    var
@@ -3335,10 +3292,8 @@ procedure TMailerForm.UpdateView(fromcc: boolean);
             Z := LngStr(rsMMptNone);
          Integer(PollOwnerExtApp):
             Z := LngStr(rsMMptExtApp);
-{$IFDEF WS}
          Integer(PollOwnerDaemon):
             Z := LngStr(rsMMptDaemon);
-{$ENDIF}
          else
             Z := P.Owner.Name;
          end;
@@ -3349,11 +3304,9 @@ procedure TMailerForm.UpdateView(fromcc: boolean);
          if (P.Owner = nil) or (P.Owner = PollOwnerExtApp) then
             N := rsMMpsIdle
          else
-{$IFDEF WS}
          if P.Owner = PollOwnerDaemon then
             N := rsMMpsConnect
          else
-{$ENDIF}
          case
             P.Owner.State of
          msDialing: N := rsMMpsDialing;
@@ -3391,20 +3344,18 @@ procedure TMailerForm.UpdateView(fromcc: boolean);
    begin
       SetEnabledO(mlClose, wcb_mlClose, B);
       SetEnabledO(mlAbortOperation, wcb_mlAbortOperation, B);
-{$IFDEF WS}
       if (not B) or (not ActiveLine.DialupLine) then begin
          SetEnabledO(mlSendMdmCmds, wcb_mlSendMdmCmds, False);
          mnuTerminal.Enabled := false;
-      end else
-{$ENDIF}
-      begin
+      end else begin
          SetEnabledO(mlSendMdmCmds, wcb_mlSendMdmCmds, B and (AllowedMdmCmdState(ActiveLine.State) { and (ActiveLine.CP <> nil)}));
          mnuTerminal.Enabled := B and AllowedMdmCmdState(ActiveLine.State) and ((@F_OpenTerm <> nil) or (@F_OpenUniTerm <> nil));
       end;
       if B then begin
          if (ActiveLine = PanelOwnerPolls) or
-            (ActiveLine = PanelOwnerOutMgr)
-{$IFDEF WS} or (ActiveLine = PanelOwnerDaemon){$ENDIF} then GlobalFail('%s', ['SetLineCommands']);
+            (ActiveLine = PanelOwnerOutMgr) or
+            (ActiveLine = PanelOwnerSystem) or
+            (ActiveLine = PanelOwnerDaemon) then GlobalFail('%s', ['SetLineCommands']);
          Z := TimerInstalled(ActiveLine.D.TmrPublic)
       end else begin
          Z := False;
@@ -3451,8 +3402,6 @@ procedure TMailerForm.UpdateView(fromcc: boolean);
       SetEnabledO(ppDeleteAllPolls, wcb_ppDeleteAllPolls, Z);
    end;
 
-{$IFDEF WS}
-
    procedure UpdateDaemon;
    begin
       if exitnow then exit;
@@ -3471,7 +3420,6 @@ procedure TMailerForm.UpdateView(fromcc: boolean);
       gInput.Invalidate;
       gOutputGraph.Invalidate;
       gInputGraph.Invalidate;
-{$IFDEF RASDIAL}
       if inifile.RASEnabled then begin
          if not (RasLabelPan.Visible and RasBtnPan.Visible) then begin
            RasLabelPan.Visible := true;
@@ -3482,9 +3430,44 @@ procedure TMailerForm.UpdateView(fromcc: boolean);
          RasLabelPan.Visible := False;
          RasBtnPan.Visible := False;
       end;
-{$ENDIF}
    end;
-{$ENDIF}
+
+   procedure UpdateSystem;
+   var
+      B: boolean;
+      i: integer;
+      m: TMailerThread;
+      a: TListItem;
+      t: string;
+   begin
+      if bwListView.Selected = nil then
+         B := false
+      else
+         b := true;
+      SetEnabledO(bKillBWZ, wcb_bKillBWZ, B);
+      stListView.Items.BeginUpdate;
+      t := '';
+      if stListView.ItemFocused <> nil then begin
+         t := stListView.ItemFocused.Caption;
+      end;
+      stListView.Items.Clear;
+      for i := 0 to CollMax(MailerThreads) do begin
+         m := MailerThreads[i];
+         a := stListView.Items.Add;
+         a.Caption := m.Name;
+         a.SubItems.Add(m.StatusMsg);
+         if TimerInstalled(m.D.TmrPublic) then begin
+           a.SubItems.Add(IntToStr(RemainingTimeSecs(m.D.TmrPublic)));
+         end;
+      end;
+      if t <> '' then begin
+         stListView.ItemFocused := stListView.FindCaption(0, t, False, True, False);
+         if stListView.ItemFocused <> nil then begin
+            stListView.ItemFocused.Selected := True;
+         end;
+      end;
+      stListView.Items.EndUpdate;
+   end;
 
    procedure SetMasterKeyCommands(B: Boolean);
    begin
@@ -3501,9 +3484,7 @@ var
    dsk: byte;
 begin
    if ApplicationDowned then begin
-{$IFDEF WS}
       mnu_tray_TCP.Checked := DaemonStarted;
-{$ENDIF}
    end;
    if (Trunc(Now * 100000) mod 50) = 0 then begin
       try
@@ -3530,10 +3511,9 @@ begin
    B := False;
    OutMgrTab := False;
    case Integer(ActiveLine) of
-{$IFDEF WS}
    Integer(PanelOwnerDaemon): UpdateDaemon;
-{$ENDIF}
    Integer(PanelOwnerOutMgr): begin OutMgrTab := True; end; // OutMgr needs no updating
+   Integer(PanelOwnerSystem): UpdateSystem;
    Integer(PanelOwnerPolls):
       if not fromcc then UpdatePolls;
    else
@@ -3559,10 +3539,8 @@ begin
       SetEnabledO(bAnswer, wcb_bAnswer, False);
    end;
    SetMasterKeyCommands(Cfg.MasterKey = 0);
-{$IFDEF WS}
    mfRunIPDaemon.Checked := DaemonStarted;
    mnu_tray_TCP.Checked := DaemonStarted;
-{$ENDIF}
    if LUpd then UpdateLamps;
    lTime0.Caption := LngStr(rsUptimeStr);
    lTime1.Caption := ShowTime;
@@ -3574,15 +3552,12 @@ procedure TMailerForm.MainTabControlChange(Sender: TObject);
    procedure GetActiveLine;
    var
       i: Integer;
-   {$IFDEF WS}
       j,
      ch: Integer;
       m: TMailerThread;
-   {$ENDIF}
    begin
       ActiveLine := nil;
       i := MainTabControl.TabIndex;
-{$IFDEF WS}
       ch := 0;
       for j := 0 to MailerThreads.Count - 1 do begin
          m := MailerThreads[j];
@@ -3604,6 +3579,11 @@ procedure TMailerForm.MainTabControlChange(Sender: TObject);
       end;
       Inc(ch);
       if ch = i then begin
+         ActiveLine := PanelOwnerSystem;
+         Exit;
+      end;
+      Inc(ch);
+      if ch = i then begin
          ActiveLine := PanelOwnerDaemon;
          Exit
       end;
@@ -3617,15 +3597,6 @@ procedure TMailerForm.MainTabControlChange(Sender: TObject);
          end;
          Inc(ch);
       end;
-
-{$ELSE}
-      case MainTabControl.Tabs.Count - i of
-      1: ActiveLine := PanelOwnerOutMgr;
-      2: ActiveLine := PanelOwnerPolls;
-      else
-         ActiveLine := MailerThreads[i]
-      end;
-{$ENDIF}
       if ActiveLine = nil then ActiveLine := PanelOwnerPolls;
    end;
 
@@ -3656,7 +3627,15 @@ begin
          ChatPan.Visible := false;
          s := LngStr(rsMMwcPollMgr);
       end;
-{$IFDEF WS}
+   Integer(PanelOwnerSystem):
+      begin
+         SetTopPageIndex(5);
+         SetBtmPageIndex(5);
+         LogBox.Lines := nil;
+         ChatPan.Visible := false;
+         LogBox.Visible := false;
+         s := LngStr(rsMMwcSystem);
+      end;
    Integer(PanelOwnerDaemon):
       begin
          SetTopPageIndex(3);
@@ -3667,7 +3646,6 @@ begin
          ChatPan.Visible := false;
          s := LngStr(rsMMwcDaemon);
       end;
-{$ENDIF}
    else
       begin
          SetBtmPageIndex(0);
@@ -3894,9 +3872,9 @@ begin
       Inifile.SplitA := Panel2.Width;
       Inifile.SplitB := TermsPanel.Width;
       s := ExtractWord(1, lInfo1.Caption, [#13, #10]);
-      IniFile.WriteString('Store', 'LastIn', s);
+      SavFile.WriteString('Store', 'LastIn', s);
       s := ExtractWord(2, lInfo1.Caption, [#13, #10]);
-      IniFile.WriteString('Store', 'LastOut', s);
+      SavFile.WriteString('Store', 'LastOut', s);
       IniFile.StoreCFG;
       FreeLibrary(ModuleHandle);
       ExitNow := true;
@@ -4298,9 +4276,9 @@ var
 
 begin
    lInfo1.Caption :=
-   Trim(IniFile.ReadString('Store', 'LastIn',
+   Trim(SavFile.ReadString('Store', 'LastIn',
                       'Last  in: -:---/---@--------, --/--/-- --:--:--')) + #32#13#10 +
-   Trim(IniFile.ReadString('Store', 'LastOut',
+   Trim(SavFile.ReadString('Store', 'LastOut',
                       'Last out: -:---/---@--------, --/--/-- --:--:--')) + #32;
    if (Win32Platform = VER_PLATFORM_WIN32_NT) then begin
       aOutbound := nil;
@@ -4334,12 +4312,14 @@ begin
    TopPagePanels[wcb_TopPage2] := PollsListPanel;
    TopPagePanels[wcb_TopPage3] := DaemonPanel;
    TopPagePanels[wcb_TopPage4] := OutMgrPanel;
+   TopPagePanels[wcb_TopPage5] := SystemPanel;
 
    BtmPagePanels[wcb_BtmPage0] := MailerBtnPanel;
    BtmPagePanels[wcb_BtmPage1] := PollBtnPanel;
    BtmPagePanels[wcb_BtmPage2] := DaemonBtnPanel;
    BtmPagePanels[wcb_BtmPage3] := OutMgrBtnPanel;
    BtmPagePanels[wcb_BtmPage4] := PollBtnPanel;
+   BtmPagePanels[wcb_BtmPage5] := SystemBtnPanel;
 
    FillForm(Self, rsMailerForm);
    GridFillRowLng(Self.gTitles, rsMMTitlesGrid);
@@ -5204,12 +5184,13 @@ begin
    UpdateBoundsOutMgrBM;
    OutMgrPanel.Width := MainPanel.ClientWidth;
    OutMgrPanel.Height := BottomPanel.Top - OutMgrPanel.Top;
+   SystemPanel.Width := MainPanel.ClientWidth;
+   SystemPanel.Height := BottomPanel.Top - SystemPanel.Top;
    lTimeCon.Left := RasBtnPan.Left - lTimeCon.Width - 20;
    lTime0.Top  := 2;
    lTime1.Top  := 2;
    lTime0.Left := MainTabControl.ClientWidth - lTime0.Width - ltime1.Width - 10;
    lTime1.Left := MainTabControl.ClientWidth - ltime1.Width - 10;
-//   ChatMemo1.Height := Panel15.Height div 2;
 end;
 
 procedure TMailerForm.OutMgrOutlineMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
@@ -5285,7 +5266,7 @@ procedure TMailerForm.TrayIconClick(Sender: TObject);
 begin
   if TrayIcon.Minimized then begin
     RestoreFromTray;
-    if Inifile.TrayLamps then begin {SetForegroundWindow(Handle);}
+    if Inifile.TrayLamps then begin 
        if MailerForms <> nil then begin
           MailerForms.Enter;
           if MainTabControl.Tabs.Count > TNum then begin
@@ -6468,11 +6449,10 @@ begin
    if not HelpDone then begin
      if Screen.ActiveForm is TMailerForm then begin
        case Integer(ActiveLine) of
-{$IFDEF WS}
          Integer(PanelOwnerDaemon): Data := IDH_INTRODAEMON;
-{$ENDIF}
          Integer(PanelOwnerPolls): Data := IDH_POLLMGRDESCR;
          Integer(PanelOwnerOutMgr): Data := IDH_OUTBOUND;
+         Integer(PanelOwnerSystem): Data := IDH_SYSTEM;
        else
          Data := IDH_MLRD;
        end; {of case}
@@ -6775,8 +6755,8 @@ end;
 
 procedure TMailerForm.SplitterAPanelMoved(Sender: TObject);
 begin
-   TermTx.Width := TermsPanel.Width - 2 * TermTx.Left;
-   TermRx.Width := TermsPanel.Width - 2 * TermRx.Left;
+   TermTx.Width := TermsPanel.Width - TermTx.Left - 5;
+   TermRx.Width := TermsPanel.Width - TermRx.Left - 5;
 end;
 
 procedure TMailerForm.SplitterBPanelMoved(Sender: TObject);

@@ -9,10 +9,8 @@ program Taurus;
 {$I DEFINE.INC}
 
 uses
-{$IFDEF DEBUG_VERSION}
   JCLHookExcept,
   JCLDebug,
-{$ENDIF}  
   RasThrd in 'RasThrd.pas',
   Setup in 'Setup.pas' {SetupForm},
   ComeOn in 'ComeOn.pas',
@@ -84,7 +82,8 @@ uses
   xTAPI in 'xTAPI.pas',
   Netmail in 'Netmail.pas',
   UnitOK in 'UnitOK.pas',
-  LogView in 'LogView.pas' {LogViewer};
+  LogView in 'LogView.pas' {LogViewer},
+  UNetCfg in 'UNetCfg.pas' {NetCfg};
 
 {$R *.RES}
 

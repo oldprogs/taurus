@@ -1150,6 +1150,8 @@ begin
    if o then begin
       FidoOut.AddOutbound(t, s, u, kaBSOKillAfter);
    end;
+   ScanActive := True;
+   ScanCounter := 1;
 end;
 
 procedure TNetmail.PackMail;
@@ -1157,15 +1159,12 @@ var
    i: integer;
    m: TNetmailMsg;
 begin
-   NetColl.Enter;
    for i := 0 to CollMax(NetColl) do begin
       m := NetColl[i];
       if MatchMaskAddress(m.Addr, r) and not MatchMaskAddressListSingle(m.Addr, e) then begin
          if existfile(m.Pack) then begin
             if (Pos('DIR', m.Flgs) = 0) or (CompareAddrs(m.Addr, a) = 0) then begin
                MoveMail(m, a, p, Active);
-               ScanActive := True;
-               ScanCounter := 1;
             end;
          end else begin
             FreeMem(m.Body, m.Size);
@@ -1181,7 +1180,6 @@ begin
          NetColl.AtFree(i);
       end;
    end;
-   NetColl.Leave;
 end;
 
 procedure TNetmail.Route;

@@ -147,6 +147,7 @@ LANGUAGE LANG_ENGLISH,0
         "llRcvSize|Size:\n"\
         "PollsListView|Node|Numbers|Owner|State|Busy|No c.|Fail|Type\n"\
         "BWListView|Filename|Temp Size|Full Size|From Node|Last Record\n"\
+        "STListView|Line|State|Timer\n"\
         "StatusBox| Status \n"\
         "GroupBox3| Status \n"\
         "CancelButton|Cancel\n"\

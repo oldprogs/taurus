@@ -2023,6 +2023,7 @@ object SetupForm: TSetupForm
         RowCount = 2
         Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goRowMoving, goEditing, goDigitalRows]
         TabOrder = 0
+        OnDblClick = gNetmailDblClick
         CheckBoxes = False
         PasswordCol = 3
         ColWidths = (

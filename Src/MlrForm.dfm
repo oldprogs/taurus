@@ -1,8 +1,8 @@
 object MailerForm: TMailerForm
-  Left = 192
-  Top = 128
-  Width = 737
-  Height = 564
+  Left = 204
+  Top = 126
+  Width = 741
+  Height = 577
   HelpContext = 1500
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -27,20 +27,21 @@ object MailerForm: TMailerForm
   object MainTabControl: TTabControl
     Left = 0
     Top = 0
-    Width = 729
-    Height = 512
+    Width = 733
+    Height = 525
     Align = alClient
     HotTrack = True
     TabOrder = 0
     Tabs.Strings = (
-      'Polls')
+      'Polls'
+      'System')
     TabIndex = 0
     OnChange = MainTabControlChange
     DesignSize = (
-      729
-      512)
+      733
+      525)
     object lTime0: TLabel
-      Left = 503
+      Left = 506
       Top = 3
       Width = 91
       Height = 16
@@ -50,7 +51,7 @@ object MailerForm: TMailerForm
       Layout = tlCenter
     end
     object lTime1: TLabel
-      Left = 612
+      Left = 616
       Top = 3
       Width = 108
       Height = 16
@@ -68,19 +69,19 @@ object MailerForm: TMailerForm
     object MainPanel: TTransPan
       Left = 4
       Top = 27
-      Width = 721
-      Height = 481
+      Width = 725
+      Height = 494
       Align = alClient
       BevelOuter = bvNone
       BorderStyle = bsSingle
+      FullRepaint = False
       ParentBackground = False
       TabOrder = 0
-      EraseBackGround = True
       object LogBox: TLogger
         Left = 0
         Top = 329
-        Width = 717
-        Height = 108
+        Width = 721
+        Height = 121
         Cursor = crHandPoint
         Align = alClient
         Color = clBtnFace
@@ -93,32 +94,33 @@ object MailerForm: TMailerForm
         ParentFont = False
         ReadOnly = True
         ScrollBars = ssBoth
-        TabOrder = 4
+        TabOrder = 5
       end
       object TopNotebookPanel: TTransPan
         Left = 0
         Top = 0
-        Width = 717
+        Width = 721
         Height = 329
         Align = alTop
         BevelOuter = bvNone
+        FullRepaint = False
         ParentBackground = False
         TabOrder = 0
         object PollsListPanel: TTransPan
           Left = 0
           Top = 0
-          Width = 717
+          Width = 721
           Height = 329
           Align = alClient
           BevelOuter = bvNone
+          FullRepaint = False
           ParentBackground = False
           TabOrder = 0
           Visible = False
-          EraseBackGround = True
           object PollsListView: TAdvListView
             Left = 0
             Top = 0
-            Width = 717
+            Width = 721
             Height = 329
             Align = alClient
             AllocBy = 128
@@ -171,7 +173,7 @@ object MailerForm: TMailerForm
         object DaemonPanel: TTransPan
           Left = 0
           Top = 0
-          Width = 717
+          Width = 721
           Height = 329
           Align = alClient
           BevelOuter = bvNone
@@ -182,7 +184,7 @@ object MailerForm: TMailerForm
           object MainDaemonPanel: TTransPan
             Left = 10
             Top = 0
-            Width = 697
+            Width = 701
             Height = 315
             Align = alClient
             BevelOuter = bvNone
@@ -191,7 +193,7 @@ object MailerForm: TMailerForm
             object Panel7: TTransPan
               Left = 0
               Top = 158
-              Width = 697
+              Width = 701
               Height = 157
               Align = alBottom
               BevelOuter = bvNone
@@ -240,7 +242,7 @@ object MailerForm: TMailerForm
               object Panel12: TTransPan
                 Left = 112
                 Top = 0
-                Width = 585
+                Width = 589
                 Height = 157
                 Align = alClient
                 BevelOuter = bvNone
@@ -250,7 +252,7 @@ object MailerForm: TMailerForm
                 object DaemonPIH: TTransPan
                   Left = 8
                   Top = 8
-                  Width = 569
+                  Width = 573
                   Height = 20
                   Align = alTop
                   Alignment = taLeftJustify
@@ -262,7 +264,7 @@ object MailerForm: TMailerForm
                 object Panel18: TTransPan
                   Left = 8
                   Top = 28
-                  Width = 569
+                  Width = 573
                   Height = 121
                   Align = alClient
                   BorderWidth = 1
@@ -271,7 +273,7 @@ object MailerForm: TMailerForm
                   object gInputGraph: TNavyGraph
                     Left = 2
                     Top = 2
-                    Width = 565
+                    Width = 569
                     Height = 117
                     Align = alClient
                     EraseBackGround = True
@@ -282,7 +284,7 @@ object MailerForm: TMailerForm
             object Panel6: TTransPan
               Left = 0
               Top = 0
-              Width = 697
+              Width = 701
               Height = 158
               Align = alClient
               BevelOuter = bvNone
@@ -331,7 +333,7 @@ object MailerForm: TMailerForm
               object Panel10: TTransPan
                 Left = 112
                 Top = 0
-                Width = 585
+                Width = 589
                 Height = 158
                 Align = alClient
                 BevelOuter = bvNone
@@ -341,7 +343,7 @@ object MailerForm: TMailerForm
                 object DaemonPOH: TTransPan
                   Left = 8
                   Top = 8
-                  Width = 569
+                  Width = 573
                   Height = 20
                   Align = alTop
                   Alignment = taLeftJustify
@@ -353,7 +355,7 @@ object MailerForm: TMailerForm
                 object Panel17: TTransPan
                   Left = 8
                   Top = 28
-                  Width = 569
+                  Width = 573
                   Height = 122
                   Align = alClient
                   BorderWidth = 1
@@ -362,7 +364,7 @@ object MailerForm: TMailerForm
                   object gOutputGraph: TNavyGraph
                     Left = 2
                     Top = 2
-                    Width = 565
+                    Width = 569
                     Height = 118
                     Align = alClient
                     EraseBackGround = True
@@ -374,7 +376,7 @@ object MailerForm: TMailerForm
           object Panel19: TTransPan
             Left = 0
             Top = 315
-            Width = 717
+            Width = 721
             Height = 14
             Align = alBottom
             BevelOuter = bvNone
@@ -383,7 +385,7 @@ object MailerForm: TMailerForm
             EraseBackGround = True
           end
           object Panel20: TTransPan
-            Left = 707
+            Left = 711
             Top = 0
             Width = 10
             Height = 315
@@ -406,255 +408,17 @@ object MailerForm: TMailerForm
             EraseBackGround = True
           end
         end
-        object MailerAPanel: TTransPan
-          Left = 0
-          Top = 0
-          Width = 717
-          Height = 329
-          Align = alClient
-          BevelOuter = bvNone
-          ParentBackground = False
-          TabOrder = 1
-          Visible = False
-          EraseBackGround = True
-          object SplitterAPanel: TSplitter
-            Left = 393
-            Top = 0
-            Width = 4
-            Height = 329
-            Align = alRight
-            AutoSnap = False
-            ResizeStyle = rsUpdate
-            OnMoved = SplitterAPanelMoved
-          end
-          object TermsPanel: TTransPan
-            Left = 397
-            Top = 0
-            Width = 320
-            Height = 329
-            Align = alRight
-            BevelOuter = bvNone
-            ParentBackground = False
-            TabOrder = 0
-            object TermRx: TMicroTerm
-              Left = 10
-              Top = 156
-              Width = 305
-              Height = 144
-            end
-            object TermTx: TMicroTerm
-              Left = 10
-              Top = 9
-              Width = 305
-              Height = 144
-            end
-          end
-          object DialupInfoPanel: TTransPan
-            Left = 0
-            Top = 0
-            Width = 393
-            Height = 329
-            Align = alClient
-            BevelOuter = bvNone
-            ParentBackground = False
-            TabOrder = 1
-            EraseBackGround = True
-            object Panel4: TTransPan
-              Left = 0
-              Top = 66
-              Width = 393
-              Height = 256
-              Align = alTop
-              BevelOuter = bvNone
-              BorderWidth = 3
-              ParentBackground = False
-              TabOrder = 1
-              EraseBackGround = True
-              object GroupBox2: TGroupBox
-                Left = 9
-                Top = 3
-                Width = 381
-                Height = 250
-                Align = alClient
-                Caption = ' badwazoo.lst '
-                ParentBackground = False
-                TabOrder = 0
-                object Panel11: TTransPan
-                  Left = 2
-                  Top = 18
-                  Width = 377
-                  Height = 230
-                  Align = alClient
-                  BevelOuter = bvNone
-                  BorderWidth = 4
-                  ParentBackground = False
-                  TabOrder = 0
-                  EraseBackGround = True
-                  object bwListView: TListView
-                    Left = 4
-                    Top = 4
-                    Width = 369
-                    Height = 222
-                    Align = alClient
-                    Columns = <
-                      item
-                        Caption = 'Filename'
-                        MinWidth = 70
-                        Width = 86
-                      end
-                      item
-                        Caption = 'Temp Size'
-                        MinWidth = 50
-                        Width = 86
-                      end
-                      item
-                        Caption = 'Full Size'
-                        MinWidth = 50
-                        Width = 86
-                      end
-                      item
-                        Caption = 'From Node'
-                        MinWidth = 50
-                        Width = 86
-                      end
-                      item
-                        Caption = 'FileTime'
-                        MinWidth = 50
-                        Width = 62
-                      end>
-                    ColumnClick = False
-                    GridLines = True
-                    ReadOnly = True
-                    RowSelect = True
-                    PopupMenu = pBWZ
-                    TabOrder = 0
-                    ViewStyle = vsReport
-                    OnClick = bwListBoxClick
-                  end
-                end
-              end
-              object Panel5: TTransPan
-                Left = 3
-                Top = 3
-                Width = 6
-                Height = 250
-                Align = alLeft
-                BevelOuter = bvNone
-                ParentBackground = False
-                TabOrder = 1
-                EraseBackGround = True
-              end
-            end
-            object StatusCarrier: TTransPan
-              Left = 0
-              Top = 0
-              Width = 393
-              Height = 66
-              Align = alTop
-              BevelOuter = bvNone
-              BorderWidth = 3
-              ParentBackground = False
-              TabOrder = 0
-              EraseBackGround = True
-              object Panel1: TTransPan
-                Left = 3
-                Top = 3
-                Width = 6
-                Height = 60
-                Align = alLeft
-                BevelOuter = bvNone
-                ParentBackground = False
-                TabOrder = 1
-                EraseBackGround = True
-              end
-              object StatusBox: TGroupBox
-                Left = 9
-                Top = 3
-                Width = 381
-                Height = 60
-                Align = alClient
-                Caption = ' Status '
-                ParentBackground = False
-                TabOrder = 0
-                object lStatus: TLabel
-                  Left = 14
-                  Top = 25
-                  Width = 22
-                  Height = 16
-                  Caption = 'Idle'
-                  Transparent = False
-                  Layout = tlCenter
-                end
-                object TimeoutBox: TTransPan
-                  Left = 266
-                  Top = 18
-                  Width = 113
-                  Height = 40
-                  Align = alRight
-                  BevelOuter = bvNone
-                  ParentBackground = False
-                  TabOrder = 0
-                  Visible = False
-                  EraseBackGround = True
-                  object lTimeout: TLabel
-                    Left = 80
-                    Top = 8
-                    Width = 21
-                    Height = 16
-                    Caption = '999'
-                  end
-                  object bStart: TSpeedButton
-                    Left = 20
-                    Top = 5
-                    Width = 26
-                    Height = 22
-                    Glyph.Data = {
-                      36010000424D3601000000000000760000002800000014000000100000000100
-                      040000000000C000000000000000000000001000000010000000000000000000
-                      80000080000000808000800000008000800080800000C0C0C000808080000000
-                      FF0000FF000000FFFF00FF000000FF00FF00FFFF0000FFFFFF00333333333333
-                      333333330000333333333333333333330000338FF33333333333FF3300003380
-                      F333333333FF0F3300003380F3333333FF000F3300003380F33333FF00000F33
-                      00003380F333FF0000000F3300003380F33F000000000F3300003380F3880000
-                      00000F3300003380F333880000000F3300003380F333338800000F3300003380
-                      F333333388000F3300003380F333333333880F3300003388F333333333338F33
-                      0000333333333333333333330000333333333333333333330000}
-                    OnClick = bStartClick
-                  end
-                  object bAdd: TSpeedButton
-                    Left = 44
-                    Top = 5
-                    Width = 26
-                    Height = 22
-                    Glyph.Data = {
-                      36010000424D3601000000000000760000002800000011000000100000000100
-                      040000000000C000000000000000000000001000000010000000000000000000
-                      80000080000000808000800000008000800080800000C0C0C000808080000000
-                      FF0000FF000000FFFF00FF000000FF00FF00FFFF0000FFFFFF00333333333333
-                      333330000000333333333333333330000000333F333333333333300000003380
-                      FF333333333330000000338000FF333333333000000033800000FF3333333000
-                      00003380000000FF333330000000338000000000FF3330000000338000000000
-                      88F3300000003380000000883333300000003380000088333333300000003380
-                      0088333333333000000033808833333333333000000033883333333333333000
-                      0000333333333333333330000000333333333333333330000000}
-                    OnClick = bAddClick
-                  end
-                end
-              end
-            end
-          end
-        end
         object MailerBPanel: TTransPan
           Left = 0
           Top = 0
-          Width = 717
+          Width = 721
           Height = 329
           Align = alClient
           BevelOuter = bvNone
+          FullRepaint = False
           ParentBackground = False
           TabOrder = 3
           Visible = False
-          EraseBackGround = True
           object SplitterBPanel: TSplitter
             Left = 375
             Top = 0
@@ -663,136 +427,6 @@ object MailerForm: TMailerForm
             AutoSnap = False
             ResizeStyle = rsUpdate
             OnMoved = SplitterBPanelMoved
-          end
-          object Panel3: TTransPan
-            Left = 379
-            Top = 0
-            Width = 338
-            Height = 329
-            Align = alClient
-            BevelOuter = bvNone
-            BorderWidth = 12
-            ParentBackground = False
-            TabOrder = 1
-            EraseBackGround = True
-            object SessionHist: TTransPan
-              Left = 12
-              Top = 222
-              Width = 314
-              Height = 95
-              Align = alBottom
-              ParentBackground = False
-              TabOrder = 1
-              EraseBackGround = True
-              object MHistO: TNavyGraph
-                Left = 1
-                Top = 1
-                Width = 312
-                Height = 46
-                Align = alTop
-                EraseBackGround = True
-              end
-              object MHistI: TNavyGraph
-                Left = 1
-                Top = 48
-                Width = 312
-                Height = 46
-                Align = alBottom
-                EraseBackGround = True
-              end
-            end
-            object SessionNfoPnl: TTransPan
-              Left = 12
-              Top = 12
-              Width = 314
-              Height = 207
-              Align = alTop
-              BevelOuter = bvNone
-              ParentBackground = False
-              TabOrder = 0
-              object gTabCnt: TTabControl
-                Left = 0
-                Top = 0
-                Width = 314
-                Height = 207
-                Align = alClient
-                TabOrder = 0
-                Tabs.Strings = (
-                  'Info')
-                TabIndex = 0
-                OnChange = gTabCntChange
-                object gTitles: TAdvGrid
-                  Left = 4
-                  Top = 27
-                  Width = 105
-                  Height = 176
-                  FixedFont.Charset = DEFAULT_CHARSET
-                  FixedFont.Color = clWindowText
-                  FixedFont.Height = -13
-                  FixedFont.Name = 'Arial'
-                  FixedFont.Style = []
-                  Align = alLeft
-                  Color = clBtnFace
-                  ColCount = 2
-                  DefaultColWidth = 80
-                  DefaultRowHeight = 18
-                  Enabled = False
-                  RowCount = 8
-                  FixedRows = 0
-                  Options = [goFixedVertLine, goFixedHorzLine]
-                  ScrollBars = ssNone
-                  TabOrder = 0
-                  CheckBoxes = False
-                end
-                object gNfo: TAdvGrid
-                  Left = 109
-                  Top = 27
-                  Width = 201
-                  Height = 176
-                  FixedFont.Charset = DEFAULT_CHARSET
-                  FixedFont.Color = clWindowText
-                  FixedFont.Height = -13
-                  FixedFont.Name = 'Arial'
-                  FixedFont.Style = []
-                  Align = alClient
-                  Color = clBtnFace
-                  ColCount = 1
-                  DefaultColWidth = 1000
-                  DefaultRowHeight = 18
-                  FixedCols = 0
-                  RowCount = 8
-                  FixedRows = 0
-                  Options = [goHorzLine]
-                  ScrollBars = ssHorizontal
-                  TabOrder = 2
-                  CheckBoxes = False
-                end
-                object gLst: TAdvGrid
-                  Left = 113
-                  Top = 30
-                  Width = 307
-                  Height = 172
-                  FixedFont.Charset = DEFAULT_CHARSET
-                  FixedFont.Color = clWindowText
-                  FixedFont.Height = -13
-                  FixedFont.Name = 'Arial'
-                  FixedFont.Style = []
-                  ColCount = 3
-                  DefaultColWidth = 160
-                  DefaultRowHeight = 18
-                  RowCount = 2
-                  Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goDigitalRows]
-                  ScrollBars = ssVertical
-                  TabOrder = 1
-                  Visible = False
-                  CheckBoxes = False
-                  ColWidths = (
-                    31
-                    171
-                    60)
-                end
-              end
-            end
           end
           object Panel2: TTransPan
             Left = 0
@@ -1168,15 +802,350 @@ object MailerForm: TMailerForm
               end
             end
           end
+          object Panel3: TTransPan
+            Left = 379
+            Top = 0
+            Width = 342
+            Height = 329
+            Align = alClient
+            BevelOuter = bvNone
+            BorderWidth = 12
+            ParentBackground = False
+            TabOrder = 1
+            EraseBackGround = True
+            object SessionHist: TTransPan
+              Left = 12
+              Top = 222
+              Width = 318
+              Height = 95
+              Align = alBottom
+              ParentBackground = False
+              TabOrder = 1
+              EraseBackGround = True
+              object MHistO: TNavyGraph
+                Left = 1
+                Top = 1
+                Width = 316
+                Height = 46
+                Align = alTop
+                EraseBackGround = True
+              end
+              object MHistI: TNavyGraph
+                Left = 1
+                Top = 48
+                Width = 316
+                Height = 46
+                Align = alBottom
+                EraseBackGround = True
+              end
+            end
+            object SessionNfoPnl: TTransPan
+              Left = 12
+              Top = 12
+              Width = 318
+              Height = 207
+              Align = alTop
+              BevelOuter = bvNone
+              ParentBackground = False
+              TabOrder = 0
+              object gTabCnt: TTabControl
+                Left = 0
+                Top = 0
+                Width = 318
+                Height = 207
+                Align = alClient
+                TabOrder = 0
+                Tabs.Strings = (
+                  'Info')
+                TabIndex = 0
+                OnChange = gTabCntChange
+                object gTitles: TAdvGrid
+                  Left = 4
+                  Top = 27
+                  Width = 105
+                  Height = 176
+                  FixedFont.Charset = DEFAULT_CHARSET
+                  FixedFont.Color = clWindowText
+                  FixedFont.Height = -13
+                  FixedFont.Name = 'Arial'
+                  FixedFont.Style = []
+                  Align = alLeft
+                  Color = clBtnFace
+                  ColCount = 2
+                  DefaultColWidth = 80
+                  DefaultRowHeight = 18
+                  Enabled = False
+                  RowCount = 8
+                  FixedRows = 0
+                  Options = [goFixedVertLine, goFixedHorzLine]
+                  ScrollBars = ssNone
+                  TabOrder = 0
+                  CheckBoxes = False
+                end
+                object gNfo: TAdvGrid
+                  Left = 109
+                  Top = 27
+                  Width = 205
+                  Height = 176
+                  FixedFont.Charset = DEFAULT_CHARSET
+                  FixedFont.Color = clWindowText
+                  FixedFont.Height = -13
+                  FixedFont.Name = 'Arial'
+                  FixedFont.Style = []
+                  Align = alClient
+                  Color = clBtnFace
+                  ColCount = 1
+                  DefaultColWidth = 1000
+                  DefaultRowHeight = 18
+                  FixedCols = 0
+                  RowCount = 8
+                  FixedRows = 0
+                  Options = [goHorzLine]
+                  ScrollBars = ssHorizontal
+                  TabOrder = 2
+                  CheckBoxes = False
+                end
+                object gLst: TAdvGrid
+                  Left = 113
+                  Top = 30
+                  Width = 307
+                  Height = 172
+                  FixedFont.Charset = DEFAULT_CHARSET
+                  FixedFont.Color = clWindowText
+                  FixedFont.Height = -13
+                  FixedFont.Name = 'Arial'
+                  FixedFont.Style = []
+                  ColCount = 3
+                  DefaultColWidth = 160
+                  DefaultRowHeight = 18
+                  RowCount = 2
+                  Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goDigitalRows]
+                  ScrollBars = ssVertical
+                  TabOrder = 1
+                  Visible = False
+                  CheckBoxes = False
+                  ColWidths = (
+                    31
+                    171
+                    60)
+                end
+              end
+            end
+          end
+        end
+        object MailerAPanel: TTransPan
+          Left = 0
+          Top = 0
+          Width = 721
+          Height = 329
+          Align = alClient
+          BevelOuter = bvNone
+          UseDockManager = False
+          FullRepaint = False
+          ParentBackground = False
+          TabOrder = 1
+          Visible = False
+          object SplitterAPanel: TSplitter
+            Left = 397
+            Top = 0
+            Width = 4
+            Height = 329
+            Align = alRight
+            AutoSnap = False
+            ResizeStyle = rsUpdate
+            OnMoved = SplitterAPanelMoved
+          end
+          object TermsPanel: TTransPan
+            Left = 401
+            Top = 0
+            Width = 320
+            Height = 329
+            Align = alRight
+            BevelOuter = bvNone
+            FullRepaint = False
+            ParentBackground = False
+            TabOrder = 0
+            object TermRx: TMicroTerm
+              Left = 10
+              Top = 169
+              Width = 305
+              Height = 150
+            end
+            object TermTx: TMicroTerm
+              Left = 10
+              Top = 16
+              Width = 305
+              Height = 150
+            end
+          end
+          object DialupInfoPanel: TTransPan
+            Left = 0
+            Top = 0
+            Width = 397
+            Height = 329
+            Align = alClient
+            BevelOuter = bvNone
+            BorderWidth = 9
+            UseDockManager = False
+            FullRepaint = False
+            ParentBackground = False
+            TabOrder = 1
+            object StatusCarrier: TTransPan
+              Left = 9
+              Top = 9
+              Width = 379
+              Height = 60
+              Align = alTop
+              BevelOuter = bvNone
+              UseDockManager = False
+              FullRepaint = False
+              ParentBackground = False
+              TabOrder = 0
+              object StatusBox: TGroupBox
+                Left = 0
+                Top = 0
+                Width = 379
+                Height = 60
+                Align = alClient
+                Caption = ' Status '
+                ParentBackground = False
+                TabOrder = 0
+                object lStatus: TLabel
+                  Left = 14
+                  Top = 25
+                  Width = 22
+                  Height = 16
+                  Caption = 'Idle'
+                  Transparent = False
+                  Layout = tlCenter
+                end
+                object TimeoutBox: TTransPan
+                  Left = 264
+                  Top = 18
+                  Width = 113
+                  Height = 40
+                  Align = alRight
+                  BevelOuter = bvNone
+                  FullRepaint = False
+                  ParentBackground = False
+                  TabOrder = 0
+                  Visible = False
+                  object lTimeout: TLabel
+                    Left = 82
+                    Top = 8
+                    Width = 21
+                    Height = 16
+                    Caption = '999'
+                  end
+                  object bStart: TSpeedButton
+                    Left = 25
+                    Top = 5
+                    Width = 26
+                    Height = 22
+                    Glyph.Data = {
+                      36010000424D3601000000000000760000002800000014000000100000000100
+                      040000000000C000000000000000000000001000000010000000000000000000
+                      80000080000000808000800000008000800080800000C0C0C000808080000000
+                      FF0000FF000000FFFF00FF000000FF00FF00FFFF0000FFFFFF00333333333333
+                      333333330000333333333333333333330000338FF33333333333FF3300003380
+                      F333333333FF0F3300003380F3333333FF000F3300003380F33333FF00000F33
+                      00003380F333FF0000000F3300003380F33F000000000F3300003380F3880000
+                      00000F3300003380F333880000000F3300003380F333338800000F3300003380
+                      F333333388000F3300003380F333333333880F3300003388F333333333338F33
+                      0000333333333333333333330000333333333333333333330000}
+                    Transparent = False
+                    OnClick = bStartClick
+                  end
+                  object bAdd: TSpeedButton
+                    Left = 50
+                    Top = 5
+                    Width = 26
+                    Height = 22
+                    Glyph.Data = {
+                      36010000424D3601000000000000760000002800000011000000100000000100
+                      040000000000C000000000000000000000001000000010000000000000000000
+                      80000080000000808000800000008000800080800000C0C0C000808080000000
+                      FF0000FF000000FFFF00FF000000FF00FF00FFFF0000FFFFFF00333333333333
+                      333330000000333333333333333330000000333F333333333333300000003380
+                      FF333333333330000000338000FF333333333000000033800000FF3333333000
+                      00003380000000FF333330000000338000000000FF3330000000338000000000
+                      88F3300000003380000000883333300000003380000088333333300000003380
+                      0088333333333000000033808833333333333000000033883333333333333000
+                      0000333333333333333330000000333333333333333330000000}
+                    Transparent = False
+                    OnClick = bAddClick
+                  end
+                end
+              end
+            end
+            object StatusLine: TTransPan
+              Left = 9
+              Top = 78
+              Width = 379
+              Height = 242
+              Align = alClient
+              BevelOuter = bvNone
+              UseDockManager = False
+              FullRepaint = False
+              ParentBackground = True
+              ParentColor = True
+              TabOrder = 1
+              object GroupLine: TGroupBox
+                Left = 0
+                Top = 0
+                Width = 379
+                Height = 242
+                Align = alClient
+                TabOrder = 0
+                object TransPan2: TTransPan
+                  Left = 2
+                  Top = 18
+                  Width = 375
+                  Height = 222
+                  Align = alClient
+                  BevelOuter = bvNone
+                  BorderWidth = 20
+                  UseDockManager = False
+                  FullRepaint = False
+                  TabOrder = 0
+                  object Clock: TJvAnalogClock
+                    Left = 20
+                    Top = 20
+                    Width = 335
+                    Height = 182
+                    Date = True
+                    SpiderClock = True
+                    SecJump = True
+                    CenterCol = clWindow
+                    Align = alClient
+                    TabOrder = 0
+                    BevelInner = bvNone
+                    BevelOuter = bvNone
+                  end
+                end
+              end
+            end
+            object TransPan1: TTransPan
+              Left = 9
+              Top = 69
+              Width = 379
+              Height = 9
+              Align = alTop
+              BevelOuter = bvNone
+              FullRepaint = False
+              TabOrder = 2
+            end
+          end
         end
       end
       object ChatPan: TTransPan
         Left = 0
         Top = 329
-        Width = 717
-        Height = 108
+        Width = 721
+        Height = 121
         Align = alClient
         BevelOuter = bvNone
+        FullRepaint = False
         Font.Charset = DEFAULT_CHARSET
         Font.Color = clWindowText
         Font.Height = -13
@@ -1186,22 +1155,43 @@ object MailerForm: TMailerForm
         TabOrder = 3
         Visible = False
         OnResize = ChatPanResize
+        object Panel13: TTransPan
+          Left = 0
+          Top = 90
+          Width = 721
+          Height = 31
+          Align = alBottom
+          BevelOuter = bvNone
+          TabOrder = 0
+          DesignSize = (
+            721
+            31)
+          object eType: TEdit
+            Left = 1
+            Top = 4
+            Width = 867
+            Height = 24
+            Anchors = [akLeft, akTop, akRight, akBottom]
+            TabOrder = 0
+            OnKeyPress = eTypeKeyPress
+          end
+        end
         object ChatCaptionPan: TTransPan
           Left = 0
           Top = 0
-          Width = 717
+          Width = 721
           Height = 23
           Align = alTop
           TabOrder = 2
           OnConstrainedResize = ChatCaptionPanConstrainedResize
           EraseBackGround = True
           DesignSize = (
-            717
+            721
             23)
           object imgHeader: TImage
             Left = 1
             Top = 1
-            Width = 715
+            Width = 719
             Height = 21
             Align = alClient
             Picture.Data = {
@@ -1253,7 +1243,7 @@ object MailerForm: TMailerForm
             Stretch = True
           end
           object sbCloseChat: TSpeedButton
-            Left = 642
+            Left = 646
             Top = 2
             Width = 18
             Height = 18
@@ -1288,32 +1278,11 @@ object MailerForm: TMailerForm
             Transparent = True
           end
         end
-        object Panel13: TTransPan
-          Left = 0
-          Top = 77
-          Width = 717
-          Height = 31
-          Align = alBottom
-          BevelOuter = bvNone
-          TabOrder = 0
-          DesignSize = (
-            717
-            31)
-          object eType: TEdit
-            Left = 1
-            Top = 4
-            Width = 863
-            Height = 24
-            Anchors = [akLeft, akTop, akRight, akBottom]
-            TabOrder = 0
-            OnKeyPress = eTypeKeyPress
-          end
-        end
         object Panel15: TTransPan
           Left = 0
           Top = 23
-          Width = 717
-          Height = 54
+          Width = 721
+          Height = 67
           Align = alClient
           BevelOuter = bvNone
           ParentColor = True
@@ -1321,7 +1290,7 @@ object MailerForm: TMailerForm
           object ChatMemo1: TMemo
             Left = 0
             Top = 0
-            Width = 717
+            Width = 721
             Height = 191
             TabStop = False
             Align = alTop
@@ -1334,7 +1303,7 @@ object MailerForm: TMailerForm
           object ChatMemo2: TMemo
             Left = 0
             Top = 191
-            Width = 717
+            Width = 721
             Height = 198
             TabStop = False
             Align = alClient
@@ -1348,438 +1317,21 @@ object MailerForm: TMailerForm
       end
       object BottomPanel: TTransPan
         Left = 0
-        Top = 437
-        Width = 717
+        Top = 450
+        Width = 721
         Height = 40
         Align = alBottom
         BevelOuter = bvNone
         ParentBackground = False
         ParentColor = True
         TabOrder = 1
-        object MailerBtnPanel: TTransPan
-          Left = 0
-          Top = 0
-          Width = 717
-          Height = 40
-          Align = alClient
-          BevelOuter = bvNone
-          ParentBackground = False
-          TabOrder = 0
-          Visible = False
-          object bAbort: TSpeedButton
-            Left = 9
-            Top = 4
-            Width = 32
-            Height = 32
-            Hint = 'Abort & Reset'
-            Flat = True
-            Glyph.Data = {
-              DE010000424DDE01000000000000760000002800000024000000120000000100
-              0400000000006801000000000000000000001000000010000000000000000000
-              8000008000000080800080000000800080008080000080808000C0C0C0000000
-              FF0000FF000000FFFF00FF000000FF00FF00FFFF0000FFFFFF00333333111111
-              33333333333F7777773F33330000391331999999113333377F3733333377F333
-              000039911999999999133337F7733FFFFF337F3300003999999FFFFF99913337
-              F333F77777F337F30000399999F33333F9991337F33F7333337F337F00003999
-              993333333F991337F33733333337F37F00003999999333333F991337FFFF7F33
-              3337777300003FFFFFFF33333333333777777733333333330000333333333333
-              333333333333333333FFFFFF000033333333333311111133FFFF333333777777
-              00003F991333333F99999137777F333337F3333700003F9913333333F9999137
-              F37F333333733337000033F991333331199991337337FFFFF7733337000033F9
-              99111119999991337F3377777333FF370000333F9999999999FF913337FF3333
-              33FF77F700003333FF999999FF33F3333377FFFFFF7733730000333333FFFFFF
-              3333333333337777773333330000333333333333333333333333333333333333
-              0000}
-            NumGlyphs = 2
-            ParentShowHint = False
-            ShowHint = True
-            OnClick = bAbortClick
-          end
-          object bRefuse: TSpeedButton
-            Left = 85
-            Top = 4
-            Width = 32
-            Height = 32
-            Hint = 'Reject file (delete on remote)'
-            Enabled = False
-            Flat = True
-            Glyph.Data = {
-              DE010000424DDE01000000000000760000002800000024000000120000000100
-              0400000000006801000000000000000000001000000010000000000000000000
-              8000008000000080800080000000800080008080000080808000C0C0C0000000
-              FF0000FF000000FFFF00FF000000FF00FF00FFFF0000FFFFFF00311116333331
-              11133333FFFF333333FFFF330000339991333333291333337733F33333773F33
-              0000333291633333291333333373F33333373F33000033329213333696633333
-              33733F333373F33300003333991633629133333333373F333733F33300003333
-              6991162916333333333733FF733F333300003333329922916333333333337333
-              33F333330000333333699922613333333333373333F7FF330000331111669913
-              6913333337FFF7733F373F3300003369921692136913333337733F733F373F33
-              000033336921991129133333333733F33FF73F33000033333392992991333333
-              333373333333F33300003333333229991333333333333733333F333300003333
-              33332291333333333333337333F3333300003333333119133333333333333337
-              3F333333000033333336921333333333333333733F3333330000333333369913
-              33333333333333733F3333330000333333336663333333333333333777333333
-              0000}
-            NumGlyphs = 2
-            ParentShowHint = False
-            ShowHint = True
-            OnClick = bRefuseClick
-          end
-          object bSkip: TSpeedButton
-            Left = 47
-            Top = 4
-            Width = 32
-            Height = 32
-            Hint = 'Skip file (receive later)'
-            Enabled = False
-            Flat = True
-            Glyph.Data = {
-              DE010000424DDE01000000000000760000002800000024000000120000000100
-              0400000000006801000000000000000000001000000010000000000000000000
-              80000080000000808000800000008000800080800000C0C0C000808080000000
-              FF0000FF000000FFFF00FF000000FF00FF00FFFF0000FFFFFF00344446333334
-              44433333FFFF333333FFFF33000033AAA43333332A4333338833F33333883F33
-              00003332A46333332A4333333383F33333383F3300003332A2433336A6633333
-              33833F333383F33300003333AA463362A433333333383F333833F33300003333
-              6AA4462A46333333333833FF833F33330000333332AA22246333333333338333
-              33F3333300003333336AAA22646333333333383333F8FF33000033444466AA43
-              6A43333338FFF8833F383F330000336AA246A2436A43333338833F833F383F33
-              000033336A24AA442A433333333833F33FF83F330000333333A2AA2AA4333333
-              333383333333F3330000333333322AAA4333333333333833333F333300003333
-              333322A4333333333333338333F333330000333333344A433333333333333338
-              3F333333000033333336A24333333333333333833F333333000033333336AA43
-              33333333333333833F3333330000333333336663333333333333333888333333
-              0000}
-            NumGlyphs = 2
-            ParentShowHint = False
-            ShowHint = True
-            OnClick = bSkipClick
-          end
-          object bAnswer: TSpeedButton
-            Left = 123
-            Top = 4
-            Width = 32
-            Height = 32
-            Hint = 'Answer call'
-            Enabled = False
-            Flat = True
-            Glyph.Data = {
-              76010000424D7601000000000000760000002800000020000000100000000100
-              0400000000000001000000000000000000001000000010000000000000000000
-              800000800000008080008000000080008000808000007F7F7F00BFBFBF000000
-              FF0000FF000000FFFF00FF000000FF00FF00FFFF0000FFFFFF00333333303333
-              333333333337FF3333333333330003333333333333777F333333333333080333
-              3333333F33777FF33F3333B33B000B33B3333373F777773F7333333BBB0B0BBB
-              33333337737F7F77F333333BBB0F0BBB33333337337373F73F3333BBB0F7F0BB
-              B333337F3737F73F7F3333BB0FB7BF0BB3333F737F37F37F73FFBBBB0BF7FB0B
-              BBB3773F7F37337F377333BB0FBFBF0BB333337F73F333737F3333BBB0FBF0BB
-              B3333373F73FF7337333333BBB000BBB33333337FF777337F333333BBBBBBBBB
-              3333333773FF3F773F3333B33BBBBB33B33333733773773373333333333B3333
-              333333333337F33333333333333B333333333333333733333333}
-            NumGlyphs = 2
-            ParentShowHint = False
-            ShowHint = True
-            OnClick = bAnswerClick
-          end
-          object bKillBWZ: TSpeedButton
-            Left = 161
-            Top = 4
-            Width = 32
-            Height = 32
-            Hint = 'Delete BWZ line'
-            Enabled = False
-            Flat = True
-            Glyph.Data = {
-              76010000424D7601000000000000760000002800000020000000100000000100
-              0400000000000001000000000000000000001000000000000000000000000000
-              8000008000000080800080000000800080008080000080808000C0C0C0000000
-              FF0000FF000000FFFF00FF000000FF00FF00FFFF0000FFFFFF00333333333333
-              333333333333333FF8F33333333333003033333333FFFF7787333333300000FF
-              0333333FF77777FF733333000FFF444033333F77788877778F33730FFFF4FFFF
-              03337F7F888788FF78F3130FFF4FF444F0337F78F87FF77787331180F4714FFF
-              033377F787777888733371780717FFF03333777F777788F78F338117011FF44F
-              033337777778877878F3871111FF4FFFF033377777F878888733871110F4FFFF
-              0333377777F788FF73337111170FF44033337777777FF777FF33117311704FF0
-              0333777377777F8778F3333331170FFFF033333337777FFFF733333333117000
-              0333333333777777733333333333333333333333333333333333}
-            NumGlyphs = 2
-            ParentShowHint = False
-            ShowHint = True
-            OnClick = bbDeleteClick
-          end
-          object bChat: TSpeedButton
-            Left = 199
-            Top = 4
-            Width = 32
-            Height = 32
-            Hint = 'Open Chat'
-            Enabled = False
-            Flat = True
-            Glyph.Data = {
-              CE070000424DCE07000000000000360000002800000024000000120000000100
-              1800000000009807000000000000000000000000000000000000FFEFE1FFEFE1
-              FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1DFE1
-              E5FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FF
-              EFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1
-              FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1BDB1A78179
-              7261879928D2FA2FE7FF28EDFF1FECFF33DCFDA8DDF0FFEFE1FFEFE1FFEFE1FF
-              EFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1
-              FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEF
-              E1FFEFE18FC98700B01A05AE6306E4FF1EF5FF66F8FF50F7FF3AF6FF2FF5FF20
-              E8FFA8DCF0FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1A3B1B4A3B1B4
-              A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4FFEFE1FFEFE1FFEFE1FFEFE1FFEF
-              E1FFEFE1FFEFE1CDC0B4827A73857D7540A74C00D32D01D3EC15F4FF7BCBFF5F
-              ABFF57BBFF489BFF3FD7FF38F6FF33DAFEFFEFE1FFEFE1FFEFE1FFEFE1FFEFE1
-              FFEFE1A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1
-              B4FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1A8D5A20AAC3406B834449A4D309A3F00
-              D6351CEAFFADFBFF8DBDFFA6FBFF94FAFF74F9FF3AB9FF3BF6FF23ECFFFFEFE1
-              FFEFE1FFEFE1A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1
-              B4A3B1B4A3B1B4A3B1B4A3B1B4FFEFE1FFEFE1FFEFE1FFEFE1FFEFE113B94400
-              E45600E25000C93B1A912900D23800E9FFC9FCFFD8FDFFC1FCFFAFFBFF8CFAFF
-              62F8FF4EF7FF21ECFFFFEFE1FFEFE1FFEFE1A3B1B4A3B1B4A3B1B4A3B1B4A3B1
-              B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4FFEFE1FFEFE1FF
-              EFE1FFEFE1FFEFE113BB4800E85E00E55700E25000BB3300B53434E9FFD2FDFF
-              F6FFFF000000C4FCFF00000073F8FF45F6FF00E7FFFFEFE1FFEFE1FFEFE1A3B1
-              B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3
-              B1B4A3B1B4FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1A8D6A521B14800D85200E558
-              00D05A009C9A0FD1F950F7FFFAFFFFF2FEFFD1FDFFADFBFF8AF9FF4FF7FF24CC
-              F6FFEFE1FFEFE1FFEFE1A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3
-              B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1
-              C1CBB1368A4513A03700B135009C8A00EBEA00F5FF28E0FF51F7FFB3FBFFAFFB
-              FF5EF7FF4EF7FF14E6FE87AAB7FFEFE1FFEFE1FFEFE1A3B1B4A3B1B4A3B1B4A3
-              B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4FFEFE1
-              FFEFE1FFEFE1FFEFE1C3DFBA07BE4E00F17300EE6D00EB66009F9800FFFF00FF
-              FF00F5FF20D5FB75EBFE94F6FF57EFFF2ED6EC4BB193FFEFE1FFEFE1FFEFE1A3
-              B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4
-              A3B1B4A3B1B4FFEFE1FFEFE1FFEFE1FFEFE1FFEFE18FD09800EE7900F47B00F1
-              7400E66600A57C00C7C700FFFF00FFFF00A6A500A632089820349D42528150CD
-              C0B4FFEFE1FFEFE1FFEFE1A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4
-              A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4FFEFE1FFEFE1FFEFE1FFEFE1FFEF
-              E1FFEFE13BC26A2FD27300AF3D00BF4900E76800A37E00A5A200A19C00C37100
-              E14D00D7430BA529699865857D75DCCFC2FFEFE1FFEFE1FFEFE1A3B1B4A3B1B4
-              A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1
-              B4FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE135B95F00EE7B00F57D00EA6F00
-              9C2900EC6900C14300C03E00E45500E14F00DE4806B62F7A9872BDB1A7FFEFE1
-              FFEFE1FFEFE1FFEFE1A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1
-              B4A3B1B4A3B1B4A3B1B4A3B1B4FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE100
-              D86D00FA8A00EF7C20A3480AC85600EF7000ED6912912A00D04B00E45600E14F
-              00DF4947874BEEDED1FFEFE1FFEFE1FFEFE1FFEFE1A3B1B4A3B1B4FFEFE1A3B1
-              B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4FFEFE1FFEFE1FFEFE1FFEFE1FF
-              EFE1FFEFE1FFEFE1FFEFE145C3712FD67C4FC171FFEFE100D25E00F27700F071
-              3BAB5C49A35B0AC04500DC5114A936E0E6CAFFEFE1FFEFE1FFEFE1FFEFE1FFEF
-              E1FFEFE1FFEFE1FFEFE1A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4FFEFE1A3B1B4FF
-              EFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1
-              FFEFE100D56400F57E00F3782EA053BDB1A7E0E7CB8FCC90FFEFE1FFEFE1FFEF
-              E1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1A3B1B4A3B1B4A3B1B4A3
-              B1B4FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1
-              FFEFE1FFEFE1FFEFE1FFEFE1FFEFE145C26E00CC5C00C24F8FCF95FFEFE1FFEF
-              E1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FF
-              EFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1
-              FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEF
-              E1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FF
-              EFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1
-              FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1}
-            NumGlyphs = 2
-            ParentShowHint = False
-            ShowHint = True
-            OnClick = bChatClick
-          end
-          object LampsPanelCarrier: TTransPan
-            Left = 552
-            Top = 0
-            Width = 165
-            Height = 40
-            Align = alRight
-            BevelOuter = bvNone
-            BorderWidth = 3
-            ParentBackground = False
-            TabOrder = 0
-            object LampsPanel: TTransPan
-              Left = 3
-              Top = 3
-              Width = 159
-              Height = 34
-              Align = alClient
-              BevelOuter = bvLowered
-              Font.Charset = DEFAULT_CHARSET
-              Font.Color = clWindowText
-              Font.Height = -12
-              Font.Name = 'Small Fonts'
-              Font.Style = []
-              ParentBackground = False
-              ParentFont = False
-              TabOrder = 0
-              Visible = False
-              object mlRXD: TModemLamp
-                Left = 133
-                Top = 5
-                Kind = mlkBlue
-              end
-              object lRXD: TLabel
-                Left = 127
-                Top = 16
-                Width = 20
-                Height = 11
-                Caption = 'RXD'
-                Font.Charset = DEFAULT_CHARSET
-                Font.Color = clWindowText
-                Font.Height = -9
-                Font.Name = 'Small Fonts'
-                Font.Style = []
-                ParentFont = False
-              end
-              object mlTXD: TModemLamp
-                Left = 103
-                Top = 5
-                Kind = mlkBlue
-              end
-              object lTXD: TLabel
-                Left = 97
-                Top = 16
-                Width = 19
-                Height = 11
-                Caption = 'TXD'
-                Font.Charset = DEFAULT_CHARSET
-                Font.Color = clWindowText
-                Font.Height = -9
-                Font.Name = 'Small Fonts'
-                Font.Style = []
-                ParentFont = False
-              end
-              object mlCTS: TModemLamp
-                Left = 74
-                Top = 5
-              end
-              object lCTS: TLabel
-                Left = 69
-                Top = 16
-                Width = 19
-                Height = 11
-                Caption = 'CTS'
-                Font.Charset = DEFAULT_CHARSET
-                Font.Color = clWindowText
-                Font.Height = -9
-                Font.Name = 'Small Fonts'
-                Font.Style = []
-                ParentFont = False
-              end
-              object lDSR: TLabel
-                Left = 39
-                Top = 16
-                Width = 20
-                Height = 11
-                Caption = 'DSR'
-                Font.Charset = DEFAULT_CHARSET
-                Font.Color = clWindowText
-                Font.Height = -9
-                Font.Name = 'Small Fonts'
-                Font.Style = []
-                ParentFont = False
-              end
-              object mlDSR: TModemLamp
-                Left = 44
-                Top = 5
-              end
-              object mlDCD: TModemLamp
-                Left = 15
-                Top = 5
-                Kind = mlkRed
-              end
-              object lDCD: TLabel
-                Left = 9
-                Top = 16
-                Width = 21
-                Height = 11
-                Caption = 'DCD'
-                Font.Charset = DEFAULT_CHARSET
-                Font.Color = clWindowText
-                Font.Height = -9
-                Font.Name = 'Small Fonts'
-                Font.Style = []
-                ParentFont = False
-              end
-            end
-          end
-        end
-        object DaemonBtnPanel: TTransPan
-          Left = 0
-          Top = 0
-          Width = 717
-          Height = 40
-          Align = alClient
-          BevelOuter = bvNone
-          ParentBackground = False
-          TabOrder = 2
-          Visible = False
-          object RasBtnPan: TTransPan
-            Left = 505
-            Top = 0
-            Width = 212
-            Height = 40
-            Align = alRight
-            BevelOuter = bvNone
-            ParentBackground = False
-            TabOrder = 0
-            object CancelButton: TButton
-              Left = 108
-              Top = 9
-              Width = 100
-              Height = 25
-              Cancel = True
-              Caption = 'Cancel'
-              TabOrder = 0
-              OnClick = CancelButtonClick
-            end
-            object ConnectButton: TButton
-              Left = 0
-              Top = 9
-              Width = 100
-              Height = 25
-              Caption = 'Connect'
-              Default = True
-              TabOrder = 1
-              OnClick = ConnectButtonClick
-            end
-          end
-          object RasLabelPan: TTransPan
-            Left = 0
-            Top = 0
-            Width = 505
-            Height = 40
-            Align = alClient
-            BevelOuter = bvNone
-            ParentBackground = False
-            TabOrder = 1
-            DesignSize = (
-              505
-              40)
-            object lStatus2: TLabel
-              Left = 33
-              Top = 14
-              Width = 148
-              Height = 16
-              Caption = 'Connected to Corex VPN'
-            end
-            object lTimeCon: TLabel
-              Left = 491
-              Top = 14
-              Width = 57
-              Height = 16
-              Anchors = [akTop, akRight]
-              Caption = '11:11:11'
-              Font.Charset = DEFAULT_CHARSET
-              Font.Color = clWindowText
-              Font.Height = -15
-              Font.Name = 'MS Sans Serif'
-              Font.Style = [fsBold]
-              ParentFont = False
-            end
-          end
-        end
+        DesignSize = (
+          721
+          40)
         object PollBtnPanel: TTransPan
           Left = 0
           Top = 0
-          Width = 717
+          Width = 721
           Height = 40
           Align = alClient
           BevelOuter = bvNone
@@ -2004,7 +1556,7 @@ object MailerForm: TMailerForm
             OnClick = mpPauseClick
           end
           object lInfo1: TLabel
-            Left = 357
+            Left = 361
             Top = 0
             Width = 360
             Height = 40
@@ -2022,7 +1574,7 @@ object MailerForm: TMailerForm
         object OutMgrBtnPanel: TTransPan
           Left = 0
           Top = 0
-          Width = 717
+          Width = 721
           Height = 40
           Align = alClient
           BevelOuter = bvNone
@@ -2123,6 +1675,435 @@ object MailerForm: TMailerForm
             Caption = 'Outbound size:'
           end
         end
+        object MailerBtnPanel: TTransPan
+          Left = 0
+          Top = 0
+          Width = 721
+          Height = 40
+          Align = alClient
+          BevelOuter = bvNone
+          ParentBackground = False
+          TabOrder = 0
+          Visible = False
+          object bAbort: TSpeedButton
+            Left = 9
+            Top = 4
+            Width = 32
+            Height = 32
+            Hint = 'Abort & Reset'
+            Flat = True
+            Glyph.Data = {
+              DE010000424DDE01000000000000760000002800000024000000120000000100
+              0400000000006801000000000000000000001000000010000000000000000000
+              8000008000000080800080000000800080008080000080808000C0C0C0000000
+              FF0000FF000000FFFF00FF000000FF00FF00FFFF0000FFFFFF00333333111111
+              33333333333F7777773F33330000391331999999113333377F3733333377F333
+              000039911999999999133337F7733FFFFF337F3300003999999FFFFF99913337
+              F333F77777F337F30000399999F33333F9991337F33F7333337F337F00003999
+              993333333F991337F33733333337F37F00003999999333333F991337FFFF7F33
+              3337777300003FFFFFFF33333333333777777733333333330000333333333333
+              333333333333333333FFFFFF000033333333333311111133FFFF333333777777
+              00003F991333333F99999137777F333337F3333700003F9913333333F9999137
+              F37F333333733337000033F991333331199991337337FFFFF7733337000033F9
+              99111119999991337F3377777333FF370000333F9999999999FF913337FF3333
+              33FF77F700003333FF999999FF33F3333377FFFFFF7733730000333333FFFFFF
+              3333333333337777773333330000333333333333333333333333333333333333
+              0000}
+            NumGlyphs = 2
+            ParentShowHint = False
+            ShowHint = True
+            OnClick = bAbortClick
+          end
+          object bRefuse: TSpeedButton
+            Left = 85
+            Top = 4
+            Width = 32
+            Height = 32
+            Hint = 'Reject file (delete on remote)'
+            Enabled = False
+            Flat = True
+            Glyph.Data = {
+              DE010000424DDE01000000000000760000002800000024000000120000000100
+              0400000000006801000000000000000000001000000010000000000000000000
+              8000008000000080800080000000800080008080000080808000C0C0C0000000
+              FF0000FF000000FFFF00FF000000FF00FF00FFFF0000FFFFFF00311116333331
+              11133333FFFF333333FFFF330000339991333333291333337733F33333773F33
+              0000333291633333291333333373F33333373F33000033329213333696633333
+              33733F333373F33300003333991633629133333333373F333733F33300003333
+              6991162916333333333733FF733F333300003333329922916333333333337333
+              33F333330000333333699922613333333333373333F7FF330000331111669913
+              6913333337FFF7733F373F3300003369921692136913333337733F733F373F33
+              000033336921991129133333333733F33FF73F33000033333392992991333333
+              333373333333F33300003333333229991333333333333733333F333300003333
+              33332291333333333333337333F3333300003333333119133333333333333337
+              3F333333000033333336921333333333333333733F3333330000333333369913
+              33333333333333733F3333330000333333336663333333333333333777333333
+              0000}
+            NumGlyphs = 2
+            ParentShowHint = False
+            ShowHint = True
+            OnClick = bRefuseClick
+          end
+          object bSkip: TSpeedButton
+            Left = 47
+            Top = 4
+            Width = 32
+            Height = 32
+            Hint = 'Skip file (receive later)'
+            Enabled = False
+            Flat = True
+            Glyph.Data = {
+              DE010000424DDE01000000000000760000002800000024000000120000000100
+              0400000000006801000000000000000000001000000010000000000000000000
+              80000080000000808000800000008000800080800000C0C0C000808080000000
+              FF0000FF000000FFFF00FF000000FF00FF00FFFF0000FFFFFF00344446333334
+              44433333FFFF333333FFFF33000033AAA43333332A4333338833F33333883F33
+              00003332A46333332A4333333383F33333383F3300003332A2433336A6633333
+              33833F333383F33300003333AA463362A433333333383F333833F33300003333
+              6AA4462A46333333333833FF833F33330000333332AA22246333333333338333
+              33F3333300003333336AAA22646333333333383333F8FF33000033444466AA43
+              6A43333338FFF8833F383F330000336AA246A2436A43333338833F833F383F33
+              000033336A24AA442A433333333833F33FF83F330000333333A2AA2AA4333333
+              333383333333F3330000333333322AAA4333333333333833333F333300003333
+              333322A4333333333333338333F333330000333333344A433333333333333338
+              3F333333000033333336A24333333333333333833F333333000033333336AA43
+              33333333333333833F3333330000333333336663333333333333333888333333
+              0000}
+            NumGlyphs = 2
+            ParentShowHint = False
+            ShowHint = True
+            OnClick = bSkipClick
+          end
+          object bAnswer: TSpeedButton
+            Left = 123
+            Top = 4
+            Width = 32
+            Height = 32
+            Hint = 'Answer call'
+            Enabled = False
+            Flat = True
+            Glyph.Data = {
+              76010000424D7601000000000000760000002800000020000000100000000100
+              0400000000000001000000000000000000001000000010000000000000000000
+              800000800000008080008000000080008000808000007F7F7F00BFBFBF000000
+              FF0000FF000000FFFF00FF000000FF00FF00FFFF0000FFFFFF00333333303333
+              333333333337FF3333333333330003333333333333777F333333333333080333
+              3333333F33777FF33F3333B33B000B33B3333373F777773F7333333BBB0B0BBB
+              33333337737F7F77F333333BBB0F0BBB33333337337373F73F3333BBB0F7F0BB
+              B333337F3737F73F7F3333BB0FB7BF0BB3333F737F37F37F73FFBBBB0BF7FB0B
+              BBB3773F7F37337F377333BB0FBFBF0BB333337F73F333737F3333BBB0FBF0BB
+              B3333373F73FF7337333333BBB000BBB33333337FF777337F333333BBBBBBBBB
+              3333333773FF3F773F3333B33BBBBB33B33333733773773373333333333B3333
+              333333333337F33333333333333B333333333333333733333333}
+            NumGlyphs = 2
+            ParentShowHint = False
+            ShowHint = True
+            OnClick = bAnswerClick
+          end
+          object bChat: TSpeedButton
+            Left = 199
+            Top = 4
+            Width = 32
+            Height = 32
+            Hint = 'Open Chat'
+            Enabled = False
+            Flat = True
+            Glyph.Data = {
+              CE070000424DCE07000000000000360000002800000024000000120000000100
+              1800000000009807000000000000000000000000000000000000FFEFE1FFEFE1
+              FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1DFE1
+              E5FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FF
+              EFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1
+              FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1BDB1A78179
+              7261879928D2FA2FE7FF28EDFF1FECFF33DCFDA8DDF0FFEFE1FFEFE1FFEFE1FF
+              EFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1
+              FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEF
+              E1FFEFE18FC98700B01A05AE6306E4FF1EF5FF66F8FF50F7FF3AF6FF2FF5FF20
+              E8FFA8DCF0FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1A3B1B4A3B1B4
+              A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4FFEFE1FFEFE1FFEFE1FFEFE1FFEF
+              E1FFEFE1FFEFE1CDC0B4827A73857D7540A74C00D32D01D3EC15F4FF7BCBFF5F
+              ABFF57BBFF489BFF3FD7FF38F6FF33DAFEFFEFE1FFEFE1FFEFE1FFEFE1FFEFE1
+              FFEFE1A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1
+              B4FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1A8D5A20AAC3406B834449A4D309A3F00
+              D6351CEAFFADFBFF8DBDFFA6FBFF94FAFF74F9FF3AB9FF3BF6FF23ECFFFFEFE1
+              FFEFE1FFEFE1A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1
+              B4A3B1B4A3B1B4A3B1B4A3B1B4FFEFE1FFEFE1FFEFE1FFEFE1FFEFE113B94400
+              E45600E25000C93B1A912900D23800E9FFC9FCFFD8FDFFC1FCFFAFFBFF8CFAFF
+              62F8FF4EF7FF21ECFFFFEFE1FFEFE1FFEFE1A3B1B4A3B1B4A3B1B4A3B1B4A3B1
+              B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4FFEFE1FFEFE1FF
+              EFE1FFEFE1FFEFE113BB4800E85E00E55700E25000BB3300B53434E9FFD2FDFF
+              F6FFFF000000C4FCFF00000073F8FF45F6FF00E7FFFFEFE1FFEFE1FFEFE1A3B1
+              B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3
+              B1B4A3B1B4FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1A8D6A521B14800D85200E558
+              00D05A009C9A0FD1F950F7FFFAFFFFF2FEFFD1FDFFADFBFF8AF9FF4FF7FF24CC
+              F6FFEFE1FFEFE1FFEFE1A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3
+              B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1
+              C1CBB1368A4513A03700B135009C8A00EBEA00F5FF28E0FF51F7FFB3FBFFAFFB
+              FF5EF7FF4EF7FF14E6FE87AAB7FFEFE1FFEFE1FFEFE1A3B1B4A3B1B4A3B1B4A3
+              B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4FFEFE1
+              FFEFE1FFEFE1FFEFE1C3DFBA07BE4E00F17300EE6D00EB66009F9800FFFF00FF
+              FF00F5FF20D5FB75EBFE94F6FF57EFFF2ED6EC4BB193FFEFE1FFEFE1FFEFE1A3
+              B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4
+              A3B1B4A3B1B4FFEFE1FFEFE1FFEFE1FFEFE1FFEFE18FD09800EE7900F47B00F1
+              7400E66600A57C00C7C700FFFF00FFFF00A6A500A632089820349D42528150CD
+              C0B4FFEFE1FFEFE1FFEFE1A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4
+              A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4FFEFE1FFEFE1FFEFE1FFEFE1FFEF
+              E1FFEFE13BC26A2FD27300AF3D00BF4900E76800A37E00A5A200A19C00C37100
+              E14D00D7430BA529699865857D75DCCFC2FFEFE1FFEFE1FFEFE1A3B1B4A3B1B4
+              A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1
+              B4FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE135B95F00EE7B00F57D00EA6F00
+              9C2900EC6900C14300C03E00E45500E14F00DE4806B62F7A9872BDB1A7FFEFE1
+              FFEFE1FFEFE1FFEFE1A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1
+              B4A3B1B4A3B1B4A3B1B4A3B1B4FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE100
+              D86D00FA8A00EF7C20A3480AC85600EF7000ED6912912A00D04B00E45600E14F
+              00DF4947874BEEDED1FFEFE1FFEFE1FFEFE1FFEFE1A3B1B4A3B1B4FFEFE1A3B1
+              B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4FFEFE1FFEFE1FFEFE1FFEFE1FF
+              EFE1FFEFE1FFEFE1FFEFE145C3712FD67C4FC171FFEFE100D25E00F27700F071
+              3BAB5C49A35B0AC04500DC5114A936E0E6CAFFEFE1FFEFE1FFEFE1FFEFE1FFEF
+              E1FFEFE1FFEFE1FFEFE1A3B1B4A3B1B4A3B1B4A3B1B4A3B1B4FFEFE1A3B1B4FF
+              EFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1
+              FFEFE100D56400F57E00F3782EA053BDB1A7E0E7CB8FCC90FFEFE1FFEFE1FFEF
+              E1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1A3B1B4A3B1B4A3B1B4A3
+              B1B4FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1
+              FFEFE1FFEFE1FFEFE1FFEFE1FFEFE145C26E00CC5C00C24F8FCF95FFEFE1FFEF
+              E1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FF
+              EFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1
+              FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEF
+              E1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FF
+              EFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1
+              FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1FFEFE1}
+            NumGlyphs = 2
+            ParentShowHint = False
+            ShowHint = True
+            OnClick = bChatClick
+          end
+          object LampsPanelCarrier: TTransPan
+            Left = 556
+            Top = 0
+            Width = 165
+            Height = 40
+            Align = alRight
+            BevelOuter = bvNone
+            BorderWidth = 3
+            ParentBackground = False
+            TabOrder = 0
+            object LampsPanel: TTransPan
+              Left = 3
+              Top = 3
+              Width = 159
+              Height = 34
+              Align = alClient
+              BevelOuter = bvLowered
+              Font.Charset = DEFAULT_CHARSET
+              Font.Color = clWindowText
+              Font.Height = -12
+              Font.Name = 'Small Fonts'
+              Font.Style = []
+              ParentBackground = False
+              ParentFont = False
+              TabOrder = 0
+              Visible = False
+              object mlRXD: TModemLamp
+                Left = 133
+                Top = 5
+                Kind = mlkBlue
+              end
+              object lRXD: TLabel
+                Left = 127
+                Top = 16
+                Width = 20
+                Height = 11
+                Caption = 'RXD'
+                Font.Charset = DEFAULT_CHARSET
+                Font.Color = clWindowText
+                Font.Height = -9
+                Font.Name = 'Small Fonts'
+                Font.Style = []
+                ParentFont = False
+              end
+              object mlTXD: TModemLamp
+                Left = 103
+                Top = 5
+                Kind = mlkBlue
+              end
+              object lTXD: TLabel
+                Left = 97
+                Top = 16
+                Width = 19
+                Height = 11
+                Caption = 'TXD'
+                Font.Charset = DEFAULT_CHARSET
+                Font.Color = clWindowText
+                Font.Height = -9
+                Font.Name = 'Small Fonts'
+                Font.Style = []
+                ParentFont = False
+              end
+              object mlCTS: TModemLamp
+                Left = 74
+                Top = 5
+              end
+              object lCTS: TLabel
+                Left = 69
+                Top = 16
+                Width = 19
+                Height = 11
+                Caption = 'CTS'
+                Font.Charset = DEFAULT_CHARSET
+                Font.Color = clWindowText
+                Font.Height = -9
+                Font.Name = 'Small Fonts'
+                Font.Style = []
+                ParentFont = False
+              end
+              object lDSR: TLabel
+                Left = 39
+                Top = 16
+                Width = 20
+                Height = 11
+                Caption = 'DSR'
+                Font.Charset = DEFAULT_CHARSET
+                Font.Color = clWindowText
+                Font.Height = -9
+                Font.Name = 'Small Fonts'
+                Font.Style = []
+                ParentFont = False
+              end
+              object mlDSR: TModemLamp
+                Left = 44
+                Top = 5
+              end
+              object mlDCD: TModemLamp
+                Left = 15
+                Top = 5
+                Kind = mlkRed
+              end
+              object lDCD: TLabel
+                Left = 9
+                Top = 16
+                Width = 21
+                Height = 11
+                Caption = 'DCD'
+                Font.Charset = DEFAULT_CHARSET
+                Font.Color = clWindowText
+                Font.Height = -9
+                Font.Name = 'Small Fonts'
+                Font.Style = []
+                ParentFont = False
+              end
+            end
+          end
+        end
+        object DaemonBtnPanel: TTransPan
+          Left = 0
+          Top = 0
+          Width = 721
+          Height = 40
+          Align = alClient
+          BevelOuter = bvNone
+          ParentBackground = False
+          TabOrder = 2
+          Visible = False
+          object RasLabelPan: TTransPan
+            Left = 0
+            Top = 0
+            Width = 509
+            Height = 40
+            Align = alClient
+            BevelOuter = bvNone
+            ParentBackground = False
+            TabOrder = 1
+            DesignSize = (
+              509
+              40)
+            object lStatus2: TLabel
+              Left = 33
+              Top = 14
+              Width = 148
+              Height = 16
+              Caption = 'Connected to Corex VPN'
+            end
+            object lTimeCon: TLabel
+              Left = 495
+              Top = 14
+              Width = 57
+              Height = 16
+              Anchors = [akTop, akRight]
+              Caption = '11:11:11'
+              Font.Charset = DEFAULT_CHARSET
+              Font.Color = clWindowText
+              Font.Height = -15
+              Font.Name = 'MS Sans Serif'
+              Font.Style = [fsBold]
+              ParentFont = False
+            end
+          end
+          object RasBtnPan: TTransPan
+            Left = 509
+            Top = 0
+            Width = 212
+            Height = 40
+            Align = alRight
+            BevelOuter = bvNone
+            ParentBackground = False
+            TabOrder = 0
+            object CancelButton: TButton
+              Left = 108
+              Top = 9
+              Width = 100
+              Height = 25
+              Cancel = True
+              Caption = 'Cancel'
+              TabOrder = 0
+              OnClick = CancelButtonClick
+            end
+            object ConnectButton: TButton
+              Left = 0
+              Top = 9
+              Width = 100
+              Height = 25
+              Caption = 'Connect'
+              Default = True
+              TabOrder = 1
+              OnClick = ConnectButtonClick
+            end
+          end
+        end
+        object SystemBtnPanel: TTransPan
+          Left = 0
+          Top = 0
+          Width = 721
+          Height = 40
+          Anchors = [akLeft, akTop, akRight, akBottom]
+          TabOrder = 4
+          Visible = False
+          object bKillBWZ: TSpeedButton
+            Left = 9
+            Top = 4
+            Width = 32
+            Height = 32
+            Hint = 'Delete BWZ line'
+            Enabled = False
+            Flat = True
+            Glyph.Data = {
+              76010000424D7601000000000000760000002800000020000000100000000100
+              0400000000000001000000000000000000001000000000000000000000000000
+              8000008000000080800080000000800080008080000080808000C0C0C0000000
+              FF0000FF000000FFFF00FF000000FF00FF00FFFF0000FFFFFF00333333333333
+              333333333333333FF8F33333333333003033333333FFFF7787333333300000FF
+              0333333FF77777FF733333000FFF444033333F77788877778F33730FFFF4FFFF
+              03337F7F888788FF78F3130FFF4FF444F0337F78F87FF77787331180F4714FFF
+              033377F787777888733371780717FFF03333777F777788F78F338117011FF44F
+              033337777778877878F3871111FF4FFFF033377777F878888733871110F4FFFF
+              0333377777F788FF73337111170FF44033337777777FF777FF33117311704FF0
+              0333777377777F8778F3333331170FFFF033333337777FFFF733333333117000
+              0333333333777777733333333333333333333333333333333333}
+            NumGlyphs = 2
+            ParentShowHint = False
+            ShowHint = True
+            OnClick = bbDeleteClick
+          end
+        end
       end
       object OutMgrPanel: TTransPan
         Left = 0
@@ -2135,45 +2116,11 @@ object MailerForm: TMailerForm
         Visible = False
         object OutMgrBevel: TBevel
           Left = 0
-          Top = 28
+          Top = 26
           Width = 676
-          Height = 3
+          Height = 5
           Align = alBottom
           Shape = bsBottomLine
-        end
-        object OutMgrOutline: TxOutlin
-          Left = 0
-          Top = 21
-          Width = 676
-          Height = 7
-          FileNameCol = 0
-          FixedFont.Charset = DEFAULT_CHARSET
-          FixedFont.Color = clWindowText
-          FixedFont.Height = -13
-          FixedFont.Name = 'MS Sans Serif'
-          FixedFont.Style = []
-          OutlineStyle = osText
-          Options = []
-          Style = otOwnerDraw
-          ItemHeight = 16
-          OnDrawItem = OutMgrOutlineDrawItem
-          Align = alClient
-          Font.Charset = DEFAULT_CHARSET
-          Font.Color = clWindowText
-          Font.Height = -11
-          Font.Name = 'Arial'
-          Font.Style = []
-          TabOrder = 1
-          OnMouseDown = OutMgrOutlineMouseDown
-          OnDblClick = OutMgrOutlineDblClick
-          OnKeyDown = OutMgrOutlineKeyDown
-          BorderStyle = bsNone
-          ItemSeparator = '\'
-          ParentFont = False
-          PopupMenu = OutMgrPopup
-          EraseBackGround = True
-          OnApiDropFiles = OutMgrOutlineApiDropFiles
-          Data = {1F}
         end
         object OutMgrHeader: THeaderControl
           Left = 0
@@ -2216,13 +2163,190 @@ object MailerForm: TMailerForm
           OnSectionClick = OutMgrHeaderSectionClick
           OnSectionResize = OutMgrHeaderSectionResize
         end
+        object OutMgrOutline: TxOutlin
+          Left = 0
+          Top = 21
+          Width = 676
+          Height = 5
+          FileNameCol = 0
+          FixedFont.Charset = DEFAULT_CHARSET
+          FixedFont.Color = clWindowText
+          FixedFont.Height = -13
+          FixedFont.Name = 'MS Sans Serif'
+          FixedFont.Style = []
+          OutlineStyle = osText
+          Options = []
+          Style = otOwnerDraw
+          ItemHeight = 16
+          OnDrawItem = OutMgrOutlineDrawItem
+          Align = alClient
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Arial'
+          Font.Style = []
+          TabOrder = 1
+          OnMouseDown = OutMgrOutlineMouseDown
+          OnDblClick = OutMgrOutlineDblClick
+          OnKeyDown = OutMgrOutlineKeyDown
+          BorderStyle = bsNone
+          ItemSeparator = '\'
+          ParentFont = False
+          PopupMenu = OutMgrPopup
+          EraseBackGround = True
+          OnApiDropFiles = OutMgrOutlineApiDropFiles
+          Data = {1F}
+        end
+      end
+      object SystemPanel: TTransPan
+        Left = 0
+        Top = 0
+        Width = 721
+        Height = 417
+        UseDockManager = False
+        FullRepaint = False
+        ParentBackground = True
+        TabOrder = 4
+        Visible = False
+        object Panel4: TTransPan
+          Left = 1
+          Top = 1
+          Width = 719
+          Height = 256
+          Align = alTop
+          BevelOuter = bvNone
+          BorderWidth = 10
+          FullRepaint = False
+          ParentBackground = False
+          TabOrder = 0
+          object GroupBox2: TGroupBox
+            Left = 10
+            Top = 10
+            Width = 699
+            Height = 236
+            Align = alClient
+            Caption = ' badwazoo.lst '
+            ParentBackground = False
+            TabOrder = 0
+            object Panel11: TTransPan
+              Left = 2
+              Top = 18
+              Width = 695
+              Height = 216
+              Align = alClient
+              BevelOuter = bvNone
+              BorderWidth = 4
+              FullRepaint = False
+              ParentBackground = False
+              TabOrder = 0
+              object bwListView: TListView
+                Left = 4
+                Top = 4
+                Width = 687
+                Height = 208
+                Align = alClient
+                Columns = <
+                  item
+                    Caption = 'Filename'
+                    MinWidth = 70
+                    Width = 286
+                  end
+                  item
+                    Caption = 'Temp Size'
+                    MinWidth = 50
+                    Width = 86
+                  end
+                  item
+                    Caption = 'Full Size'
+                    MinWidth = 50
+                    Width = 86
+                  end
+                  item
+                    Caption = 'From Node'
+                    MinWidth = 50
+                    Width = 86
+                  end
+                  item
+                    Caption = 'FileTime'
+                    MinWidth = 50
+                    Width = 100
+                  end>
+                ColumnClick = False
+                GridLines = True
+                ReadOnly = True
+                RowSelect = True
+                PopupMenu = pBWZ
+                TabOrder = 0
+                ViewStyle = vsReport
+                OnClick = bwListBoxClick
+              end
+            end
+          end
+        end
+        object TransPan3: TTransPan
+          Left = 1
+          Top = 257
+          Width = 719
+          Height = 159
+          Align = alClient
+          BevelOuter = bvNone
+          BorderWidth = 10
+          TabOrder = 1
+          object GroupBox1: TGroupBox
+            Left = 10
+            Top = 10
+            Width = 699
+            Height = 139
+            Align = alClient
+            Caption = 'Opened Lines'
+            TabOrder = 0
+            object stPanel: TTransPan
+              Left = 2
+              Top = 18
+              Width = 695
+              Height = 119
+              Align = alClient
+              BevelOuter = bvNone
+              BorderWidth = 3
+              TabOrder = 0
+              object stListView: TListView
+                Left = 3
+                Top = 3
+                Width = 689
+                Height = 113
+                Align = alClient
+                Columns = <
+                  item
+                    AutoSize = True
+                    Caption = 'Line'
+                  end
+                  item
+                    AutoSize = True
+                    Caption = 'State'
+                  end
+                  item
+                    Alignment = taCenter
+                    Caption = 'Timer'
+                  end>
+                ColumnClick = False
+                GridLines = True
+                ReadOnly = True
+                RowSelect = True
+                ParentShowHint = False
+                ShowHint = True
+                TabOrder = 0
+                ViewStyle = vsReport
+              end
+            end
+          end
+        end
       end
     end
   end
   object MainMenu: TMainMenu
     Images = ilMainMenu
-    Left = 458
-    Top = 290
+    Left = 394
+    Top = 266
     object mSystem: TMenuItem
       Caption = '&System'
       HelpContext = 1560
@@ -2651,8 +2775,8 @@ object MailerForm: TMailerForm
     Images = ilMainMenu
     OwnerDraw = True
     OnPopup = PollPopupMenuPopup
-    Left = 514
-    Top = 290
+    Left = 554
+    Top = 266
     object ppCreatePoll: TMenuItem
       Caption = '&Create Crash Poll'
       ImageIndex = 13
@@ -2714,8 +2838,8 @@ object MailerForm: TMailerForm
     Images = ilMainMenu
     OwnerDraw = True
     OnPopup = OutMgrPopupPopup
-    Left = 342
-    Top = 290
+    Left = 286
+    Top = 266
     object ompHelp: TMenuItem
       Caption = 'Help on SmartMenu'
       OnClick = ompHelpClick
@@ -2864,8 +2988,8 @@ object MailerForm: TMailerForm
     Images = ilMainMenu
     OwnerDraw = True
     OnPopup = TrayPopupMenuPopup
-    Left = 486
-    Top = 290
+    Left = 470
+    Top = 266
     object tpRestore: TMenuItem
       Caption = '&Restore'
       OnClick = tpRestoreClick
@@ -2931,8 +3055,8 @@ object MailerForm: TMailerForm
     MenuAnimation = [maLeftToRight, maTopToBottom]
     OwnerDraw = True
     OnPopup = pBWZPopup
-    Left = 391
-    Top = 290
+    Left = 343
+    Top = 266
     object mnuDelBWZ: TMenuItem
       Caption = 'Delete %s from BadWazoo'
       Enabled = False
@@ -2946,8 +3070,8 @@ object MailerForm: TMailerForm
     end
   end
   object ilMainMenu: TImageList
-    Left = 545
-    Top = 290
+    Left = 625
+    Top = 266
     Bitmap = {
       494C010131003600040010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       000000000000360000002800000040000000E0000000010020000000000000E0
@@ -4808,8 +4932,8 @@ object MailerForm: TMailerForm
     Height = 7
     Masked = False
     Width = 5
-    Left = 573
-    Top = 290
+    Left = 677
+    Top = 266
     Bitmap = {
       494C010103000400040005000700FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000140000000700000001002000000000003002

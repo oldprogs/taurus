@@ -76,110 +76,8 @@ const
   IDH_INTRODAEMON        = 1820;
   IDH_POLLMGRDESCR       = 1690;
   IDH_OUTBOUND           = 1160;
+  IDH_SYSTEM             = 1260;
   IDH_MLRD               = 1500;
-
-{  IDH_PREFERENCES        = 2400;
-  IDH_CFGNODELIST        = 1010;
-  IDH_CFGPASSWORDS       = 1020;
-  IDH_CFGFILEREQUESTS    = 1030;
-  IDH_CFGDIALUP          = 1050;
-  IDH_CFGMLRLINE         = 1060;
-  IDH_CFGEMSI            = 1070;
-  IDH_CFGSERIAL          = 1080;
-  IDH_CFGMODEM           = 1090;
-  IDH_CFGREST            = 1100;
-  IDH_CFGNODES           = 1110;
-  IDH_ADDRMASKS          = 1120;
-  IDH_ASYNC              = 1130;
-  IDH_ASYNCERR           = 1140;
-  IDH_ASYNCLINE          = 1150;
-  IDH_ASYNCUART          = 1160;
-  IDH_BSO                = 1170;
-  IDH_CFG                = 1180;
-  IDH_CFGBASES           = 1190;
-  IDH_CFGDIALUPDGS       = 1200;
-  IDH_CFGDIALUPTS        = 1210;
-  IDH_CFGDIALUPWIN       = 1220;
-  IDH_CFGIP              = 1230;
-  IDH_CFGIPDAEMON        = 1240;
-  IDH_CFGIPFLG           = 1250;
-  IDH_CFGMDM             = 1260;
-  IDH_CFGMDMPROP         = 1270;
-  IDH_CFGREF             = 1280;
-  IDH_CFGREFOL           = 1300;
-  IDH_CFGRESTR           = 1310;
-  IDH_CFGSTARTUP         = 1320;
-  IDH_CSI                = 1330;
-  IDH_ENV                = 1340;
-  IDH_FAQ                = 1350;
-  IDH_FTN                = 1360;
-  IDH_GUI                = 1370;
-  IDH_GUILOG             = 1390;
-  IDH_GUIPIE             = 1400;
-  IDH_GUITERM            = 1410;
-  IDH_HD                 = 1420;
-  IDH_HOWTO              = 1430;
-  IDH_HOWTOMON           = 1440;
-  IDH_HOWTOPOLL          = 1450;
-  IDH_HOWTOREQ           = 1460;
-  IDH_INTRO              = 1470;
-  IDH_INTROMULTI         = 1480;
-  IDH_INTRONATIVE        = 1490;
-  IDH_MNU                = 1510;
-  IDH_MNUCONFIG          = 1520;
-  IDH_MNUHELP            = 1530;
-  IDH_MNULINE            = 1540;
-  IDH_MNUPOLL            = 1550;
-  IDH_MNUSYSTEM          = 1560;
-  IDH_MNUTOOL            = 1570;
-  IDH_MNUWINDOW          = 1580;
-  IDH_MODEMCTLCHARS      = 1590;
-  IDH_OFTN               = 1600;
-  IDH_OFTNBASIC          = 1610;
-  IDH_OFTNEMSI           = 1620;
-  IDH_OFTNHYDRA          = 1630;
-  IDH_OFTNNODELIST       = 1640;
-  IDH_OFTNONLINE         = 1650;
-  IDH_OFTNWAZOO          = 1660;
-  IDH_PN                 = 1670;
-  IDH_POLLMGR            = 1680;
-  IDH_READMEFIRST        = 1690;
-  IDH_SD                 = 1700;
-  IDH_SDII               = 1710;
-  IDH_SDL                = 1730;
-  IDH_SDO                = 1740;
-  IDH_SDSI               = 1750;
-  IDH_SDTI               = 1760;
-  IDH_CFGLINEBITS        = 1770;
-  IDH_GUILAMPS           = 1780;
-  IDH_7                  = 1790;
-  IDH_ASYNCFLOW          = 1800;
-  IDH_BINKP              = 1810;
-  IDH_INTROTCP           = 1830;
-  IDH_CFGEXTERNAL        = 1880;
-  IDH_ATOMS              = 1890;
-  IDH_CFGEVENTS          = 1900;
-  IDH_CFGEXT             = 1910;
-  IDH_CFGEXTCRON         = 1920;
-  IDH_CFGEXTPP           = 1930;
-  IDH_CFGEXTSVC          = 1940;
-  IDH_CFGPPOLLS          = 1950;
-  IDH_CRON               = 1960;
-  IDH_NODEBROWSE         = 1970;
-  IDH_OUTMGR             = 1980;
-  IDH_LOGS               = 1990;
-  IDH_MNUADVANCED        = 2000;
-  IDH_WHATSNEW           = 2010;
-  IDH_FAX                = 2020;
-  IDH_CFGPO              = 2030;
-  IDH_BINKPENC           = 2040;
-  IDH_MASTPWD            = 2050;
-  IDH_ROW                = 2060;
-  IDH_SMARTMENU          = 2070;
-  IDH_TELNET             = 2080;
-  IDH_TIMEOUT            = 2090;
-  IDH_OVRLINED           = 2100;
-}
 
   EMSI_INQ = '**EMSI_INQC816';
   EMSI_REQ = '**EMSI_REQA77E';
@@ -194,12 +92,7 @@ const
 
   EMSI_TZP = '-TZP16B2-';
   EMSI_PZT = '-PZT8AF6-';
- {$IFDEF EXTREME}
   EMSI_RCC = '-RCC0000-';
- {$ENDIF}
-
-//  aMutexName = 'ARGUS_SEMAPHORE';
-//  aActivateEventName = 'ARGUS_EVENT_ACTIVATE';
 
   TCPIP_GrDataSz = 2000 ;
   TCPIP_Round = 8;
@@ -244,7 +137,7 @@ const
   coMissingStr = -4;
 
   WM__ARGUSBASE = WM_USER + 8;
-  WM__NUMRESOLVE = {$IFDEF WS}32{$ELSE}0{$ENDIF};
+  WM__NUMRESOLVE = 32;
 
   WM_RESOLVE       = WM__ARGUSBASE + $1000;
   WM__ARGUS        = WM_RESOLVE + WM__NUMRESOLVE;
@@ -270,9 +163,7 @@ const
   WM_RESTORE_EVT   = WM__ARGUS + 22;
   WM_STARTMDMCMD   = WM__ARGUS + 23;
   WM_IMPORTDUPOVRL = WM__ARGUS + 24;
-{$IFDEF WS}
   WM_IMPORTIPOVRL  = WM__ARGUS + 25;
-{$ENDIF}
   WM_SETUPOK       = WM__ARGUS + 26;
 
   WM_RESCANOUTBOUND= WM__ARGUS + 30; // visual
@@ -289,10 +180,8 @@ const
   WM_EXTREBUILD    = WM__ARGUS + 45;
   WM_STARTTERM     = WM__ARGUS + 46;
   WM_REREADOUTB    = WM_RESCANOUTBOUND;
-{$IFDEF RASDIAL}
   WM_SETRASDIALSTATE  = WM__ARGUS + 47;
   WM_RASLOADENTRYLIST = WM__ARGUS + 48;
-{$ENDIF}
 //  WM_STARTCHAT     = WM__ARGUS + 49; //FREE!
   WM_CLOSECHAT     = WM__ARGUS + 50;
   WM_RASEVENT      = WM__ARGUS + 51;
@@ -311,11 +200,9 @@ const
   WM_CHECKNETMAIL  = WM__ARGUS + 64;
   WM_ROUTEEXPORT   = WM__ARGUS + 65;
 
-{$IFDEF WS}
   WM_NEWSOCKPORT   = WM__ARGUS + 100;
   WM_ADDDAEMONLOG  = WM__ARGUS + 101;
   WM_CONNECTRES    = WM__ARGUS + 102;
-{$ENDIF}
 
 type
   TObjProc = procedure of object;
@@ -3142,15 +3029,23 @@ var
 begin
   e := GetCurrentThreadId;
   if e = MainThreadID then begin
-     MainThreadMsg := S;
      MainThreadNum := N;
+     if N <> 0 then begin
+        MainThreadMsg := S;
+     end else begin
+        MainThreadMsg := '';
+     end;
   end else begin
     Thr_Coll.Enter;
     for i := 0 to Thr_Coll.Count - 1 do begin
       t := Thr_Coll[i];
       if t.ThreadID = e then begin
-        t.FThreadErrMsg := s;
         t.FThreadErrNum := n;
+        if n <> 0 then begin
+           t.FThreadErrMsg := s;
+        end else begin
+           t.FThreadErrMsg := '';
+        end;
         Break;
       end;
     end;

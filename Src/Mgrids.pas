@@ -1,13 +1,3 @@
-{*******************************************************}
-{                                                       }
-{       Delphi Visual Component Library                 }
-{                                                       }
-{       Copyright (c) 1995,96 Borland International     }
-{                                                       }
-{*******************************************************}
-
-{TODO: Make saving grids optional}
-
 unit mGrids;
 
 {$I DEFINE.INC}
@@ -698,7 +688,7 @@ procedure Register;
 
 implementation
 
-uses Dialogs, Consts, LngTools, RadIni;
+uses Dialogs, Consts, LngTools, RadSav;
 
 procedure Register;
 begin
@@ -1280,7 +1270,7 @@ begin
       if N is TCustomForm then break;
       N := N.Parent;
     end;
-    s := IniFile.ReadString('ColWidths', FParentName + '_' + Name, '');
+    s := SavFile.ReadString('ColWidths', FParentName + '_' + Name, '');
     for i := 0 to WordCount(s, [',']) - 1 do begin
        ColWidths[i] := strtoint(extractword(i + 1, s, [',']));
     end;
@@ -1292,7 +1282,7 @@ begin
        ColWidths[ColCount - 1] := Width - w;
     end;
     Font.Name := 'FixedSys';
-    Font.Size := IniFile.ReadInteger('interface', 'formsfontsize', 8);
+    Font.Size := SavFile.ReadInteger('interface', 'formsfontsize', 8);
     FixedFont.Size := Font.Size;
   end;
 end;
@@ -1306,7 +1296,7 @@ begin
      for i := 0 to ColCount - 1 do begin
         s := s + inttostr(ColWidths[i]) + ',';
      end;
-     IniFile.WriteString('ColWidths', FParentName + '_' + Name, s);
+     SavFile.WriteString('ColWidths', FParentName + '_' + Name, s);
   end;
   ReallocMem(FColWidths, 0);
   ReallocMem(FTabStops, 0);

@@ -37,7 +37,7 @@ var
 
 implementation
 
-uses RadIni, Plus, Wizard, OutBound;
+uses RadIni, RadSav, Plus, Wizard, OutBound;
 
 {$R *.dfm}
 
@@ -71,7 +71,7 @@ var
    s: string;
 begin
    LogViewer := self;
-   s := IniFile.ReadString('Sizes', 'LogViewer', '');
+   s := SavFile.ReadString('Sizes', 'LogViewer', '');
    Left := StrToIntDef(ExtractWord(1, s, [',']), Left);
    Top := StrToIntDef(ExtractWord(2, s, [',']), Top);
    Width := StrToIntDef(ExtractWord(3, s, [',']), Width);
@@ -80,7 +80,7 @@ end;
 
 procedure TLogViewer.FormDestroy(Sender: TObject);
 begin
-   IniFile.WriteString('Sizes', 'LogViewer',
+   SavFile.WriteString('Sizes', 'LogViewer',
       IntToStr(Left) + ',' +
       IntToStr(Top) + ',' +
       IntToStr(Width) + ',' +

@@ -147,6 +147,7 @@ LANGUAGE LANG_RUSSIAN,0
         "llRcvSize|Размер:\n"\
         "PollsListView|Узел|Номера|Владелец|Статус|Занят|Не с.|Сбой|Тип\n"\
         "BWListView|Имя файла|Получено|Всего|С узла|Последняя запись\n"\
+        "STListView|Линия|Состояние|Таймер\n"\
         "StatusBox| Состояние \n"\
         "GroupBox3| Статус \n"\
         "CancelButton|Отмена\n"\

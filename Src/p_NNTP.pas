@@ -76,7 +76,7 @@ implementation
 
 uses
    Wizard, WSock, Outbound, Plus, Recs, RadIni, UStr, xDES,
-   DateUtils, Crypt;
+   DateUtils, Crypt, RadSav;
 
 function CreateNNTPProtocol;
 begin

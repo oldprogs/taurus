@@ -137,11 +137,8 @@ function SetupIP(APageIndex: Integer): Boolean;
 
 implementation
 
-uses LngTools, xFido, AltRecs, xEvents, OvrExpl, TracePl, Wizard, RadIni;
-
-{$IFNDEF WS}
-  This form cannot be linked
-{$ENDIF}
+uses LngTools, xFido, AltRecs, xEvents, OvrExpl, TracePl, Wizard,
+     RadIni, RadSav;
 
 {$R *.DFM}
 
@@ -155,9 +152,9 @@ begin
    4: IPcfgForm.tb.ActivePage := IPcfgForm.lRestrict;
    end;
    IPcfgForm.SetData;
-   IPcfgForm.tb.ActivePageIndex := IniFile.ReadInteger('IPCfg', 'Page', 0);
+   IPcfgForm.tb.ActivePageIndex := SavFile.ReadInteger('IPCfg', 'Page', 0);
    Result := IPcfgForm.ShowModal = mrOK;
-   IniFile.WriteInteger('IPCfg', 'Page', IPcfgForm.tb.ActivePageIndex);
+   SavFile.WriteInteger('IPCfg', 'Page', IPcfgForm.tb.ActivePageIndex);
    if Result and IPcfgForm.EvtChanged then begin
       RecalcEvents := True;
       SetEvt(oRecalcEvents);
@@ -222,7 +219,7 @@ begin
    IniFile.LoadGrid(gSMTP);
    IniFile.LoadGrid(gPOP3);
    IniFile.LoadGrid(gNNTP);
-   IniFile.LoadGrid('Black_List', gBList);
+   SavFile.LoadGrid('Black_List', gBList);
 
    rgProxyType.ItemIndex := Integer(IniFile.ProxyType); // visual
    lSocksAddr.Text := Cfg.Proxy.Addr;
@@ -420,7 +417,7 @@ begin
    end;
    IniFile.SaveGrid(gPOP3);
    IniFile.SaveGrid(gNNTP);
-   IniFile.SaveGrid('Black_List', gBList);
+   SavFile.SaveGrid('Black_List', gBList);
    Cfg.IPData.InC := spIn.Value;
    Cfg.IPData.OutC := spOut.Value;
    Cfg.IPData.BList := spBL.Value;

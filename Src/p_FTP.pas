@@ -379,23 +379,26 @@ end;
 procedure TFTP.SendStep;
 var
    i: DWORD;
+   a: integer;
+   e: integer;
 begin
-   i := MinD(T.D.BlkLen, T.D.FSize - T.D.FPos);
-   SetLastError(0);
-   if (T.Stream.Read(aOut, i) <> i) or (GetLastError <> 0) then
-   begin
-      FFinishSend(Self, aaSysError);
-      FreeObject(dSock);
-      State := bdServ;
-      exit;
-   end else
-   begin
-      TxBlkSize := i;
-      TxBlkRead := i;
-      TxBlkPos  := 0;
-   end;
-   if CanSend then
-   begin
+   if CanSend then begin
+      i := MinD(T.D.BlkLen, T.D.FSize - T.D.FPos);
+      SetLastError(0);
+      a := T.Stream.Read(aOut, i);
+      e := GetLastError;
+      if (a <> i) or (e <> 0) then begin
+         CustomInfo := Format('Read Error, i = %d, a = %d, e = %d, offset = ', [i, a, e, T.Stream.Position]);
+         FLogFile(Self, lfLog);
+         FFinishSend(Self, aaSysError);
+         FreeObject(dSock);
+         State := bdServ;
+         exit;
+      end else begin
+         TxBlkSize := i;
+         TxBlkRead := i;
+         TxBlkPos  := 0;
+      end;
       NewTimerSecs(Timer, BinkPTimeout);
       WriteProc(aOut[TxBlkPos], i);
       if T.D.BlkLen < MaxSndBlkSz then T.D.BlkLen := T.D.BlkLen shl 1;
@@ -403,8 +406,7 @@ begin
       if TxBlkPos + i = TxBlkSize then begin
          Inc(T.D.FPos, TxBlkRead);
       end;
-      if T.D.FPos = T.D.FSize then
-      begin
+      if T.D.FPos = T.D.FSize then begin
          while dSock.OutUsed > 0 do Application.ProcessMessages;
          PutString('226 Data transfer completed');
          FreeObject(dSock);
@@ -412,8 +414,7 @@ begin
          FreeObject(dSock);
          State := bdServ;
          exit;
-      end else
-      begin
+      end else begin
          Inc(TxBlkPos, i);
       end;
    end else
