@@ -2,7 +2,7 @@ unit Netmail;
 
 interface
 
-uses Windows, xBase, xFido, MClasses, Classes;
+uses Windows, xBase, xFido, MClasses, Classes, MlrThr;
 
 {$I ftsc.inc}
 
@@ -105,6 +105,19 @@ type
       procedure LoadFromFile(const n: string); reintroduce;
    end;
 
+   TNetStream = class(TFileStream)
+      constructor Create(const n: string; m: DWORD);
+   end;
+
+   TNetLogger = class
+      LogColl: TStringColl;
+   public
+      constructor Create;
+      destructor Destroy; override;
+      procedure Log(const s: string);
+      procedure LogMSG(m: TNetmailMSG; p: string);
+   end;
+
 procedure FreeNetmailHolder;
 function  ClearAttach(d: TFidoAddress; m, a: string): string;
 procedure UnpackPKT(p: string);
@@ -117,6 +130,8 @@ procedure MergeMail(const a: TFidoAddress; const n, o: string);
 var
    NetmailHolder: TNetmail;
    EchomailHolder: TColl;
+   NetmailLog: string;
+   NetmailLogger: TNetLogger = nil;
 
 implementation
 
@@ -127,6 +142,7 @@ uses
 procedure FreeNetmailHolder;
 begin
    FreeObject(NetmailHolder);
+   FreeObject(NetmailLogger);
 end;
 
 function ClearAttach;
@@ -170,9 +186,6 @@ begin
          r.DestZone  := d.Zone;
          r.OrigPoint := inifile.MainAddr.Point;
          r.DestPoint := d.Point;
-//         if fPass <> '' then begin
-//            move(fPass[1], h.Password, Length(fPass));
-//         end;
          p.MsgType   := 2;
          p.OrigNode  := g.From.Node;
          p.DestNode  := g.Addr.Node;
@@ -374,6 +387,7 @@ begin
       o := m.bOff - m.Offs - SizeOf(PackedMsgHeaderRec);
       s.Write(Pointer(Integer(m.Body) + o)^, m.Size - o - 1);
       s.Free;
+      NetmailLogger.LogMSG(m, 'unpack');
       if (m.Attr and AuditRequest > 0) or
          ((m.Attr and ReturnReceiptRequest > 0) and (AddrColl.Search(@m.Addr, o))) then
       begin
@@ -413,6 +427,7 @@ begin
    n.ScanPacket(p);
    for i := 0 to CollMax(n.NetColl) do begin
       m := n.NetColl[i];
+      NetmailLogger.LogMSG(m, 'router');
       if (m.Attr and AuditRequest > 0) then begin
          NewMessage(m.From, m.Frnm, 'Transit confirmation');
          WriteLine(
@@ -610,6 +625,9 @@ begin
    FilColl := TStringList.Create;
    FilColl.Sorted := True;
    NetColl := TNetColl.Create;
+   if NetmailLogger = nil then begin
+      NetmailLogger := TNetLogger.Create;
+   end;
 end;
 
 destructor TNetmail.Destroy;
@@ -658,17 +676,17 @@ var
 begin
    if not IniFile.ScanMSG then exit;
    DC := IniFile.GetStrings('gNetPath');
+   NetColl.Enter;
+   NetColl.MarkDel(True);
    for PN := 0 to CollMax(DC) do begin
    FP := AddBackSlash(TDualRec(DC.Items[PN]^).St1^);
    if uFindFirst(FP + '*.MSG', SR) then begin
-      Application.ProcessMessages;
-      NetColl.Enter;
-      NetColl.MarkDel(True);
       PktColl.Enter;
       repeat
+         Application.ProcessMessages;
          NN := Vl(ExtractWord(1, SR.FName, ['.']));
          if NN > 0 then begin
-            if MaxMSG < NN then begin
+            if (PN = 0) and (MaxMSG < NN) then begin
                MaxMSG := NN;
             end;
             CC := PktColl.FindName(FP + SR.FName);
@@ -690,9 +708,9 @@ begin
       until not uFindNext(SR);
       uFindClose(SR);
       PktColl.Leave;
-      NetColl.Leave;
    end;
    end;
+   NetColl.Leave;
 end;
 
 procedure TNetMail.ScanMail;
@@ -1362,9 +1380,20 @@ begin
    inherited;
 end;
 
+constructor TNetStream.Create;
+var
+   h: THandle;
+begin
+   h := _CreateFile(n, [cRead, cWrite]);
+   if h = INVALID_HANDLE_VALUE then Exit;
+   ZeroHandle(h);
+   inherited;
+end;
+
 procedure MergeMail(const a: TFidoAddress; const n, o: string);
 var
-   i, p: TFileStream;
+   i,
+   p: TNetStream;
 begin
    if FidoOut.Lock(a, osBusyEx, True) then begin
       if FidoOut.Lock(a, osBusy, True) then begin
@@ -1372,21 +1401,20 @@ begin
             RenameFile(n, o);
          end else
          if GetPKTFileType(n) = pftFSC39 then begin
-            try
-               i := nil;
-               p := nil;
-               i := TFileStream.Create(o, fmOpenRead);
-               p := TFileStream.Create(n, fmOpenReadWrite);
-               i.Seek($3A, soFromBeginning);
-               p.Seek(-2, soFromEnd);
-               p.CopyFrom(i, i.Size - $3A);
+            i := TNetStream.Create(o, fmOpenRead);
+            if i <> nil then begin
+               p := TNetStream.Create(n, fmOpenReadWrite);
+               if p <> nil then begin
+                  i.Seek($3A, soFromBeginning);
+                  p.Seek(-2, soFromEnd);
+                  p.CopyFrom(i, i.Size - $3A);
+                  FreeObject(i);
+                  FreeObject(p);
+                  DeleteFile(o);
+                  RenameFile(n, o);
+                  FreeObject(p);
+               end;
                FreeObject(i);
-               FreeObject(p);
-               DeleteFile(o);
-               RenameFile(n, o);
-            finally
-               FreeObject(i);
-               FreeObject(p);
             end;
          end else begin
             // hope this shit never happen or
@@ -1396,6 +1424,39 @@ begin
       end;
       FidoOut.Unlock(a, osBusyEx);
    end;
+end;
+
+constructor TNetLogger.Create;
+begin
+   inherited;
+   LogColl := TStringColl.Create;
+   Log('Begin v' + ProductVersion);
+end;
+
+destructor TNetLogger.Destroy;
+begin
+   Log('End');
+   FreeObject(LogColl);
+   inherited;
+end;
+
+procedure TNetLogger.Log;
+var
+   t: THandle;
+begin
+   LogColl.Add(s);
+   if _LogOK(NetmailLog, t) then begin
+      While LogColl.Count > 0 do begin
+        _LogWriteStr(' ' + uFormat(uGetLocalTime) + ' ' + LogColl[0], t);
+         LogColl.AtFree(0);
+      end;
+      ZeroHandle(t);
+   end;
+end;
+
+procedure TNetLogger.LogMSG;
+begin
+   Log('[' + p + '] From: ' + m.Frnm + ' (' + Addr2Str(m.From) + '), To: ' + m.Tonm + ' (' + Addr2Str(m.Addr) + '), Subj: ' + m.Subj + ', Date: ' + m.Date + ', MsgId: ' + m.MsId);
 end;
 
 initialization

@@ -140,7 +140,6 @@ begin
    UpdateButtons;
 end;
 
-
 procedure TEventsForm.UpdateButtons;
 var
    e: Boolean;
