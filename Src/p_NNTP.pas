@@ -268,7 +268,8 @@ begin
                      end;
                      for i := 0 to CollMax(OutPaths) do begin
                         s := UpperCase(OutPaths[i]);
-                        if pos('.PKT', s) = Length(s) - 3 then begin
+                        if (fEcho.FilColl.IndexOf(s) = -1) and
+                           (pos('.PKT', s) = Length(s) - 3) then begin
                            fEcho.ScanPacket(s);
                         end;
                      end;

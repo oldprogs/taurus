@@ -5471,8 +5471,9 @@ begin
             SD.SentFiles.Enter;
             for P := 0 to SD.SentFiles.Count - 1 do
             begin
-               if (tof.Name = TOutFile(SD.SentFiles[P]).Name) or
-                  (tof.Name = TOutFile(SD.SentFiles[P]).Orig) then
+               if not (tof.Status in [osImmedMail..osHoldMail]) and
+                  ((tof.Name = TOutFile(SD.SentFiles[P]).Name) or
+                   (tof.Name = TOutFile(SD.SentFiles[P]).Orig)) then
                begin
                   SD.OutFiles.AtFree(M);
                   tof := nil;

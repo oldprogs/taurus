@@ -60,6 +60,7 @@ type
       PktColl: TPktColl;
       MsgColl: TstringColl;
       fAddres: TFidoAddress;
+      fBackup: Boolean;
       procedure FreePack(p: TNetmailPkt);
       procedure Scan(const path: string);
       procedure MoveMail(n: TNetmailMsg; const t: TFidoAddress; const a: string);
@@ -72,6 +73,7 @@ type
       NetWait: TRTLCriticalSection;
       NetColl: TNetColl;
       LstColl: TStringList;
+      FilColl: TStringList;
       constructor Create; virtual;
       destructor Destroy; override;
       procedure ScanMail;
@@ -238,6 +240,8 @@ begin
    MsgColl := TStringColl.Create;
    LstColl := TStringList.Create;
    LstColl.Sorted := True;
+   FilColl := TStringList.Create;
+   FilColl.Sorted := True;
    NetColl := TNetColl.Create;
    InitializeCriticalSection(NetWait);
 end;
@@ -246,6 +250,7 @@ destructor TNetmail.Destroy;
 begin
    FreeObject(NetColl);
    LstColl.Free;
+   FilColl.Free;
    FreeObject(MsgColl);
    FreeObject(PktColl);
    PurgeCS(NetWait);
@@ -383,6 +388,7 @@ var
 
 begin
    if not ExistFile(pack) then exit;
+   if EchoMail and (FilColl.IndexOf(pack) > -1) then exit;
    NetColl.Enter;
    n := TMemoryStream.Create;
    if n <> nil then begin
@@ -494,6 +500,7 @@ begin
          g := FindMessage(l.MsId);
          if g = nil then begin
             NetColl.Add(l);
+            fBackup := True;
          end else begin
             FreeObject(l);
             g.Dele := False;
@@ -711,22 +718,29 @@ var
    i: TFileStream;
    m: TNetmailMsg;
    n: string;
+   j: integer;
 begin
    if CompareAddrs(a, fAddres) <> 0 then begin
-      n := GetOutFileName(Address, osNone) + '.idx';
+      fBackup := False;
+      n := GetOutFileName(a, osNone) + '.idx';
       if ExistFile(n) then begin
          fAddres := a;
          NetColl.Enter;
          NetColl.FreeAll;
+         FilColl.Clear;
+         LstColl.Clear;
          i := TFileStream.Create(n, fmOpenRead);
          while i.Position < i.Size do begin
             m := TNetmailMSG.Create;
             m.Get(i);
             NetColl.Add(m);
+            FilColl.Add(m.Pack);
+            j := LstColl.Add(m.Echo);
+            LstColl.Objects[j] := Pointer(Integer(LstColl.Objects[j]) + 1);
          end;
          i.Free;
          NetColl.Leave;
-      end;   
+      end;
    end;
 end;
 
@@ -752,11 +766,13 @@ var
    n: integer;
    i: TFileStream;
 begin
-   i := TFileStream.Create(GetOutFileName(Address, osNone) + '.idx', fmCreate);
-   for n := 0 to CollMax(NetColl) do begin
-      NetColl[n].Put(i);
+   if fBackup then begin
+      i := TFileStream.Create(GetOutFileName(Address, osNone) + '.idx', fmCreate);
+      for n := 0 to CollMax(NetColl) do begin
+         NetColl[n].Put(i);
+      end;
+      i.Free;
    end;
-   i.Free;
 end;
 
 initialization

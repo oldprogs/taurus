@@ -123,7 +123,7 @@ end;
 
 function Win2Dos;
 begin
-  StrPCopy(plusSrcStr,WinStr);
+  StrPCopy(plusSrcStr, WinStr);
   CharToOEM(plusSrcStr, plusDestStr);
   Win2Dos := plusDestStr;
 end;
@@ -138,17 +138,17 @@ end;
 function FileNameDos2Win;
 begin
   if not (convert) then
-    result := FileName
+     result := FileName
   else
-    result := Dos2Win(FileName);
+     result := Dos2Win(FileName);
 end;
 
 function FileNameWin2Dos;
 begin
   if not (convert) then
-    result := FileName
+     result := FileName
   else
-    result := Win2Dos(FileName);
+     result := Win2Dos(FileName);
 end;
 
 {based on function LongToShortFileName from RxLibrary}
@@ -156,7 +156,8 @@ function ShortFileName;
 var
   Temp: TWin32FindData;
   SearchHandle: THandle;
-  Name, Ext: string;
+  Name,
+  Ext: string;
   ExtPos: integer;
   i: integer;
 begin
@@ -164,23 +165,23 @@ begin
 
   SearchHandle := FindFirstFile(PChar(LongName), Temp);
   if SearchHandle <> INVALID_HANDLE_VALUE then begin
-    Result := string(Temp.cAlternateFileName);
-    if Result = '' then Result := string(Temp.cFileName);
+     Result := string(Temp.cAlternateFileName);
+     if Result = '' then Result := string(Temp.cFileName);
   end;
   Windows.FindClose(SearchHandle);
 
   if length(Result) > 12 then begin
-    Name := ExtractFileName(Result);
-    Ext := ExtractFileExt(Result);
-    ExtPos := pos(Ext, Name);
-    if ExtPos > 9 then ExtPos := 9;
-    Name := copy(Name, 1, ExtPos - 1);
-    Ext := copy(Ext, 2, 3);
-    result := Name + '.' + Ext;
+     Name := ExtractFileName(Result);
+     Ext := ExtractFileExt(Result);
+     ExtPos := pos(Ext, Name);
+     if ExtPos > 9 then ExtPos := 9;
+     Name := copy(Name, 1, ExtPos - 1);
+     Ext := copy(Ext, 2, 3);
+     result := Name + '.' + Ext;
   end;
 
   for i := 1 to length(result) do
-    if (result[i] <= ' ') then result[i] := '_';
+     if (result[i] <= ' ') then result[i] := '_';
 end;
 
 function GetPriority(PriorityName: string): integer;

@@ -292,6 +292,12 @@ begin
                   fStam := fStam + ' ' + KeyedMD5(s[1], Length(s), fLine[1], Length(fLine));
                   PutString(EncodeB64(fStam));
                end;
+            end else
+            if z = '535' then begin
+               CustomInfo := 'Server reported authentication error';
+               FLogFile(Self, lfLog);
+               PutString('QUIT');
+               State := bdDone;
             end;
             if (z = '235') or (State = bdMail) then begin
                PutString('MAIL FROM: <' + GetWord(4) + '>');
