@@ -123,6 +123,7 @@ type
 
             NetmailDir: string;
             ScanMSG: boolean;
+            UnpackMSG: boolean;
             lang: integer;
             helplang: string;
             Synch: TFidoAddress;
@@ -703,6 +704,7 @@ begin
       FlagsDir := MakeFullDir('', ReadString(paths, 'flags', ExtractFilePath(ParamStr(0)) + 'FLAGS'));
       NetmailDir := MakeFullDir('', ReadString('MSG', 'Netmail', 'NETMAIL'));
       ScanMSG := ReadBool('MSG', 'ScanMSG', False);
+      UnpackMSG := ReadBool('MSG', 'UnpackMSG', False);
 
       accessFName := ReadString(LogNames, 'access_log', GetRegStringDef('access_log', 'access_log'));
       agentFName := ReadString(LogNames, 'agent_log', GetRegStringDef('agent_log', 'agent_log'));
@@ -1027,6 +1029,7 @@ begin
 
      WriteString('MSG', 'Netmail', NetmailDir);
      WriteBool('MSG', 'ScanMSG', ScanMSG);
+     WriteBool('MSG', 'UnpackMSG', UnpackMSG);
 
      WriteString(LogNames, 'access_log', accessFName);
      WriteString(LogNames, 'agent_log', agentFName);

@@ -5,8 +5,8 @@ object AtomEditorForm: TAtomEditorForm
   BorderStyle = bsDialog
   BorderWidth = 6
   Caption = 'Edit Event Atom'
-  ClientHeight = 317
-  ClientWidth = 432
+  ClientHeight = 367
+  ClientWidth = 515
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -18,13 +18,17 @@ object AtomEditorForm: TAtomEditorForm
   OnCloseQuery = FormCloseQuery
   OnCreate = FormCreate
   OnDestroy = FormDestroy
+  DesignSize = (
+    515
+    367)
   PixelsPerInch = 96
   TextHeight = 15
   object Bevel2: TBevel
     Left = 0
     Top = 0
-    Width = 337
-    Height = 68
+    Width = 424
+    Height = 66
+    Anchors = [akLeft, akTop, akRight]
     Shape = bsFrame
   end
   object llTyp: TLabel
@@ -36,40 +40,44 @@ object AtomEditorForm: TAtomEditorForm
   end
   object cb: TComboBox
     Left = 10
-    Top = 25
-    Width = 316
+    Top = 27
+    Width = 405
     Height = 23
     Style = csDropDownList
+    Anchors = [akLeft, akTop, akRight]
     DropDownCount = 20
     ItemHeight = 15
     TabOrder = 0
     OnChange = cbChange
   end
   object bOK: TButton
-    Left = 345
+    Left = 432
     Top = 0
     Width = 80
     Height = 25
+    Anchors = [akTop, akRight]
     Caption = 'OK'
     Default = True
     ModalResult = 1
     TabOrder = 2
   end
   object bCancel: TButton
-    Left = 345
-    Top = 30
+    Left = 432
+    Top = 34
     Width = 80
     Height = 25
+    Anchors = [akTop, akRight]
     Cancel = True
     Caption = 'Cancel'
     ModalResult = 2
     TabOrder = 3
   end
   object bHelp: TButton
-    Left = 345
-    Top = 60
+    Left = 432
+    Top = 68
     Width = 80
     Height = 25
+    Anchors = [akTop, akRight]
     Caption = 'Help'
     TabOrder = 4
     OnClick = bHelpClick
@@ -77,9 +85,12 @@ object AtomEditorForm: TAtomEditorForm
   object nb: TNotebook
     Left = 0
     Top = 66
-    Width = 337
-    Height = 237
+    Width = 424
+    Height = 296
+    Anchors = [akLeft, akTop, akRight, akBottom]
+    Ctl3D = True
     PageIndex = 7
+    ParentCtl3D = False
     TabOrder = 1
     object TPage
       Left = 0
@@ -90,11 +101,14 @@ object AtomEditorForm: TAtomEditorForm
       Left = 0
       Top = 0
       Caption = '1'
+      DesignSize = (
+        424
+        296)
       object bvl1: TBevel
         Left = 0
         Top = 0
-        Width = 337
-        Height = 76
+        Width = 424
+        Height = 73
         Align = alTop
         Shape = bsFrame
       end
@@ -107,9 +121,10 @@ object AtomEditorForm: TAtomEditorForm
       end
       object iString: TEdit
         Left = 10
-        Top = 26
-        Width = 316
+        Top = 32
+        Width = 403
         Height = 24
+        Anchors = [akLeft, akTop, akRight]
         Font.Charset = DEFAULT_CHARSET
         Font.Color = clWindowText
         Font.Height = -13
@@ -123,11 +138,14 @@ object AtomEditorForm: TAtomEditorForm
       Left = 0
       Top = 0
       Caption = '2'
+      DesignSize = (
+        424
+        296)
       object bvl2: TBevel
         Left = 0
         Top = 0
-        Width = 337
-        Height = 76
+        Width = 424
+        Height = 73
         Align = alTop
         Shape = bsFrame
       end
@@ -139,12 +157,13 @@ object AtomEditorForm: TAtomEditorForm
         FocusControl = cbCombo
       end
       object cbCombo: TComboBox
-        Left = 10
-        Top = 26
-        Width = 316
-        Height = 24
+        Left = 9
+        Top = 32
+        Width = 405
+        Height = 23
         Style = csDropDownList
-        ItemHeight = 0
+        Anchors = [akLeft, akTop, akRight]
+        ItemHeight = 15
         TabOrder = 0
         OnClick = cbComboClick
       end
@@ -156,7 +175,7 @@ object AtomEditorForm: TAtomEditorForm
       object bvl3: TBevel
         Left = 0
         Top = 0
-        Width = 337
+        Width = 424
         Height = 57
         Align = alTop
         Shape = bsFrame
@@ -164,15 +183,16 @@ object AtomEditorForm: TAtomEditorForm
       object lSpin: TLabel
         Left = 90
         Top = 20
-        Width = 3
+        Width = 28
         Height = 15
+        Caption = 'lSpin'
         FocusControl = sSpin
       end
       object sSpin: TxSpinEdit
         Left = 10
         Top = 16
         Width = 73
-        Height = 23
+        Height = 24
         MaxValue = 0
         MinValue = 0
         TabOrder = 0
@@ -184,19 +204,23 @@ object AtomEditorForm: TAtomEditorForm
       Left = 0
       Top = 0
       Caption = '4'
+      DesignSize = (
+        424
+        296)
       object bvl4: TBevel
         Left = 0
         Top = 0
-        Width = 337
-        Height = 46
+        Width = 424
+        Height = 49
         Align = alTop
         Shape = bsFrame
       end
       object cbCheckBox: TCheckBox
         Left = 12
-        Top = 14
-        Width = 316
+        Top = 15
+        Width = 398
         Height = 18
+        Anchors = [akLeft, akTop, akRight]
         TabOrder = 0
         OnClick = cbCheckBoxClick
       end
@@ -205,10 +229,13 @@ object AtomEditorForm: TAtomEditorForm
       Left = 0
       Top = 0
       Caption = '5'
+      DesignSize = (
+        424
+        296)
       object bvl5: TBevel
         Left = 0
         Top = 0
-        Width = 337
+        Width = 424
         Height = 122
         Align = alTop
         Shape = bsFrame
@@ -230,8 +257,9 @@ object AtomEditorForm: TAtomEditorForm
       object iDstrA: TEdit
         Left = 10
         Top = 26
-        Width = 316
+        Width = 400
         Height = 24
+        Anchors = [akLeft, akTop, akRight]
         Font.Charset = DEFAULT_CHARSET
         Font.Color = clWindowText
         Font.Height = -13
@@ -243,8 +271,9 @@ object AtomEditorForm: TAtomEditorForm
       object iDstrB: TEdit
         Left = 10
         Top = 78
-        Width = 316
+        Width = 400
         Height = 24
+        Anchors = [akLeft, akTop, akRight]
         Font.Charset = DEFAULT_CHARSET
         Font.Color = clWindowText
         Font.Height = -13
@@ -261,25 +290,25 @@ object AtomEditorForm: TAtomEditorForm
       object bvl6: TBevel
         Left = 0
         Top = 0
-        Width = 337
-        Height = 225
-        Align = alTop
+        Width = 414
+        Height = 297
         Shape = bsFrame
       end
       object MemoPageControl: TPageControl
         Left = 0
-        Top = 2
-        Width = 337
-        Height = 223
+        Top = 0
+        Width = 424
+        Height = 297
         ActivePage = tsMemoA
+        Align = alTop
         TabOrder = 0
         object tsMemoA: TTabSheet
           Caption = 'tsMemoA'
           object MemoA: TMemo
             Left = 0
             Top = 0
-            Width = 328
-            Height = 193
+            Width = 416
+            Height = 267
             Align = alClient
             Font.Charset = DEFAULT_CHARSET
             Font.Color = clWindowText
@@ -297,8 +326,8 @@ object AtomEditorForm: TAtomEditorForm
           object MemoB: TMemo
             Left = 0
             Top = 0
-            Width = 328
-            Height = 193
+            Width = 416
+            Height = 216
             Align = alClient
             Font.Charset = DEFAULT_CHARSET
             Font.Color = clWindowText
@@ -316,12 +345,15 @@ object AtomEditorForm: TAtomEditorForm
       Left = 0
       Top = 0
       Caption = '7'
+      DesignSize = (
+        424
+        296)
       object bvl7: TBevel
         Left = 0
         Top = 0
-        Width = 337
-        Height = 228
-        Align = alTop
+        Width = 424
+        Height = 297
+        Anchors = [akLeft, akTop, akRight, akBottom]
         Shape = bsFrame
       end
       object lGrid: TLabel
@@ -333,14 +365,15 @@ object AtomEditorForm: TAtomEditorForm
       end
       object StringGrid: TAdvGrid
         Left = 0
-        Top = 69
-        Width = 337
-        Height = 159
+        Top = 72
+        Width = 424
+        Height = 224
         FixedFont.Charset = DEFAULT_CHARSET
         FixedFont.Color = clWindowText
         FixedFont.Height = -12
         FixedFont.Name = 'Arial'
         FixedFont.Style = []
+        Align = alBottom
         DefaultRowHeight = 18
         RowCount = 2
         Font.Charset = DEFAULT_CHARSET
@@ -351,20 +384,22 @@ object AtomEditorForm: TAtomEditorForm
         Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goRowMoving, goEditing, goThumbTracking, goDigitalRows]
         ParentFont = False
         TabOrder = 0
+        CheckBoxes = False
         OnRowInsert = StringGridRowInsert
         OnRowDelete = StringGridRowDelete
         ColWidths = (
           30
-          84
-          86
+          107
+          111
           80
           77)
       end
       object eGrid: TEdit
         Left = 10
-        Top = 26
-        Width = 316
+        Top = 32
+        Width = 402
         Height = 24
+        Anchors = [akLeft, akTop, akRight]
         Font.Charset = DEFAULT_CHARSET
         Font.Color = clWindowText
         Font.Height = -13

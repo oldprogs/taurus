@@ -3317,7 +3317,7 @@ procedure TMailerForm.UpdateView(fromcc: boolean);
 
    procedure UpdatePolls;
    const
-      PT: array[TPollType] of Integer = (-1, rsMMptAuto, rsMMptCron, rsMMptManual, rsMMptImm, rsMMptBack, rsMMptRCC, rsMMptNetm, rsMMptNmIm, rsMMptTest);
+      PT: array[TPollType] of Integer = (-1, rsMMptAuto, rsMMptNetm, rsMMptCron, rsMMptTest, rsMMptManual, rsMMptImm, rsMMptBack, rsMMptRCC, rsMMptNmIm);
    var
       C: TColl;
       S: TStringColl;
@@ -4794,7 +4794,7 @@ var
    end;
 
 const
-   PtpTyp: array[TPollType] of Integer = (0, rsMMptpiOutb, rsMMptpiCron, rsMMptpiManual, rsMMptpiImm, rsMMptpiBack, rsMMptpiRCC, rsMMptpiNetm, rsMMptpiNmIm, rsMMptpiTest);
+   PtpTyp: array[TPollType] of Integer = (0, rsMMptpiOutb, rsMMptpiNetm, rsMMptpiCron, rsMMptpiTest, rsMMptpiManual, rsMMptpiImm, rsMMptpiBack, rsMMptpiRCC, rsMMptpiNmIm);
 
 var
    s: string;

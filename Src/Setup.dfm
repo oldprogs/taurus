@@ -4,8 +4,8 @@ object SetupForm: TSetupForm
   HelpContext = 11000
   BorderStyle = bsDialog
   Caption = 'Taurus Setup'
-  ClientHeight = 396
-  ClientWidth = 509
+  ClientHeight = 452
+  ClientWidth = 569
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -17,12 +17,15 @@ object SetupForm: TSetupForm
   Scaled = False
   OnClose = FormClose
   OnCreate = FormCreate
+  DesignSize = (
+    569
+    452)
   PixelsPerInch = 96
   TextHeight = 15
   object imgHeader: TImage
     Left = 142
     Top = 5
-    Width = 360
+    Width = 422
     Height = 20
     Picture.Data = {
       07544269746D617086050000424D86050000000000001E040000280000006801
@@ -73,11 +76,12 @@ object SetupForm: TSetupForm
     Stretch = True
   end
   object bvFrame: TBevel
-    Left = 142
-    Top = 32
-    Width = 360
-    Height = 324
+    Left = 141
+    Top = 27
+    Width = 427
+    Height = 381
     Shape = bsFrame
+    Visible = False
   end
   object lblPageTitle: TLabel
     Left = 150
@@ -97,7 +101,8 @@ object SetupForm: TSetupForm
     Left = 5
     Top = 5
     Width = 130
-    Height = 350
+    Height = 442
+    Anchors = [akLeft, akTop, akBottom]
     BorderWidth = 1
     HideSelection = False
     HotTrack = True
@@ -124,10 +129,11 @@ object SetupForm: TSetupForm
       000000000000055061746873}
   end
   object nbPages: TNotebook
-    Left = 144
-    Top = 27
-    Width = 356
-    Height = 319
+    Left = 145
+    Top = 29
+    Width = 418
+    Height = 375
+    Anchors = [akLeft, akTop, akRight, akBottom]
     PageIndex = 9
     TabOrder = 1
     object TPage
@@ -136,8 +142,8 @@ object SetupForm: TSetupForm
       HelpContext = 11010
       Caption = 'Main'
       object sbMainPrev: TSpeedButton
-        Left = 188
-        Top = 280
+        Left = 236
+        Top = 287
         Width = 69
         Height = 20
         Caption = '<< Prev'
@@ -146,8 +152,8 @@ object SetupForm: TSetupForm
         OnClick = sbMainPrevClick
       end
       object sbMainNext: TSpeedButton
-        Left = 260
-        Top = 280
+        Left = 308
+        Top = 287
         Width = 69
         Height = 20
         Caption = 'Next >>'
@@ -157,14 +163,14 @@ object SetupForm: TSetupForm
       object Bevel20: TBevel
         Left = 14
         Top = 270
-        Width = 320
+        Width = 393
         Height = 5
         Shape = bsTopLine
       end
       object MainPan2: TPanel
         Left = 0
         Top = 0
-        Width = 356
+        Width = 417
         Height = 257
         BevelOuter = bvNone
         TabOrder = 1
@@ -172,7 +178,7 @@ object SetupForm: TSetupForm
         object Bevel1: TBevel
           Left = 14
           Top = 71
-          Width = 320
+          Width = 393
           Height = 5
           Shape = bsTopLine
         end
@@ -199,7 +205,7 @@ object SetupForm: TSetupForm
           FocusControl = cbCloseBtnAction
         end
         object lMinFreeSpace: TLabel
-          Left = 189
+          Left = 218
           Top = 161
           Width = 83
           Height = 15
@@ -208,7 +214,7 @@ object SetupForm: TSetupForm
         object Bevel18: TBevel
           Left = 14
           Top = 16
-          Width = 320
+          Width = 393
           Height = 5
           Shape = bsTopLine
         end
@@ -229,7 +235,7 @@ object SetupForm: TSetupForm
         object cbSessionOK: TCheckBox
           Left = 16
           Top = 82
-          Width = 170
+          Width = 190
           Height = 17
           Caption = 'Create SESSION.OK'
           TabOrder = 0
@@ -237,23 +243,23 @@ object SetupForm: TSetupForm
         object cbCreateSessionFail: TCheckBox
           Left = 16
           Top = 99
-          Width = 170
+          Width = 190
           Height = 17
           Caption = 'Create SESSION.FAIL'
           TabOrder = 1
         end
         object cbUseSPACE: TCheckBox
-          Left = 189
+          Left = 218
           Top = 82
-          Width = 160
+          Width = 180
           Height = 17
           Caption = 'Use SPACE to flush'
           TabOrder = 2
         end
         object cbFixedRetryTimeout: TCheckBox
-          Left = 189
+          Left = 218
           Top = 99
-          Width = 160
+          Width = 180
           Height = 17
           Caption = 'Fixed retry timeout'
           TabOrder = 3
@@ -261,7 +267,7 @@ object SetupForm: TSetupForm
         object cbDynamicOutbound: TCheckBox
           Left = 16
           Top = 28
-          Width = 170
+          Width = 190
           Height = 17
           Caption = 'Use Dynamic Outbound'
           TabOrder = 4
@@ -280,7 +286,7 @@ object SetupForm: TSetupForm
             'Minimize to tray')
         end
         object seMinFreeSpace: TxSpinEdit
-          Left = 189
+          Left = 218
           Top = 180
           Width = 73
           Height = 24
@@ -290,9 +296,9 @@ object SetupForm: TSetupForm
           Value = 0
         end
         object cbD5Out: TCheckBox
-          Left = 189
+          Left = 218
           Top = 28
-          Width = 160
+          Width = 180
           Height = 17
           Caption = '5D Outbound'
           TabOrder = 8
@@ -300,15 +306,15 @@ object SetupForm: TSetupForm
         object cbUseNodelistData: TCheckBox
           Left = 16
           Top = 116
-          Width = 170
+          Width = 190
           Height = 17
           Caption = 'Use Nodelist Data'
           TabOrder = 7
         end
         object cbPlaySounds: TCheckBox
-          Left = 189
+          Left = 218
           Top = 116
-          Width = 160
+          Width = 180
           Height = 17
           Caption = 'Play Sounds'
           TabOrder = 9
@@ -316,7 +322,7 @@ object SetupForm: TSetupForm
         object cbCompileNodelist: TCheckBox
           Left = 16
           Top = 133
-          Width = 170
+          Width = 190
           Height = 17
           Caption = 'Auto compile nodelist'
           TabOrder = 10
@@ -325,28 +331,29 @@ object SetupForm: TSetupForm
       object MainPan1: TPanel
         Left = 0
         Top = 0
-        Width = 356
+        Width = 418
         Height = 257
+        Align = alTop
         BevelOuter = bvNone
         TabOrder = 0
         object Bevel6: TBevel
           Left = 15
           Top = 146
-          Width = 320
+          Width = 393
           Height = 5
           Shape = bsTopLine
         end
         object Bevel2: TBevel
           Left = 15
           Top = 76
-          Width = 320
+          Width = 394
           Height = 5
           Shape = bsTopLine
         end
         object Bevel4: TBevel
           Left = 15
           Top = 16
-          Width = 320
+          Width = 393
           Height = 5
           Shape = bsTopLine
         end
@@ -365,7 +372,7 @@ object SetupForm: TSetupForm
           Transparent = False
         end
         object sbMainAKABrowse: TSpeedButton
-          Left = 147
+          Left = 182
           Top = 42
           Width = 23
           Height = 20
@@ -374,7 +381,7 @@ object SetupForm: TSetupForm
           OnClick = sbMainAKABrowseClick
         end
         object sbSynchClockBrowse: TSpeedButton
-          Left = 312
+          Left = 380
           Top = 42
           Width = 23
           Height = 20
@@ -383,7 +390,7 @@ object SetupForm: TSetupForm
           OnClick = sbSynchClockBrowseClick
         end
         object lSynchClock: TLabel
-          Left = 181
+          Left = 215
           Top = 24
           Width = 92
           Height = 15
@@ -418,14 +425,14 @@ object SetupForm: TSetupForm
           Caption = 'Synch time shift:'
         end
         object lCPSMinBytes: TLabel
-          Left = 126
+          Left = 150
           Top = 88
           Width = 84
           Height = 15
           Caption = 'CPS min bytes:'
         end
         object lCPSMinSecs: TLabel
-          Left = 236
+          Left = 284
           Top = 88
           Width = 79
           Height = 15
@@ -453,7 +460,7 @@ object SetupForm: TSetupForm
           Caption = 'Msgs autoclose:'
         end
         object lMaxBWZAge: TLabel
-          Left = 126
+          Left = 150
           Top = 158
           Width = 77
           Height = 15
@@ -467,7 +474,7 @@ object SetupForm: TSetupForm
           Caption = 'Max BSY age:'
         end
         object lMaxUDLAge: TLabel
-          Left = 235
+          Left = 283
           Top = 158
           Width = 76
           Height = 15
@@ -476,15 +483,15 @@ object SetupForm: TSetupForm
         object eMainAKA: TEdit
           Left = 16
           Top = 41
-          Width = 129
+          Width = 161
           Height = 23
           TabOrder = 0
           Text = '2:5012/38.1'
         end
         object eSynchClock: TEdit
-          Left = 181
+          Left = 215
           Top = 41
-          Width = 129
+          Width = 161
           Height = 23
           TabOrder = 1
           Text = '2:5012/38.0'
@@ -500,7 +507,7 @@ object SetupForm: TSetupForm
           Value = 0
         end
         object seCPSMinBytes: TxSpinEdit
-          Left = 126
+          Left = 150
           Top = 105
           Width = 90
           Height = 24
@@ -510,7 +517,7 @@ object SetupForm: TSetupForm
           Value = 0
         end
         object seCPSMinSecs: TxSpinEdit
-          Left = 236
+          Left = 284
           Top = 105
           Width = 90
           Height = 24
@@ -530,7 +537,7 @@ object SetupForm: TSetupForm
           Value = 0
         end
         object seMaxBWZAge: TxSpinEdit
-          Left = 126
+          Left = 150
           Top = 175
           Width = 90
           Height = 24
@@ -550,7 +557,7 @@ object SetupForm: TSetupForm
           Value = 0
         end
         object seMaxUDLAge: TxSpinEdit
-          Left = 236
+          Left = 284
           Top = 175
           Width = 90
           Height = 24
@@ -569,21 +576,21 @@ object SetupForm: TSetupForm
       object Bevel7: TBevel
         Left = 15
         Top = 16
-        Width = 320
+        Width = 386
         Height = 5
         Shape = bsTopLine
       end
       object Bevel11: TBevel
         Left = 15
         Top = 136
-        Width = 320
+        Width = 386
         Height = 5
         Shape = bsTopLine
       end
       object Bevel12: TBevel
         Left = 15
         Top = 240
-        Width = 320
+        Width = 386
         Height = 5
         Shape = bsTopLine
       end
@@ -609,14 +616,14 @@ object SetupForm: TSetupForm
         Caption = 'Mutex name:'
       end
       object lActivateEventName: TLabel
-        Left = 184
+        Left = 213
         Top = 37
         Width = 114
         Height = 15
         Caption = 'Activate Event Name:'
       end
       object lEMSICR: TLabel
-        Left = 184
+        Left = 213
         Top = 77
         Width = 52
         Height = 15
@@ -638,7 +645,7 @@ object SetupForm: TSetupForm
         Caption = 'Watcher Event Name'
       end
       object lPriority: TLabel
-        Left = 157
+        Left = 188
         Top = 249
         Width = 99
         Height = 15
@@ -647,23 +654,23 @@ object SetupForm: TSetupForm
       object eMutexName: TEdit
         Left = 16
         Top = 52
-        Width = 153
+        Width = 182
         Height = 23
         TabOrder = 0
         Text = 'ARGUS_SEMAPHORE'
       end
       object eActivateEventName: TEdit
-        Left = 184
+        Left = 213
         Top = 52
-        Width = 153
+        Width = 182
         Height = 23
         TabOrder = 1
         Text = 'ARGUS_EVENT_ACTIVATE'
       end
       object eEMSICR: TEdit
-        Left = 184
+        Left = 213
         Top = 92
-        Width = 153
+        Width = 182
         Height = 23
         TabOrder = 3
         Text = '%0D'
@@ -671,7 +678,7 @@ object SetupForm: TSetupForm
       object cbSimpleBSY: TCheckBox
         Left = 16
         Top = 155
-        Width = 161
+        Width = 186
         Height = 17
         Caption = 'Simple BSY'
         TabOrder = 4
@@ -679,23 +686,23 @@ object SetupForm: TSetupForm
       object cbCloseBWZ: TCheckBox
         Left = 16
         Top = 172
-        Width = 161
+        Width = 186
         Height = 17
         Caption = 'Cloze BWZ'
         TabOrder = 5
       end
       object cbIncrementArcmail: TCheckBox
-        Left = 185
+        Left = 213
         Top = 172
-        Width = 158
+        Width = 186
         Height = 17
         Caption = 'Increment arcmail'
         TabOrder = 9
       end
       object cbForceFAXPage: TCheckBox
-        Left = 185
+        Left = 213
         Top = 155
-        Width = 158
+        Width = 186
         Height = 17
         Caption = 'Force fax page'
         TabOrder = 8
@@ -703,7 +710,7 @@ object SetupForm: TSetupForm
       object cbIgnoreEndSession: TCheckBox
         Left = 16
         Top = 189
-        Width = 161
+        Width = 186
         Height = 17
         Caption = 'Ignore end session'
         TabOrder = 6
@@ -711,7 +718,7 @@ object SetupForm: TSetupForm
       object cbWinsockVersion: TComboBox
         Left = 17
         Top = 265
-        Width = 129
+        Width = 144
         Height = 23
         Style = csDropDownList
         ItemHeight = 15
@@ -722,9 +729,9 @@ object SetupForm: TSetupForm
           'Winsock v2')
       end
       object cbDisableWinsockTraps: TCheckBox
-        Left = 185
+        Left = 213
         Top = 189
-        Width = 158
+        Width = 186
         Height = 17
         Caption = 'Disable Winsock traps'
         TabOrder = 10
@@ -732,7 +739,7 @@ object SetupForm: TSetupForm
       object eWatcherEventName: TEdit
         Left = 16
         Top = 92
-        Width = 153
+        Width = 182
         Height = 23
         TabOrder = 2
         Text = 'ARGUS_EVENT_DIRECTORY_WATCHER'
@@ -740,15 +747,15 @@ object SetupForm: TSetupForm
       object cbIgnoreBWZSize: TCheckBox
         Left = 16
         Top = 206
-        Width = 163
+        Width = 186
         Height = 17
         Caption = 'Ignore BadWazoo size'
         TabOrder = 7
       end
       object cbPriority: TComboBox
-        Left = 157
+        Left = 185
         Top = 265
-        Width = 181
+        Width = 211
         Height = 23
         Style = csDropDownList
         ItemHeight = 15
@@ -767,16 +774,16 @@ object SetupForm: TSetupForm
       HelpContext = 11030
       Caption = 'Interface'
       object Bevel3: TBevel
-        Left = 15
+        Left = 12
         Top = 16
-        Width = 320
+        Width = 392
         Height = 5
         Shape = bsTopLine
       end
       object Bevel13: TBevel
-        Left = 15
+        Left = 12
         Top = 88
-        Width = 320
+        Width = 392
         Height = 5
         Shape = bsTopLine
       end
@@ -795,7 +802,7 @@ object SetupForm: TSetupForm
         Transparent = False
       end
       object lHelpLanguage: TLabel
-        Left = 181
+        Left = 215
         Top = 25
         Width = 26
         Height = 15
@@ -825,9 +832,9 @@ object SetupForm: TSetupForm
         Transparent = False
       end
       object Bevel19: TBevel
-        Left = 15
+        Left = 12
         Top = 203
-        Width = 320
+        Width = 392
         Height = 5
         Shape = bsTopLine
       end
@@ -853,9 +860,9 @@ object SetupForm: TSetupForm
         Caption = 'Fixedsys'
       end
       object Bevel24: TBevel
-        Left = 15
+        Left = 12
         Top = 250
-        Width = 320
+        Width = 392
         Height = 5
         Shape = bsTopLine
       end
@@ -874,9 +881,9 @@ object SetupForm: TSetupForm
         Transparent = False
       end
       object Bevel27: TBevel
-        Left = 15
+        Left = 12
         Top = 152
-        Width = 320
+        Width = 392
         Height = 5
         Shape = bsTopLine
       end
@@ -902,9 +909,9 @@ object SetupForm: TSetupForm
         Transparent = False
       end
       object cbHelpLanguage: TComboBox
-        Left = 181
+        Left = 215
         Top = 40
-        Width = 155
+        Width = 185
         Height = 23
         Style = csDropDownList
         ItemHeight = 15
@@ -916,7 +923,7 @@ object SetupForm: TSetupForm
       object cbInterfaceLanguage: TComboBox
         Left = 19
         Top = 40
-        Width = 145
+        Width = 175
         Height = 23
         Style = csDropDownList
         ItemHeight = 15
@@ -928,7 +935,7 @@ object SetupForm: TSetupForm
       object cbGridBWZ: TCheckBox
         Left = 20
         Top = 99
-        Width = 269
+        Width = 380
         Height = 16
         Caption = 'Grid lines in BadWaZoo'
         TabOrder = 2
@@ -936,15 +943,15 @@ object SetupForm: TSetupForm
       object cbGridPV: TCheckBox
         Left = 20
         Top = 123
-        Width = 269
+        Width = 380
         Height = 16
         Caption = 'Grid lines in Polls View'
         TabOrder = 3
       end
       object cbUseHTMLHelp: TCheckBox
-        Left = 181
+        Left = 215
         Top = 67
-        Width = 155
+        Width = 185
         Height = 17
         Caption = 'Use HTML help'
         TabOrder = 4
@@ -961,7 +968,7 @@ object SetupForm: TSetupForm
       object cbShowIcons: TCheckBox
         Left = 20
         Top = 266
-        Width = 325
+        Width = 381
         Height = 17
         Caption = 'Show icons in MainMenu (needs restart)'
         TabOrder = 6
@@ -984,12 +991,12 @@ object SetupForm: TSetupForm
       object Bevel15: TBevel
         Left = 15
         Top = 16
-        Width = 320
+        Width = 388
         Height = 5
         Shape = bsTopLine
       end
       object sbDefGauge: TSpeedButton
-        Left = 275
+        Left = 338
         Top = 49
         Width = 30
         Height = 20
@@ -998,7 +1005,7 @@ object SetupForm: TSetupForm
         OnClick = sbDefGaugeClick
       end
       object sbSysGauge: TSpeedButton
-        Left = 309
+        Left = 372
         Top = 49
         Width = 30
         Height = 20
@@ -1008,7 +1015,7 @@ object SetupForm: TSetupForm
       end
       object sbDefLogger: TSpeedButton
         Tag = 1
-        Left = 275
+        Left = 338
         Top = 88
         Width = 30
         Height = 20
@@ -1018,7 +1025,7 @@ object SetupForm: TSetupForm
       end
       object sbSysLogger: TSpeedButton
         Tag = 1
-        Left = 309
+        Left = 372
         Top = 88
         Width = 30
         Height = 20
@@ -1028,7 +1035,7 @@ object SetupForm: TSetupForm
       end
       object sbDefBadWazoo: TSpeedButton
         Tag = 2
-        Left = 275
+        Left = 338
         Top = 128
         Width = 30
         Height = 20
@@ -1038,7 +1045,7 @@ object SetupForm: TSetupForm
       end
       object sbSysBadWazoo: TSpeedButton
         Tag = 2
-        Left = 309
+        Left = 372
         Top = 128
         Width = 30
         Height = 20
@@ -1048,7 +1055,7 @@ object SetupForm: TSetupForm
       end
       object sbDefMail7: TSpeedButton
         Tag = 3
-        Left = 275
+        Left = 338
         Top = 169
         Width = 30
         Height = 20
@@ -1058,7 +1065,7 @@ object SetupForm: TSetupForm
       end
       object sbSysMail7: TSpeedButton
         Tag = 3
-        Left = 309
+        Left = 372
         Top = 169
         Width = 30
         Height = 20
@@ -1068,7 +1075,7 @@ object SetupForm: TSetupForm
       end
       object sbDefMail14: TSpeedButton
         Tag = 4
-        Left = 275
+        Left = 338
         Top = 209
         Width = 30
         Height = 20
@@ -1078,7 +1085,7 @@ object SetupForm: TSetupForm
       end
       object sbSysMail14: TSpeedButton
         Tag = 4
-        Left = 309
+        Left = 372
         Top = 209
         Width = 30
         Height = 20
@@ -1088,7 +1095,7 @@ object SetupForm: TSetupForm
       end
       object sbDefMail28: TSpeedButton
         Tag = 6
-        Left = 275
+        Left = 338
         Top = 288
         Width = 30
         Height = 20
@@ -1098,7 +1105,7 @@ object SetupForm: TSetupForm
       end
       object sbSysMail28: TSpeedButton
         Tag = 6
-        Left = 309
+        Left = 372
         Top = 288
         Width = 30
         Height = 20
@@ -1108,7 +1115,7 @@ object SetupForm: TSetupForm
       end
       object sbSysMail21: TSpeedButton
         Tag = 5
-        Left = 309
+        Left = 372
         Top = 248
         Width = 30
         Height = 20
@@ -1118,7 +1125,7 @@ object SetupForm: TSetupForm
       end
       object sbDefMail21: TSpeedButton
         Tag = 5
-        Left = 275
+        Left = 338
         Top = 248
         Width = 30
         Height = 20
@@ -1148,7 +1155,7 @@ object SetupForm: TSetupForm
         Transparent = False
       end
       object lGaugeBack: TLabel
-        Left = 147
+        Left = 178
         Top = 32
         Width = 66
         Height = 15
@@ -1162,7 +1169,7 @@ object SetupForm: TSetupForm
         Caption = 'Logger fore'
       end
       object lLoggerBack: TLabel
-        Left = 147
+        Left = 178
         Top = 72
         Width = 68
         Height = 15
@@ -1176,7 +1183,7 @@ object SetupForm: TSetupForm
         Caption = 'BadWaZoo fore'
       end
       object lBadWazooBack: TLabel
-        Left = 147
+        Left = 178
         Top = 112
         Width = 90
         Height = 15
@@ -1190,14 +1197,14 @@ object SetupForm: TSetupForm
         Caption = 'Mail 7 days old fore'
       end
       object lMail7Back: TLabel
-        Left = 147
+        Left = 178
         Top = 152
         Width = 110
         Height = 15
         Caption = 'Mail 7 days old back'
       end
       object lMail14Back: TLabel
-        Left = 147
+        Left = 178
         Top = 192
         Width = 117
         Height = 15
@@ -1211,7 +1218,7 @@ object SetupForm: TSetupForm
         Caption = 'Mail 14 days old fore'
       end
       object lMail21Back: TLabel
-        Left = 147
+        Left = 178
         Top = 232
         Width = 117
         Height = 15
@@ -1225,7 +1232,7 @@ object SetupForm: TSetupForm
         Caption = 'Mail 21 days old fore'
       end
       object lMail28Back: TLabel
-        Left = 147
+        Left = 178
         Top = 272
         Width = 117
         Height = 15
@@ -1241,16 +1248,16 @@ object SetupForm: TSetupForm
       object cbGaugeFore: TColorBox
         Left = 14
         Top = 48
-        Width = 123
+        Width = 148
         Height = 22
         Style = [cbStandardColors, cbExtendedColors, cbSystemColors, cbIncludeDefault, cbCustomColor, cbPrettyNames]
         ItemHeight = 16
         TabOrder = 0
       end
       object cbGaugeBack: TColorBox
-        Left = 147
+        Left = 178
         Top = 48
-        Width = 123
+        Width = 148
         Height = 22
         Style = [cbStandardColors, cbExtendedColors, cbSystemColors, cbIncludeDefault, cbCustomColor, cbPrettyNames]
         ItemHeight = 16
@@ -1259,16 +1266,16 @@ object SetupForm: TSetupForm
       object cbLoggerFore: TColorBox
         Left = 14
         Top = 88
-        Width = 123
+        Width = 148
         Height = 22
         Style = [cbStandardColors, cbExtendedColors, cbSystemColors, cbIncludeDefault, cbCustomColor, cbPrettyNames]
         ItemHeight = 16
         TabOrder = 2
       end
       object cbLoggerBack: TColorBox
-        Left = 147
+        Left = 178
         Top = 88
-        Width = 123
+        Width = 148
         Height = 22
         Style = [cbStandardColors, cbExtendedColors, cbSystemColors, cbIncludeDefault, cbCustomColor, cbPrettyNames]
         ItemHeight = 16
@@ -1277,16 +1284,16 @@ object SetupForm: TSetupForm
       object cbBadWazooFore: TColorBox
         Left = 14
         Top = 128
-        Width = 123
+        Width = 148
         Height = 22
         Style = [cbStandardColors, cbExtendedColors, cbSystemColors, cbIncludeDefault, cbCustomColor, cbPrettyNames]
         ItemHeight = 16
         TabOrder = 4
       end
       object cbBadWazooBack: TColorBox
-        Left = 147
+        Left = 178
         Top = 128
-        Width = 123
+        Width = 148
         Height = 22
         Style = [cbStandardColors, cbExtendedColors, cbSystemColors, cbIncludeDefault, cbCustomColor, cbPrettyNames]
         ItemHeight = 16
@@ -1295,16 +1302,16 @@ object SetupForm: TSetupForm
       object cbMail7Fore: TColorBox
         Left = 14
         Top = 168
-        Width = 123
+        Width = 148
         Height = 22
         Style = [cbStandardColors, cbExtendedColors, cbSystemColors, cbIncludeDefault, cbCustomColor, cbPrettyNames]
         ItemHeight = 16
         TabOrder = 6
       end
       object cbMail7Back: TColorBox
-        Left = 147
+        Left = 178
         Top = 168
-        Width = 123
+        Width = 148
         Height = 22
         Style = [cbStandardColors, cbExtendedColors, cbSystemColors, cbIncludeDefault, cbCustomColor, cbPrettyNames]
         ItemHeight = 16
@@ -1313,16 +1320,16 @@ object SetupForm: TSetupForm
       object cbMail14Fore: TColorBox
         Left = 14
         Top = 208
-        Width = 123
+        Width = 148
         Height = 22
         Style = [cbStandardColors, cbExtendedColors, cbSystemColors, cbIncludeDefault, cbCustomColor, cbPrettyNames]
         ItemHeight = 16
         TabOrder = 8
       end
       object cbMail14Back: TColorBox
-        Left = 147
+        Left = 178
         Top = 208
-        Width = 123
+        Width = 148
         Height = 22
         Style = [cbStandardColors, cbExtendedColors, cbSystemColors, cbIncludeDefault, cbCustomColor, cbPrettyNames]
         ItemHeight = 16
@@ -1331,16 +1338,16 @@ object SetupForm: TSetupForm
       object cbMail21Fore: TColorBox
         Left = 14
         Top = 248
-        Width = 123
+        Width = 148
         Height = 22
         Style = [cbStandardColors, cbExtendedColors, cbSystemColors, cbIncludeDefault, cbCustomColor, cbPrettyNames]
         ItemHeight = 16
         TabOrder = 10
       end
       object cbMail21Back: TColorBox
-        Left = 147
+        Left = 178
         Top = 248
-        Width = 123
+        Width = 148
         Height = 22
         Style = [cbStandardColors, cbExtendedColors, cbSystemColors, cbIncludeDefault, cbCustomColor, cbPrettyNames]
         ItemHeight = 16
@@ -1349,16 +1356,16 @@ object SetupForm: TSetupForm
       object cbMail28Fore: TColorBox
         Left = 14
         Top = 288
-        Width = 123
+        Width = 148
         Height = 22
         Style = [cbStandardColors, cbExtendedColors, cbSystemColors, cbIncludeDefault, cbCustomColor, cbPrettyNames]
         ItemHeight = 16
         TabOrder = 12
       end
       object cbMail28Back: TColorBox
-        Left = 147
+        Left = 178
         Top = 288
-        Width = 123
+        Width = 148
         Height = 22
         Style = [cbStandardColors, cbExtendedColors, cbSystemColors, cbIncludeDefault, cbCustomColor, cbPrettyNames]
         ItemHeight = 16
@@ -1373,7 +1380,7 @@ object SetupForm: TSetupForm
       object Bevel16: TBevel
         Left = 15
         Top = 16
-        Width = 320
+        Width = 387
         Height = 5
         Shape = bsTopLine
       end
@@ -1394,7 +1401,7 @@ object SetupForm: TSetupForm
       object Bevel14: TBevel
         Left = 15
         Top = 147
-        Width = 320
+        Width = 387
         Height = 5
         Shape = bsTopLine
       end
@@ -1472,7 +1479,7 @@ object SetupForm: TSetupForm
       object Bevel9: TBevel
         Left = 15
         Top = 16
-        Width = 320
+        Width = 386
         Height = 5
         Shape = bsTopLine
       end
@@ -1493,7 +1500,7 @@ object SetupForm: TSetupForm
       object Bevel23: TBevel
         Left = 15
         Top = 101
-        Width = 320
+        Width = 386
         Height = 5
         Shape = bsTopLine
       end
@@ -1570,7 +1577,7 @@ object SetupForm: TSetupForm
       object cbTariff: TCheckBox
         Left = 30
         Top = 30
-        Width = 251
+        Width = 300
         Height = 17
         Caption = 'Use tariffication log'
         TabOrder = 0
@@ -1578,7 +1585,7 @@ object SetupForm: TSetupForm
       object cbODBCLogging: TCheckBox
         Left = 30
         Top = 49
-        Width = 153
+        Width = 300
         Height = 17
         Caption = 'ODBC logging'
         TabOrder = 1
@@ -1586,64 +1593,64 @@ object SetupForm: TSetupForm
       object cbLogThreadTimes: TCheckBox
         Left = 30
         Top = 68
-        Width = 153
+        Width = 300
         Height = 17
         Caption = 'Log thread times'
         TabOrder = 2
       end
       object eaccess_log: TEdit
-        Left = 123
+        Left = 145
         Top = 113
-        Width = 182
+        Width = 255
         Height = 23
         TabOrder = 3
       end
       object eagnt_log: TEdit
-        Left = 123
+        Left = 145
         Top = 137
-        Width = 182
+        Width = 255
         Height = 23
         TabOrder = 4
       end
       object ebinary_log: TEdit
-        Left = 123
+        Left = 145
         Top = 161
-        Width = 182
+        Width = 255
         Height = 23
         TabOrder = 5
       end
       object epolls_log: TEdit
-        Left = 123
+        Left = 145
         Top = 185
-        Width = 182
+        Width = 255
         Height = 23
         TabOrder = 6
       end
       object ecronapps_log: TEdit
-        Left = 123
+        Left = 145
         Top = 209
-        Width = 182
+        Width = 255
         Height = 23
         TabOrder = 7
       end
       object etariff_log: TEdit
-        Left = 123
+        Left = 145
         Top = 233
-        Width = 182
+        Width = 255
         Height = 23
         TabOrder = 8
       end
       object eipdaemon_log: TEdit
-        Left = 123
+        Left = 145
         Top = 257
-        Width = 182
+        Width = 255
         Height = 23
         TabOrder = 9
       end
       object eras_log: TEdit
-        Left = 123
+        Left = 145
         Top = 281
-        Width = 182
+        Width = 255
         Height = 23
         TabOrder = 10
       end
@@ -1656,7 +1663,7 @@ object SetupForm: TSetupForm
       object Bevel8: TBevel
         Left = 15
         Top = 16
-        Width = 320
+        Width = 387
         Height = 5
         Shape = bsTopLine
       end
@@ -1715,7 +1722,7 @@ object SetupForm: TSetupForm
       object Bevel5: TBevel
         Left = 15
         Top = 16
-        Width = 320
+        Width = 388
         Height = 5
         Shape = bsTopLine
       end
@@ -1743,15 +1750,15 @@ object SetupForm: TSetupForm
       object cbEntryList: TComboBox
         Left = 25
         Top = 56
-        Width = 145
+        Width = 215
         Height = 23
         Style = csDropDownList
         ItemHeight = 15
         TabOrder = 0
       end
       object btnReloadRASEntries: TButton
-        Left = 185
-        Top = 56
+        Left = 254
+        Top = 55
         Width = 145
         Height = 24
         Caption = 'Reload entrylist'
@@ -1773,7 +1780,7 @@ object SetupForm: TSetupForm
       HelpContext = 11095
       Caption = 'Protocols'
       object lTxWindow: TLabel
-        Left = 16
+        Left = 96
         Top = 32
         Width = 59
         Height = 15
@@ -1782,7 +1789,7 @@ object SetupForm: TSetupForm
       object Bevel21: TBevel
         Left = 15
         Top = 16
-        Width = 320
+        Width = 386
         Height = 5
         Shape = bsTopLine
       end
@@ -1803,7 +1810,7 @@ object SetupForm: TSetupForm
       object Bevel22: TBevel
         Left = 15
         Top = 112
-        Width = 320
+        Width = 386
         Height = 5
         Shape = bsTopLine
       end
@@ -1822,7 +1829,7 @@ object SetupForm: TSetupForm
         Transparent = False
       end
       object lRxWindow: TLabel
-        Left = 176
+        Left = 303
         Top = 32
         Width = 61
         Height = 15
@@ -1831,7 +1838,7 @@ object SetupForm: TSetupForm
       object Bevel17: TBevel
         Left = 15
         Top = 164
-        Width = 320
+        Width = 386
         Height = 5
         Shape = bsTopLine
       end
@@ -1860,7 +1867,7 @@ object SetupForm: TSetupForm
       object Bevel26: TBevel
         Left = 15
         Top = 234
-        Width = 320
+        Width = 386
         Height = 5
         Shape = bsTopLine
       end
@@ -1879,7 +1886,7 @@ object SetupForm: TSetupForm
         Transparent = False
       end
       object seTxWindow: TxSpinEdit
-        Left = 90
+        Left = 16
         Top = 27
         Width = 73
         Height = 24
@@ -1889,7 +1896,7 @@ object SetupForm: TSetupForm
         Value = 0
       end
       object seRxWindow: TxSpinEdit
-        Left = 249
+        Left = 220
         Top = 27
         Width = 73
         Height = 24
@@ -1901,13 +1908,13 @@ object SetupForm: TSetupForm
       object cbShortName: TCheckBox
         Left = 16
         Top = 58
-        Width = 169
+        Width = 170
         Height = 17
         Caption = 'Short and long name'
         TabOrder = 2
       end
       object cbOEMCharset: TCheckBox
-        Left = 200
+        Left = 220
         Top = 58
         Width = 150
         Height = 17
@@ -1917,7 +1924,7 @@ object SetupForm: TSetupForm
       object cbDebug: TCheckBox
         Left = 16
         Top = 78
-        Width = 169
+        Width = 170
         Height = 17
         Caption = 'Debug'
         TabOrder = 4
@@ -1925,21 +1932,21 @@ object SetupForm: TSetupForm
       object cbRequestCrypt: TCheckBox
         Left = 16
         Top = 127
-        Width = 169
+        Width = 170
         Height = 17
         Caption = 'Request Crypt'
         TabOrder = 5
       end
       object cbIBNRequestList: TCheckBox
-        Left = 200
+        Left = 221
         Top = 127
-        Width = 145
+        Width = 150
         Height = 17
         Caption = 'Request File List'
         TabOrder = 6
       end
       object cbHydRequestList: TCheckBox
-        Left = 200
+        Left = 221
         Top = 78
         Width = 150
         Height = 17
@@ -1949,7 +1956,7 @@ object SetupForm: TSetupForm
       object cbChatEnabled: TCheckBox
         Left = 16
         Top = 176
-        Width = 185
+        Width = 170
         Height = 17
         Caption = 'Chat Enabled'
         TabOrder = 7
@@ -1957,13 +1964,13 @@ object SetupForm: TSetupForm
       object eChatBell: TEdit
         Left = 72
         Top = 195
-        Width = 237
+        Width = 297
         Height = 23
         TabOrder = 9
       end
       object btnChatBell: TButton
         Tag = 8
-        Left = 310
+        Left = 372
         Top = 195
         Width = 24
         Height = 22
@@ -1972,9 +1979,9 @@ object SetupForm: TSetupForm
         OnClick = btnChatBellClick
       end
       object cbIgnoreCD: TCheckBox
-        Left = 200
+        Left = 221
         Top = 247
-        Width = 145
+        Width = 150
         Height = 17
         Caption = 'Ignore CD'
         TabOrder = 11
@@ -1982,7 +1989,7 @@ object SetupForm: TSetupForm
       object cbLamps: TCheckBox
         Left = 16
         Top = 247
-        Width = 177
+        Width = 170
         Height = 17
         Caption = 'Lamps in tray'
         TabOrder = 12
@@ -1995,21 +2002,22 @@ object SetupForm: TSetupForm
       Caption = 'Netmail'
       object lNetmail: TLabel
         Left = 8
-        Top = 36
+        Top = 33
         Width = 60
         Height = 15
         Caption = 'MSG folder'
       end
       object gNetmail: TAdvGrid
-        Left = 8
-        Top = 88
-        Width = 338
-        Height = 222
+        Left = 0
+        Top = 82
+        Width = 418
+        Height = 293
         FixedFont.Charset = DEFAULT_CHARSET
         FixedFont.Color = clWindowText
         FixedFont.Height = -12
         FixedFont.Name = 'Arial'
         FixedFont.Style = []
+        Align = alBottom
         ColCount = 4
         DefaultRowHeight = 17
         RowCount = 2
@@ -2024,23 +2032,23 @@ object SetupForm: TSetupForm
           95)
       end
       object cbDynamicRouting: TCheckBox
-        Left = 8
+        Left = 9
         Top = 11
-        Width = 165
+        Width = 191
         Height = 17
         Caption = 'Use Dynamic Routing'
         TabOrder = 1
       end
       object eNetmail: TEdit
         Left = 8
-        Top = 53
-        Width = 308
+        Top = 50
+        Width = 370
         Height = 23
         TabOrder = 2
       end
       object bNetmail: TButton
-        Left = 319
-        Top = 52
+        Left = 382
+        Top = 49
         Width = 27
         Height = 25
         Caption = '...'
@@ -2048,9 +2056,9 @@ object SetupForm: TSetupForm
         OnClick = bNetmailClick
       end
       object cbScanMSG: TCheckBox
-        Left = 178
+        Left = 206
         Top = 11
-        Width = 163
+        Width = 189
         Height = 17
         Caption = 'Scan MSG area'
         TabOrder = 4
@@ -2065,7 +2073,7 @@ object SetupForm: TSetupForm
       object Bevel25: TBevel
         Left = 14
         Top = 16
-        Width = 320
+        Width = 389
         Height = 5
         Shape = bsTopLine
       end
@@ -2099,99 +2107,99 @@ object SetupForm: TSetupForm
       Caption = 'Sounds'
       object Label2: TLabel
         Left = 16
-        Top = 7
+        Top = 24
         Width = 30
         Height = 15
         Caption = 'RING'
       end
       object Label3: TLabel
         Left = 16
-        Top = 31
+        Top = 48
         Width = 22
         Height = 15
         Caption = 'Dial'
       end
       object Label4: TLabel
         Left = 16
-        Top = 55
+        Top = 72
         Width = 60
         Height = 15
         Caption = 'CONNECT'
       end
       object Label5: TLabel
         Left = 16
-        Top = 79
+        Top = 96
         Width = 49
         Height = 15
         Caption = 'Session '
       end
       object Label6: TLabel
         Left = 16
-        Top = 103
+        Top = 120
         Width = 28
         Height = 15
         Caption = 'Abort'
       end
       object Label7: TLabel
         Left = 16
-        Top = 127
+        Top = 144
         Width = 55
         Height = 15
         Caption = 'Line open'
       end
       object Label8: TLabel
         Left = 16
-        Top = 151
+        Top = 168
         Width = 57
         Height = 15
         Caption = 'Line close'
       end
       object Label9: TLabel
         Left = 16
-        Top = 175
+        Top = 192
         Width = 47
         Height = 15
         Caption = 'RAS dial'
       end
       object Label10: TLabel
         Left = 16
-        Top = 199
+        Top = 216
         Width = 70
         Height = 15
         Caption = 'RAS connect'
       end
       object Label11: TLabel
         Left = 16
-        Top = 223
+        Top = 240
         Width = 87
         Height = 15
         Caption = 'RAS disconnect'
       end
       object Label12: TLabel
         Left = 16
-        Top = 247
+        Top = 264
         Width = 51
         Height = 15
         Caption = 'Incoming'
       end
       object Label13: TLabel
         Left = 16
-        Top = 271
+        Top = 288
         Width = 24
         Height = 15
         Caption = 'BBS'
       end
       object Label14: TLabel
         Left = 16
-        Top = 296
+        Top = 313
         Width = 25
         Height = 15
         Caption = 'Trap'
       end
       object edRing: TEdit
         Left = 145
-        Top = 5
-        Width = 185
+        Top = 22
+        Width = 232
         Height = 23
         TabOrder = 0
         Text = 'Ring'
@@ -2199,8 +2207,8 @@ object SetupForm: TSetupForm
       object edDial: TEdit
         Tag = 1
         Left = 145
-        Top = 29
-        Width = 185
+        Top = 46
+        Width = 232
         Height = 23
         TabOrder = 2
         Text = 'Dial'
@@ -2208,8 +2216,8 @@ object SetupForm: TSetupForm
       object edConnect: TEdit
         Tag = 2
         Left = 145
-        Top = 52
-        Width = 185
+        Top = 69
+        Width = 232
         Height = 23
         TabOrder = 4
         Text = 'Connect'
@@ -2217,8 +2225,8 @@ object SetupForm: TSetupForm
       object edSession: TEdit
         Tag = 3
         Left = 145
-        Top = 76
-        Width = 185
+        Top = 93
+        Width = 232
         Height = 23
         TabOrder = 6
         Text = 'Session'
@@ -2226,8 +2234,8 @@ object SetupForm: TSetupForm
       object edAborted: TEdit
         Tag = 4
         Left = 145
-        Top = 100
-        Width = 185
+        Top = 117
+        Width = 232
         Height = 23
         TabOrder = 8
         Text = 'Aborted'
@@ -2235,8 +2243,8 @@ object SetupForm: TSetupForm
       object edNewLine: TEdit
         Tag = 5
         Left = 145
-        Top = 124
-        Width = 185
+        Top = 141
+        Width = 232
         Height = 23
         TabOrder = 10
         Text = 'NewLine'
@@ -2244,8 +2252,8 @@ object SetupForm: TSetupForm
       object edEndLine: TEdit
         Tag = 6
         Left = 145
-        Top = 148
-        Width = 185
+        Top = 165
+        Width = 232
         Height = 23
         TabOrder = 12
         Text = 'EndLine'
@@ -2253,8 +2261,8 @@ object SetupForm: TSetupForm
       object edRASDial: TEdit
         Tag = 7
         Left = 145
-        Top = 172
-        Width = 185
+        Top = 189
+        Width = 232
         Height = 23
         TabOrder = 14
         Text = 'RASDial'
@@ -2262,8 +2270,8 @@ object SetupForm: TSetupForm
       object edRASConnect: TEdit
         Tag = 8
         Left = 145
-        Top = 196
-        Width = 185
+        Top = 213
+        Width = 232
         Height = 23
         TabOrder = 16
         Text = 'RASConnect'
@@ -2271,15 +2279,15 @@ object SetupForm: TSetupForm
       object edRASFinish: TEdit
         Tag = 9
         Left = 145
-        Top = 220
-        Width = 185
+        Top = 237
+        Width = 232
         Height = 23
         TabOrder = 18
         Text = 'RASFinish'
       end
       object Button1: TButton
-        Left = 329
-        Top = 5
+        Left = 378
+        Top = 22
         Width = 24
         Height = 22
         Caption = '. . .'
@@ -2288,8 +2296,8 @@ object SetupForm: TSetupForm
       end
       object Button2: TButton
         Tag = 1
-        Left = 329
-        Top = 29
+        Left = 378
+        Top = 46
         Width = 24
         Height = 22
         Caption = '. . .'
@@ -2298,8 +2306,8 @@ object SetupForm: TSetupForm
       end
       object Button3: TButton
         Tag = 2
-        Left = 329
-        Top = 52
+        Left = 378
+        Top = 69
         Width = 24
         Height = 23
         Caption = '. . .'
@@ -2308,8 +2316,8 @@ object SetupForm: TSetupForm
       end
       object Button4: TButton
         Tag = 3
-        Left = 329
-        Top = 76
+        Left = 378
+        Top = 93
         Width = 24
         Height = 23
         Caption = '. . .'
@@ -2318,8 +2326,8 @@ object SetupForm: TSetupForm
       end
       object Button5: TButton
         Tag = 4
-        Left = 329
-        Top = 100
+        Left = 378
+        Top = 117
         Width = 24
         Height = 23
         Caption = '. . .'
@@ -2328,8 +2336,8 @@ object SetupForm: TSetupForm
       end
       object Button6: TButton
         Tag = 5
-        Left = 329
-        Top = 124
+        Left = 378
+        Top = 141
         Width = 24
         Height = 23
         Caption = '. . .'
@@ -2338,8 +2346,8 @@ object SetupForm: TSetupForm
       end
       object Button7: TButton
         Tag = 6
-        Left = 329
-        Top = 148
+        Left = 378
+        Top = 165
         Width = 24
         Height = 23
         Caption = '. . .'
@@ -2348,8 +2356,8 @@ object SetupForm: TSetupForm
       end
       object Button8: TButton
         Tag = 7
-        Left = 329
-        Top = 172
+        Left = 378
+        Top = 189
         Width = 24
         Height = 23
         Caption = '. . .'
@@ -2358,8 +2366,8 @@ object SetupForm: TSetupForm
       end
       object Button9: TButton
         Tag = 8
-        Left = 329
-        Top = 196
+        Left = 378
+        Top = 213
         Width = 24
         Height = 23
         Caption = '. . .'
@@ -2368,8 +2376,8 @@ object SetupForm: TSetupForm
       end
       object Button10: TButton
         Tag = 9
-        Left = 329
-        Top = 220
+        Left = 378
+        Top = 237
         Width = 24
         Height = 23
         Caption = '. . .'
@@ -2379,16 +2387,16 @@ object SetupForm: TSetupForm
       object edIncoming: TEdit
         Tag = 10
         Left = 145
-        Top = 244
-        Width = 185
+        Top = 261
+        Width = 232
         Height = 23
         TabOrder = 20
         Text = 'Incoming'
       end
       object Button11: TButton
         Tag = 10
-        Left = 329
-        Top = 244
+        Left = 378
+        Top = 261
         Width = 24
         Height = 23
         Caption = '. . .'
@@ -2398,8 +2406,8 @@ object SetupForm: TSetupForm
       object edBBS: TEdit
         Tag = 11
         Left = 145
-        Top = 268
-        Width = 185
+        Top = 285
+        Width = 232
         Height = 23
         TabOrder = 22
         Text = 'BBS'
@@ -2407,16 +2415,16 @@ object SetupForm: TSetupForm
       object edTrap: TEdit
         Tag = 12
         Left = 145
-        Top = 292
-        Width = 185
+        Top = 309
+        Width = 232
         Height = 23
         TabOrder = 24
         Text = 'Trap'
       end
       object Button12: TButton
         Tag = 11
-        Left = 329
-        Top = 268
+        Left = 378
+        Top = 285
         Width = 24
         Height = 23
         Caption = '. . .'
@@ -2425,8 +2433,8 @@ object SetupForm: TSetupForm
       end
       object Button13: TButton
         Tag = 12
-        Left = 329
-        Top = 292
+        Left = 378
+        Top = 309
         Width = 24
         Height = 23
         Caption = '. . .'
@@ -2435,7 +2443,7 @@ object SetupForm: TSetupForm
       end
       object cbRing: TCheckBox
         Left = 120
-        Top = 5
+        Top = 22
         Width = 17
         Height = 17
         Checked = True
@@ -2445,7 +2453,7 @@ object SetupForm: TSetupForm
       object cbDial: TCheckBox
         Tag = 1
         Left = 120
-        Top = 29
+        Top = 46
         Width = 17
         Height = 17
         Checked = True
@@ -2455,7 +2463,7 @@ object SetupForm: TSetupForm
       object cbConnect: TCheckBox
         Tag = 2
         Left = 120
-        Top = 52
+        Top = 69
         Width = 17
         Height = 17
         Checked = True
@@ -2465,7 +2473,7 @@ object SetupForm: TSetupForm
       object cbSession: TCheckBox
         Tag = 3
         Left = 120
-        Top = 76
+        Top = 93
         Width = 17
         Height = 17
         Checked = True
@@ -2475,7 +2483,7 @@ object SetupForm: TSetupForm
       object cbAborted: TCheckBox
         Tag = 4
         Left = 120
-        Top = 100
+        Top = 117
         Width = 17
         Height = 17
         Checked = True
@@ -2485,7 +2493,7 @@ object SetupForm: TSetupForm
       object cbNewLine: TCheckBox
         Tag = 5
         Left = 120
-        Top = 124
+        Top = 141
         Width = 17
         Height = 17
         Checked = True
@@ -2495,7 +2503,7 @@ object SetupForm: TSetupForm
       object cbEndLine: TCheckBox
         Tag = 6
         Left = 120
-        Top = 148
+        Top = 165
         Width = 17
         Height = 17
         Checked = True
@@ -2505,7 +2513,7 @@ object SetupForm: TSetupForm
       object cbRASDial: TCheckBox
         Tag = 7
         Left = 120
-        Top = 172
+        Top = 189
         Width = 17
         Height = 17
         Checked = True
@@ -2515,7 +2523,7 @@ object SetupForm: TSetupForm
       object cbRASConnect: TCheckBox
         Tag = 8
         Left = 120
-        Top = 196
+        Top = 213
         Width = 17
         Height = 17
         Checked = True
@@ -2525,7 +2533,7 @@ object SetupForm: TSetupForm
       object cbRASFinish: TCheckBox
         Tag = 9
         Left = 120
-        Top = 220
+        Top = 237
         Width = 17
         Height = 17
         Checked = True
@@ -2535,7 +2543,7 @@ object SetupForm: TSetupForm
       object cbIncoming: TCheckBox
         Tag = 10
         Left = 120
-        Top = 244
+        Top = 261
         Width = 17
         Height = 17
         Checked = True
@@ -2545,7 +2553,7 @@ object SetupForm: TSetupForm
       object cbBBS: TCheckBox
         Tag = 11
         Left = 120
-        Top = 268
+        Top = 285
         Width = 17
         Height = 17
         Checked = True
@@ -2555,7 +2563,7 @@ object SetupForm: TSetupForm
       object cbTrap: TCheckBox
         Tag = 12
         Left = 120
-        Top = 292
+        Top = 309
         Width = 17
         Height = 17
         Checked = True
@@ -2571,7 +2579,7 @@ object SetupForm: TSetupForm
       object Bevel10: TBevel
         Left = 15
         Top = 16
-        Width = 320
+        Width = 388
         Height = 5
         Shape = bsTopLine
       end
@@ -2648,13 +2656,13 @@ object SetupForm: TSetupForm
       object eHome: TEdit
         Left = 123
         Top = 30
-        Width = 182
+        Width = 252
         Height = 23
         TabOrder = 0
         OnChange = eHomeChange
       end
       object btnHome: TButton
-        Left = 304
+        Left = 376
         Top = 30
         Width = 24
         Height = 22
@@ -2664,7 +2672,7 @@ object SetupForm: TSetupForm
       end
       object btnConfigs: TButton
         Tag = 1
-        Left = 304
+        Left = 376
         Top = 54
         Width = 24
         Height = 22
@@ -2675,14 +2683,14 @@ object SetupForm: TSetupForm
       object eConfigs: TEdit
         Left = 123
         Top = 54
-        Width = 182
+        Width = 252
         Height = 23
         TabOrder = 3
         OnChange = eConfigsChange
       end
       object btnFileFlags: TButton
         Tag = 2
-        Left = 304
+        Left = 376
         Top = 78
         Width = 24
         Height = 22
@@ -2693,13 +2701,13 @@ object SetupForm: TSetupForm
       object eFlags: TEdit
         Left = 123
         Top = 78
-        Width = 182
+        Width = 252
         Height = 23
         TabOrder = 5
       end
       object btnTempInbound: TButton
         Tag = 3
-        Left = 304
+        Left = 376
         Top = 102
         Width = 24
         Height = 22
@@ -2710,13 +2718,13 @@ object SetupForm: TSetupForm
       object eTempInbound: TEdit
         Left = 123
         Top = 102
-        Width = 182
+        Width = 252
         Height = 23
         TabOrder = 7
       end
       object btnSecureInbound: TButton
         Tag = 4
-        Left = 304
+        Left = 376
         Top = 126
         Width = 24
         Height = 22
@@ -2727,13 +2735,13 @@ object SetupForm: TSetupForm
       object eSecureInbound: TEdit
         Left = 123
         Top = 126
-        Width = 182
+        Width = 252
         Height = 23
         TabOrder = 9
       end
       object btnInbound: TButton
         Tag = 5
-        Left = 304
+        Left = 376
         Top = 150
         Width = 24
         Height = 22
@@ -2744,13 +2752,13 @@ object SetupForm: TSetupForm
       object eInbound: TEdit
         Left = 123
         Top = 150
-        Width = 182
+        Width = 252
         Height = 23
         TabOrder = 11
       end
       object btnOutbound: TButton
         Tag = 6
-        Left = 304
+        Left = 376
         Top = 174
         Width = 24
         Height = 22
@@ -2761,20 +2769,20 @@ object SetupForm: TSetupForm
       object eOutbound: TEdit
         Left = 123
         Top = 174
-        Width = 182
+        Width = 252
         Height = 23
         TabOrder = 13
       end
       object eLogs: TEdit
         Left = 123
         Top = 198
-        Width = 182
+        Width = 252
         Height = 23
         TabOrder = 14
       end
       object btnLogs: TButton
         Tag = 7
-        Left = 304
+        Left = 376
         Top = 198
         Width = 24
         Height = 22
@@ -2785,38 +2793,42 @@ object SetupForm: TSetupForm
     end
   end
   object btnHelp: TButton
-    Left = 417
-    Top = 362
+    Left = 477
+    Top = 417
     Width = 85
     Height = 25
+    Anchors = [akRight, akBottom]
     Caption = 'Help'
     TabOrder = 5
     OnClick = btnHelpClick
   end
   object btnApply: TButton
-    Left = 326
-    Top = 362
+    Left = 386
+    Top = 417
     Width = 85
     Height = 25
+    Anchors = [akRight, akBottom]
     Caption = 'Apply'
     TabOrder = 4
     OnClick = btnApplyClick
   end
   object btnCancel: TButton
-    Left = 234
-    Top = 362
+    Left = 294
+    Top = 417
     Width = 86
     Height = 25
+    Anchors = [akRight, akBottom]
     Cancel = True
     Caption = 'Cancel'
     ModalResult = 2
     TabOrder = 3
   end
   object btnOK: TButton
-    Left = 142
-    Top = 362
+    Left = 202
+    Top = 417
     Width = 86
     Height = 25
+    Anchors = [akRight, akBottom]
     Caption = 'OK'
     Default = True
     ModalResult = 1

@@ -5,7 +5,7 @@ object EvtEditForm: TEvtEditForm
   BorderStyle = bsDialog
   Caption = 'Edit Event'
   ClientHeight = 282
-  ClientWidth = 434
+  ClientWidth = 502
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -18,7 +18,7 @@ object EvtEditForm: TEvtEditForm
   OnCloseQuery = FormCloseQuery
   OnCreate = FormCreate
   DesignSize = (
-    434
+    502
     282)
   PixelsPerInch = 96
   TextHeight = 15
@@ -48,7 +48,7 @@ object EvtEditForm: TEvtEditForm
   object iName: TEdit
     Left = 8
     Top = 24
-    Width = 304
+    Width = 372
     Height = 23
     Anchors = [akLeft, akTop, akRight]
     TabOrder = 0
@@ -56,7 +56,7 @@ object EvtEditForm: TEvtEditForm
   object iCron: TEdit
     Left = 8
     Top = 68
-    Width = 304
+    Width = 372
     Height = 24
     Anchors = [akLeft, akTop, akRight]
     Font.Charset = DEFAULT_CHARSET
@@ -68,7 +68,7 @@ object EvtEditForm: TEvtEditForm
     TabOrder = 1
   end
   object llL: TGroupBox
-    Left = 325
+    Left = 393
     Top = 8
     Width = 97
     Height = 113
@@ -140,7 +140,7 @@ object EvtEditForm: TEvtEditForm
     end
   end
   object bOK: TButton
-    Left = 325
+    Left = 393
     Top = 184
     Width = 95
     Height = 23
@@ -151,7 +151,7 @@ object EvtEditForm: TEvtEditForm
     TabOrder = 8
   end
   object bCancel: TButton
-    Left = 325
+    Left = 393
     Top = 216
     Width = 95
     Height = 23
@@ -162,7 +162,7 @@ object EvtEditForm: TEvtEditForm
     TabOrder = 9
   end
   object bHelp: TButton
-    Left = 325
+    Left = 393
     Top = 248
     Width = 95
     Height = 23
@@ -201,7 +201,7 @@ object EvtEditForm: TEvtEditForm
   object lb: TListView
     Left = 8
     Top = 112
-    Width = 304
+    Width = 372
     Height = 129
     Anchors = [akLeft, akTop, akRight]
     Columns = <
@@ -225,7 +225,7 @@ object EvtEditForm: TEvtEditForm
     OnDblClick = bEditClick
   end
   object cbPermanent: TCheckBox
-    Left = 333
+    Left = 401
     Top = 128
     Width = 89
     Height = 21
@@ -235,7 +235,7 @@ object EvtEditForm: TEvtEditForm
     OnClick = cbPermanentClick
   end
   object cbUTC: TCheckBox
-    Left = 333
+    Left = 401
     Top = 152
     Width = 89
     Height = 21

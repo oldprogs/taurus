@@ -1443,6 +1443,8 @@ var
 function OpenMailerThread(APort: TPort; ALineId: DWORD{$IFDEF WS}; NI: TNewIPLineData{$ENDIF}; ACW, ACH: Integer): TMailerThread;
 procedure ShowIt(const S: String; ShowBalloonTT: boolean);
 procedure _RecalcPolls(Fire: boolean);
+procedure _RecreatePolls;
+procedure  RecreatePolls(c: TOutNodeColl);
 procedure InitMailers;
 procedure DoneMailers;
 {$IFDEF WS}
@@ -1969,7 +1971,21 @@ begin
    end;
    if Fire and (IPPolls <> nil) then begin
       SetEvt(IPPolls.oSleep);
-   end;   
+   end;
+end;
+
+procedure _RecreatePolls;
+var
+   c: TOutNodeColl;
+begin
+   if NodelistCompilation then begin
+      Exit;
+   end;
+   c := FidoOut.GetOutColl(False, False);
+   if c <> nil then begin
+      RecreatePolls(c);
+      FreeObject(c);
+   end;
 end;
 
 function CronMatchEx(const t: TSystemTime; const c: TCronRecord; AllowPermanent: Boolean): Boolean;
@@ -2537,7 +2553,7 @@ var
    AP: TFidoPoll;
     I: Integer;
 const
-   CTyp: array[TPollType] of string = ('???', 'Outb', 'Cron', 'Manual', 'Outb/Imm', 'Callback', 'Mirror', 'MSG', 'MSG/Imm', 'Test');
+   CTyp: array[TPollType] of string = ('???', 'Outb', 'MSG', 'Cron', 'Test', 'Manual', 'Outb/Imm', 'Callback', 'Mirror', 'MSG/Imm');
 begin
    EnterFidoPolls;
    AP := nil;
@@ -2552,8 +2568,7 @@ begin
    OldTyp := ptpUnknown;
    if AP <> nil then begin
       OldTyp := AP.Typ;
-//      NewTyp := TPollType(MaxD(DWORD(OldTyp), DWORD(ATyp)));
-      NewTyp := ATyp;
+      NewTyp := TPollType(MaxD(DWORD(OldTyp), DWORD(ATyp)));
       if (OldTyp <> NewTyp) and (OldTyp <> ptpManual) and (OldTyp <> ptpTest) then begin
          FidoPollsLog(Format('*Poll/%s  %s  (%s)', [CTyp[NewTyp], Addr2Str(ANode.Addr), NodeDataStr(ANode, True)]));
          AP.Typ := NewTyp;
@@ -2610,6 +2625,7 @@ procedure RecreatePolls(c: TOutNodeColl);
 var
    i, j: Integer;
    p   : TFidoPoll;
+   t   : TPollType;
    n   : TOutNode;
    an  : TAdvNode;
 
@@ -2624,8 +2640,8 @@ var
    CurrentTime: dword;
 begin
    EnterFidoPolls;
-   DirAsNormal := IniFile.DirectAsNormal; //pofDirAsNormal in FidoPolls.Options.d.Flags;
-    for i := FidoPolls.Count - 1 downto 0 do begin
+   DirAsNormal := IniFile.DirectAsNormal;
+   for i := FidoPolls.Count - 1 downto 0 do begin
       p := FidoPolls[i];
       p.Keep := False;
       CurrentTime := uGetSystemTime;
@@ -2636,19 +2652,21 @@ begin
          end;
          if c.Search(@p.Node.Addr, j) then begin
             n := c[j];
-            if (p.Typ in [ptpNetm..ptpNmIm]) and not (p.Typ in n.FPollType) then begin
-               FidoPollsLog(Format('*Poll/%s  %s  (%s)', ['Outb', Addr2Str(P.Node.Addr), NodeDataStr(P.Node, True)]));
+            p.Flav := p.Flav + n.FStatus;
+            if not (p.Typ in [ptpManual, ptpTest]) then begin
+               for t := Low(TPollType) to High(TPollType) do begin
+                  if (t in n.FPollType) then p.Typ := t;
+               end;
+            end;
+            if p.Typ = ptpUnknown then begin
                p.Typ := ptpOutb;
             end;
-            p.Flav := p.Flav + n.FStatus;
-            if  (p.Typ = ptpOutb) and ((osImmed in n.FStatus) or (osImmedMail in n.FStatus)) then p.Typ := ptpImm;
-            if  (p.Typ = ptpImm ) and not (osImmed in n.FStatus) and not (osImmedMail in n.FStatus) then p.Typ := ptpOutb;
             if ((p.Typ = ptpOutb) or (p.Typ = ptpNetm)) and
                 (not OutDial(n.FStatus, DirAsNormal)) then
             begin
                 FreePoll_I_P;
             end;
-             c.AtFree(j);
+            c.AtFree(j);
          end else begin
             if (p.Typ = ptpOutb) or (p.Typ = ptpImm) or (p.Typ = ptpNetm) or (p.Typ = ptpNmIm) then FreePoll_I_P;
          end;
@@ -6466,6 +6484,9 @@ var
                   if TossSingleBWZ(SD.WzRec, fn) then begin
                      sss := Format('%sReceived ''%s''', [CPS, fn]);
                      FreeBWZ(SD.WzRec);
+                     If IniFile.UnpackMSG and (ufe = '.PKT') then begin
+                        UnpackPKT(fn);
+                     end;
                   end else begin
                      ChkErrMsg;
                      if CompleteFile then SD.WzRec.FSize := P.R.d.FSize;
@@ -13051,30 +13072,23 @@ begin
          end;
       msError:
          begin
-            if PrevState = msError then
-               State := msInit
-            else
-            begin
-               if not PortReloaded then
-               begin
+            if PrevState = msError then begin
+               State := msInit;
+            end else begin
+               if not PortReloaded then begin
                   PortReloaded := True;
                   FreeCP;
                   Sleep(2000);
                   RestoreSerial;
                   State := msInit;
-               end
-               else
-               begin
+               end else begin
                   SD.ExtAppStr := Trim(EP.StrValue(eiModemErrExtApp));
-                  if SD.ExtAppStr = '' then
-                  begin
+                  if SD.ExtAppStr = '' then begin
                      State := msError;
                      SetTmr1(CReinitTime, msInit);
                      SetStatusMsg(rsMMErrInitMdm, '');
                      Log(ltGlobalErr, 'Error initializing modem');
-                  end
-                  else
-                  begin
+                  end else begin
                      Log(ltGlobalErr, 'Error initializing modem - executing Error Ext.App.');
                      State := msExtApp_0;
                   end;
@@ -13103,12 +13117,10 @@ begin
                end;
             end;}
             SD.ModemInfoString := ModemInfoString;
-            if SD.ModemInfoString <> '' then
-            begin
+            if SD.ModemInfoString <> '' then begin
 //                  s := EscapeChar + EscapeChar + EscapeChar;
                s := EP.StrValueD(eiModemCmdTest, SD.ModemRec.Cmds.Test);
-               if s <> '' then
-               begin
+               if s <> '' then begin
                  c := 0;
                  while not SendModemString(s) do begin
                     HangupModem;
@@ -13128,13 +13140,11 @@ begin
       msInit:
          begin
             SetStatusMsg(rsMMInit, '');
-            if EP.VoidFound(eiDelBSY) then
-            begin
+            if EP.VoidFound(eiDelBSY) then begin
                c := DeleteBsy;
                if c > 0 then LogFmt(ltInfo, '%d old BSY-files were deleted (event)', [c]);
             end;
-            if RestoreBPS and (CP <> nil) and (CP is TSerialPort) then
-            begin
+            if RestoreBPS and (CP <> nil) and (CP is TSerialPort) then begin
                RestoreBPS := False;
                TSerialPort(CP).SetBPS(CP.DTE);
             end;
@@ -13246,8 +13256,7 @@ begin
             Inc(SD.TriesA);
             if SD.TriesA > 3 then
                State := msError
-            else
-            begin
+            else begin
                Log(ltGlobalErr, 'Carrier is still high!');
                State := msInitModem;
             end;
@@ -13259,8 +13268,7 @@ begin
             NewTimerAvg(SD.TmrReInit, CReinitTime);
             TossBWZ(false);
             SD.StateDeltaDCD := msCN_ConnectDCD_A;
-            if not SD.ReportedLogOK then
-            begin
+            if not SD.ReportedLogOK then begin
                SD.ReportedLogOK := True;
                if (CP <> nil) and (CP.Handle <> INVALID_HANDLE_VALUE) then begin
                   Log(ltInfo, 'OK');
@@ -13294,14 +13302,11 @@ begin
             if (not TimerInstalled(TmrNextDial)) or (TimerExpired(TmrNextDial)) then
             begin
                ClearTmrPublic;
-            end else
-            begin
+            end else begin
                R := EP.DwordValueD(eiRetry, inifile.FPFlags.Retry);
-               if IniFile.FixedRetryTimeout then
-               begin
+               if IniFile.FixedRetryTimeout then begin
                   NewTimerSecs(TmrNextDial, R);
-               end else
-               begin
+               end else begin
                   NewTimerAvg(TmrNextDial, R);
                end;
                SetTmrPublic(RemainingTimeSecs(TmrNextDial), msCheckOut);
@@ -13310,19 +13315,14 @@ begin
       msRingAfterIdle:
          begin
             SD.RingsToAnswer := EP.DwordValueD(eiNumRings, 1);
-            if SD.RingsToAnswer = 0 then
-            begin
-               if TimerInstalled(D.TmrPublic) then
-             begin
+            if SD.RingsToAnswer = 0 then begin
+               if TimerInstalled(D.TmrPublic) then begin
                   State := msIdleA
-             end else
-               begin
+               end else begin
                   ClearTmrPublic;
                   State := msInitOK;
                end;
-            end
-            else
-            begin
+            end else begin
                ClearTmrPublic;
                State := msGotNextRing;
             end;
@@ -13330,12 +13330,9 @@ begin
       msGotNextRing:
          begin
             Inc(SD.RingsDone);
-            if SD.RingsDone >= SD.RingsToAnswer then
-            begin
+            if SD.RingsDone >= SD.RingsToAnswer then begin
                State := msStartAnswer;
-            end
-            else
-            begin
+            end else begin
                State := msStartWaitNextRing;
             end;
          end;
@@ -13383,7 +13380,8 @@ begin
                (CP as TTAPIPort).DropCall;
                (CP as TTAPIPort).CheckOpens;
                if (CP as TTAPIPort).Answer or
-                  (CP as TTAPIPort).fHandOf {and (not D.TimeSaved)} then begin
+                  (CP as TTAPIPort).fHandOf {and (not D.TimeSaved)} then
+               begin
                   D.TimeSaved := True;
                   D.SavPublic := D.TmrPublic;
                   D.SavNextDl := TmrNextDial;
@@ -13400,27 +13398,23 @@ begin
             if not TimerInstalled(SD.TmrReInit) then
                NewTimerAvg(SD.TmrReInit, CReinitTime)
             else
-               if not TimerExpired(SD.TmrReInit) then
-                  DoIdle
-               else
+            if not TimerExpired(SD.TmrReInit) then
+               DoIdle
+            else begin
+               if (EP.VoidFound(eiAccNoIncoming)) or
+                  ((EP.VoidFound(eiModemDisaReinit)) and (ModemInitString = SD.LastModemInitString)) then
                begin
-                  if (EP.VoidFound(eiAccNoIncoming)) or
-                     ((EP.VoidFound(eiModemDisaReinit)) and (ModemInitString = SD.LastModemInitString)) then
-                  begin
-                     NewTimerAvg(SD.TmrReInit, CReinitTime);
-                     TossBWZ(false);
-                     State := msIdleA_Expired;
-                     // visual - bugfix: argus don't release port when atom AcceptNoIncoming is activated.
-                     if (EP.VoidFound(eiAccNoIncoming)) then State := msInitFreeCP; // by Sergey Shumakov
-                  end
-                  else
-                  begin
-                     SD.Tries := 3;
-                     State := msInitModemA;
-                  end;
+                  NewTimerAvg(SD.TmrReInit, CReinitTime);
+                  TossBWZ(false);
+                  State := msIdleA_Expired;
+                  // visual - bugfix: argus don't release port when atom AcceptNoIncoming is activated.
+                  if (EP.VoidFound(eiAccNoIncoming)) then State := msInitFreeCP; // by Sergey Shumakov
+               end else begin
+                  SD.Tries := 3;
+                  State := msInitModemA;
                end;
-            if Inifile.RASEnabled and EP.VoidFound(eiRASEvent) and (not RASInvoked) then
-            begin
+            end;
+            if Inifile.RASEnabled and EP.VoidFound(eiRASEvent) and (not RASInvoked) then begin
                RASInvoked := True;
                RASHangup := EP.BoolValueD(eiRASEvent, False);
                RASSoundsON := SoundsON;
@@ -13428,8 +13422,7 @@ begin
                PostMessage(MainWinHandle, WM_RASEVENT, integer(self), LineID);
                FidoPollsLog('RAS event started');
             end else
-            if (not Inifile.RASEnabled) and (not RASInvoked) and (EP.VoidFound(eiRASEvent)) then
-            begin
+            if (not Inifile.RASEnabled) and (not RASInvoked) and (EP.VoidFound(eiRASEvent)) then begin
                RASInvoked := True;
                FidoPollsLog('RAS event invoked, but RAS is disabled. Dropping event');
             end
@@ -13518,11 +13511,9 @@ begin
          end;
       msStartDialPhone:
          begin
-            if CP = nil then
-            begin
+            if CP = nil then begin
                DoRestoreSerial;
-               if CP <> nil then
-               begin
+               if CP <> nil then begin
                   HangupModem;
                   SendModemInitString;
                end;
@@ -13576,8 +13567,7 @@ begin
             DoRestoreSerial;
             if CP = nil then
                State := msTryOpenSer
-            else
-            begin
+            else begin
                LogFmt(ltInfo, 'Serial port restored OK, %d attempts', [SD.OpenSerTries]);
                State := msInit;
             end;
@@ -13614,12 +13604,9 @@ begin
             ClearTmr1;
             State := msAnswering;
             SetStatusMsg(rsMMAnswering, '');
-            if SendModemString(EP.StrValueD(eiModemCmdAnswer, SD.ModemRec.Cmds.Answer)) then
-            begin
+            if SendModemString(EP.StrValueD(eiModemCmdAnswer, SD.ModemRec.Cmds.Answer)) then begin
                SD.ActivePoll := nil;
-            end
-            else
-            begin
+            end else begin
                State := msError;
             end;
          end;
@@ -13655,13 +13642,13 @@ begin
             CheckModem;
             if not ChkFax then
             case ModemResponseCn of
-               mrpNone: ;
-               mrpRing: ;
-               mrpConnect:
-                  State := msCN_ConnectString;
-               else
-                  State := msSE_NoConnect;
-               end;
+            mrpNone: ;
+            mrpRing: ;
+            mrpConnect:
+               State := msCN_ConnectString;
+            else
+               State := msSE_NoConnect;
+            end;
          end;
       msCarrierLost:
          begin
@@ -13673,7 +13660,7 @@ begin
             begin
                Log(ltWarning, 'Carrier lost');
                State := msSE_SessionAborted;
-            end;   
+            end;
          end;
       msHandshakeTimeout:
          begin
@@ -13690,8 +13677,7 @@ begin
       msSE_OK:
          begin
             State := msSE_OKa;
-            if CP.DCD then
-            begin
+            if CP.DCD then begin
                HangupModem;
                SD.SkipHangup := True
             end;
@@ -14617,10 +14603,11 @@ begin
          if PubInst then begin
             SetStatusMsg(rsMMWaitDial, Addr2Str(p.Node.Addr));
             ShowIt('W: ' + Addr2Str(p.Node.Addr), false);
-            if TimerInstalled(D.TmrPublic) then
+            if TimerInstalled(D.TmrPublic) then begin
                NewTimerSecs(SD.TmrReinit, RemainingTimeSecs(D.TmrPublic) + 5)
-            else
+            end else begin
                GlobalFail('%s', ['DoPollsRecalc/TimerInstalled']);
+            end;
          end else begin
             ClearTmrPublic;
             ClearTimer(TmrNextDial);
@@ -15725,7 +15712,7 @@ begin
    NewC := 0;
    for i := CollMax(NewNodes) downto 0 do begin
       n := NewNodes[i];
-      NewC := NewC + n.Nfo.Size + 1;
+      NewC := NewC + n.Nfo.Size + n.Nfo.Time;
       if n.StatusSet = [osNone] then begin
          FileNames.AtInsert(FileNames.Count, NewStr(StrAsg(n.Name)));
          New(Nfo);
@@ -15761,7 +15748,8 @@ begin
    ChangeFlag := OldC <> NewC;
 
    if ChangeFlag then begin
-     _RecalcPolls(False);
+//     _RecalcPolls(False);
+      _RecreatePolls;
       if Application.MainForm <> nil then begin
          PostMessage(Application.MainForm.Handle, WM_OUTBOUNDALERT, 2, 0);
       end;

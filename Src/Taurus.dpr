@@ -9,10 +9,8 @@ program Taurus;
 {$I DEFINE.INC}
 
 uses
-{$IFDEF DEBUG_VERSION}
   JCLHookExcept,
   JCLDebug,
-{$ENDIF}
   RasThrd in 'RasThrd.pas',
   Setup in 'Setup.pas' {SetupForm},
   ComeOn in 'ComeOn.pas',
@@ -74,9 +72,7 @@ uses
   RadIni in 'RadIni.pas',
   Watcher in 'Watcher.pas',
   PathName in 'PathName.PAS' {PathNamesForm},
-{$IFDEF DEBUGVER}
   MemCheck in 'MemCheck.pas',
-{$ENDIF}  
   Wizard in 'Wizard.pas',
   Util in 'Util.pas',
   IpCfg in 'IpCfg.pas' {IPCfgForm},

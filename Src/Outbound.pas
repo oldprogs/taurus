@@ -8,7 +8,7 @@ interface
 uses Windows, Classes, SysUtils, xBase, xFido;
 
 type
-     TPollType = (ptpUnknown, ptpOutb, ptpCron, ptpManual, ptpImm, ptpBack, ptpRCC, ptpNetm, ptpNmIm, ptpTest);
+     TPollType = (ptpUnknown, ptpOutb, ptpNetm, ptpCron, ptpTest, ptpManual, ptpImm, ptpBack, ptpRCC, ptpNmIm);
 
      TOutStatusSet = Set of TOutStatus;
      TPollTypeSet = Set of TPollType;
@@ -145,6 +145,13 @@ procedure InitFidoOut;
 procedure DoneFidoOut;
 function DeleteOutFile(const FName: string): Boolean;
 function TruncOutFile(const FName: string): Boolean;
+
+const
+  PollStatus: array[TOutStatus] of TPollType =
+              (ptpUnknown, ptpUnknown,
+               ptpImm, ptpOutb, ptpOutb, ptpUnknown, ptpUnknown,
+               ptpImm, ptpOutb, ptpOutb, ptpUnknown, ptpUnknown, ptpUnknown, ptpUnknown,
+               ptpBack, ptpUnknown, ptpUnknown, ptpUnknown);
 
 var FidoOut: TOutbound;
 
@@ -1669,6 +1676,7 @@ begin
     T.Nfo.Size := ASize + T.Nfo.Size;
     T.Nfo.Time := MaxD(ATime, T.Nfo.Time);
     Include(T.FStatus, A);
+    Include(T.FPollType, PollStatus[A]);
   end else begin
     T := TOutNode.Create;
     T.Address := Addr;
@@ -1676,6 +1684,7 @@ begin
     T.Nfo.Time := ATime;
     GetListedNode(Addr);
     T.FStatus := [A];
+    T.FPollType := [PollStatus[A]];
     AOutColl.AtInsert(I, T);
   end;
 end;

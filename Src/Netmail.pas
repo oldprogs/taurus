@@ -84,6 +84,7 @@ type
       LstColl: TStringList;
       FilColl: TStringList;
       NeedScan: boolean;
+      MaxMSG: integer;
       constructor Create; virtual;
       destructor Destroy; override;
       procedure ScanMSG;
@@ -98,6 +99,7 @@ type
 
 procedure FreeNetmailHolder;
 procedure ClearAttach(m, a: string);
+procedure UnpackPKT(p: string);
 
 var
    NetmailHolder: TNetmail;
@@ -107,7 +109,7 @@ implementation
 
 uses
    RadIni, RRegExp, SysUtils, Wizard, Outbound, DateUtils,
-   Forms, Watcher;
+   Forms, Watcher, JclDateTime;
 
 procedure FreeNetmailHolder;
 begin
@@ -165,6 +167,90 @@ begin
       end;
       n.Free;
    end;
+end;
+
+procedure UnpackPKT;
+var
+   n: TNetmail;
+   i: integer;
+   m: TNetmailMSG;
+   h: _fidomsgtype;
+   s: TFileStream;
+   x: Integer;
+   t: string;
+   o: integer;
+begin
+   x := NetmailHolder.MaxMSG;
+   n := TNetmail.Create;
+   n.ScanPacket(p);
+   for i := 0 to CollMax(n.NetColl) do begin
+      FillChar(h, SizeOf(h), #0);
+      m := n.NetColl[i];
+      move(m.Frnm[1], h.from, Length(m.Frnm));
+      move(m.Tonm[1], h.towhom, Length(m.Tonm));
+      move(m.Subj[1], h.subject, Length(m.Subj));
+      move(m.Date[1], h.azdate, Length(m.Date));
+      h.dest_node := m.Addr.Node;
+      h.orig_node := m.From.Node;
+      h.orig_net  := m.From.Net;
+      h.dest_net  := m.Addr.Net;
+      h.date_arrived := DateTimeToDosDateTime(Date + Time);
+      h.attr := m.Attr or KillSent or InTransit;
+      repeat
+         inc(x);
+         t := AddBackSlash(IniFile.NetmailDir) + IntToStr(x) + '.MSG';
+      until not ExistFile(t);
+      s := TFileStream.Create(t, fmCreate or fmShareExclusive);
+      s.Write(h, SizeOf(h));
+      o := m.bOff - m.Offs - SizeOf(PackedMsgHeaderRec);
+      s.Write(Pointer(Integer(m.Body) + o)^, m.Size - o - 1);
+      s.Free;
+      if pos('CFM', m.Flgs) > 0 then begin
+         FillChar(h, SizeOf(h), #0);
+         t := 'Taurus ' + CProductVersionA + '/W32';
+         move(t[1], h.from, Length(t));
+         move(m.Frnm[1], h.towhom, Length(m.Frnm));
+         t := 'Transit confirmation';
+         move(t[1], h.subject, Length(t));
+         t := FormatDateTime('dd mmm yy  hh:nn:ss', Date + Time);
+         move(t[1], h.azdate, Length(t));
+         h.dest_node := m.From.Node;
+         h.orig_node := IniFile.MainAddr.Node;
+         h.orig_net  := IniFile.MainAddr.Net;
+         h.dest_net  := m.From.Net;
+         h.attr := Pvt or Local or KillSent or AuditRequest;
+         repeat
+            inc(x);
+            t := AddBackSlash(IniFile.NetmailDir) + IntToStr(x) + '.MSG';
+         until not ExistFile(t);
+         s := TFileStream.Create(t, fmCreate or fmShareExclusive);
+         s.Write(h, SizeOf(h));
+         t := #1'MSGID: ' + Addr2Str(IniFile.MainAddr) + ' ' + Format('%.8x', [GetTickCount xor xRandom32]) + #13;
+         s.Write(t[1], Length(t));
+         t := #1'INTL ' +
+                ExtractWord(1, ExtractWord(1, Addr2Str(m.From), ['@']), ['.']) + ' ' +
+                ExtractWord(1, ExtractWord(1, Addr2Str(IniFile.MainAddr), ['@']), ['.']) + #13;
+         s.Write(t[1], Length(t));
+         if m.From.Point <> 0 then begin
+            t := #1'TOPT ' + IntToStr(m.From.Point) + #13;
+            s.Write(t[1], Length(t));
+         end;
+         if IniFile.MainAddr.Point <> 0 then begin
+            t := #1'FMPT ' + IntToStr(IniFile.MainAddr.Point) + #13;
+            s.Write(t[1], Length(t));
+         end;
+         t := #13' Your message to: ' + Addr2Str(m.Addr) + ' (' + m.Tonm + ')'#13 +
+                 '            from: ' + m.Date + #13 +
+                 '         subject: ' + m.Subj + #13 +
+              #13' was received at: ' + Addr2Str(IniFile.MainAddr) + #13 +
+                 '              on: ' + FormatDateTime('dd mmm yy  hh:nn:ss', Date + Time) + #13 +
+              #13'--- Taurus ' + CProductVersionA + '/W32'#13;
+         s.Write(t[1], Length(t));
+         s.Free;
+      end;
+   end;
+   FreeObject(n);
+   DelFile('UnpackPKT', p);
 end;
 
 function TNetmailMsg.IChr;
@@ -371,6 +457,7 @@ var
    FP: string;
    CC: integer;
    PK: TNetmailPKT;
+   NN: integer;
 begin
    if not IniFile.ScanMSG then exit;
    FP := AddBackSlash(IniFile.NetmailDir);
@@ -380,7 +467,11 @@ begin
       NetColl.MarkDel(True);
       PktColl.Enter;
       repeat
-         if Vl(ExtractFileName(SR.FName)) > 0 then begin
+         NN := Vl(ExtractWord(1, SR.FName, ['.']));
+         if NN > 0 then begin
+            if MaxMSG < NN then begin
+               MaxMSG := NN;
+            end;
             CC := PktColl.FindName(FP + SR.FName);
             if (CC = -1) or (PktColl.Items[CC].Mark <> SR.Info.Time) then begin
                if CC = -1 then begin
@@ -770,6 +861,7 @@ begin
          l.Lock.Net   := h.DestNet;
          l.Lock.Node  := h.DestNode;
          l.Lock.Point := h.DestPoint;
+         l.Attr       := m.Attribute;
          FillMSG(n, l);
          if l <> nil then begin
             SetValue(l.From.Net, m.OrigNet);

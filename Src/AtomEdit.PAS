@@ -40,10 +40,10 @@ type
     tsMemoB: TTabSheet;
     MemoA: TMemo;
     MemoB: TMemo;
-    StringGrid: TAdvGrid;
     bvl7: TBevel;
     lGrid: TLabel;
     eGrid: TEdit;
+    StringGrid: TAdvGrid;
     procedure FormDestroy(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure cbChange(Sender: TObject);
@@ -141,8 +141,7 @@ begin
     s := LngStr(i + LngEvtBase);
     if s = '' then GlobalFail('%s', ['TAtomEditorForm.FillCombo']);
     if s = '!' then Break;
-    if s <> '-' then
-    begin
+    if s <> '-' then begin
       GetWrd(s, z, '|');
       cc := TCmdCaption.Create;
       cc.Typ := i;
@@ -152,8 +151,7 @@ begin
     Inc(i);
   until False;
   CmdMap.Sort(CmdMapSort);
-  for i := 0 to CmdMap.Count - 1 do
-  begin
+  for i := 0 to CmdMap.Count - 1 do begin
     cc := CmdMap[i];
     cb.Items.Add(cc.Cap);
     if cc.Typ = Typ then cb.ItemIndex := i;
@@ -164,10 +162,9 @@ end;
 
 procedure TAtomEditorForm.DoAdjustSize;
 begin
-  if not nb.Visible then ClientHeight := bHelp.Top+28 else
-  ClientHeight := nb.Top+Bevels[nb.PageIndex].Height;
+  if not nb.Visible then ClientHeight := bHelp.Top + 28 else
+  ClientHeight := nb.Top + Bevels[nb.PageIndex].Height + 5;
 end;
-
 
 procedure TAtomEditorForm.FormDestroy(Sender: TObject);
 begin
@@ -176,16 +173,16 @@ end;
 
 procedure TAtomEditorForm.FormCreate(Sender: TObject);
 begin
-  FillForm(Self, rsAtomEditorForm);
-  CmdMap := TColl.Create;
-  sSpin.MinValue := 0;
-  Bevels[1] := bvl1;
-  Bevels[2] := bvl2;
-  Bevels[3] := bvl3;
-  Bevels[4] := bvl4;
-  Bevels[5] := bvl5;
-  Bevels[6] := bvl6;
-  Bevels[7] := bvl7;
+   FillForm(Self, rsAtomEditorForm);
+   CmdMap := TColl.Create;
+   sSpin.MinValue := 0;
+   Bevels[1] := bvl1;
+   Bevels[2] := bvl2;
+   Bevels[3] := bvl3;
+   Bevels[4] := bvl4;
+   Bevels[5] := bvl5;
+   Bevels[6] := bvl6;
+   Bevels[7] := bvl7;
 end;
 
 procedure TAtomEditorForm.UpdateNB;
