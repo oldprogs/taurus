@@ -485,6 +485,10 @@ type
     mpProperties: TMenuItem;
     ompProperties: TMenuItem;
     N32: TMenuItem;
+    EventMenu: TPopupMenu;
+    AssignEvents1: TMenuItem;
+    EditEvents1: TMenuItem;
+    N33: TMenuItem;
     procedure MainTabControlChange(Sender: TObject);
     procedure bAbortClick(Sender: TObject);
     procedure bStartClick(Sender: TObject);
@@ -614,6 +618,7 @@ type
     procedure gLstRowMoved(Sender: TObject; FromIndex, ToIndex: Integer);
     procedure mnuClockClick(Sender: TObject);
     procedure evListViewClick(Sender: TObject);
+    procedure evListViewDblClick(Sender: TObject);
     procedure evListViewCompare(Sender: TObject; Item1, Item2: TListItem;
       Data: Integer; var Compare: Integer);
     procedure New1Click(Sender: TObject);
@@ -766,7 +771,7 @@ uses
    StupCfg, NodeLCfg, Wizard, Plus, Util, RadIni, tarif, IPCfg, ShellAPI,
    TracePl, Extrnls, PollCfg, xEvents, FreqCfg, SinglPwd, EncLinks,
    AdrIBox, FreqEdit, Attach, xDES, PwdInput, Setup, LogView, RadSav,
-   EvtEdit, xTAPI;
+   EvtEdit, xTAPI, MLineCfg;
 
 {$R *.DFM}
 
@@ -6971,6 +6976,38 @@ begin
 end;
 
 procedure TMailerForm.evListViewClick(Sender: TObject);
+var
+   c: TMainCfgColl;
+   b: boolean;
+   i: integer;
+   L: TLineRec;
+   procedure Ins(P: Pointer); begin C.Insert(P) end;
+begin
+   c := TMainCfgColl.Create;
+   for i := 0 to 1 do begin
+      Ins(TLineColl.Create);
+      Ins(TStationColl.Create);
+      Ins(TPortColl.Create);
+      Ins(TModemColl.Create);
+      Ins(TRestrictColl.Create);
+   end;
+   Cfg.Lines.AppendTo(C.Lines);
+   Cfg.Station.AppendTo(C.Station);
+   Cfg.Ports.AppendTo(C.Ports);
+   Cfg.Modems.AppendTo(C.Modems);
+   Cfg.Restrictions.AppendTo(C.Restrictions);
+   b := False;
+   for i := 0 to CollMax(C.Lines) do begin
+      l := C.Lines[i];
+      if ActiveLine.LineId = l.Id then begin
+         b := EditMailerLine(1, C.Lines[i], C, b);
+         XChg(Integer(C.FList^[i]), Integer(Cfg.Lines));
+      end;
+   end;
+   FreeObject(C);
+end;
+
+procedure TMailerForm.evListViewDblClick(Sender: TObject);
 var
   oe,
   ne: TEventContainer;

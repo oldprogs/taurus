@@ -74,7 +74,7 @@ type
     { Public declarations }
   end;
 
-function EditMailerLine(Line, C: Pointer; var EvtChanged: Boolean): Boolean;
+function EditMailerLine(P: integer; Line, C: Pointer; var EvtChanged: Boolean): Boolean;
 
 implementation
 
@@ -90,6 +90,10 @@ begin
   MailerLineCfgForm.Line := Line;
   MailerLineCfgForm.C := C;
   MailerLineCfgForm.SetData;
+  if p = 1 then begin
+     MailerLineCfgForm.PageControl.Pages[0].Enabled := False;
+     MailerLineCfgForm.PageControl.ActivePageIndex := 1;
+  end;
   Result := MailerLineCfgForm.ShowModal = mrOK;
   EvtChanged := MailerLineCfgForm.EvtChanged;
   FreeObject(MailerLineCfgForm);

@@ -1853,7 +1853,6 @@ var
 begin
    if uFindFirst(MakeNormName(Path, '*.*'), SR) then begin
       repeat
-         Application.ProcessMessages;
          FSplit(SR.FName, Dr, Nm, Xt);
          if SR.Info.Attr and FILE_ATTRIBUTE_DIRECTORY = 0 then begin
             S := GetOutStatus(Xt);
@@ -2060,7 +2059,6 @@ begin
                                               else fn := Dr + Nm + '.*';
    if uFindFirstEx(fn, SR, FindExSearchLimitToDirectories) then begin
       repeat
-         Application.ProcessMessages;
          if SR.Info.Attr and FILE_ATTRIBUTE_DIRECTORY <> 0 then begin
             if SR.FName[1] <> '.' then begin
                Xt := ExtractWord(2, SR.FName, ['.']);

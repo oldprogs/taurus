@@ -3808,6 +3808,7 @@ procedure EnterCS(var CS: TRTLCriticalSection);
 {$IFDEF DEBUG_VERSION}
 var
    s: string;
+   e: string;
    i: integer;
 {$ENDIF}
 begin
@@ -3829,9 +3830,10 @@ begin
 {$IFDEF DEBUG_VERSION}
    if (IniFile <> nil) and IniFile.logWaitEvt then begin
       EnterList.Enter;
+      e := Pad('Enter', 19) + ': ' + s;
       for i := EnterList.Count - 1 downto 0 do begin
          if pos(Pad('Enter_(pre)', 19) + ': EnterCS, ' + IntToStr(Integer(CS.DebugInfo)), EnterList[i]) > 0 then begin
-            EnterList[i] := Pad('Enter', 19) + ': ' + s;
+            EnterList[i] := e;
             break;
          end;
       end;

@@ -8393,8 +8393,6 @@ begin
    if not (SD.SessionCore in [scBinkP, scFTP, scHTTP, scSMTP, scPOP3, scGATE, scNNTP]) and (SD.ActivePoll = nil) then begin
       CP.SendString('(CONNECT ' + DS.ConnectString + ')'#13#10);
    end;
-   SD.txMail := 0;
-   SD.txFiles := 0;
 end;
 
 procedure TMailerThread.FilterProtocols(const AFlags: string);
@@ -9064,6 +9062,8 @@ begin
    msStartWZ:
       begin
          SD.SessionOK := False;
+         SD.txMail := 0;
+         SD.txFiles := 0;
          FstTic := GetTickCount;
          if SD.rmtPrimaryAddr.Zone = 0 then;
          SD.Accumulate := False;
@@ -13137,7 +13137,13 @@ begin
             SD.InB := '';
             TD := EP.DwordValueD(eiTimeDial, inifile.FPFlags.TimeDial);
             SetTmrPublic(TD, msDialTimeout);
-            s := SD.ActivePoll.Node.Station;
+            s := '';
+            if (SD.ActivePoll <> nil) and (SD.ActivePoll.Node <> nil) then begin
+               s := SD.ActivePoll.Node.Station;
+            end else begin
+               State := msIdle;
+               exit;
+            end;
             if s = '' then s := '-Unknown system-';
             SetStatusMsg(rsMMCalling, Addr2Str(SD.ActivePoll.Node.Addr) + ';' + s);
             LogPoll(Format('Dialing %s (%s)', [Addr2Str(SD.ActivePoll.Node.Addr), SD.ActivePoll.DialupPhone]));

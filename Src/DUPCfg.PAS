@@ -408,7 +408,7 @@ begin
   cl.Insert(ne);
   evc := False;
   case CurNo of
-    0 : b := EditMailerLine(ne, C, evc);
+    0 : b := EditMailerLine(0, ne, C, evc);
     1 : b := EditStation(ne);
     2 : b := EditPort(ne);
     3 : b := EditModem(ne);
@@ -428,24 +428,25 @@ end;
 
 procedure TMainConfigForm.bEditClick(Sender: TObject);
 var
-  evc, b: Boolean;
+ evc,
+   b: Boolean;
 begin
-  if not bEdit.Enabled then Exit;
-  evc := False;
-  case CurNo of
-    0 : b := EditMailerLine(C.Lines[lLines.ItemFocused.Index], C, evc);
+   if not bEdit.Enabled then Exit;
+   evc := False;
+   case CurNo of
+    0 : b := EditMailerLine(0, C.Lines[lLines.ItemFocused.Index], C, evc);
     1 : b := EditStation(C.Station[lStation.ItemFocused.Index]);
     2 : b := EditPort(C.Ports[lPorts.ItemFocused.Index]);
     3 : b := EditModem(C.Modems[lModems.ItemFocused.Index]);
     4 : b := EditRestriction(C.Restrictions[lRestrictions.ItemFocused.Index]);
     else b := Boolean(GlobalFail('TMainConfigForm.bEditClick CurNo=%d', [CurNo]));
-  end;
-  EvtChanged := EvtChanged or evc;
-  if b then begin
-    Changed := True;
-    UpdatePage(CurNo); if CurNo <> 0 then UpdatePage(0);
-    UpdateButtons;
-  end;
+   end;
+   EvtChanged := EvtChanged or evc;
+   if b then begin
+      Changed := True;
+      UpdatePage(CurNo); if CurNo <> 0 then UpdatePage(0);
+      UpdateButtons;
+   end;
 end;
 
 procedure TMainConfigForm.bCopyClick(Sender: TObject);

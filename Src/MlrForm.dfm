@@ -1372,12 +1372,13 @@ object MailerForm: TMailerForm
                 ReadOnly = True
                 RowSelect = True
                 ParentFont = False
+                PopupMenu = EventMenu
                 SmallImages = ilMainMenu
                 SortType = stData
                 TabOrder = 1
                 ViewStyle = vsReport
                 OnCompare = evListViewCompare
-                OnDblClick = evListViewClick
+                OnDblClick = evListViewDblClick
               end
             end
             object TransPan1: TTransPan
@@ -5105,5 +5106,20 @@ object MailerForm: TMailerForm
       000000001C0000000000000000000000000000000000000000000000FFFFFF00
       840000008400000084000000840000008400000084000000FFC0000000000000
       000000000000000000000000000000000000}
+  end
+  object EventMenu: TPopupMenu
+    Left = 265
+    Top = 318
+    object AssignEvents1: TMenuItem
+      Caption = 'Assign Events'
+      OnClick = evListViewClick
+    end
+    object N33: TMenuItem
+      Caption = '-'
+    end
+    object EditEvents1: TMenuItem
+      Caption = 'Modify Event'
+      OnClick = evListViewDblClick
+    end
   end
 end
