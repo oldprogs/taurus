@@ -241,7 +241,7 @@ begin
       end;
       i.Free;
       fBackup := False;
-      NetColl.Enter;
+      NetColl.Leave;
    end;
 end;
 
@@ -630,6 +630,9 @@ begin
                   nDest := m.Frnm;
                   aDest := m.From;
                   rMsId := m.MsId;
+                  for i:= 1 to Length(rMsId) do begin
+                     if rMsId[i] = '#' then rMsId := ' ';
+                  end;
                end;
             end else
             if z = 'NEWSGROUPS:' then begin
