@@ -250,6 +250,7 @@ begin
                      FillOutList := True;
                      FGetNextFile(Self);
                      fEcho := TEchoMail.Create;
+                     fEcho.Address := FiAddr;
                      z := IniFile.ReadString('NNTP', 'EchoList', '');
                      if ExistFile(z) then begin
                         l := TStringList.Create;
@@ -271,6 +272,7 @@ begin
                            fEcho.ScanPacket(s);
                         end;
                      end;
+                     fEcho.SaveIdx;
                   end else begin
                      PutString('502 ' + CustomInfo);
                      State := bdAuth;
@@ -459,6 +461,9 @@ begin
                h.DestZone  := inifile.MainAddr.Zone;
                h.OrigPoint := FiAddr.Point;
                h.DestPoint := inifile.MainAddr.Point;
+               if fPass <> '' then begin
+                  move(fPass[1], h.Password, Length(fPass));
+               end;
                p.MsgType   := 2;
                p.OrigNode  := aFrom.Node;
                p.DestNode  := aDest.Node;

@@ -139,8 +139,10 @@ uses
 function InetAddr(const s: string): DWORD;
 {$IFNDEF WS}
 var
-  a,b: string;
-  i,e: Integer;
+  a,
+  b: string;
+  i,
+  e: Integer;
   r: array[0..3] of Int64;
 {$ENDIF}
 begin
@@ -167,25 +169,25 @@ begin
      if e <> 0 then Exit;
      Inc(i);
    end;
-   for e := 0 to i-2 do
+   for e := 0 to i - 2 do
    begin
-     if (r[e]<0) or (r[e]>$FF) then Exit;
+     if (r[e] < 0) or (r[e] > $FF) then Exit;
    end;
-   case i-1 of
+   case i - 1 of
      0 : begin
-           if r[0] > MaxInt then Result := (r[0]-MaxInt)+MaxInt else
+           if r[0] > MaxInt then Result := (r[0] - MaxInt) + MaxInt else
              Result := (r[0]);
          end;
      1 : begin
-           if (r[1]<0) or (r[1]>$FFFFFF) then Exit;
+           if (r[1] < 0) or (r[1] > $FFFFFF) then Exit;
            Result := ((r[0]) shl 24) or (r[1]);
          end;
      2 : begin
-           if (r[2]<0) or (r[2]>$FFFF) then Exit;
+           if (r[2] < 0) or (r[2] > $FFFF) then Exit;
            Result := ((r[0]) shl 24) or ((r[1]) shl 16) or ((r[2]));
          end;
      3 : begin
-           if (r[3]<0) or (r[3]>$FF) then Exit;
+           if (r[3] < 0) or (r[3] > $FF) then Exit;
            Result := ((r[0]) shl 24) or ((r[1]) shl 16) or ((r[2]) shl 8) or (r[3]);
          end;
      else GlobalFail('%s', ['InetAddr']);
@@ -339,7 +341,7 @@ begin
       for j := Resp.Count - 1 downto 0 do
       begin
         rsp := Resp[j];
-        if rsp.HostName = r.HostName then Resp.AtFree(j); 
+        if rsp.HostName = r.HostName then Resp.AtFree(j);
       end;
 
       he := @r.HostBuf;
@@ -529,65 +531,65 @@ end;
 const
 
 WSA_ErrMsgMax = 65;
-WSA_ErrMsg : array[0..WSA_ErrMsgMax] of record s: string; n: Integer end = (
+WSA_ErrMsg: array[0..WSA_ErrMsgMax] of record s: string; n: Integer end = (
 
   // Custom error codes
-  (s:'No address (A) records available'; n:-199),
+  (s: 'No address (A) records available'; n:-199),
 
   // SOCKS4 error codes
 
-  (s:'SOCKS request rejected or failed'; n:-91),
-  (s:'SOCKS request rejected becasue SOCKS server cannot connect to identd on the client'; n:-92),
-  (s:'SOCKS request rejected because the client program and identd report different user-ids'; n:-93),
+  (s: 'SOCKS request rejected or failed'; n:-91),
+  (s: 'SOCKS request rejected becasue SOCKS server cannot connect to identd on the client'; n:-92),
+  (s: 'SOCKS request rejected because the client program and identd report different user-ids'; n:-93),
 
   // Windows Sockets definitions of regular Microsoft C error constants
 
-  (s:'WSAEINTR';n:                (WSABASEERR+4)),
-  (s:'WSAEBADF';n:                (WSABASEERR+9)),
-  (s:'WSAEACCES';n:               (WSABASEERR+13)),
-  (s:'WSAEFAULT';n:               (WSABASEERR+14)),
-  (s:'WSAEINVAL';n:               (WSABASEERR+22)),
-  (s:'WSAEMFILE';n:               (WSABASEERR+24)),
+  (s: 'WSAEINTR';  n: (WSABASEERR +  4)),
+  (s: 'WSAEBADF';  n: (WSABASEERR +  9)),
+  (s: 'WSAEACCES'; n: (WSABASEERR + 13)),
+  (s: 'WSAEFAULT'; n: (WSABASEERR + 14)),
+  (s: 'WSAEINVAL'; n: (WSABASEERR + 22)),
+  (s: 'WSAEMFILE'; n: (WSABASEERR + 24)),
 
   // Windows Sockets definitions of regular Berkeley error constants
 
-  (s:'WSAEWOULDBLOCK';n:          (WSABASEERR+35)),
-  (s:'WSAEINPROGRESS';n:          (WSABASEERR+36)),
-  (s:'WSAEALREADY';n:             (WSABASEERR+37)),
-  (s:'WSAENOTSOCK';n:             (WSABASEERR+38)),
-  (s:'WSAEDESTADDRREQ';n:         (WSABASEERR+39)),
-  (s:'WSAEMSGSIZE';n:             (WSABASEERR+40)),
-  (s:'WSAEPROTOTYPE';n:           (WSABASEERR+41)),
-  (s:'WSAENOPROTOOPT';n:          (WSABASEERR+42)),
-  (s:'WSAEPROTONOSUPPORT';n:      (WSABASEERR+43)),
-  (s:'WSAESOCKTNOSUPPORT';n:      (WSABASEERR+44)),
-  (s:'WSAEOPNOTSUPP';n:           (WSABASEERR+45)),
-  (s:'WSAEPFNOSUPPORT';n:         (WSABASEERR+46)),
-  (s:'WSAEAFNOSUPPORT';n:         (WSABASEERR+47)),
-  (s:'WSAEADDRINUSE';n:           (WSABASEERR+48)),
-  (s:'WSAEADDRNOTAVAIL';n:        (WSABASEERR+49)),
-  (s:'WSAENETDOWN';n:             (WSABASEERR+50)),
-  (s:'WSAENETUNREACH';n:          (WSABASEERR+51)),
-  (s:'WSAENETRESET';n:            (WSABASEERR+52)),
-  (s:'WSAECONNABORTED';n:         (WSABASEERR+53)),
-  (s:'WSAECONNRESET';n:           (WSABASEERR+54)),
-  (s:'WSAENOBUFS';n:              (WSABASEERR+55)),
-  (s:'WSAEISCONN';n:              (WSABASEERR+56)),
-  (s:'WSAENOTCONN';n:             (WSABASEERR+57)),
-  (s:'WSAESHUTDOWN';n:            (WSABASEERR+58)),
-  (s:'WSAETOOMANYREFS';n:         (WSABASEERR+59)),
-  (s:'WSAETIMEDOUT';n:            (WSABASEERR+60)),
-  (s:'WSAECONNREFUSED';n:         (WSABASEERR+61)),
-  (s:'WSAELOOP';n:                (WSABASEERR+62)),
-  (s:'WSAENAMETOOLONG';n:         (WSABASEERR+63)),
-  (s:'WSAEHOSTDOWN';n:            (WSABASEERR+64)),
-  (s:'WSAEHOSTUNREACH';n:         (WSABASEERR+65)),
-  (s:'WSAENOTEMPTY';n:            (WSABASEERR+66)),
-  (s:'WSAEPROCLIM';n:             (WSABASEERR+67)),
-  (s:'WSAEUSERS';n:               (WSABASEERR+68)),
-  (s:'WSAEDQUOT';n:               (WSABASEERR+69)),
-  (s:'WSAESTALE';n:               (WSABASEERR+70)),
-  (s:'WSAEREMOTE';n:              (WSABASEERR+71)),
+  (s: 'WSAEWOULDBLOCK';     n: (WSABASEERR + 35)),
+  (s: 'WSAEINPROGRESS';     n: (WSABASEERR + 36)),
+  (s: 'WSAEALREADY';        n: (WSABASEERR + 37)),
+  (s: 'WSAENOTSOCK';        n: (WSABASEERR + 38)),
+  (s: 'WSAEDESTADDRREQ';    n: (WSABASEERR + 39)),
+  (s: 'WSAEMSGSIZE';        n: (WSABASEERR + 40)),
+  (s: 'WSAEPROTOTYPE';      n: (WSABASEERR + 41)),
+  (s: 'WSAENOPROTOOPT';     n: (WSABASEERR + 42)),
+  (s: 'WSAEPROTONOSUPPORT'; n: (WSABASEERR + 43)),
+  (s: 'WSAESOCKTNOSUPPORT'; n: (WSABASEERR + 44)),
+  (s: 'WSAEOPNOTSUPP';      n: (WSABASEERR + 45)),
+  (s: 'WSAEPFNOSUPPORT';    n: (WSABASEERR + 46)),
+  (s: 'WSAEAFNOSUPPORT';    n: (WSABASEERR + 47)),
+  (s: 'WSAEADDRINUSE';      n: (WSABASEERR + 48)),
+  (s: 'WSAEADDRNOTAVAIL';   n: (WSABASEERR + 49)),
+  (s: 'WSAENETDOWN';        n: (WSABASEERR + 50)),
+  (s: 'WSAENETUNREACH';     n: (WSABASEERR + 51)),
+  (s: 'WSAENETRESET';       n: (WSABASEERR + 52)),
+  (s: 'WSAECONNABORTED';    n: (WSABASEERR + 53)),
+  (s: 'WSAECONNRESET';      n: (WSABASEERR + 54)),
+  (s: 'WSAENOBUFS';         n: (WSABASEERR + 55)),
+  (s: 'WSAEISCONN';         n: (WSABASEERR + 56)),
+  (s: 'WSAENOTCONN';        n: (WSABASEERR + 57)),
+  (s: 'WSAESHUTDOWN';       n: (WSABASEERR + 58)),
+  (s: 'WSAETOOMANYREFS';    n: (WSABASEERR + 59)),
+  (s: 'WSAETIMEDOUT';       n: (WSABASEERR + 60)),
+  (s: 'WSAECONNREFUSED';    n: (WSABASEERR + 61)),
+  (s: 'WSAELOOP';           n: (WSABASEERR + 62)),
+  (s: 'WSAENAMETOOLONG';    n: (WSABASEERR + 63)),
+  (s: 'WSAEHOSTDOWN';       n: (WSABASEERR + 64)),
+  (s: 'WSAEHOSTUNREACH';    n: (WSABASEERR + 65)),
+  (s: 'WSAENOTEMPTY';       n: (WSABASEERR + 66)),
+  (s: 'WSAEPROCLIM';        n: (WSABASEERR + 67)),
+  (s: 'WSAEUSERS';          n: (WSABASEERR + 68)),
+  (s: 'WSAEDQUOT';          n: (WSABASEERR + 69)),
+  (s: 'WSAESTALE';          n: (WSABASEERR + 70)),
+  (s: 'WSAEREMOTE';         n: (WSABASEERR + 71)),
 
   // Extended Windows Sockets error constant definitions
 

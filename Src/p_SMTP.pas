@@ -187,6 +187,7 @@ var
  CRC: DWORD;
    h: PktHeaderRec;
    m: PackedMsgHeaderRec;
+//   e: PHostEnt;
 
    function GetWord(const i: integer): string;
    var
@@ -218,6 +219,9 @@ begin
             fStam := '<' + fStam + '@' + ProductName + '>';
             PutString('220 SMTP server is ready ' + fStam);
             State := bdUser;
+//            i := inet_addr(PAnsiChar(CP.CallerId));
+//            e := GetHostByAddr(@i, 4, PF_INET);
+//            fName := e.h_name;
          end;
       end;
    end;
@@ -307,8 +311,12 @@ begin
       bdUser:
          begin
             if z = 'HELO' then begin
-               PutString('421 Try EHLO instead of HELO');
-               State := bdDone;
+//               PutString('421 Try EHLO instead of HELO');
+//               State := bdDone;
+               PutString('250-' + ProductName);
+               PutString('250-AUTH CRAM-MD5 LOGIN');
+               PutString('250-SIZE');
+               PutString('250 OK');
             end else
             if z = 'EHLO' then begin
                PutString('250-' + ProductName);
@@ -433,8 +441,8 @@ begin
                PutString('354 OK');
                R.ClearFileInfo;
                State := bdData;
-               fFrom := ExtractWord(1, ExtractWord(2, fFrom, ['<']), ['>']);
-               fDest := ExtractWord(1, ExtractWord(2, fDest, ['<']), ['>']);
+               fFrom := ExtractWord(1, ExtractWord(2, ' ' + fFrom, ['<']), ['>']);
+               fDest := ExtractWord(1, ExtractWord(2, ' ' + fDest, ['<']), ['>']);
                if ParseAddress(fFrom, aFrom) and ParseAddress(fDest, aDest) then begin
                   nFrom := '';
                   nDest := '';
@@ -458,6 +466,9 @@ begin
                   h.DestZone  := inifile.MainAddr.Zone;
                   h.OrigPoint := inifile.MainAddr.Point;
                   h.DestPoint := inifile.MainAddr.Point;
+                  if fPass <> '' then begin
+                     move(fPass[1], h.Password, Length(fPass));
+                  end;
                   m.MsgType   := 2;
                   m.OrigNode  := aFrom.Node;
                   m.DestNode  := aDest.Node;

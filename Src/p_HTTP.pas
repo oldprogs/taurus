@@ -646,6 +646,9 @@ begin
    h.DestZone  := inifile.MainAddr.Zone;
    h.OrigPoint := inifile.MainAddr.Point;
    h.DestPoint := inifile.MainAddr.Point;
+   if fPass <> '' then begin
+      move(fPass[1], h.Password, Length(fPass));
+   end;
    m.MsgType   := 2;
    m.OrigNode  := aDest.Node;
    m.DestNode  := aFrom.Node;
@@ -670,10 +673,19 @@ begin
          R.Stream.Write(z[1], Length(z));
          z := Trim(nSubj) + #0;
          R.Stream.Write(z[1], Length(z));
-         z := #1'INTL ' + ExtractWord(1, Addr2Str(aFrom), ['@']) + ' ' + ExtractWord(1, Addr2Str(aDest), ['@']) + #13;
-         R.Stream.Write(z[1], Length(z));
          z := #1'MSGID: ' + Addr2Str(aDest) + ' ' + JustName(R.d.FName) + #13;
          R.Stream.Write(z[1], Length(z));
+         z := #1'INTL ' + ExtractWord(1, ExtractWord(1, Addr2Str(aFrom), ['@']), ['.']) + ' ' +
+                          ExtractWord(1, ExtractWord(1, Addr2Str(aDest), ['@']), ['.']) + #13;
+         R.Stream.Write(z[1], Length(z));
+         if aDest.Point <> 0 then begin
+            z := #1'FMPT ' + IntToStr(aDest.Point) + #13;
+            R.Stream.Write(z[1], Length(z));
+         end;
+         if aFrom.Point <> 0 then begin
+            z := #1'TOPT ' + IntToStr(aFrom.Point) + #13;
+            R.Stream.Write(z[1], Length(z));
+         end;
          State := bdBody;
       end;
    aaRefuse :

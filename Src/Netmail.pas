@@ -29,6 +29,8 @@ type
       function IChr: string;
       function Date: string;
       destructor Destroy; override;
+      procedure Put(s: TStream);
+      procedure Get(s: TStream);
    end;
 
    TNetmailPkt = class
@@ -57,11 +59,14 @@ type
    private
       PktColl: TPktColl;
       MsgColl: TstringColl;
+      fAddres: TFidoAddress;
       procedure FreePack(p: TNetmailPkt);
       procedure Scan(const path: string);
       procedure MoveMail(n: TNetmailMsg; const t: TFidoAddress; const a: string);
       procedure PackMail(const a: TFidoAddress; const r, e, p: string);
       procedure DelMail(n: TNetmailMsg);
+   protected
+      procedure SetAddress(a: TFidoAddress);
    public
       Echomail: boolean;
       NetWait: TRTLCriticalSection;
@@ -74,6 +79,8 @@ type
       procedure Route(const a: TFidoAddress; Log: TLogProcedure);
       procedure DeleteMail(const Id: string);
       function FindMessage(const Id: string): TNetmailMsg;
+      procedure SaveIdx;
+      property Address: TFidoAddress read fAddres write SetAddress;
    end;
 
 procedure FreeNetmailHolder;
@@ -95,6 +102,9 @@ end;
 function TNetmailMsg.IChr;
 begin
    if Chrs = '' then begin
+      Result := 'ibm866';
+   end else
+   if Chrs = 'CP866 2' then begin
       Result := 'ibm866';
    end else
    if Chrs = 'CP1125 2' then begin
@@ -130,6 +140,58 @@ begin
       FreeMem(Body, Size);
    end;
    inherited;
+end;
+
+procedure TNetmailMSG.Put;
+   procedure WriteStr(t: string);
+   var
+      b: byte;
+   begin
+      b := Length(t);
+      s.Write(b, 1);
+      s.Write(t[1], b);
+   end;
+begin
+   s.Write(Addr, SizeOf(Addr));
+   s.Write(From, SizeOf(Addr));
+   WriteStr(Tonm);
+   WriteStr(Frnm);
+   WriteStr(Subj);
+   WriteStr(Pack);
+   WriteStr(MsId);
+   WriteStr(Chrs);
+   WriteStr(Echo);
+   s.Write(Offs, SizeOf(Offs));
+   s.Write(bOff, SizeOf(bOff));
+   s.Write(Head, SizeOf(Head));
+   s.Write(Size, SizeOf(Size));
+   s.Write(Addy, SizeOf(Addy));
+end;
+
+procedure TNetmailMSG.Get;
+   function ReadStr: string;
+   var
+      b: byte;
+   begin
+      s.Read(b, 1);
+      SetLength(Result, b);
+      s.Read(Result[1], b);
+   end;
+begin
+   s.Read(Addr, SizeOf(Addr));
+   s.Read(From, SizeOf(From));
+   Tonm := ReadStr;
+   Frnm := ReadStr;
+   Subj := ReadStr;
+   Pack := ReadStr;
+   MsId := ReadStr;
+   Chrs := ReadStr;
+   Echo := ReadStr;
+   s.Read(Offs, SizeOf(Offs));
+   s.Read(bOff, SizeOf(bOff));
+   s.Read(Head, SizeOf(Head));
+   s.Read(Size, SizeOf(Size));
+   s.Read(Addy, SizeOf(Addy));
 end;
 
 function TPktColl.FindName;
@@ -644,6 +706,30 @@ begin
    NetColl.Leave;
 end;
 
+procedure TNetmail.SetAddress;
+var
+   i: TFileStream;
+   m: TNetmailMsg;
+   n: string;
+begin
+   if CompareAddrs(a, fAddres) <> 0 then begin
+      n := GetOutFileName(Address, osNone) + '.idx';
+      if ExistFile(n) then begin
+         fAddres := a;
+         NetColl.Enter;
+         NetColl.FreeAll;
+         i := TFileStream.Create(n, fmOpenRead);
+         while i.Position < i.Size do begin
+            m := TNetmailMSG.Create;
+            m.Get(i);
+            NetColl.Add(m);
+         end;
+         i.Free;
+         NetColl.Leave;
+      end;   
+   end;
+end;
+
 function TNetmail.FindMessage;
 var
    i: integer;
@@ -659,6 +745,18 @@ begin
       end;
    end;
    NetColl.Leave;
+end;
+
+procedure TNetmail.SaveIdx;
+var
+   n: integer;
+   i: TFileStream;
+begin
+   i := TFileStream.Create(GetOutFileName(Address, osNone) + '.idx', fmCreate);
+   for n := 0 to CollMax(NetColl) do begin
+      NetColl[n].Put(i);
+   end;
+   i.Free;
 end;
 
 initialization

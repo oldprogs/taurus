@@ -753,6 +753,7 @@ function  shutdown(s: TSocket; how: Integer): Integer;
 function  socket(af, Struct, protocol: Integer): TSocket;
 function  gethostname(name: PChar; len: Integer): Integer;
 function  gethostbyname(name: PChar): PHostEnt;
+function  gethostbyaddr(addr: Pointer; len, Struct: Integer): PHostEnt; stdcall;
 function  WSAStartup(wVersionRequired: word; var WSData: TWSAData): Integer;
 function  WSACleanup: Integer;
 function  WSAGetLastError: Integer;
@@ -821,6 +822,7 @@ type
   T_socket                    = function(af, Struct, protocol: Integer): TSocket; stdcall;
   T_gethostname               = function(name: PChar; len: Integer): Integer; stdcall;
   T_gethostbyname             = function(name: PChar): PHostEnt; stdcall;
+  T_gethostbyaddr             = function(addr: Pointer; len, Struct: Integer): PHostEnt; stdcall;
   T_WSAStartup                = function(wVersionRequired: word; var WSData: TWSAData): Integer; stdcall;
   T_WSACleanup                = function: Integer; stdcall;
   T_WSAGetLastError           = function: Integer; stdcall;
@@ -852,6 +854,7 @@ var
   F_socket                    : T_socket;
   F_gethostname               : T_gethostname;
   F_gethostbyname             : T_gethostbyname;
+  F_gethostbyaddr             : T_gethostbyaddr; 
   F_WSAStartup                : T_WSAStartup;
   F_WSACleanup                : T_WSACleanup;
   F_WSAGetLastError           : T_WSAGetLastError;
@@ -987,6 +990,12 @@ begin
   if Assigned(F_gethostbyname) then Result := F_gethostbyname(name) else Result := nil;
 end;
 
+function gethostbyaddr(addr: Pointer; len, Struct: Integer): PHostEnt;
+begin
+  if not Assigned(F_gethostbyaddr) then F_gethostbyaddr := __Load('gethostbyaddr');
+  if Assigned(F_gethostbyaddr) then Result := F_gethostbyaddr(addr, len, Struct) else Result := nil;
+end;
+
 function WSAStartup(wVersionRequired: word; var WSData: TWSAData): Integer;
 begin
   if not Assigned(F_WSAStartup) then F_WSAStartup := __Load('WSAStartup');
@@ -1097,7 +1106,6 @@ begin
 // Otherwise, the value SOCKET_ERROR is returned, and a specific error number may be retrieved by calling WSAGetLastError.
   if Assigned(F_WSAEnumNetworkEvents) then Result := F_WSAEnumNetworkEvents(s, hEventObject, lpNetworkEvents) else Result := SOCKET_ERROR;
 end;
-
 
 (*
 
