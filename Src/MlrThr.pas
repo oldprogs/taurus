@@ -6920,6 +6920,7 @@ begin
       SD.SentFiles.Insert(r);
       SD.SentFiles.Leave;
    end;
+   SD.txTran := 0;
    Inc(D.txBytes, P.T.D.FSize);
    Inc(SD.cTxBytes, P.T.D.FPos - P.T.D.FOfs);
    P.T.ClearFileInfo;
@@ -7120,7 +7121,6 @@ begin
          Continue;
       end;
 
-      SD.txTran := 0;
       ss := ExtractFileName(f.Name);
       PTDFName := ss;
       case f.FStatus of
@@ -9497,6 +9497,7 @@ begin
          end;
       msFinishWZ:
          begin
+            ScanCounter := 1;
             CommonStatx;
             SaveTarifLog(self); // visual
             if SD.SessionCore <> scEmsiWz then LogEMSIData;
@@ -14817,6 +14818,7 @@ begin
       PlaySnd('EndLine', SoundsON);
    end;
    inherited Destroy;
+   ScanCounter := 1;
 end;
 
 procedure TMailerThread.DoPollsRecalc;

@@ -57,6 +57,7 @@ type
       procedure ExecDele(const n: integer);                       virtual;
       procedure AbortRece(const s: string);                       override;
       procedure FinisRece(const s: string);                       override;
+      procedure AuthOK;
       procedure Quit;
       function NextStep: boolean;                                 override;
       procedure Start({RX}AAcceptFile: TAcceptFile;
@@ -268,6 +269,16 @@ begin
    State := bdGetb;
 end;
 
+procedure TPOP3.AuthOK;
+begin
+   PutString('+OK');
+   FillOutList := True;
+   FGetNextFile(Self);
+   T.d.State := bsIdle;
+   R.d.State := bsIdle;
+   State := bdIdle;
+end;
+
 procedure TPOP3.Quit;
 begin
    PutString('QUIT');
@@ -426,13 +437,10 @@ begin
                FLogFile(Self, lfBinkPAddr);
                if CustomInfo = '' then begin
                   ParseAddress(z, FiAddr);
-                  FillOutList := True;
-                  FGetNextFile(Self);
                   CustomInfo := fStam + ' ' + s;
                   FLogFile(Self, lfNodePassw);
                   if CustomInfo = '' then begin
-                     PutString('+OK');
-                     State := bdIdle;
+                     AuthOK;
                   end else begin
                      PutString('-ERR Auth error');
                      State := bdDone;
@@ -451,12 +459,7 @@ begin
                CustomInfo := '- ' + s;
                FLogFile(Self, lfBinkPPwd);
                if CustomInfo = '' then begin
-                  DummyNextFile := True;
-                  FGetNextFile(Self);
-                  T.d.State := bsIdle;
-                  R.d.State := bsIdle;
-                  PutString('+OK');
-                  State := bdIdle;
+                  AuthOK;
                end else begin
                   PutString('-ERR ' + CustomInfo);
                   State := bdUser;

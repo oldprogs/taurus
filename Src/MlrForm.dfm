@@ -1,8 +1,8 @@
 object MailerForm: TMailerForm
   Left = 192
   Top = 128
-  Width = 718
-  Height = 562
+  Width = 737
+  Height = 564
   HelpContext = 1500
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -27,8 +27,8 @@ object MailerForm: TMailerForm
   object MainTabControl: TTabControl
     Left = 0
     Top = 0
-    Width = 710
-    Height = 510
+    Width = 729
+    Height = 512
     Align = alClient
     HotTrack = True
     TabOrder = 0
@@ -37,10 +37,10 @@ object MailerForm: TMailerForm
     TabIndex = 0
     OnChange = MainTabControlChange
     DesignSize = (
-      710
-      510)
+      729
+      512)
     object lTime0: TLabel
-      Left = 489
+      Left = 503
       Top = 3
       Width = 91
       Height = 16
@@ -50,7 +50,7 @@ object MailerForm: TMailerForm
       Layout = tlCenter
     end
     object lTime1: TLabel
-      Left = 594
+      Left = 612
       Top = 3
       Width = 108
       Height = 16
@@ -68,8 +68,8 @@ object MailerForm: TMailerForm
     object MainPanel: TTransPan
       Left = 4
       Top = 27
-      Width = 702
-      Height = 479
+      Width = 721
+      Height = 481
       Align = alClient
       BevelOuter = bvNone
       BorderStyle = bsSingle
@@ -79,8 +79,8 @@ object MailerForm: TMailerForm
       object LogBox: TLogger
         Left = 0
         Top = 329
-        Width = 698
-        Height = 106
+        Width = 717
+        Height = 108
         Cursor = crHandPoint
         Align = alClient
         Color = clBtnFace
@@ -98,7 +98,7 @@ object MailerForm: TMailerForm
       object TopNotebookPanel: TTransPan
         Left = 0
         Top = 0
-        Width = 698
+        Width = 717
         Height = 329
         Align = alTop
         BevelOuter = bvNone
@@ -107,18 +107,18 @@ object MailerForm: TMailerForm
         object PollsListPanel: TTransPan
           Left = 0
           Top = 0
-          Width = 698
+          Width = 717
           Height = 329
           Align = alClient
           BevelOuter = bvNone
           ParentBackground = False
-          TabOrder = 1
+          TabOrder = 0
           Visible = False
           EraseBackGround = True
           object PollsListView: TAdvListView
             Left = 0
             Top = 0
-            Width = 698
+            Width = 717
             Height = 329
             Align = alClient
             AllocBy = 128
@@ -171,18 +171,18 @@ object MailerForm: TMailerForm
         object DaemonPanel: TTransPan
           Left = 0
           Top = 0
-          Width = 698
+          Width = 717
           Height = 329
           Align = alClient
           BevelOuter = bvNone
           ParentBackground = False
-          TabOrder = 2
+          TabOrder = 3
           Visible = False
           EraseBackGround = True
           object MainDaemonPanel: TTransPan
             Left = 10
             Top = 0
-            Width = 678
+            Width = 697
             Height = 315
             Align = alClient
             BevelOuter = bvNone
@@ -191,7 +191,7 @@ object MailerForm: TMailerForm
             object Panel7: TTransPan
               Left = 0
               Top = 158
-              Width = 678
+              Width = 697
               Height = 157
               Align = alBottom
               BevelOuter = bvNone
@@ -240,7 +240,7 @@ object MailerForm: TMailerForm
               object Panel12: TTransPan
                 Left = 112
                 Top = 0
-                Width = 566
+                Width = 585
                 Height = 157
                 Align = alClient
                 BevelOuter = bvNone
@@ -250,7 +250,7 @@ object MailerForm: TMailerForm
                 object DaemonPIH: TTransPan
                   Left = 8
                   Top = 8
-                  Width = 550
+                  Width = 569
                   Height = 20
                   Align = alTop
                   Alignment = taLeftJustify
@@ -262,7 +262,7 @@ object MailerForm: TMailerForm
                 object Panel18: TTransPan
                   Left = 8
                   Top = 28
-                  Width = 550
+                  Width = 569
                   Height = 121
                   Align = alClient
                   BorderWidth = 1
@@ -271,7 +271,7 @@ object MailerForm: TMailerForm
                   object gInputGraph: TNavyGraph
                     Left = 2
                     Top = 2
-                    Width = 546
+                    Width = 565
                     Height = 117
                     Align = alClient
                     EraseBackGround = True
@@ -282,7 +282,7 @@ object MailerForm: TMailerForm
             object Panel6: TTransPan
               Left = 0
               Top = 0
-              Width = 678
+              Width = 697
               Height = 158
               Align = alClient
               BevelOuter = bvNone
@@ -331,7 +331,7 @@ object MailerForm: TMailerForm
               object Panel10: TTransPan
                 Left = 112
                 Top = 0
-                Width = 566
+                Width = 585
                 Height = 158
                 Align = alClient
                 BevelOuter = bvNone
@@ -341,7 +341,7 @@ object MailerForm: TMailerForm
                 object DaemonPOH: TTransPan
                   Left = 8
                   Top = 8
-                  Width = 550
+                  Width = 569
                   Height = 20
                   Align = alTop
                   Alignment = taLeftJustify
@@ -353,7 +353,7 @@ object MailerForm: TMailerForm
                 object Panel17: TTransPan
                   Left = 8
                   Top = 28
-                  Width = 550
+                  Width = 569
                   Height = 122
                   Align = alClient
                   BorderWidth = 1
@@ -362,7 +362,7 @@ object MailerForm: TMailerForm
                   object gOutputGraph: TNavyGraph
                     Left = 2
                     Top = 2
-                    Width = 546
+                    Width = 565
                     Height = 118
                     Align = alClient
                     EraseBackGround = True
@@ -374,7 +374,7 @@ object MailerForm: TMailerForm
           object Panel19: TTransPan
             Left = 0
             Top = 315
-            Width = 698
+            Width = 717
             Height = 14
             Align = alBottom
             BevelOuter = bvNone
@@ -383,7 +383,7 @@ object MailerForm: TMailerForm
             EraseBackGround = True
           end
           object Panel20: TTransPan
-            Left = 688
+            Left = 707
             Top = 0
             Width = 10
             Height = 315
@@ -406,532 +406,19 @@ object MailerForm: TMailerForm
             EraseBackGround = True
           end
         end
-        object MailerBPanel: TTransPan
-          Left = 0
-          Top = 0
-          Width = 698
-          Height = 329
-          Align = alClient
-          BevelOuter = bvNone
-          ParentBackground = False
-          TabOrder = 3
-          Visible = False
-          EraseBackGround = True
-          object SplitterBPanel: TSplitter
-            Left = 375
-            Top = 0
-            Width = 4
-            Height = 329
-            AutoSnap = False
-            ResizeStyle = rsUpdate
-            OnMoved = SplitterBPanelMoved
-          end
-          object Panel3: TTransPan
-            Left = 379
-            Top = 0
-            Width = 319
-            Height = 329
-            Align = alClient
-            BevelOuter = bvNone
-            BorderWidth = 12
-            ParentBackground = False
-            TabOrder = 1
-            EraseBackGround = True
-            object SessionHist: TTransPan
-              Left = 12
-              Top = 222
-              Width = 295
-              Height = 95
-              Align = alBottom
-              ParentBackground = False
-              TabOrder = 1
-              EraseBackGround = True
-              object MHistO: TNavyGraph
-                Left = 1
-                Top = 1
-                Width = 293
-                Height = 46
-                Align = alTop
-                EraseBackGround = True
-              end
-              object MHistI: TNavyGraph
-                Left = 1
-                Top = 48
-                Width = 293
-                Height = 46
-                Align = alBottom
-                EraseBackGround = True
-              end
-            end
-            object SessionNfoPnl: TTransPan
-              Left = 12
-              Top = 12
-              Width = 295
-              Height = 207
-              Align = alTop
-              BevelOuter = bvNone
-              ParentBackground = False
-              TabOrder = 0
-              object gTabCnt: TTabControl
-                Left = 0
-                Top = 0
-                Width = 295
-                Height = 207
-                Align = alClient
-                TabOrder = 0
-                Tabs.Strings = (
-                  'Info')
-                TabIndex = 0
-                OnChange = gTabCntChange
-                object gTitles: TAdvGrid
-                  Left = 4
-                  Top = 27
-                  Width = 105
-                  Height = 176
-                  FixedFont.Charset = DEFAULT_CHARSET
-                  FixedFont.Color = clWindowText
-                  FixedFont.Height = -13
-                  FixedFont.Name = 'Arial'
-                  FixedFont.Style = []
-                  Align = alLeft
-                  Color = clBtnFace
-                  ColCount = 2
-                  DefaultColWidth = 80
-                  DefaultRowHeight = 18
-                  Enabled = False
-                  RowCount = 8
-                  FixedRows = 0
-                  Options = [goFixedVertLine, goFixedHorzLine]
-                  ScrollBars = ssNone
-                  TabOrder = 0
-                  CheckBoxes = False
-                end
-                object gNfo: TAdvGrid
-                  Left = 109
-                  Top = 27
-                  Width = 182
-                  Height = 176
-                  FixedFont.Charset = DEFAULT_CHARSET
-                  FixedFont.Color = clWindowText
-                  FixedFont.Height = -13
-                  FixedFont.Name = 'Arial'
-                  FixedFont.Style = []
-                  Align = alClient
-                  Color = clBtnFace
-                  ColCount = 1
-                  DefaultColWidth = 1000
-                  DefaultRowHeight = 18
-                  FixedCols = 0
-                  RowCount = 8
-                  FixedRows = 0
-                  Options = [goHorzLine]
-                  ScrollBars = ssHorizontal
-                  TabOrder = 2
-                  CheckBoxes = False
-                end
-                object gLst: TAdvGrid
-                  Left = 177
-                  Top = 30
-                  Width = 207
-                  Height = 172
-                  FixedFont.Charset = DEFAULT_CHARSET
-                  FixedFont.Color = clWindowText
-                  FixedFont.Height = -13
-                  FixedFont.Name = 'Arial'
-                  FixedFont.Style = []
-                  ColCount = 3
-                  DefaultColWidth = 160
-                  DefaultRowHeight = 18
-                  RowCount = 2
-                  Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goDigitalRows]
-                  ScrollBars = ssVertical
-                  TabOrder = 1
-                  Visible = False
-                  CheckBoxes = False
-                  ColWidths = (
-                    31
-                    171
-                    60)
-                end
-              end
-            end
-          end
-          object Panel2: TTransPan
-            Left = 0
-            Top = 0
-            Width = 375
-            Height = 329
-            Align = alLeft
-            BevelOuter = bvNone
-            ParentBackground = False
-            TabOrder = 0
-            DesignSize = (
-              375
-              329)
-            object SndBox: TGroupBox
-              Left = 10
-              Top = 10
-              Width = 365
-              Height = 119
-              Anchors = [akLeft, akTop, akRight]
-              Caption = 'Sending'
-              ParentBackground = False
-              TabOrder = 0
-              DesignSize = (
-                365
-                119)
-              object lSndFile: TLabel
-                Left = 25
-                Top = 25
-                Width = 80
-                Height = 16
-                Caption = 'Taurus.exe'
-                Font.Charset = DEFAULT_CHARSET
-                Font.Color = clWindowText
-                Font.Height = -15
-                Font.Name = 'Fixedsys'
-                Font.Style = []
-                ParentFont = False
-                ParentShowHint = False
-                ShowAccelChar = False
-                ShowHint = True
-              end
-              object llSndCPS: TLabel
-                Left = 231
-                Top = 20
-                Width = 27
-                Height = 16
-                Anchors = [akTop, akRight]
-                Caption = 'CPS'
-                Font.Charset = DEFAULT_CHARSET
-                Font.Color = clWindowText
-                Font.Height = -15
-                Font.Name = 'MS Sans Serif'
-                Font.Style = []
-                ParentFont = False
-                Visible = False
-              end
-              object lSndCPS: TLabel
-                Left = 203
-                Top = 20
-                Width = 25
-                Height = 16
-                Alignment = taRightJustify
-                Anchors = [akTop, akRight]
-                Caption = '100'
-                Font.Charset = DEFAULT_CHARSET
-                Font.Color = clWindowText
-                Font.Height = -15
-                Font.Name = 'MS Sans Serif'
-                Font.Style = [fsBold]
-                ParentFont = False
-                Visible = False
-              end
-              object llSndSize: TLabel
-                Left = 20
-                Top = 74
-                Width = 29
-                Height = 16
-                Caption = 'Size:'
-                Visible = False
-              end
-              object lSndSize: TLabel
-                Left = 55
-                Top = 74
-                Width = 5
-                Height = 16
-                Font.Charset = DEFAULT_CHARSET
-                Font.Color = clWindowText
-                Font.Height = -15
-                Font.Name = 'MS Sans Serif'
-                Font.Style = [fsBold]
-                ParentFont = False
-                Visible = False
-              end
-              object SndTot: TxGauge
-                Left = 281
-                Top = 20
-                Width = 70
-                Height = 70
-                Kind = gkPie
-                BorderStyle = bsNone
-                Progress = 0
-                Visible = False
-              end
-              object llFileSndTime: TLabel
-                Left = 20
-                Top = 96
-                Width = 53
-                Height = 16
-                Caption = 'File time:'
-                Visible = False
-              end
-              object lFileSndTime: TLabel
-                Left = 79
-                Top = 96
-                Width = 57
-                Height = 16
-                Caption = '00:00:00'
-                Font.Charset = DEFAULT_CHARSET
-                Font.Color = clWindowText
-                Font.Height = -15
-                Font.Name = 'MS Sans Serif'
-                Font.Style = [fsBold]
-                ParentFont = False
-                Visible = False
-              end
-              object llTotalSndTime: TLabel
-                Left = 167
-                Top = 96
-                Width = 62
-                Height = 16
-                Caption = 'Total time:'
-                Visible = False
-              end
-              object lTotalSndTime: TLabel
-                Left = 234
-                Top = 96
-                Width = 57
-                Height = 16
-                Caption = '00:00:00'
-                Font.Charset = DEFAULT_CHARSET
-                Font.Color = clWindowText
-                Font.Height = -15
-                Font.Name = 'MS Sans Serif'
-                Font.Style = [fsBold]
-                ParentFont = False
-                Visible = False
-              end
-              object SndBar: TProgressBar
-                Left = 15
-                Top = 44
-                Width = 250
-                Height = 19
-                Anchors = [akLeft, akTop, akRight]
-                Smooth = True
-                TabOrder = 0
-                Visible = False
-              end
-            end
-            object RcvBox: TGroupBox
-              Left = 10
-              Top = 133
-              Width = 365
-              Height = 119
-              Anchors = [akLeft, akTop, akRight]
-              Caption = 'Receiving'
-              ParentBackground = False
-              TabOrder = 1
-              DesignSize = (
-                365
-                119)
-              object lRcvFile: TLabel
-                Left = 25
-                Top = 25
-                Width = 80
-                Height = 16
-                Caption = 'Taurus.exe'
-                Font.Charset = DEFAULT_CHARSET
-                Font.Color = clWindowText
-                Font.Height = -15
-                Font.Name = 'Fixedsys'
-                Font.Style = []
-                ParentFont = False
-                ParentShowHint = False
-                ShowAccelChar = False
-                ShowHint = True
-              end
-              object llRcvCPS: TLabel
-                Left = 231
-                Top = 20
-                Width = 27
-                Height = 16
-                Anchors = [akTop, akRight]
-                Caption = 'CPS'
-                Font.Charset = DEFAULT_CHARSET
-                Font.Color = clWindowText
-                Font.Height = -15
-                Font.Name = 'MS Sans Serif'
-                Font.Style = []
-                ParentFont = False
-                Visible = False
-              end
-              object lRcvCPS: TLabel
-                Left = 203
-                Top = 20
-                Width = 25
-                Height = 16
-                Alignment = taRightJustify
-                Anchors = [akTop, akRight]
-                Caption = '100'
-                Font.Charset = DEFAULT_CHARSET
-                Font.Color = clWindowText
-                Font.Height = -15
-                Font.Name = 'MS Sans Serif'
-                Font.Style = [fsBold]
-                ParentFont = False
-                Visible = False
-              end
-              object llRcvSize: TLabel
-                Left = 20
-                Top = 74
-                Width = 29
-                Height = 16
-                Caption = 'Size:'
-                Visible = False
-              end
-              object lRcvSize: TLabel
-                Left = 55
-                Top = 74
-                Width = 5
-                Height = 16
-                Font.Charset = DEFAULT_CHARSET
-                Font.Color = clWindowText
-                Font.Height = -15
-                Font.Name = 'MS Sans Serif'
-                Font.Style = [fsBold]
-                ParentFont = False
-                Visible = False
-              end
-              object RcvTot: TxGauge
-                Left = 281
-                Top = 20
-                Width = 70
-                Height = 70
-                Kind = gkPie
-                BorderStyle = bsNone
-                Progress = 0
-                Visible = False
-              end
-              object llFileRcvTime: TLabel
-                Left = 20
-                Top = 95
-                Width = 53
-                Height = 16
-                Caption = 'File time:'
-                Visible = False
-              end
-              object lFileRcvTime: TLabel
-                Left = 79
-                Top = 95
-                Width = 57
-                Height = 16
-                Caption = '00:00:00'
-                Font.Charset = DEFAULT_CHARSET
-                Font.Color = clWindowText
-                Font.Height = -15
-                Font.Name = 'MS Sans Serif'
-                Font.Style = [fsBold]
-                ParentFont = False
-                Visible = False
-              end
-              object llTotalRcvTime: TLabel
-                Left = 167
-                Top = 95
-                Width = 62
-                Height = 16
-                Caption = 'Total time:'
-                Visible = False
-              end
-              object lTotalRcvTime: TLabel
-                Left = 236
-                Top = 95
-                Width = 57
-                Height = 16
-                Caption = '00:00:00'
-                Font.Charset = DEFAULT_CHARSET
-                Font.Color = clWindowText
-                Font.Height = -15
-                Font.Name = 'MS Sans Serif'
-                Font.Style = [fsBold]
-                ParentFont = False
-                Visible = False
-              end
-              object RcvBar: TProgressBar
-                Left = 15
-                Top = 44
-                Width = 250
-                Height = 19
-                Anchors = [akLeft, akTop, akRight]
-                Smooth = True
-                TabOrder = 0
-                Visible = False
-              end
-            end
-            object SessionBox: TGroupBox
-              Left = 11
-              Top = 255
-              Width = 364
-              Height = 59
-              Anchors = [akLeft, akTop, akRight]
-              Caption = 'SessionBox'
-              ParentBackground = False
-              TabOrder = 2
-              DesignSize = (
-                364
-                59)
-              object llSessionTime: TLabel
-                Left = 15
-                Top = 26
-                Width = 115
-                Height = 16
-                Alignment = taRightJustify
-                Caption = 'Total elapsed time:'
-                Visible = False
-              end
-              object lSessionTime: TLabel
-                Left = 139
-                Top = 26
-                Width = 57
-                Height = 16
-                Caption = '00:00:00'
-                Font.Charset = DEFAULT_CHARSET
-                Font.Color = clWindowText
-                Font.Height = -15
-                Font.Name = 'MS Sans Serif'
-                Font.Style = [fsBold]
-                ParentFont = False
-                Visible = False
-              end
-              object llSessionCost: TLabel
-                Left = 259
-                Top = 26
-                Width = 30
-                Height = 16
-                Alignment = taRightJustify
-                Anchors = [akTop, akRight]
-                Caption = 'Cost:'
-              end
-              object lSessionCost: TLabel
-                Left = 295
-                Top = 26
-                Width = 37
-                Height = 16
-                Anchors = [akTop, akRight]
-                Caption = '00.00'
-                Font.Charset = DEFAULT_CHARSET
-                Font.Color = clWindowText
-                Font.Height = -15
-                Font.Name = 'MS Sans Serif'
-                Font.Style = [fsBold]
-                ParentFont = False
-              end
-            end
-          end
-        end
         object MailerAPanel: TTransPan
           Left = 0
           Top = 0
-          Width = 698
+          Width = 717
           Height = 329
           Align = alClient
           BevelOuter = bvNone
           ParentBackground = False
-          TabOrder = 0
+          TabOrder = 2
           Visible = False
           EraseBackGround = True
           object SplitterAPanel: TSplitter
-            Left = 374
+            Left = 393
             Top = 0
             Width = 4
             Height = 329
@@ -940,10 +427,32 @@ object MailerForm: TMailerForm
             ResizeStyle = rsUpdate
             OnMoved = SplitterAPanelMoved
           end
+          object TermsPanel: TTransPan
+            Left = 397
+            Top = 0
+            Width = 320
+            Height = 329
+            Align = alRight
+            BevelOuter = bvNone
+            ParentBackground = False
+            TabOrder = 0
+            object TermRx: TMicroTerm
+              Left = 10
+              Top = 156
+              Width = 305
+              Height = 144
+            end
+            object TermTx: TMicroTerm
+              Left = 10
+              Top = 9
+              Width = 305
+              Height = 144
+            end
+          end
           object DialupInfoPanel: TTransPan
             Left = 0
             Top = 0
-            Width = 374
+            Width = 393
             Height = 329
             Align = alClient
             BevelOuter = bvNone
@@ -953,7 +462,7 @@ object MailerForm: TMailerForm
             object Panel4: TTransPan
               Left = 0
               Top = 66
-              Width = 374
+              Width = 393
               Height = 256
               Align = alTop
               BevelOuter = bvNone
@@ -964,7 +473,7 @@ object MailerForm: TMailerForm
               object GroupBox2: TGroupBox
                 Left = 9
                 Top = 3
-                Width = 362
+                Width = 381
                 Height = 250
                 Align = alClient
                 Caption = ' badwazoo.lst '
@@ -973,7 +482,7 @@ object MailerForm: TMailerForm
                 object Panel11: TTransPan
                   Left = 2
                   Top = 18
-                  Width = 358
+                  Width = 377
                   Height = 230
                   Align = alClient
                   BevelOuter = bvNone
@@ -984,7 +493,7 @@ object MailerForm: TMailerForm
                   object bwListView: TListView
                     Left = 4
                     Top = 4
-                    Width = 350
+                    Width = 369
                     Height = 222
                     Align = alClient
                     Columns = <
@@ -1039,7 +548,7 @@ object MailerForm: TMailerForm
             object StatusCarrier: TTransPan
               Left = 0
               Top = 0
-              Width = 374
+              Width = 393
               Height = 66
               Align = alTop
               BevelOuter = bvNone
@@ -1061,24 +570,23 @@ object MailerForm: TMailerForm
               object StatusBox: TGroupBox
                 Left = 9
                 Top = 3
-                Width = 362
+                Width = 381
                 Height = 60
                 Align = alClient
                 Caption = ' Status '
-                Color = clBtnFace
                 ParentBackground = False
-                ParentColor = False
                 TabOrder = 0
                 object lStatus: TLabel
                   Left = 14
                   Top = 25
-                  Width = 3
+                  Width = 22
                   Height = 16
+                  Caption = 'Idle'
                   Transparent = False
                   Layout = tlCenter
                 end
                 object TimeoutBox: TTransPan
-                  Left = 247
+                  Left = 266
                   Top = 18
                   Width = 113
                   Height = 40
@@ -1090,15 +598,10 @@ object MailerForm: TMailerForm
                   EraseBackGround = True
                   object lTimeout: TLabel
                     Left = 71
-                    Top = 5
-                    Width = 5
-                    Height = 21
-                    Font.Charset = DEFAULT_CHARSET
-                    Font.Color = clWindowText
-                    Font.Height = -18
-                    Font.Name = 'Arial'
-                    Font.Style = [fsBold]
-                    ParentFont = False
+                    Top = 8
+                    Width = 21
+                    Height = 16
+                    Caption = '999'
                   end
                   object bStart: TSpeedButton
                     Left = 4
@@ -1140,26 +643,517 @@ object MailerForm: TMailerForm
               end
             end
           end
-          object TermsPanel: TTransPan
-            Left = 378
+        end
+        object MailerBPanel: TTransPan
+          Left = 0
+          Top = 0
+          Width = 717
+          Height = 329
+          Align = alClient
+          BevelOuter = bvNone
+          ParentBackground = False
+          TabOrder = 1
+          Visible = False
+          EraseBackGround = True
+          object SplitterBPanel: TSplitter
+            Left = 375
             Top = 0
-            Width = 320
+            Width = 4
             Height = 329
-            Align = alRight
+            AutoSnap = False
+            ResizeStyle = rsUpdate
+            OnMoved = SplitterBPanelMoved
+          end
+          object Panel3: TTransPan
+            Left = 379
+            Top = 0
+            Width = 338
+            Height = 329
+            Align = alClient
+            BevelOuter = bvNone
+            BorderWidth = 12
+            ParentBackground = False
+            TabOrder = 1
+            EraseBackGround = True
+            object SessionHist: TTransPan
+              Left = 12
+              Top = 222
+              Width = 314
+              Height = 95
+              Align = alBottom
+              ParentBackground = False
+              TabOrder = 1
+              EraseBackGround = True
+              object MHistO: TNavyGraph
+                Left = 1
+                Top = 1
+                Width = 312
+                Height = 46
+                Align = alTop
+                EraseBackGround = True
+              end
+              object MHistI: TNavyGraph
+                Left = 1
+                Top = 48
+                Width = 312
+                Height = 46
+                Align = alBottom
+                EraseBackGround = True
+              end
+            end
+            object SessionNfoPnl: TTransPan
+              Left = 12
+              Top = 12
+              Width = 314
+              Height = 207
+              Align = alTop
+              BevelOuter = bvNone
+              ParentBackground = False
+              TabOrder = 0
+              object gTabCnt: TTabControl
+                Left = 0
+                Top = 0
+                Width = 314
+                Height = 207
+                Align = alClient
+                TabOrder = 0
+                Tabs.Strings = (
+                  'Info')
+                TabIndex = 0
+                OnChange = gTabCntChange
+                object gTitles: TAdvGrid
+                  Left = 4
+                  Top = 27
+                  Width = 105
+                  Height = 176
+                  FixedFont.Charset = DEFAULT_CHARSET
+                  FixedFont.Color = clWindowText
+                  FixedFont.Height = -13
+                  FixedFont.Name = 'Arial'
+                  FixedFont.Style = []
+                  Align = alLeft
+                  Color = clBtnFace
+                  ColCount = 2
+                  DefaultColWidth = 80
+                  DefaultRowHeight = 18
+                  Enabled = False
+                  RowCount = 8
+                  FixedRows = 0
+                  Options = [goFixedVertLine, goFixedHorzLine]
+                  ScrollBars = ssNone
+                  TabOrder = 0
+                  CheckBoxes = False
+                end
+                object gNfo: TAdvGrid
+                  Left = 109
+                  Top = 27
+                  Width = 201
+                  Height = 176
+                  FixedFont.Charset = DEFAULT_CHARSET
+                  FixedFont.Color = clWindowText
+                  FixedFont.Height = -13
+                  FixedFont.Name = 'Arial'
+                  FixedFont.Style = []
+                  Align = alClient
+                  Color = clBtnFace
+                  ColCount = 1
+                  DefaultColWidth = 1000
+                  DefaultRowHeight = 18
+                  FixedCols = 0
+                  RowCount = 8
+                  FixedRows = 0
+                  Options = [goHorzLine]
+                  ScrollBars = ssHorizontal
+                  TabOrder = 2
+                  CheckBoxes = False
+                end
+                object gLst: TAdvGrid
+                  Left = 113
+                  Top = 30
+                  Width = 307
+                  Height = 172
+                  FixedFont.Charset = DEFAULT_CHARSET
+                  FixedFont.Color = clWindowText
+                  FixedFont.Height = -13
+                  FixedFont.Name = 'Arial'
+                  FixedFont.Style = []
+                  ColCount = 3
+                  DefaultColWidth = 160
+                  DefaultRowHeight = 18
+                  RowCount = 2
+                  Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goDigitalRows]
+                  ScrollBars = ssVertical
+                  TabOrder = 1
+                  Visible = False
+                  CheckBoxes = False
+                  ColWidths = (
+                    31
+                    171
+                    60)
+                end
+              end
+            end
+          end
+          object Panel2: TTransPan
+            Left = 0
+            Top = 0
+            Width = 375
+            Height = 329
+            Align = alLeft
             BevelOuter = bvNone
             ParentBackground = False
             TabOrder = 0
-            object TermRx: TMicroTerm
+            DesignSize = (
+              375
+              329)
+            object SndBox: TGroupBox
               Left = 10
-              Top = 156
-              Width = 305
-              Height = 144
+              Top = 10
+              Width = 365
+              Height = 119
+              Anchors = [akLeft, akTop, akRight]
+              Caption = 'Sending'
+              ParentBackground = False
+              TabOrder = 0
+              DesignSize = (
+                365
+                119)
+              object lSndFile: TLabel
+                Left = 14
+                Top = 25
+                Width = 80
+                Height = 16
+                Caption = 'Taurus.exe'
+                Font.Charset = DEFAULT_CHARSET
+                Font.Color = clWindowText
+                Font.Height = -15
+                Font.Name = 'Fixedsys'
+                Font.Style = []
+                ParentFont = False
+                ParentShowHint = False
+                ShowAccelChar = False
+                ShowHint = True
+              end
+              object llSndCPS: TLabel
+                Left = 239
+                Top = 22
+                Width = 27
+                Height = 16
+                Anchors = [akTop, akRight]
+                Caption = 'CPS'
+                Font.Charset = DEFAULT_CHARSET
+                Font.Color = clWindowText
+                Font.Height = -15
+                Font.Name = 'MS Sans Serif'
+                Font.Style = []
+                ParentFont = False
+                Visible = False
+              end
+              object lSndCPS: TLabel
+                Left = 211
+                Top = 22
+                Width = 25
+                Height = 16
+                Alignment = taRightJustify
+                Anchors = [akTop, akRight]
+                Caption = '100'
+                Font.Charset = DEFAULT_CHARSET
+                Font.Color = clWindowText
+                Font.Height = -15
+                Font.Name = 'MS Sans Serif'
+                Font.Style = [fsBold]
+                ParentFont = False
+                Visible = False
+              end
+              object llSndSize: TLabel
+                Left = 20
+                Top = 74
+                Width = 29
+                Height = 16
+                Caption = 'Size:'
+                Visible = False
+              end
+              object lSndSize: TLabel
+                Left = 55
+                Top = 74
+                Width = 5
+                Height = 16
+                Font.Charset = DEFAULT_CHARSET
+                Font.Color = clWindowText
+                Font.Height = -15
+                Font.Name = 'MS Sans Serif'
+                Font.Style = [fsBold]
+                ParentFont = False
+                Visible = False
+              end
+              object SndTot: TxGauge
+                Left = 281
+                Top = 20
+                Width = 70
+                Height = 70
+                Kind = gkPie
+                BorderStyle = bsNone
+                Progress = 0
+                Visible = False
+              end
+              object llFileSndTime: TLabel
+                Left = 20
+                Top = 92
+                Width = 53
+                Height = 16
+                Caption = 'File time:'
+                Visible = False
+              end
+              object lFileSndTime: TLabel
+                Left = 79
+                Top = 92
+                Width = 57
+                Height = 16
+                Caption = '00:00:00'
+                Font.Charset = DEFAULT_CHARSET
+                Font.Color = clWindowText
+                Font.Height = -15
+                Font.Name = 'MS Sans Serif'
+                Font.Style = [fsBold]
+                ParentFont = False
+                Visible = False
+              end
+              object llTotalSndTime: TLabel
+                Left = 167
+                Top = 92
+                Width = 62
+                Height = 16
+                Caption = 'Total time:'
+                Visible = False
+              end
+              object lTotalSndTime: TLabel
+                Left = 234
+                Top = 92
+                Width = 57
+                Height = 16
+                Caption = '00:00:00'
+                Font.Charset = DEFAULT_CHARSET
+                Font.Color = clWindowText
+                Font.Height = -15
+                Font.Name = 'MS Sans Serif'
+                Font.Style = [fsBold]
+                ParentFont = False
+                Visible = False
+              end
+              object SndBar: TProgressBar
+                Left = 15
+                Top = 44
+                Width = 250
+                Height = 19
+                Anchors = [akLeft, akTop, akRight]
+                Smooth = True
+                TabOrder = 0
+                Visible = False
+              end
             end
-            object TermTx: TMicroTerm
+            object RcvBox: TGroupBox
               Left = 10
-              Top = 9
-              Width = 305
-              Height = 144
+              Top = 133
+              Width = 365
+              Height = 119
+              Anchors = [akLeft, akTop, akRight]
+              Caption = 'Receiving'
+              ParentBackground = False
+              TabOrder = 2
+              DesignSize = (
+                365
+                119)
+              object lRcvFile: TLabel
+                Left = 14
+                Top = 25
+                Width = 80
+                Height = 16
+                Caption = 'Taurus.exe'
+                Font.Charset = DEFAULT_CHARSET
+                Font.Color = clWindowText
+                Font.Height = -15
+                Font.Name = 'Fixedsys'
+                Font.Style = []
+                ParentFont = False
+                ParentShowHint = False
+                ShowAccelChar = False
+                ShowHint = True
+              end
+              object llRcvCPS: TLabel
+                Left = 239
+                Top = 22
+                Width = 27
+                Height = 16
+                Anchors = [akTop, akRight]
+                Caption = 'CPS'
+                Font.Charset = DEFAULT_CHARSET
+                Font.Color = clWindowText
+                Font.Height = -15
+                Font.Name = 'MS Sans Serif'
+                Font.Style = []
+                ParentFont = False
+                Visible = False
+              end
+              object lRcvCPS: TLabel
+                Left = 211
+                Top = 22
+                Width = 25
+                Height = 16
+                Alignment = taRightJustify
+                Anchors = [akTop, akRight]
+                Caption = '100'
+                Font.Charset = DEFAULT_CHARSET
+                Font.Color = clWindowText
+                Font.Height = -15
+                Font.Name = 'MS Sans Serif'
+                Font.Style = [fsBold]
+                ParentFont = False
+                Visible = False
+              end
+              object llRcvSize: TLabel
+                Left = 20
+                Top = 74
+                Width = 29
+                Height = 16
+                Caption = 'Size:'
+                Visible = False
+              end
+              object lRcvSize: TLabel
+                Left = 55
+                Top = 74
+                Width = 5
+                Height = 16
+                Font.Charset = DEFAULT_CHARSET
+                Font.Color = clWindowText
+                Font.Height = -15
+                Font.Name = 'MS Sans Serif'
+                Font.Style = [fsBold]
+                ParentFont = False
+                Visible = False
+              end
+              object RcvTot: TxGauge
+                Left = 281
+                Top = 20
+                Width = 70
+                Height = 70
+                Kind = gkPie
+                BorderStyle = bsNone
+                Progress = 0
+                Visible = False
+              end
+              object llFileRcvTime: TLabel
+                Left = 20
+                Top = 91
+                Width = 53
+                Height = 16
+                Caption = 'File time:'
+                Visible = False
+              end
+              object lFileRcvTime: TLabel
+                Left = 79
+                Top = 91
+                Width = 57
+                Height = 16
+                Caption = '00:00:00'
+                Font.Charset = DEFAULT_CHARSET
+                Font.Color = clWindowText
+                Font.Height = -15
+                Font.Name = 'MS Sans Serif'
+                Font.Style = [fsBold]
+                ParentFont = False
+                Visible = False
+              end
+              object llTotalRcvTime: TLabel
+                Left = 167
+                Top = 91
+                Width = 62
+                Height = 16
+                Caption = 'Total time:'
+                Visible = False
+              end
+              object lTotalRcvTime: TLabel
+                Left = 236
+                Top = 91
+                Width = 57
+                Height = 16
+                Caption = '00:00:00'
+                Font.Charset = DEFAULT_CHARSET
+                Font.Color = clWindowText
+                Font.Height = -15
+                Font.Name = 'MS Sans Serif'
+                Font.Style = [fsBold]
+                ParentFont = False
+                Visible = False
+              end
+              object RcvBar: TProgressBar
+                Left = 15
+                Top = 44
+                Width = 250
+                Height = 19
+                Anchors = [akLeft, akTop, akRight]
+                Smooth = True
+                TabOrder = 0
+                Visible = False
+              end
+            end
+            object SessionBox: TGroupBox
+              Left = 11
+              Top = 255
+              Width = 364
+              Height = 59
+              Anchors = [akLeft, akTop, akRight]
+              Caption = 'SessionBox'
+              ParentBackground = False
+              TabOrder = 1
+              DesignSize = (
+                364
+                59)
+              object llSessionTime: TLabel
+                Left = 15
+                Top = 26
+                Width = 115
+                Height = 16
+                Alignment = taRightJustify
+                Caption = 'Total elapsed time:'
+                Visible = False
+              end
+              object lSessionTime: TLabel
+                Left = 139
+                Top = 26
+                Width = 57
+                Height = 16
+                Caption = '00:00:00'
+                Font.Charset = DEFAULT_CHARSET
+                Font.Color = clWindowText
+                Font.Height = -15
+                Font.Name = 'MS Sans Serif'
+                Font.Style = [fsBold]
+                ParentFont = False
+                Visible = False
+              end
+              object llSessionCost: TLabel
+                Left = 259
+                Top = 26
+                Width = 30
+                Height = 16
+                Alignment = taRightJustify
+                Anchors = [akTop, akRight]
+                Caption = 'Cost:'
+              end
+              object lSessionCost: TLabel
+                Left = 295
+                Top = 26
+                Width = 37
+                Height = 16
+                Anchors = [akTop, akRight]
+                Caption = '00.00'
+                Font.Charset = DEFAULT_CHARSET
+                Font.Color = clWindowText
+                Font.Height = -15
+                Font.Name = 'MS Sans Serif'
+                Font.Style = [fsBold]
+                ParentFont = False
+              end
             end
           end
         end
@@ -1167,85 +1161,29 @@ object MailerForm: TMailerForm
       object ChatPan: TTransPan
         Left = 0
         Top = 329
-        Width = 698
-        Height = 106
+        Width = 717
+        Height = 108
         Align = alClient
         BevelOuter = bvNone
         TabOrder = 3
         Visible = False
         OnResize = ChatPanResize
-        object Panel13: TTransPan
-          Left = 0
-          Top = 75
-          Width = 698
-          Height = 31
-          Align = alBottom
-          BevelOuter = bvNone
-          TabOrder = 0
-          DesignSize = (
-            698
-            31)
-          object eType: TEdit
-            Left = 1
-            Top = 4
-            Width = 844
-            Height = 24
-            Anchors = [akLeft, akTop, akRight, akBottom]
-            TabOrder = 0
-            OnKeyPress = eTypeKeyPress
-          end
-        end
-        object Panel15: TTransPan
-          Left = 0
-          Top = 23
-          Width = 698
-          Height = 52
-          Align = alClient
-          BevelOuter = bvNone
-          TabOrder = 1
-          object ChatMemo1: TMemo
-            Left = 0
-            Top = 0
-            Width = 698
-            Height = 191
-            TabStop = False
-            Align = alTop
-            Color = 14415353
-            ReadOnly = True
-            ScrollBars = ssVertical
-            TabOrder = 0
-            OnKeyPress = ChatMemo2KeyPress
-          end
-          object ChatMemo2: TMemo
-            Left = 0
-            Top = 191
-            Width = 698
-            Height = 198
-            TabStop = False
-            Align = alClient
-            Color = 14415353
-            ReadOnly = True
-            ScrollBars = ssVertical
-            TabOrder = 1
-            OnKeyPress = ChatMemo2KeyPress
-          end
-        end
         object ChatCaptionPan: TTransPan
           Left = 0
           Top = 0
-          Width = 698
+          Width = 717
           Height = 23
           Align = alTop
           TabOrder = 2
           OnConstrainedResize = ChatCaptionPanConstrainedResize
           EraseBackGround = True
           DesignSize = (
-            698
+            717
             23)
           object imgHeader: TImage
             Left = 1
             Top = 1
-            Width = 696
+            Width = 715
             Height = 21
             Align = alClient
             Picture.Data = {
@@ -1297,7 +1235,7 @@ object MailerForm: TMailerForm
             Stretch = True
           end
           object sbCloseChat: TSpeedButton
-            Left = 623
+            Left = 642
             Top = 2
             Width = 18
             Height = 18
@@ -1332,11 +1270,67 @@ object MailerForm: TMailerForm
             Transparent = True
           end
         end
+        object Panel13: TTransPan
+          Left = 0
+          Top = 77
+          Width = 717
+          Height = 31
+          Align = alBottom
+          BevelOuter = bvNone
+          TabOrder = 0
+          DesignSize = (
+            717
+            31)
+          object eType: TEdit
+            Left = 1
+            Top = 4
+            Width = 863
+            Height = 24
+            Anchors = [akLeft, akTop, akRight, akBottom]
+            TabOrder = 0
+            OnKeyPress = eTypeKeyPress
+          end
+        end
+        object Panel15: TTransPan
+          Left = 0
+          Top = 23
+          Width = 717
+          Height = 54
+          Align = alClient
+          BevelOuter = bvNone
+          TabOrder = 1
+          object ChatMemo1: TMemo
+            Left = 0
+            Top = 0
+            Width = 717
+            Height = 191
+            TabStop = False
+            Align = alTop
+            Color = 14415353
+            ReadOnly = True
+            ScrollBars = ssVertical
+            TabOrder = 0
+            OnKeyPress = ChatMemo2KeyPress
+          end
+          object ChatMemo2: TMemo
+            Left = 0
+            Top = 191
+            Width = 717
+            Height = 198
+            TabStop = False
+            Align = alClient
+            Color = 14415353
+            ReadOnly = True
+            ScrollBars = ssVertical
+            TabOrder = 1
+            OnKeyPress = ChatMemo2KeyPress
+          end
+        end
       end
       object BottomPanel: TTransPan
         Left = 0
-        Top = 435
-        Width = 698
+        Top = 437
+        Width = 717
         Height = 40
         Align = alBottom
         BevelOuter = bvNone
@@ -1346,7 +1340,7 @@ object MailerForm: TMailerForm
         object MailerBtnPanel: TTransPan
           Left = 0
           Top = 0
-          Width = 698
+          Width = 717
           Height = 40
           Align = alClient
           BevelOuter = bvNone
@@ -1572,7 +1566,7 @@ object MailerForm: TMailerForm
             OnClick = bChatClick
           end
           object LampsPanelCarrier: TTransPan
-            Left = 533
+            Left = 552
             Top = 0
             Width = 165
             Height = 40
@@ -1691,7 +1685,7 @@ object MailerForm: TMailerForm
         object DaemonBtnPanel: TTransPan
           Left = 0
           Top = 0
-          Width = 698
+          Width = 717
           Height = 40
           Align = alClient
           BevelOuter = bvNone
@@ -1699,7 +1693,7 @@ object MailerForm: TMailerForm
           TabOrder = 2
           Visible = False
           object RasBtnPan: TTransPan
-            Left = 486
+            Left = 505
             Top = 0
             Width = 212
             Height = 40
@@ -1731,14 +1725,14 @@ object MailerForm: TMailerForm
           object RasLabelPan: TTransPan
             Left = 0
             Top = 0
-            Width = 486
+            Width = 505
             Height = 40
             Align = alClient
             BevelOuter = bvNone
             ParentBackground = False
             TabOrder = 1
             DesignSize = (
-              486
+              505
               40)
             object lStatus2: TLabel
               Left = 33
@@ -1748,7 +1742,7 @@ object MailerForm: TMailerForm
               Caption = 'Connected to Corex VPN'
             end
             object lTimeCon: TLabel
-              Left = 472
+              Left = 491
               Top = 14
               Width = 57
               Height = 16
@@ -1766,7 +1760,7 @@ object MailerForm: TMailerForm
         object PollBtnPanel: TTransPan
           Left = 0
           Top = 0
-          Width = 698
+          Width = 717
           Height = 40
           Align = alClient
           BevelOuter = bvNone
@@ -1991,7 +1985,7 @@ object MailerForm: TMailerForm
             OnClick = mpPauseClick
           end
           object lInfo1: TLabel
-            Left = 338
+            Left = 357
             Top = 0
             Width = 360
             Height = 40
@@ -2009,7 +2003,7 @@ object MailerForm: TMailerForm
         object OutMgrBtnPanel: TTransPan
           Left = 0
           Top = 0
-          Width = 698
+          Width = 717
           Height = 40
           Align = alClient
           BevelOuter = bvNone
@@ -2128,6 +2122,39 @@ object MailerForm: TMailerForm
           Align = alBottom
           Shape = bsBottomLine
         end
+        object OutMgrOutline: TxOutlin
+          Left = 0
+          Top = 21
+          Width = 676
+          Height = 7
+          FixedFont.Charset = DEFAULT_CHARSET
+          FixedFont.Color = clWindowText
+          FixedFont.Height = -13
+          FixedFont.Name = 'MS Sans Serif'
+          FixedFont.Style = []
+          OutlineStyle = osText
+          Options = []
+          Style = otOwnerDraw
+          ItemHeight = 16
+          OnDrawItem = OutMgrOutlineDrawItem
+          Align = alClient
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Arial'
+          Font.Style = []
+          TabOrder = 1
+          OnMouseDown = OutMgrOutlineMouseDown
+          OnDblClick = OutMgrOutlineDblClick
+          OnKeyDown = OutMgrOutlineKeyDown
+          BorderStyle = bsNone
+          ItemSeparator = '\'
+          ParentFont = False
+          PopupMenu = OutMgrPopup
+          EraseBackGround = True
+          OnApiDropFiles = OutMgrOutlineApiDropFiles
+          Data = {1F}
+        end
         object OutMgrHeader: THeaderControl
           Left = 0
           Top = 0
@@ -2168,39 +2195,6 @@ object MailerForm: TMailerForm
             end>
           OnSectionClick = OutMgrHeaderSectionClick
           OnSectionResize = OutMgrHeaderSectionResize
-        end
-        object OutMgrOutline: TxOutlin
-          Left = 0
-          Top = 21
-          Width = 676
-          Height = 7
-          FixedFont.Charset = DEFAULT_CHARSET
-          FixedFont.Color = clWindowText
-          FixedFont.Height = -13
-          FixedFont.Name = 'MS Sans Serif'
-          FixedFont.Style = []
-          OutlineStyle = osText
-          Options = []
-          Style = otOwnerDraw
-          ItemHeight = 16
-          OnDrawItem = OutMgrOutlineDrawItem
-          Align = alClient
-          Font.Charset = DEFAULT_CHARSET
-          Font.Color = clWindowText
-          Font.Height = -11
-          Font.Name = 'Arial'
-          Font.Style = []
-          TabOrder = 1
-          OnMouseDown = OutMgrOutlineMouseDown
-          OnDblClick = OutMgrOutlineDblClick
-          OnKeyDown = OutMgrOutlineKeyDown
-          BorderStyle = bsNone
-          ItemSeparator = '\'
-          ParentFont = False
-          PopupMenu = OutMgrPopup
-          EraseBackGround = True
-          OnApiDropFiles = OutMgrOutlineApiDropFiles
-          Data = {1F}
         end
       end
     end

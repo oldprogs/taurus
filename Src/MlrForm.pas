@@ -4516,6 +4516,8 @@ begin
    gNfo.ColWidths[0] := gNfo.Width;
    lStatus.Font.Style := [fsBold];
    lStatus2.Font.Style := [fsBold];
+   lTimeOut.Font.Style := [fsBold];
+   lTimeOut.Top := bAdd.Top + (bAdd.Height - lTimeOut.Height) div 2;
    OutMgrOutLine.ItemHeight := Abs(Font.Height) + 4;
 end;
 
