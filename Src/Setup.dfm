@@ -134,6 +134,7 @@ object SetupForm: TSetupForm
     Width = 418
     Height = 375
     Anchors = [akLeft, akTop, akRight, akBottom]
+    PageIndex = 9
     TabOrder = 1
     object TPage
       Left = 0
@@ -2070,6 +2071,7 @@ object SetupForm: TSetupForm
         Height = 17
         Caption = 'Unpack arrived PKTs'
         TabOrder = 5
+        OnClick = cbUnpackPKTClick
       end
     end
     object TPage

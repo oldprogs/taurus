@@ -1938,12 +1938,10 @@ var
 begin
   v := False;
   d := OpenRead(ConfigFName);
-  if d = nil then
-  begin
+  if d = nil then begin
      v := True;
      StartupWizzard;
-  end else
-  begin
+  end else begin
     s := GetMemoryStream;
     sz := d.Size;
     GetMem(p, sz);
@@ -1953,8 +1951,7 @@ begin
     FreeMem(p, sz);
     FreeObject(d);
     d := OpenRead(ChangeFileExt(ConfigFName, '.add'));
-    if d <> nil then
-    begin
+    if d <> nil then begin
        sz := d.Size;
        GetMem(p, sz);
        d.Read(p^, sz);

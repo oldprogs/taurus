@@ -349,6 +349,7 @@ type
     procedure tmCRCTimer(Sender: TObject);
     procedure bNetmailClick(Sender: TObject);
     procedure cbScanMSGClick(Sender: TObject);
+    procedure cbUnpackPKTClick(Sender: TObject);
   private
     { Private declarations }
     Edits: array[0..12] of TSoundRec;
@@ -1308,8 +1309,14 @@ end;
 
 procedure TSetupForm.cbScanMSGClick(Sender: TObject);
 begin
-   eNetmail.Enabled := cbScanMSG.Checked;
-   bNetmail.Enabled := cbScanMSG.Checked;
+   eNetmail.Enabled := cbScanMSG.Checked or cbUnpackPKT.Checked;
+   bNetmail.Enabled := cbScanMSG.Checked or cbUnpackPKT.Checked;
+end;
+
+procedure TSetupForm.cbUnpackPKTClick(Sender: TObject);
+begin
+   eNetmail.Enabled := cbScanMSG.Checked or cbUnpackPKT.Checked;
+   bNetmail.Enabled := cbScanMSG.Checked or cbUnpackPKT.Checked;
 end;
 
 end.

@@ -23,6 +23,7 @@ type
       bOff: int64;
       Head: PackedMsgHeaderRec;
       Size: int64;
+      hLen: integer;
       Line: integer;
       Addy: integer;
       Numb: dword;
@@ -105,7 +106,7 @@ type
    end;
 
 procedure FreeNetmailHolder;
-procedure ClearAttach(m, a: string);
+function  ClearAttach(d: TFidoAddress; m, a: string): string;
 procedure UnpackPKT(p: string);
 procedure FinalizePKT(a: TFidoAddress; p: string);
 procedure NewMessage(a: TFidoAddress; o, u: string);
@@ -127,8 +128,13 @@ begin
    FreeObject(NetmailHolder);
 end;
 
-procedure ClearAttach;
+function ClearAttach;
 var
+   e: TNetmail;
+   g: TNetmailMSG;
+   i: integer;
+   r: PktHeaderRec;
+   p: PackedMsgHeaderRec;
    n: TMemStream;
    h: _fidomsgtype;
    s: string;
@@ -136,7 +142,64 @@ var
    t: string;
    b: boolean;
 begin
+   Result := '';
    if not ExistFile(m) then exit;
+   e := TNetmail.Create;
+   e.ScanMesage(m);
+   for i := 0 to CollMax(e.NetColl) do begin
+      g := e.NetColl[i];
+      if CompareAddrs(d, g.Addr) <> 0 then begin
+         fillchar(r, sizeof(r), 0);
+         fillchar(p, sizeof(p), 0);
+         r.OrigNode  := inifile.MainAddr.Node;
+         r.DestNode  := d.Node;
+         r.Year      := CurrentYear;
+         r.Month     := MonthOf(Date);
+         r.Day       := DayOf(Date);
+         r.Hour      := HourOf(Time);
+         r.Minute    := MinuteOf(Time);
+         r.Second    := SecondOf(Time);
+         r.Baud      := 300;
+         r.PktType   := 2;
+         r.OrigNet   := inifile.MainAddr.Net;
+         r.DestNet   := d.Net;
+         r.ProdCode  := $FF;
+         r.SerialNo  := $15;
+         r.OrigZone  := inifile.MainAddr.Zone;
+         r.DestZone  := d.Zone;
+         r.OrigPoint := inifile.MainAddr.Point;
+         r.DestPoint := d.Point;
+//         if fPass <> '' then begin
+//            move(fPass[1], h.Password, Length(fPass));
+//         end;
+         p.MsgType   := 2;
+         p.OrigNode  := g.From.Node;
+         p.DestNode  := g.Addr.Node;
+         p.OrigNet   := g.From.Net;
+         p.DestNet   := g.Addr.Net;
+         p.Attribute := g.Attr;
+         p.Cost      := 0;
+         z := FormatDateTime('dd mmm yy  hh:nn:ss', Date + Time);
+         move(z[1], p.DateTime, Length(z));
+         s := AddBackSlash(IniFile.Outbound) + Format('%.8x.PKT', [GetTickCount xor xRandom32]);
+         Result := s;
+         n := TMemStream.Create;
+         n.Write(r, SizeOf(r));
+         n.Write(p, SizeOf(p));
+         z := g.ToNm + #0;
+         n.Write(z[1], Length(z));
+         z := g.FrNm + #0;
+         n.Write(z[1], Length(z));
+         z := JustFileName(a) + #0;
+         n.Write(z[1], Length(z));
+         n.Write(Pointer(Integer(g.Body) + g.hLen)^, g.Size - g.hLen);
+         z := #0#0;
+         n.Write(z[1], Length(z));
+         n.SaveToFile(s);
+         n.Free;
+      end;
+   end;
+   FreeObject(e);
    n := TMemStream.Create;
    if n <> nil then begin
       try
@@ -166,15 +229,25 @@ begin
          end;
       end;
       if b then begin
-         FillChar(h.subject, SizeOf(h.subject), #0);
          if t <> '' then begin
+            FillChar(h.subject, SizeOf(h.subject), #0);
             move(t[1], h.subject, Length(t));
-            n.Position := 0;
-            n.Write(h, SizeOf(h));
-            n.SaveToFile(m);
          end else begin
-            DelFile('ClearAttach', m);
+            if Result <> '' then begin
+               Result := Result + ' ' + m;
+            end else begin
+               if h.attr and KillSent > 0 then begin
+                  DelFile('ClearAttach', m);
+                  n.Free;
+                  Exit;
+               end else begin
+                  h.attr := h.attr or Sent_;
+               end;
+            end;
          end;
+         n.Position := 0;
+         n.Write(h, SizeOf(h));
+         n.SaveToFile(m);
       end;
       n.Free;
    end;
@@ -261,6 +334,9 @@ begin
       FillChar(h, SizeOf(h), #0);
       move(m.Frnm[1], h.from, Length(m.Frnm));
       move(m.Tonm[1], h.towhom, Length(m.Tonm));
+      if m.Attr and FileAttached <> 0 then begin
+         m.Subj := JustPathName(p) + '\' + m.Subj;
+      end;
       move(m.Subj[1], h.subject, Length(m.Subj));
       move(m.Date[1], h.azdate, Length(m.Date));
       h.dest_node := m.Addr.Node;
@@ -282,7 +358,9 @@ begin
       o := m.bOff - m.Offs - SizeOf(PackedMsgHeaderRec);
       s.Write(Pointer(Integer(m.Body) + o)^, m.Size - o - 1);
       s.Free;
-      if (m.Attr and AuditRequest > 0) then begin
+      if (m.Attr and AuditRequest > 0) or
+         ((m.Attr and ReturnReceiptRequest > 0) and (AddrColl.Search(@m.Addr, o))) then
+      begin
          NewMessage(m.From, m.Frnm, 'Transit confirmation');
          WriteLine(
               #13' Your message to: ' + Addr2Str(m.Addr) + ' (' + m.Tonm + ')'#13 +
@@ -744,6 +822,7 @@ begin
       putstr(l.Frnm);
       putstr(l.Subj);
       s := SizeOf(_fidomsgtype) - i;
+      l.hLen := i;
    end else begin
       c := 0;
       s := 0;
@@ -861,7 +940,7 @@ begin
    end;
    g := FindMessage(l.MsId);
    if (g = nil) then begin
-      if l.Fido and (CompareAddrs(l.Addr, IniFile.MainAddr) = 0) then begin
+      if l.Fido and AddrColl.Search(@l.Addr, e) then begin
          FreeObject(l);
       end else begin
          NetColl.Add(l);

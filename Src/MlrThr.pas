@@ -702,7 +702,8 @@ type
     CanAnswer,
     ExtApp,
     NoCP,
-    SkipIs: Boolean;
+    SkipIs,
+    isZMH: Boolean;
     CPOutUsed,
     ProtTotalErrors,
     rmtForUs,
@@ -1457,7 +1458,7 @@ function NodeFlags(ANode: TAdvNode; Dialup: boolean): string;
 procedure PurgeZombies;
 function GetPortRec(LineId: DWORD): TPortRec;
 function OpenSerialPort(R: TPortRec): TPort;
-procedure InsertPoll(var ANode: TAdvNode; Status: TOutStatusSet; ATyp: TPollType);
+function InsertPoll(var ANode: TAdvNode; Status: TOutStatusSet; ATyp: TPollType): boolean;
 function PollOwnerName(p: TFidoPoll): string;
 procedure SendTRSMSG(p: TFidoPoll; c: string; var ss: string);
 function GetPollState(AOwnPolls: TColl; P: TFidoPoll; PubInst: Boolean; Mlr: TMailerThread; SC: TStringColl; TQ: TFSC62Quant): TPollState;
@@ -2118,21 +2119,16 @@ begin
       dc := P.Node.IPData
    else
 {$ENDIF}dc := P.Node.DialupData;
-   if dc = nil then
-   begin
-      if P.Node.Ext = nil then
-      begin
+   if dc = nil then begin
+      if P.Node.Ext = nil then begin
          if SC <> nil then SC.Add(' ? ' + LngStr(rsMMpiNoData));
-      end
-      else
-      begin
+      end else begin
          if SC <> nil then LogOK;
          Result := True;
       end;
       Exit;
    end;
-   for k := 0 to dc.Count - 1 do
-   begin
+   for k := 0 to dc.Count - 1 do begin
       idx := NI mod DWORD(dc.Count);
       d := dc[idx];
       Inc(NI);
@@ -2159,13 +2155,10 @@ begin
          end;
       end;
       Result := True;
-      if SC = nil then
-      begin
+      if SC = nil then begin
          P.DataIdx := idx;
          Break
-      end
-      else
-      begin
+      end else begin
          LogOK;
       end;
    end;
@@ -2258,10 +2251,12 @@ var
       end;
       if (p.Typ <> ptpManual) and
          (p.Typ <> ptpImm) and
+         (p.Typ <> ptpRCC) and
          (p.Typ <> ptpBack) and
          (p.Typ <> ptpNmIm) and
         ((p.CountersExceeded) or (p.FileSendDelayedBusy) or (p.FileSendDelayedNoc) or (p.FileSendDelayedFail)) then
       begin
+         ScanCounter := 1;
          if TimerInstalled(p.LastTry) and TimerExpired(p.LastTry) then begin
             FidoPollsLog(Format('%s - stand-off timeout expired', [Addr2Str(p.Node.Addr)]));
             p.Reset;
@@ -2379,11 +2374,11 @@ function GetAvailPoll(AOwnPolls: TColl; var PubInst: Boolean; Mlr: TMailerThread
    end;
 
 var
-   i {, _i}: Integer;
-   p {, _p}: TFidoPoll;
-   TQ: TFSC62Quant;
+   i : Integer;
+   p : TFidoPoll;
+  TQ: TFSC62Quant;
    s: string;
-   SC: TStringColl;
+  SC: TStringColl;
 begin
    SC := nil;
    Result := False;
@@ -2394,55 +2389,55 @@ begin
       for i := 0 to FidoPolls.Count - 1 do begin
          p := FidoPolls[i];
          case GetPollState(AOwnPolls, P, PubInst, Mlr, SC, TQ) of
-            plsPSD:
-               begin
+         plsPSD:
+            begin
+               s := GetErrorMsg;
+               if s <> '' then begin
+                  LocLog(s);
+               end;
+            end;
+         plsBSY:
+            begin
+               if SC <> nil then
+                  SC.Add(LngStr(rsMMOwnByExt))
+               else begin
                   s := GetErrorMsg;
                   if s <> '' then begin
                      LocLog(s);
                   end;
-               end;
-            plsBSY:
-               begin
-                  if SC <> nil then
-                     SC.Add(LngStr(rsMMOwnByExt))
-                  else begin
-                     s := GetErrorMsg;
-                     if s <> '' then begin
-                        LocLog(s);
-                     end;
-                     s := Format('Address %s is busy', [Addr2Str(p.Node.Addr)]);
-                     if (p.Typ = ptpManual) or
-                        (p.Typ = ptpImm) or
-                        (p.Typ = ptpRCC) or
-                        (p.Typ = ptpBack) or
-                        (p.Typ = ptpNmIm) then
-                     begin
-                        LocLog(s);
-                     end;
+                  s := Format('Address %s is busy', [Addr2Str(p.Node.Addr)]);
+                  if (p.Typ = ptpManual) or
+                     (p.Typ = ptpImm) or
+                     (p.Typ = ptpRCC) or
+                     (p.Typ = ptpBack) or
+                     (p.Typ = ptpNmIm) then
+                  begin
+                     LocLog(s);
                   end;
                end;
-            plsAVL:
-               begin
-                  AP := p;
-                  PubInst := False;
-                  Result := True;
-                  Exit;
-               end;
-            plsHLD:
-               begin
-                  AP := p;
-                  Result := False;
-                  Exit;
-               end;
-            plsN_A: ;
-            plsFRB: ;
-            plsPUB:
-               begin
-                  if SC <> nil then SC.Add('Skoro pozvonim');
-                  AP := p;
-                  Result := False;
-                  Exit;
-               end;
+            end;
+         plsAVL:
+            begin
+               AP := p;
+               PubInst := False;
+               Result := True;
+               Exit;
+            end;
+         plsHLD:
+            begin
+               AP := p;
+               Result := False;
+               Exit;
+            end;
+         plsN_A: ;
+         plsFRB: ;
+         plsPUB:
+            begin
+               if SC <> nil then SC.Add('Skoro pozvonim');
+               AP := p;
+               Result := False;
+               Exit;
+            end;
          else
             GlobalFail('%s', ['GetAvailPoll GetPollState ??']);
          end;
@@ -2460,12 +2455,10 @@ var
 begin
    Result := Port;
    s2 := f;
-   for j := 1 to WordCount(s2, [',']) do
-   begin
+   for j := 1 to WordCount(s2, [',']) do begin
       s := ExtractWord(j, s2, [',', ':']);
       n := pos(s, protstr);
-      if n > 0 then
-      begin
+      if n > 0 then begin
          n := pos(s, s2);
          if n > 0 then delete(s2, 1, n - 1);
          n := pos(',', s2);
@@ -2491,14 +2484,12 @@ function NodeDataStr(ANode: TAdvNode; AddFlags: Boolean): string;
       d: TAdvNodeData;
    begin
       if C = nil then Exit;
-      for J := 0 to C.Count - 1 do
-      begin
+      for J := 0 to C.Count - 1 do begin
          D := C[J];
          if Result <> '' then Result := Result + '; ';
          if Dialup then begin
             Result := Result + PatchPhoneNumber(D.Phone, False);
-         end
-         else begin
+         end else begin
             P := FindPort(0, 'IBN,BND,BNP,IFC,ITN,IP,IVM,TCP,TEL,VMP', D.Flags);
             Result := Result + D.IPAddr;
             if P <> 0 then begin
@@ -2545,7 +2536,7 @@ begin
    AOwnPolls.Leave;
 end;
 
-procedure InsertPoll(var ANode: TAdvNode; Status: TOutStatusSet; ATyp: TPollType);
+function InsertPoll(var ANode: TAdvNode; Status: TOutStatusSet; ATyp: TPollType): boolean;
 var
    OldTyp,
    NewTyp: TPollType;
@@ -2592,9 +2583,7 @@ begin
       for I := 0 to MailerThreads.Count - 1 do begin
          InsertOwnPoll(TMailerThread(MailerThreads[I]).OwnPolls, P);
       end;
-{$IFDEF WS}
       if IPPolls <> nil then InsertOwnPoll(IPPolls.OwnPolls, P);
-{$ENDIF}
       AP := P;
    end;
    if (AP.Typ = ptpTest) then begin
@@ -2606,6 +2595,7 @@ begin
          SetEvt(IPPolls.oSleep);
       end;
    end;
+   Result := not (AP.FileSendDelayedBusy or AP.FileSendDelayedNoc or AP.FileSendDelayedFail);
    LeaveFidoPolls;
 end;
 
@@ -2653,7 +2643,7 @@ begin
          if c.Search(@p.Node.Addr, j) then begin
             n := c[j];
             p.Flav := p.Flav + n.FStatus;
-            if not (p.Typ in [ptpCron, ptpTest, ptpManual]) then begin
+            if not (p.Typ in [ptpCron, ptpTest, ptpManual, ptpBack]) then begin
                for t := Low(TPollType) to High(TPollType) do begin
                   if (t in n.FPollType) then p.Typ := t;
                end;
@@ -2678,7 +2668,7 @@ begin
       if OutDial(n.FStatus, DirAsNormal) then begin
          an := FindNode(n.Address);
          if (an = nil) or ((an.DialupData = nil) and (an.IPData = nil)) then begin
-            FreeObject(an)
+            FreeObject(an);
          end else begin
             if (osImmedMail in n.FStatus) or
                (osImmed in n.FStatus) then
@@ -2690,8 +2680,6 @@ begin
    end;
 end;
 
-{$IFDEF WS}
-
 function IdxFound(idx: DWORD): Boolean;
 var
    i: Integer;
@@ -2700,12 +2688,10 @@ begin
    Result := False;
    try
       MailerThreads.Enter;
-      for i := 0 to MailerThreads.Count - 1 do
-      begin
+      for i := 0 to MailerThreads.Count - 1 do begin
          m := MailerThreads[i];
          if m.DialupLine then Continue;
-         if m.IpIdx = idx then
-         begin
+         if m.IpIdx = idx then begin
             Result := True;
             Exit;
          end;
@@ -2714,7 +2700,6 @@ begin
       MailerThreads.Leave;
    end;
 end;
-{$ENDIF}
 
 function _LinkRestrictionMatches(C: TStringColl; s: string; Single: Boolean): Boolean;
 var
@@ -2726,8 +2711,7 @@ begin
       GetWrd(s, z, ' ');
       if z = '' then Break;
       b := C.Found(z);
-      if b = Single then
-      begin
+      if b = Single then begin
          Result := False;
          Exit;
       end;
@@ -2744,7 +2728,7 @@ begin
    C := TStringColl.Create;
    C.FillEnum(us, ' ', True);
    Result := _LinkRestrictionMatches(C, UpperCase(Rqd), False) and
-      _LinkRestrictionMatches(C, UpperCase(Frb), True);
+             _LinkRestrictionMatches(C, UpperCase(Frb), True);
    FreeObject(C);
 end;
 
@@ -2783,7 +2767,11 @@ procedure _AddToExec(const s: string; ALogger: TAbstractLogger; PriorityClass: D
    end;
 
 var
-   Dir, ComSpec, es, ff, pclass: string;
+   Dir,
+   ComSpec,
+   es,
+   ff,
+   pclass: string;
    PDir: Pointer;
    PI: TProcessInformation;
    ProcNfo: TProcessNfo;
@@ -2791,8 +2779,7 @@ var
    c: integer;
 
 begin
-   if UpperCase(s) = '%STARTRAS%' then
-   begin
+   if UpperCase(s) = '%STARTRAS%' then begin
 {$IFDEF RASDIAL}
       RasThread.Connect(False);
       {if c>0 then } ALogger.Log(ltInfo, 'RasDial inited by cron');
@@ -2802,8 +2789,7 @@ begin
 {$ENDIF}
       exit;
    end;
-   if UpperCase(s) = '%STOPRAS%' then
-   begin
+   if UpperCase(s) = '%STOPRAS%' then begin
 {$IFDEF RASDIAL}
       RasThread.Disconnect;
       {if c>0 then } ALogger.Log(ltInfo, 'RasDial stopped by cron');
@@ -2813,8 +2799,7 @@ begin
 {$ENDIF}
       exit;
    end;
-   if UpperCase(s) = '%DELBSY%' then
-   begin
+   if UpperCase(s) = '%DELBSY%' then begin
       c := DeleteBSY;
       if c > 0 then ALogger.LogFmt(ltInfo, '%d old BSY-files were deleted (cron-app)', [c]);
       exit;
@@ -2828,8 +2813,7 @@ begin
       GlobalFail('_AddToExex PriorityClass=%d', [PriorityClass]);
    end;
    ProcessColl := ALogger.GetProcessColl;
-   if ProcessColl.Count >= MaxProcesses then
-   begin
+   if ProcessColl.Count >= MaxProcesses then begin
       ALogger.LogFmt(ltGlobalErr, 'Too many processes are running - cannot execute "%s"', [s]);
       Exit;
    end;
@@ -2871,31 +2855,31 @@ begin
    Result := False;
    if s = '' then Exit;
    case s[1] of
-      '?':
-         if (ShowMode = swHide) and (not Detached) then begin
-            ShowMode := swMinimize;
-            Detached := True;
-            s := cl;
-            Result := __CheckExecPrefixes(s, Priority, Detached, ShowMode);
-         end else begin
-            Result := True;
-         end;
-      '<', '+', '*':
-         begin
-            case s[1] of
-               '<': C := IDLE_PRIORITY_CLASS;
-               '+': C := HIGH_PRIORITY_CLASS;
-               '*': C := REALTIME_PRIORITY_CLASS;
-            else
-               begin
-                  GlobalFail('__CheckPrefixes("%s",...) s[1]="%s"', [s, s[1]]);
-                  Exit
-               end;
+   '?':
+      if (ShowMode = swHide) and (not Detached) then begin
+         ShowMode := swMinimize;
+         Detached := True;
+         s := cl;
+         Result := __CheckExecPrefixes(s, Priority, Detached, ShowMode);
+      end else begin
+         Result := True;
+      end;
+   '<', '+', '*':
+      begin
+         case s[1] of
+         '<': C := IDLE_PRIORITY_CLASS;
+         '+': C := HIGH_PRIORITY_CLASS;
+         '*': C := REALTIME_PRIORITY_CLASS;
+         else
+            begin
+               GlobalFail('__CheckPrefixes("%s",...) s[1]="%s"', [s, s[1]]);
+               Exit
             end;
-            s := cl;
-            Priority := C;
-            Result := True;
          end;
+         s := cl;
+         Priority := C;
+         Result := True;
+      end;
    else
       Result := True;
    end;
@@ -2924,24 +2908,24 @@ begin
    Priority := NORMAL_PRIORITY_CLASS;
    if s = '' then Exit;
    case s[1] of
-      '>':
-         begin
-            Result := True;
-            SetFlag := True;
-            s := cl
-         end;
-      '?':
-         begin
-            ShowMode := swHide;
-            s := cl;
-            Result := cp
-         end;
-      '!':
-         begin
-            ShowMode := swShow;
-            s := cl;
-            Result := cp
-         end;
+   '>':
+      begin
+         Result := True;
+         SetFlag := True;
+         s := cl
+      end;
+   '?':
+      begin
+         ShowMode := swHide;
+         s := cl;
+         Result := cp
+      end;
+   '!':
+      begin
+         ShowMode := swShow;
+         s := cl;
+         Result := cp
+      end;
    else
       Result := cp;
    end;
@@ -3220,7 +3204,6 @@ begin
       end else begin
          XChg(ActivePoll.Node, an);
          FreeObject(an);
-//         ActivePoll.Reset;
       end;
    end;
    if ActivePoll <> nil then begin
@@ -3933,19 +3916,18 @@ end;
 
 function TFidoPoll.STryNoC: string;
 begin
-   if (Typ = ptpManual) or (Typ = ptpImm) or (Typ = ptpBack) or (Typ = ptpNmIm) then
+   if (Typ = ptpManual) or (Typ = ptpImm) or (Typ = ptpBack) or (Typ = ptpNmIm) then begin
       Result := Format('%d+', [TryNoConnect])
-   else
-   begin
+   end else begin
       Result := Format('%d/%d', [TryNoConnect, inifile.FPFlags.NoC]);
    end;
 end;
 
 function TFidoPoll.STryBusy: string;
 begin
-   if (Typ = ptpManual) or (Typ = ptpImm) or (Typ = ptpBack) or (Typ = ptpNmIm) then
+   if (Typ = ptpManual) or (Typ = ptpImm) or (Typ = ptpBack) or (Typ = ptpNmIm) then begin
       Result := Format('%d+', [TryBusy])
-   else begin
+   end else begin
       Result := Format('%d/%d', [TryBusy, inifile.FPFlags.Busy]);
    end;
 end;
@@ -4304,12 +4286,10 @@ var
          if SD.Prot <> nil then
          begin // binkp
            s := EP.StrValue(eiChatBell);
-           if (s <> '') then
-           begin
+           if (s <> '') then begin
              if (s[1] <> '@') then SD.Prot.ChatBell := s
              else begin
-               if length(s) > 1 then
-               begin
+               if length(s) > 1 then begin
                  delete(s, 1 ,1);
                  SD.Prot.ChatBell := GetSongPath(s, SD.rmtPrimaryAddr);
                end;
@@ -4326,19 +4306,15 @@ begin
    FreeObject(SD.rmtAddrs);
    InvAddrs := TStringColl.Create;
    SD.rmtAddrs := CreateAddrCollInvAddrs(S, InvAddrs);
-   for i := 0 to InvAddrs.Count - 1 do
-   begin
-      if i = 0 then
-      begin
+   for i := 0 to InvAddrs.Count - 1 do begin
+      if i = 0 then begin
          LogPostEMSIErr(Format('Remote presented the following list that has invalid address(es): "%s"', [s]));
       end;
       LogPostEMSIErr(Format('Invalid (unparsed) address "%s" - removed from AKA list', [InvAddrs[i]]));
    end;
    FreeObject(InvAddrs);
-   if (SD.ActivePoll = nil) and (SD.rmtAddrs <> nil) then
-   begin
-      if not AddrRestrictionMatches(SD.rmtAddrs, Trim(EP.StrValue(eiAccNodesRqd)), Trim(EP.StrValue(eiAccNodesFrb))) then
-      begin
+   if (SD.ActivePoll = nil) and (SD.rmtAddrs <> nil) then begin
+      if not AddrRestrictionMatches(SD.rmtAddrs, Trim(EP.StrValue(eiAccNodesRqd)), Trim(EP.StrValue(eiAccNodesFrb))) then begin
          GetPrimaryAddr;
          LogEMSIData;
          Log(ltGlobalErr, 'Address restriction applied');
@@ -4361,17 +4337,11 @@ begin
    Result := True;
    if SD.SkipHangup then
       SD.SkipHangup := False
-   else
-   begin
-{$IFDEF WS}
-      if not DialupLine then
-      begin
+   else begin
+      if not DialupLine then begin
          Sleep(500); // wait to drain out
          FreeCP
-      end
-      else
-{$ENDIF}
-      begin
+      end else begin
          Sleep(200); // wait to drain out
          DoRemoveNiagara;
          UpdateModem;
@@ -4507,9 +4477,7 @@ begin
    if SD.Prot = nil then exit;
    if SD.rmtAddrs = nil then exit;
    EnterCS(DisplayDataCS);
-   SD.rmtAddrs.Enter;
    ScanOut(True);
-   SD.rmtAddrs.Leave;
    SD.OutFiles.PurgeDuplicates(SD.TxMail, SD.TxFiles);
    LeaveCS(DisplayDataCS);
    if SD.OutFiles.Count > 0 then
@@ -4600,11 +4568,9 @@ begin
    SD.LastSentString := AStr;
    Result := False;
    SL := Length(AStr);
-   if SL > 0 then
-   begin
+   if SL > 0 then begin
       I := 1;
-      while I <= SL do
-      begin
+      while I <= SL do begin
          DoAccumulate;
          CC := AStr[I];
          case CC of
@@ -4612,18 +4578,18 @@ begin
                begin
                   PutS(CC);
                   case CC of
-                     '`': Dly(1); // 0.1 Second Delay
-                     '~': Dly(5); // 0.5 Second Delay
-                     '^':
-                        begin
-                           CP.Flsh;
-                           TSerialPort(CP).DTR := True;
-                        end;
-                     'v':
-                        begin
-                           CP.Flsh;
-                           TSerialPort(CP).DTR := False;
-                        end;
+                  '`': Dly(1); // 0.1 Second Delay
+                  '~': Dly(5); // 0.5 Second Delay
+                  '^':
+                     begin
+                        CP.Flsh;
+                        TSerialPort(CP).DTR := True;
+                     end;
+                  'v':
+                     begin
+                        CP.Flsh;
+                        TSerialPort(CP).DTR := False;
+                     end;
                   end;
                end;
             '!':
@@ -4632,8 +4598,7 @@ begin
                   PutC(ccCR);
                end;
             '\':
-               if I < SL then
-               begin
+               if I < SL then begin
                   Inc(I);
                   PutC(AStr[I])
                end;
@@ -4649,21 +4614,21 @@ begin
                   repeat
                      DoAccumulate;
                      case ModemResponse of
-                        mrpOK: Break;
-                        mrpRing:
-                           begin
-                              Log(ltWarning, SD.LastResponse);
-                              break;
-                           end;   
-                        mrpNone: Sleep(100);
-                        mrpNoCarrier:
+                     mrpOK: Break;
+                     mrpRing:
+                        begin
+                           Log(ltWarning, SD.LastResponse);
+                           break;
+                        end;
+                     mrpNone: Sleep(100);
+                     mrpNoCarrier:
                         begin
                            s := SD.InB;
                            sleep(500);
                            DoAccumulate;
                            if SD.InB = s then begin
                               Log(ltWarning, SD.LastResponse);
-                              Exit;
+                               Exit;
                            end;
                         end;
                      else
@@ -4673,8 +4638,7 @@ begin
                         end;
                      end;
                      ToSleep := RemainingTimeMsecs(DT);
-                     if ToSleep = 0 then
-                     begin
+                     if ToSleep = 0 then begin
                         Result := False;
                         Exit;
                      end;
@@ -4709,7 +4673,7 @@ begin
    GetWrd(A, B, ' ');
    B := UpperCase(B);
    Replace('_', ' ', A);
-   with DS do
+   with DS do begin
       if B = '|' then
       else
       if B = 'SYS' then
@@ -4739,6 +4703,7 @@ begin
          DoTRF
       else
          LogFmt(ltInfo, '%s : %s', [AddLeftSpaces('M_NUL', 10), S]);
+   end;
 end;
 
 function TMailerThread.ChkNonEmsiPwd(P: TBaseProtocol): Boolean;
@@ -4750,14 +4715,10 @@ begin
    SD.BadPassword := not ValidEncryptedAKAs;
    SD.BadPassword := SD.BadPassword or (not CheckPasswords);
    AkasLocked := LockAKAs;
-   if not AkasLocked then
-   begin
+   if not AkasLocked then begin
       P.CustomInfo := #4;
-   end
-   else
-   begin
-      if P <> nil then
-      begin
+   end else begin
+      if P <> nil then begin
          if SD.BadPassword then
             P.CustomInfo := cBadPwd
          else
@@ -4770,9 +4731,10 @@ end;
 
 function TMailerThread.ValidEncryptedAKAs: Boolean;
 var
-   i, j: Integer;
-   ra: TFidoAddrColl;
-   pa: PFidoAddress;
+   i,
+   j: Integer;
+  ra: TFidoAddrColl;
+  pa: PFidoAddress;
    a: TFidoAddress;
    e: TEncryptedNodeData;
 begin
@@ -4807,9 +4769,9 @@ end;
 
 function TMailerThread.FindPassword(const A: TFidoAddress; P: TBaseProtocol): boolean;
 var
-   psw: string;
-   dig: string;
-     D: TMD5Byte16;
+ psw: string;
+ dig: string;
+   D: TMD5Byte16;
 begin
    Result := True;
    LogEMSIData;
@@ -4962,17 +4924,20 @@ const
 
    procedure CheckBinkPpwd;
    var
-      OurDig, OurPwd, Uniq: string;
+      OurDig,
+      OurPwd,
+      Uniq: string;
       i: Integer;
+      j: integer;
+      n: TAdvNode;
+      d: TAdvNodeData;
    const
       cCRAM = 'CRAM-MD5-';
    begin
       GetWrd(P.CustomInfo, Uniq, ' ');
-      if StrBegsU(cCRAM, P.CustomInfo) then
-      begin
+      if StrBegsU(cCRAM, P.CustomInfo) then begin
          Delete(P.CustomInfo, 1, Length(cCRAM));
-         if not SD.rmtPrimaryAddrSet then
-         begin
+         if not SD.rmtPrimaryAddrSet then begin
             P.CustomInfo := cBadPwd;
             Exit
          end;
@@ -4989,8 +4954,7 @@ const
 
          OurDig := KeyedMD5(OurPwd[1], Length(OurPwd), Uniq[1], Length(Uniq));
          SD.CramMD5 := True;
-         if UpperCase(OurDig) <> UpperCase(P.CustomInfo) then
-         begin
+         if UpperCase(OurDig) <> UpperCase(P.CustomInfo) then begin
             LogEMSIData;
             LogFmt(ltGlobalErr, 'Remote presented invalid password (auth=CRAM-MD5) when "%s" is required for %s', [OurPwd, Addr2Str(SD.rmtPrimaryAddr)]);
             P.CustomInfo := cBadPwd;
@@ -5004,6 +4968,21 @@ const
       else
          SD.rmtPassword := P.CustomInfo;
       ChkNonEmsiPwd(P);
+      if P.CustomInfo = '' then begin
+         for i := 0 to CollMax(SD.rmtAddrs) do begin
+            n := FindNode(SD.rmtAddrs[i]);
+            if n <> nil then begin
+               for j := 0 to CollMax(n.IPData) do begin
+                  d := n.IPData[j];
+                  if pos('CRYPT', d.Flags) > 0 then begin
+                     P.CustomInfo := 'CRYPT';
+                     exit;
+                  end;
+               end;
+               FreeObject(n);
+            end;
+         end;
+      end;
    end;
 
    procedure PerformDelete(const n: string);
@@ -5068,6 +5047,7 @@ const
          end else begin
             P.CustomInfo := 'NAK'
          end;
+         FreeObject(n);
       end else begin
          P.CustomInfo := 'NAK'
       end;
@@ -5358,7 +5338,7 @@ begin
    N := 0;
    TransmitHold := SD.ActivePoll = nil;
    if not TransmitHold then begin
-      TransmitHold := inifile.TransmitHold; 
+      TransmitHold := inifile.TransmitHold;
    end;
    Add(osCallback);
    if rmfHFR in SD.rmtMailerFlags then AddFReq;
@@ -6492,7 +6472,7 @@ var
                      sss := Format('%sReceived ''%s''', [CPS, fn]);
                      FreeBWZ(SD.WzRec);
                      If IniFile.UnpackMSG and (ufe = '.PKT') then begin
-                        UnpackPKT(fn);
+                        UnpackPKT(fn); 
                      end;
                   end else begin
                      ChkErrMsg;
@@ -6609,6 +6589,7 @@ var
     r: TOutFile;
     t: TOutFile;
   sss,
+  ttt,
   MoveTo,
   CPS: string;
     i: Integer;
@@ -6663,7 +6644,9 @@ begin
          SD.Prot.ProtocolError := ecAbortByLocal;
       end else
       if (UpperCase(ExtractFileExt(P.T.d.FName)) = '.PKT') then begin
-         FinalizePKT(r.Address, r.Name);
+         if IniFile.UnpackMSG then begin
+            FinalizePKT(r.Address, r.Name);
+         end;   
       end;
    end;
 
@@ -6688,6 +6671,9 @@ begin
                   end;
                   FidoOut.Lock(r.Address, osBusy, True);
                   DeleteOutFile(r.Name);
+                  if r.Twin <> '' then begin
+                     DeleteOutFile(r.Twin);
+                  end;
                   OA := True;
                end;
             kaBsoTruncateAfter:
@@ -6773,7 +6759,18 @@ begin
                end else begin
                   i := r.Nfo.Size;
                   if r.Netm <> '' then begin
-                     ClearAttach(r.Netm, r.Name);
+                     ttt := ClearAttach(r.Address, r.Netm, r.Name);
+                     if ttt <> '' then begin
+                        t := TOutFile.Create;
+                        t.FStatus := osCrash;
+                        t.KillAction := kaBsoKillAfter;
+                        t.Address := r.Address;
+                        t.Name := ExtractWord(1, ttt, [' ']);
+                        t.Twin := ExtractWord(2, ttt, [' ']);
+                        t.Nfo.Size := GetFileSize(ttt);
+                        t.Nfo.Time := GetFileTime(ttt);
+                        SD.OutFiles.AtInsert(0, t);
+                     end;
                   end;
                end;
                CommonLog.Add(SD.rmtPrimaryAddr, sss, True, i, DS.rmtSoft);
@@ -7110,10 +7107,10 @@ begin
 
       cf := [cRead, cExisting];
       case f.KillAction of
-         kaBsoTruncateAfter,
-         kaFbKillAfter,
-         kaFbMoveAfter:
-            Include(cf, cWrite);
+      kaBsoTruncateAfter,
+      kaFbKillAfter,
+      kaFbMoveAfter:
+         Include(cf, cWrite);
       end;
       s := CreateDosStream(f.Name, cf);
 
@@ -7121,9 +7118,6 @@ begin
          SetErrorMsg(f.Name);
          ChkErrMsg;
          Fre0;
-//         if SD.OutFiles.Count > 0 then begin
-//            SD.OutFiles.AtFree(0);
-//         end;
          Continue;
       end;
 
@@ -7203,9 +7197,9 @@ begin
       if ((OutCPS >= 0) and (DWORD(OutCPS) < VlD)) then Inc(L, 2);
       if L = 0 then Break;
       case L of
-         1: s := Format('RX CPS too low (%d), should be at least %d - disconnecting', [InCPS, VlD]);
-         2: s := Format('TX CPS too low (%d), should be at least %d - disconnecting', [OutCPS, VlD]);
-         3: s := Format('RX/TX CPS too low (%d/%d), should be at least %d - disconnecting', [InCPS, OutCPS, VlD]);
+      1: s := Format('RX CPS too low (%d), should be at least %d - disconnecting', [InCPS, VlD]);
+      2: s := Format('TX CPS too low (%d), should be at least %d - disconnecting', [OutCPS, VlD]);
+      3: s := Format('RX/TX CPS too low (%d/%d), should be at least %d - disconnecting', [InCPS, OutCPS, VlD]);
       else
          GlobalFail('%s', ['TMailerThread.CheckCPS']);
       end;
@@ -7213,26 +7207,25 @@ begin
    until True;
 
    if not error then
-      repeat
-         if SD.ConnectSpeed <= 0 then Break;
-         EfD := EP.DwordValueD(ACPSEfMin[SD.ActivePoll <> nil], DWORD(MaxInt));
-         if EfD = DWORD(MaxInt) then Break;
-         L := 0;
-         if ((InCPS >= 0) and (DWORD(InCPS) * 8 * 100 < EfD * SD.ConnectSpeed)) then Inc(L);
-         if ((OutCPS >= 0) and (DWORD(OutCPS) * 8 * 100 < EfD * SD.ConnectSpeed)) then Inc(L, 2);
-         if L = 0 then Break;
-         case L of
-            1: s := Format('RX Efficiency %d%% (%d of %d BPS) is too low, should be at least %d%% (%d of %d BPS) - disconnecting', [(DWORD(InCPS) * 8 * 100) div SD.ConnectSpeed, InCPS * 8, SD.ConnectSpeed, EfD, (EfD * SD.ConnectSpeed) div 100, SD.ConnectSpeed]);
-            2: s := Format('TX Efficiency %d%% (%d of %d BPS) is too low, should be at least %d%% (%d of %d BPS) - disconnecting', [(DWORD(OutCPS) * 8 * 100) div SD.ConnectSpeed, OutCPS * 8, SD.ConnectSpeed, EfD, (EfD * SD.ConnectSpeed) div 100, SD.ConnectSpeed]);
-            3: s := Format('RX/TX Efficiency %d%% (%d of %d BPS) / %d%% (%d of %d BPS) is too low, should be at least %d%% (%d of %d BPS) - disconnecting', [(DWORD(InCPS) * 8 * 100) div SD.ConnectSpeed, InCPS * 8, SD.ConnectSpeed, (DWORD(OutCPS) * 8 * 100) div SD.ConnectSpeed, OutCPS * 8, SD.ConnectSpeed, EfD, (EfD * SD.ConnectSpeed) div 100, SD.ConnectSpeed]);
-         else
-            GlobalFail('%s', ['TMailerThread.CheckCPS']);
-         end;
-         error := True;
-      until True;
+   repeat
+      if SD.ConnectSpeed <= 0 then Break;
+      EfD := EP.DwordValueD(ACPSEfMin[SD.ActivePoll <> nil], DWORD(MaxInt));
+      if EfD = DWORD(MaxInt) then Break;
+      L := 0;
+      if ((InCPS >= 0) and (DWORD(InCPS) * 8 * 100 < EfD * SD.ConnectSpeed)) then Inc(L);
+      if ((OutCPS >= 0) and (DWORD(OutCPS) * 8 * 100 < EfD * SD.ConnectSpeed)) then Inc(L, 2);
+      if L = 0 then Break;
+      case L of
+      1: s := Format('RX Efficiency %d%% (%d of %d BPS) is too low, should be at least %d%% (%d of %d BPS) - disconnecting', [(DWORD(InCPS) * 8 * 100) div SD.ConnectSpeed, InCPS * 8, SD.ConnectSpeed, EfD, (EfD * SD.ConnectSpeed) div 100, SD.ConnectSpeed]);
+      2: s := Format('TX Efficiency %d%% (%d of %d BPS) is too low, should be at least %d%% (%d of %d BPS) - disconnecting', [(DWORD(OutCPS) * 8 * 100) div SD.ConnectSpeed, OutCPS * 8, SD.ConnectSpeed, EfD, (EfD * SD.ConnectSpeed) div 100, SD.ConnectSpeed]);
+      3: s := Format('RX/TX Efficiency %d%% (%d of %d BPS) / %d%% (%d of %d BPS) is too low, should be at least %d%% (%d of %d BPS) - disconnecting', [(DWORD(InCPS) * 8 * 100) div SD.ConnectSpeed, InCPS * 8, SD.ConnectSpeed, (DWORD(OutCPS) * 8 * 100) div SD.ConnectSpeed, OutCPS * 8, SD.ConnectSpeed, EfD, (EfD * SD.ConnectSpeed) div 100, SD.ConnectSpeed]);
+      else
+         GlobalFail('%s', ['TMailerThread.CheckCPS']);
+      end;
+      error := True;
+   until True;
 
-   if error then
-   begin
+   if error then begin
       Log(ltGlobalErr, s);
       InsertEvt(TMlrEvtChStatus.Create(msCancel));
       SD.AtomDisconnected := True;
@@ -7247,7 +7240,6 @@ begin
    XChg(ForceDisplayData, i);
    if i = 0 then Exit;
    UpdateData;
-//   PostMsg(WM_UPDATEVIEW);
 end;
 
 procedure TMailerThread.DisplayData;
@@ -7259,17 +7251,12 @@ procedure TMailerThread.GetStationData;
 begin
    //  if LineId = -1 then GlobalFail('%s', ['TMailerThread.GetStationData LineId = -1']);
    CreateStation;
-{$IFDEF WS}
-   if not DialupLine then
-   begin
+   if not DialupLine then begin
       CfgEnter;
       CopyIpStation;
       SD.LogonBanner := Cfg.IpData.Banner;
       CfgLeave;
-   end
-   else
-{$ENDIF}
-   begin
+   end else begin
       DoCopyDialupStation;
    end;
 end;
@@ -7277,7 +7264,8 @@ end;
 procedure TMailerThread.DoCopyDialupStation;
 var
    r: TStationRec;
-   lL, lS: TElementColl;
+  lL,
+  lS: TElementColl;
    f: Text;
    x, s: string;
 begin
@@ -7294,10 +7282,8 @@ begin
    s := '';
    if _icvGetFromFile[0] = 0 then
       SD.LogonBanner := r.Banner
-   else
-   begin
-      if FileExists(AltCfg.AltStationRec.BannerFile) then
-      begin
+   else begin
+      if FileExists(AltCfg.AltStationRec.BannerFile) then begin
          AssignFile(f, AltCfg.AltStationRec.BannerFile);
          Reset(f);
          repeat
@@ -7306,17 +7292,18 @@ begin
          until eof(f);
          closefile(f);
          SD.LogonBanner := x;
-      end
-      else
+      end else begin
          SD.LogonBanner := 'File ' + AltCfg.AltStationRec.BannerFile + ' not found!!!';
-
+      end;
    end;
    FreeObject(r);
 end;
 
 function TMailerThread.CheckPasswords: Boolean;
 var
-   RmtPwd, RmtPwdU, s: string;
+   RmtPwd,
+   RmtPwdU,
+   s: string;
    a: TFidoAddress;
    i: Integer;
 begin
@@ -7399,7 +7386,8 @@ function TMailerThread.GetTraf(sTRAF: string; Hex: Boolean): Boolean;
 
 var
    s: string;
-   m, f: DWORD;
+   m,
+   f: DWORD;
 begin
    Result := False;
    GetWrd(sTRAF, S, ' ');
@@ -7419,10 +7407,17 @@ var
 
    procedure DoParse;
    var
-      sTRAF, sMOH, s, s2, s3, s4, spd: string;
+      sTRAF,
+      sMOH,
+      s,
+      s2,
+      s3,
+      s4,
+      spd: string;
       C: TEMSICapabilities;
       DP: TEMSICapability;
-      i, j: Integer;
+      i,
+      j: Integer;
       EMSILogFHandle: DWORD;
      _EMSILogFName: string;
       SystemTime: TSystemTime;
@@ -7434,21 +7429,16 @@ var
          sTRAF := '';
          sMOH := '';
          S := ExtractEMSI(SD.InB);
-
-         if EP.VoidFound(eiLogEMSI) then
-         begin
+         if EP.VoidFound(eiLogEMSI) then begin
             EMSILogFHandle := 0;
             logstr := '= ' + uFormat(uGetLocalTime) + ' < ' + S;
 {            if _LogOK(EMSILogFName, EMSILogFHandle) then}
             _EMSILogFName := ExtractFilePath(LogFName) + 'emsi-' + ExtractFileName(LogFName);
-            if _LogOK(_EMSILogFName, EMSILogFHandle) then
-            begin
+            if _LogOK(_EMSILogFName, EMSILogFHandle) then begin
                if trycount > -1 then TryWriteAgain(_EMSILogFName, EMSILogFHandle);
                _LogWriteStr(logstr, EMSILogFHandle);
                ZeroHandle(EMSILogFHandle);
-            end
-            else
-            begin
+            end else begin
                inc(trycount);
                ErrLogFile.Add(_EMSILogFName);
                ErrLogString.Add(LogStr);
@@ -7482,83 +7472,82 @@ var
          SD.rmtMailerSerialNo := s4;
          DS.rmtSoft := Format('%s/%s/%s', [s, s3, s4]);
 
-         while EMSI.Count > 10 do
-         begin
+         while EMSI.Count > 10 do begin
             S := EMSI[10];
             S2 := EMSI[9];
             if not Hex2EMSI(S2) then Exit;
             case IdentEMSIAddon(S2) of
-               eaIDENT:
+            eaIDENT:
+               begin
+                  ParseEMSILine(S, L, ']');
+                  for I := MinI(5, L.Count - 1) downto 0 do
                   begin
-                     ParseEMSILine(S, L, ']');
-                     for I := MinI(5, L.Count - 1) downto 0 do
-                     begin
-                        S := L[I];
-                        if not Hex2EMSI(S) then Exit;
-                        case I of
-                           0: DS.rmtStationName := S;
-                           1: DS.rmtLocation := S;
-                           2: DS.rmtSysOpName := S;
-                           3: DS.rmtPhone := S;
-                           4: spd := S;
-                           5: DS.rmtFlags := S;
-                        end;
-                     end;
-                     DS.rmtFlags := spd + ',' + DS.rmtFlags;
-                  end;
-               eaTraf:
-                  sTRAF := S;
-               eaMOH:
-                  sMOH := S;
-               eaTRX:
-                  begin
-                     ParseEMSILine(S, L, ']');
-                     if L.Count <> 1 then Exit;
-                     S := L[0];
+                     S := L[I];
                      if not Hex2EMSI(S) then Exit;
-                     SD.rmtTRX := VlH(S);
-                     if SD.rmtTRX = INVALID_VALUE then Exit;
-                     if SD.rmtAddrs <> nil then
-                        if SD.rmtAddrs.Count > 0 then
+                     case I of
+                        0: DS.rmtStationName := S;
+                        1: DS.rmtLocation := S;
+                        2: DS.rmtSysOpName := S;
+                        3: DS.rmtPhone := S;
+                        4: spd := S;
+                        5: DS.rmtFlags := S;
+                     end;
+                  end;
+                  DS.rmtFlags := spd + ',' + DS.rmtFlags;
+               end;
+            eaTraf:
+               sTRAF := S;
+            eaMOH:
+               sMOH := S;
+            eaTRX:
+               begin
+                  ParseEMSILine(S, L, ']');
+                  if L.Count <> 1 then Exit;
+                  S := L[0];
+                  if not Hex2EMSI(S) then Exit;
+                  SD.rmtTRX := VlH(S);
+                  if SD.rmtTRX = INVALID_VALUE then Exit;
+                  if SD.rmtAddrs <> nil then
+                     if SD.rmtAddrs.Count > 0 then
+                     begin
+                        for j := 0 to SD.rmtAddrs.Count - 1 do
                         begin
-                           for j := 0 to SD.rmtAddrs.Count - 1 do
+                           if Addr2Str(SD.rmtAddrs.Addresses[j]) = Addr2Str(IniFile.Synch) then
                            begin
-                              if Addr2Str(SD.rmtAddrs.Addresses[j]) = Addr2Str(IniFile.Synch) then
-                              begin
-                                 TimeDiff := uGetSystemTime;
-                                 DateTimeToSystemTime(uDelphiTime(SD.rmtTRX), SystemTime);
-                                 SystemTime.wHour := SystemTime.wHour + IniFile.TimeShift;
-                                 SetLocalTime(SystemTime);
-                                 TimeDiff := TimeDiff - Integer(uGetSystemTime);
-                                 Log(ltInfo, 'Local time was synchronized with ' + Addr2Str(IniFile.Synch));
-                                 Log(ltInfo, Format('Time difference %d', [TimeDiff]))
-                              end;
+                              TimeDiff := uGetSystemTime;
+                              DateTimeToSystemTime(uDelphiTime(SD.rmtTRX), SystemTime);
+                              SystemTime.wHour := SystemTime.wHour + IniFile.TimeShift;
+                              SetLocalTime(SystemTime);
+                              TimeDiff := TimeDiff - Integer(uGetSystemTime);
+                              Log(ltInfo, 'Local time was synchronized with ' + Addr2Str(IniFile.Synch));
+                              Log(ltInfo, Format('Time difference %d', [TimeDiff]))
                            end;
                         end;
-                     SD.rmtTime := uFormat(SD.rmtTRX);
-                     GetBias;
-                     if IniFile.HydraUTCDefault then SD.tzshift := 0
-                     else SD.tzshift := TimeZoneBias;
-                  end;
-               eaBTH:
-                  begin
-                     if SD.EMSI_Addons = nil then SD.EMSI_Addons := TStringColl.Create;
-                     SD.EMSI_Addons.Add(Format(' Great Day : %s', [s]));
-                  end;
-               eaCustom:
-                  begin
-                     if not Hex2EMSI(S) then Exit;
-                     if SD.EMSI_Addons = nil then SD.EMSI_Addons := TStringColl.Create;
-                     if ((S2 = 'XDATETIME') or (S2 = 'TZUTC')) and (not IniFile.HydraUTCDefault) then
-                     begin
-                       shift := copy(S, length(S) - 5, 5);
-                       if IsOldMailer(DS.rmtSoft) then
-                         SD.tzshift := 0
-                       else
-                         SD.tzshift := - StrToIntDef(shift, 0) * 36;
                      end;
-                     SD.EMSI_Addons.Add(Format('EMSI Addon : %s %s', [S2, S]));
+                  SD.rmtTime := uFormat(SD.rmtTRX);
+                  GetBias;
+                  if IniFile.HydraUTCDefault then SD.tzshift := 0
+                  else SD.tzshift := TimeZoneBias;
+               end;
+            eaBTH:
+               begin
+                  if SD.EMSI_Addons = nil then SD.EMSI_Addons := TStringColl.Create;
+                  SD.EMSI_Addons.Add(Format(' Great Day : %s', [s]));
+               end;
+            eaCustom:
+               begin
+                  if not Hex2EMSI(S) then Exit;
+                  if SD.EMSI_Addons = nil then SD.EMSI_Addons := TStringColl.Create;
+                  if ((S2 = 'XDATETIME') or (S2 = 'TZUTC')) and (not IniFile.HydraUTCDefault) then
+                  begin
+                    shift := copy(S, length(S) - 5, 5);
+                    if IsOldMailer(DS.rmtSoft) then
+                      SD.tzshift := 0
+                    else
+                      SD.tzshift := - StrToIntDef(shift, 0) * 36;
                   end;
+                  SD.EMSI_Addons.Add(Format('EMSI Addon : %s %s', [S2, S]));
+               end;
             else
                GlobalFail('IdentEMSIAddon("%s") ??', [S2]);
             end;
@@ -7566,19 +7555,16 @@ var
             EMSI.AtFree(9);
          end;
 
-         if sTRAF <> '' then
-         begin
+         if sTRAF <> '' then begin
             if not Hex2EMSI(sTRAF) then Exit;
             if not GetTraf(sTraf, True) then Exit;
-         end
-         else
-            if sMOH <> '' then
-            begin
-               if not Hex2EMSI(sMOH) then Exit;
-               D.rmtForUs := VlH(Copy(sMOH, 2, Length(sMOH) - 2));
-               if D.rmtForUs = INVALID_VALUE then Exit;
-               if D.rmtForUs > 0 then SD.rmtTrafInfo := Format('Remote has %sb for us', [Int2Str(D.rmtForUs)]);
-            end;
+         end else
+         if sMOH <> '' then begin
+            if not Hex2EMSI(sMOH) then Exit;
+            D.rmtForUs := VlH(Copy(sMOH, 2, Length(sMOH) - 2));
+            if D.rmtForUs = INVALID_VALUE then Exit;
+            if D.rmtForUs > 0 then SD.rmtTrafInfo := Format('Remote has %sb for us', [Int2Str(D.rmtForUs)]);
+         end;
 
          S := EMSI.Password;
          if not Hex2EMSI(S) then Exit;
@@ -7597,22 +7583,18 @@ var
          else
             if ecHFR in SD.rmtEMSICompat then Include(SD.rmtMailerFlags, rmfHFR);
 
-         if SD.ActivePoll <> nil then
-         begin
+         if SD.ActivePoll <> nil then begin
             if elPUA in SD.rmtLinkCodes then
                Include(SD.rmtMailerFlags, rmfPUA)
             else
-               if elPUP in SD.rmtLinkCodes then
-                  Include(SD.rmtMailerFlags, rmfPUP)
-               else
-                  if elNPU in SD.rmtLinkCodes then Include(SD.rmtMailerFlags, rmfNPU);
-         end
-         else
-         begin
+            if elPUP in SD.rmtLinkCodes then
+               Include(SD.rmtMailerFlags, rmfPUP)
+            else
+               if elNPU in SD.rmtLinkCodes then Include(SD.rmtMailerFlags, rmfNPU);
+         end else begin
             if elHAT in SD.rmtLinkCodes then
                Include(SD.rmtMailerFlags, rmfHAT)
-            else
-            begin
+            else begin
                if elHXT in SD.rmtLinkCodes then Include(SD.rmtMailerFlags, rmfHXT);
                if elHRQ in SD.rmtLinkCodes then Include(SD.rmtMailerFlags, rmfHRQ);
             end;
@@ -7620,8 +7602,7 @@ var
 
          C := SD.rmtEMSICompat * SD.OurProtocols;
       except
-         on E: Exception do
-         begin
+         on E: Exception do begin
             Log(ltGlobalErr, 'ParseEMSIData v' + ProductVersion + ' ' + GetThrErrorMsg + ' "' + E.Message + '"');
             FlushLog;
             ZeroHandle(LogFHandle);
@@ -7683,44 +7664,43 @@ var
       I: Integer;
    begin
       case C of
-         '{', '[':
-            begin
-               B[BP] := C;
-               Inc(BP);
-            end;
-         ' ', ',':
-            if (BP > 0) and not (B[BP - 1] in ['}', '{', ']', '[']) then
-            begin
-               B[BP] := C;
-               Inc(BP);
-            end;
+      '{', '[':
+         begin
+            B[BP] := C;
+            Inc(BP);
+         end;
+      ' ', ',':
+         if (BP > 0) and not (B[BP - 1] in ['}', '{', ']', '[']) then begin
+            B[BP] := C;
+            Inc(BP);
+         end;
       end;
       for I := 1 to Length(S) do
-         case S[I] of
-            #0..#31, '\', '{', '}', '[', ']', #127..#255:
-               begin
-                  B[BP + 0] := '\';
-                  B[BP + 1] := rrLoHexChar[Byte(S[I]) shr 4];
-                  B[BP + 2] := rrLoHexChar[Byte(S[I]) and 15];
-                  Inc(BP, 3);
-               end;
-         else
-            begin
-               B[BP] := S[I];
-               Inc(BP);
-            end;
+      case S[I] of
+      #0..#31, '\', '{', '}', '[', ']', #127..#255:
+         begin
+            B[BP + 0] := '\';
+            B[BP + 1] := rrLoHexChar[Byte(S[I]) shr 4];
+            B[BP + 2] := rrLoHexChar[Byte(S[I]) and 15];
+            Inc(BP, 3);
          end;
+      else
+         begin
+            B[BP] := S[I];
+            Inc(BP);
+         end;
+      end;
       case C of
-         '{':
-            begin
-               B[BP] := '}';
-               Inc(BP);
-            end;
-         '[':
-            begin
-               B[BP] := ']';
-               Inc(BP);
-            end;
+      '{':
+         begin
+            B[BP] := '}';
+            Inc(BP);
+         end;
+      '[':
+         begin
+            B[BP] := ']';
+            Inc(BP);
+         end;
       end;
    end;
 
@@ -7763,8 +7743,7 @@ begin
    Put('{', ProductPlatform); //visual
    //  Put('{', '0');
 
-   if not SD.BadPassword then
-   begin
+   if not SD.BadPassword then begin
       Put('{', SEMSIAddons[eaIDENT]);
       Add('{');
       Put('[', SD.Station.Station);
@@ -7784,8 +7763,7 @@ begin
       Put('[', S);
       Add('}');
       PutAddon(eaTRX, '[', Int2Hex(uGetLocalTime));
-      if (SD.txMail + SD.txFiles > 0) then
-      begin
+      if (SD.txMail + SD.txFiles > 0) then begin
          PutAddon(eaTRAF, #0, Format('%s %s', [Int2Hex(SD.txMail), Int2Hex(SD.txFiles)]));
          PutAddon(eaMOH, '[', Int2Hex(SD.txMail + SD.txFiles));
       end;
@@ -7806,19 +7784,15 @@ begin
    CRC := UpdateCrc16Usd(0, CRC);
    CRC := UpdateCrc16Usd(0, CRC);
    SetLength(B, BP - 1);
-   if EP.VoidFound(eiLogEMSI) then
-   begin
+   if EP.VoidFound(eiLogEMSI) then begin
       EMSILogFHandle := 0;
       logstr := '= ' + uFormat(uGetLocalTime) + ' > ' + CopyLeft(B, 15);
       _EMSILogFName := ExtractFilePath(LogFName) + 'emsi-' + ExtractFileName(LogFName);
-      if _LogOK(_EMSILogFName, EMSILogFHandle) then
-      begin
+      if _LogOK(_EMSILogFName, EMSILogFHandle) then begin
          if trycount > -1 then TryWriteAgain(_EMSILogFName, EMSILogFHandle);
          _LogWriteStr(logstr, EMSILogFHandle);
          ZeroHandle(EMSILogFHandle);
-      end
-      else
-      begin
+      end else begin
          inc(trycount);
          ErrLogFile.Add(_EMSILogFName);
          ErrLogString.Add(LogStr);
@@ -7853,28 +7827,20 @@ begin
    Cfg.DrsCollB.AppendTo(cb);
    CfgLeave;
    R := EP.GetAtomList(eiDoor);
-   for i := 0 to CollMax(R) do
-   begin
+   for i := 0 to CollMax(R) do begin
       ds := R[i];
       ca.Add(ds.StrA);
       cb.Add(ds.StrB);
    end;
    FreeObject(R);
-   for i := 0 to ca.Count - 1 do
-   begin
+   for i := 0 to ca.Count - 1 do begin
       s := ca[i];
       Replace('\', #27, s);
-
-      // visual - enhancement
-      // allow run ExtApp by any binary sequence, which have format 0x??
-      while Pos('0x', s) > 0 do
-      begin
+      while Pos('0x', s) > 0 do begin
          cod := copy(s, Pos('0x', s) + 2, 2);
          Replace('0x' + cod, chr(StrToIntDef('$' + cod, 0)), s)
       end;
-
-      if Pos(s, SD.InB) > 0 then
-      begin
+      if Pos(s, SD.InB) > 0 then begin
          SD.ExtAppStr := _DelSpaces(cb[i]);
          Result := True;
          Break;
@@ -7884,16 +7850,11 @@ begin
    FreeObject(cb);
 end;
 
-// visual - check remote controll access sequence
-
 function TMailerThread.GotRemCtrl: Boolean;
 begin
    Result := False;
-   //  if not BBSAllowed then Exit;
-   //    Replace('\', #27, s);
    if (not IniFile.Remote_Enabled) or (IniFile.Remote_Password = '') then exit;
-   if Pos(IniFile.Remote_Password, SD.InB) > 0 then
-   begin
+   if Pos(IniFile.Remote_Password, SD.InB) > 0 then begin
       Delete(SD.InB, 1, length(SD.InB));
       Result := True;
    end;
@@ -7912,7 +7873,8 @@ procedure TMailerThread.DoHSh;
 
    function CheckYooHooChar: Boolean;
    var
-      YC, I: Integer;
+      YC,
+      I: Integer;
       C: Char;
    begin
       if SD.ActivePoll = nil then
@@ -7920,11 +7882,9 @@ procedure TMailerThread.DoHSh;
       else
          C := ccENQ;
       Result := False;
-      if SD.MayYooHoo then
-      begin
+      if SD.MayYooHoo then begin
          I := Pos(C, SD.InB);
-         if I > 0 then
-         begin
+         if I > 0 then begin
             SD.MayFTS1 := False;
             repeat
                Delete(SD.InB, 1, I);
@@ -7934,8 +7894,7 @@ procedure TMailerThread.DoHSh;
             YC := 4;
             if not SD.MayEMSI then Dec(YC);
             if C = ccENQ then Dec(YC);
-            if SD.YooHooCount >= YC then
-            begin
+            if SD.YooHooCount >= YC then begin
                State := msStartYooHoo;
                Result := True;
             end;
@@ -7953,33 +7912,26 @@ procedure TMailerThread.DoHSh;
       AreCR := Pos(ccCR, SD.InB) > 0;
 
       //-- Chkeck YooHoo
-      if not CheckYooHooChar then
-      begin
+      if not CheckYooHooChar then begin
          //-- Chkeck FTS-0001
-         if SD.MayFTS1 then
-         begin
+         if SD.MayFTS1 then begin
             I := Pos(ccTSync, SD.InB);
-            if I > 0 then
-            begin
+            if I > 0 then begin
                repeat
                   Delete(SD.InB, 1, I);
                   I := Pos(ccTSync, SD.InB);
                until I = 0;
                Inc(SD.FTS1Count);
-               if SD.FTS1Count = 3 then
-               begin
+               if SD.FTS1Count = 3 then begin
                   State := msStartFTS1;
                   Exit;
                end;
             end;
          end;
       end;
-
-      if AreCR then
-      begin
+      if AreCR then begin
          I := Pos(ccCR, SD.InB);
-         if I > 0 then
-         begin
+         if I > 0 then begin
             repeat
                Delete(SD.InB, 1, I);
                I := Pos(ccCR, SD.InB);
@@ -7987,7 +7939,6 @@ procedure TMailerThread.DoHSh;
          end;
          SendStr(__EMSI_REQ);
       end;
-
    end;
 
 var
@@ -8020,287 +7971,279 @@ begin
 
    //===  Handshake  ( Sender )  ===//
    case State of
-      msHSh_s1:
-         begin
-            SD.Tries := cHSh_S_Tries;
-            L := EP.GetAtomList(eiLoginScript);
-            State := msHSh_s1c;
-            if L <> nil then begin
-               for i := 0 to L.Count - 1 do begin
-                  eg := L[i];
-                  if MatchMaskAddressListSingle(SD.ActivePoll.Node.Addr, eg.s) then begin
-                     SD.LoginScript := eg.L.Copy;
-                     Break;
-                  end;
+   msHSh_s1:
+      begin
+         SD.Tries := cHSh_S_Tries;
+         L := EP.GetAtomList(eiLoginScript);
+         State := msHSh_s1c;
+         if L <> nil then begin
+            for i := 0 to L.Count - 1 do begin
+               eg := L[i];
+               if MatchMaskAddressListSingle(SD.ActivePoll.Node.Addr, eg.s) then begin
+                  SD.LoginScript := eg.L.Copy;
+                  Break;
                end;
-               FreeObject(L);
             end;
-
-            if (SD.LoginScript = nil) or (TStringColl(SD.LoginScript[0]).Count <= 0) then begin
-               State := msHSh_s1c;
-            end else begin
-               State := msHSh_Login_1;
-            end;
+            FreeObject(L);
          end;
 
-      msHSh_Login_1:
+         if (SD.LoginScript = nil) or (TStringColl(SD.LoginScript[0]).Count <= 0) then begin
+            State := msHSh_s1c;
+         end else begin
+            State := msHSh_Login_1;
+         end;
+      end;
+
+   msHSh_Login_1:
+      begin
+         sc := SD.LoginScript[0];
+         SendModemString(sc[SD.LoginStep]);
+         State := msHSh_Login_2;
+      end;
+
+   msHSh_Login_2:
+      begin
+         sc := SD.LoginScript[1];
+         FreeObject(SD.LoginWdREs);
+         SD.LoginWdREs := TColl.Create;
+         SD.LoginWdREs.Add(TReLoginHolder.Create(sc[SD.LoginStep], Self));
+         sc := SD.LoginScript[2];
+         dw := Vl(sc[SD.LoginStep]);
+         SetTmr1(dw, msHSh_Login_4);
+         State := msHSh_Login_3;
+      end;
+
+   msHSh_Login_2_matched:
+      begin
+         FreeObject(SD.LoginWdREs);
+         sc := SD.LoginScript[3];
+         Inc(SD.LoginStep);
+         if SD.LoginStep >= sc.Count then
+            State := msHSh_s1c
+         else
+            State := msHSh_Login_1;
+      end;
+
+   msHSh_Login_3:
+      begin
+      end;
+
+   msHSh_Login_4:
+      begin
+         // timeout
+         sc := SD.LoginScript[3];
+         s := sc[SD.LoginStep];
+         if s = '' then
          begin
-            sc := SD.LoginScript[0];
-            SendModemString(sc[SD.LoginStep]);
+            if SD.LoginStep > 0 then Dec(SD.LoginStep);
+            State := msHSh_Login_1;
+         end
+         else
+         begin
+            SendModemString(s);
             State := msHSh_Login_2;
          end;
+      end;
 
-      msHSh_Login_2:
+   msHSh_s1c:
+      begin
+         SetTmr1(toEMSI_CR, msHSh_s1t);
+         //visual. Send <CR> until ANY character is received.
+         if SD.MayRCC then SendStr(EMSI_RCC) else
+         if length(SD.InB) > 0 then
          begin
-            sc := SD.LoginScript[1];
-            FreeObject(SD.LoginWdREs);
-            SD.LoginWdREs := TColl.Create;
-            SD.LoginWdREs.Add(TReLoginHolder.Create(sc[SD.LoginStep], Self));
-            sc := SD.LoginScript[2];
-            dw := Vl(sc[SD.LoginStep]);
-            SetTmr1(dw, msHSh_Login_4);
-            State := msHSh_Login_3;
-         end;
-
-      msHSh_Login_2_matched:
-         begin
-            FreeObject(SD.LoginWdREs);
-            sc := SD.LoginScript[3];
-            Inc(SD.LoginStep);
-            if SD.LoginStep >= sc.Count then
-               State := msHSh_s1c
-            else
-               State := msHSh_Login_1;
-         end;
-
-      msHSh_Login_3:
-         begin
-         end;
-
-      msHSh_Login_4:
-         begin
-            // timeout
-            sc := SD.LoginScript[3];
-            s := sc[SD.LoginStep];
-            if s = '' then
-            begin
-               if SD.LoginStep > 0 then Dec(SD.LoginStep);
-               State := msHSh_Login_1;
-            end
-            else
-            begin
-               SendModemString(s);
-               State := msHSh_Login_2;
-            end;
-         end;
-
-      msHSh_s1c:
-         begin
-            SetTmr1(toEMSI_CR, msHSh_s1t);
-            //visual. Send <CR> until ANY character is received.
-            if SD.MayRCC then SendStr(EMSI_RCC) else
-            if length(SD.InB) > 0 then
-            begin
-               SD.Tries := 0;
-               SetTmr1(1, msHSh_s1t);
-               State := msHSh_s1t;
-            end
-            else
-            if SD.MayEMSI then SendStr(EMSI_CR) else
-            if SD.MayYooHoo then SendStr(ccYooHoo);
-            State := msHSh_sw;
-         end;
-      msHSh_swz:
+            SD.Tries := 0;
+            SetTmr1(1, msHSh_s1t);
+            State := msHSh_s1t;
+         end
+         else
+         if SD.MayEMSI then SendStr(EMSI_CR) else
+         if SD.MayYooHoo then SendStr(ccYooHoo);
          State := msHSh_sw;
-      msHSh_sw:
-         begin
-            seq := IdentEMSISeq(SD.InB, iCRC);
-            case seq of
-               es_None:
-                  begin
-{                     if SD.MayRCC then begin
-                        Log(ltGlobalErr, 'No RCC protocol at remote, disconnecting');
-                        State := msFinishWZ;
-                        CP.Carrier := False;
-                     end else}
-                     if not (TimerInstalled(SD.HShRLast) and (ElapsedTime(SD.HShRLast) >= 10)) then
-                     begin
-                        NewTimer(SD.HShRLast, 0);
-                        CheckYooHooChar;
-                     end;
-                  end;
-               es_NOC: State := msSE_SessionAborted;
-               es_REQ:
-                  if SD.MayRCC then exit else
-                  if SD.MayEMSI then
-                     State := msEMSI_c1z
-                  else
-                     SUnExp;
-               es_PZT:
-                  if SD.MayRCC then exit else
-                  if SD.NiagaraAllowed then
-                     State := msHSh_TCP
-                  else
-                     SUnExp;
-               es_RCC:
-                  begin
-                     if SD.NiagaraAllowed or not DialupLine then begin
-                        State := msHSh_TCP;
-                     end;
-                     SD.RemRCC := True;
-                  end;
+      end;
+   msHSh_swz:
+      State := msHSh_sw;
+   msHSh_sw:
+      begin
+         seq := IdentEMSISeq(SD.InB, iCRC);
+         case seq of
+            es_None:
+            begin
+{               if SD.MayRCC then begin
+                  Log(ltGlobalErr, 'No RCC protocol at remote, disconnecting');
+                  State := msFinishWZ;
+                  CP.Carrier := False;
+               end else}
+               if not (TimerInstalled(SD.HShRLast) and (ElapsedTime(SD.HShRLast) >= 10)) then begin
+                  NewTimer(SD.HShRLast, 0);
+                  CheckYooHooChar;
+               end;
+            end;
+         es_NOC: State := msSE_SessionAborted;
+         es_REQ:
+            if SD.MayRCC then exit else
+            if SD.MayEMSI then
+               State := msEMSI_c1z
             else
                SUnExp;
-            end;
-         end;
-      msHSh_s1t:
-         begin
-            Dec(SD.Tries);
-            if SD.Tries < 0 then
+         es_PZT:
+            if SD.MayRCC then exit else
+            if SD.NiagaraAllowed then
+               State := msHSh_TCP
+            else
+               SUnExp;
+         es_RCC:
             begin
-               SD.Tries := 0;
-               NewTimer(SD.HShRLast, 0);
-               State := msHSh_s3;
-            end
-            else
-            begin
-               State := msHSh_s1c;
+               if SD.NiagaraAllowed or not DialupLine then begin
+                  State := msHSh_TCP;
+               end;
+               SD.RemRCC := True;
             end;
+         else
+            SUnExp;
          end;
-      msHSh_s3:
-         begin
-            if SD.MayEMSI then
-               SetTmr1(toEMSI_S3, msHSh_s3)
-            else
-               SetTmr1(toEMSI_CR, msHSh_s3);
-            State := msHSh_s3c;
+      end;
+   msHSh_s1t:
+      begin
+         Dec(SD.Tries);
+         if SD.Tries < 0 then begin
+            SD.Tries := 0;
+            NewTimer(SD.HShRLast, 0);
+            State := msHSh_s3;
+         end else begin
+            State := msHSh_s1c;
          end;
-      msHSh_s3c:
-         begin
-            if SD.MayEMSI then
-               State := msHSh_sES
-            else
-               State := msHSh_sYh;
-         end;
-      msHSh_sES:
-         begin
-            // Some dial-up servers may need a pause after sending a user name followed by CR
-            // 200 msecs should be sufficient
-            SendStr(EMSI_INQ + EMSI_CR);
-            SetTmr1Msec({200} 1000, msHSh_sES2); //visual - fix. 200 msec isn't sufficient.
-            // 3Com access server requires more time.
-            State := msHSh_sw;
-         end;
-      msHSh_sES2:
-         begin
-            // send EMSI_INQ once more, also take a 200-msecs pause
-            SendStr(EMSI_INQ + EMSI_CR);
-            SetTmr1Msec({200} 1000, msHSh_sYh); // visual - fix. look above.
-            State := msHSh_sw;
-         end;
-      msHSh_sYh:
-         begin
-            if SD.MayYooHoo then SendStr(ccYooHoo + ccYooHoo);
-            SetTmr1(toEMSI_CR, msHSh_s1t); // visual
-            State := msHSh_sw;
-         end;
+      end;
+   msHSh_s3:
+      begin
+         if SD.MayEMSI then
+            SetTmr1(toEMSI_S3, msHSh_s3)
+         else
+            SetTmr1(toEMSI_CR, msHSh_s3);
+         State := msHSh_s3c;
+      end;
+   msHSh_s3c:
+      begin
+         if SD.MayEMSI then
+            State := msHSh_sES
+         else
+            State := msHSh_sYh;
+      end;
+   msHSh_sES:
+      begin
+         // Some dial-up servers may need a pause after sending a user name followed by CR
+         // 200 msecs should be sufficient
+         SendStr(EMSI_INQ + EMSI_CR);
+         SetTmr1Msec({200} 1000, msHSh_sES2); //visual - fix. 200 msec isn't sufficient.
+         // 3Com access server requires more time.
+         State := msHSh_sw;
+      end;
+   msHSh_sES2:
+      begin
+         // send EMSI_INQ once more, also take a 200-msecs pause
+         SendStr(EMSI_INQ + EMSI_CR);
+         SetTmr1Msec({200} 1000, msHSh_sYh); // visual - fix. look above.
+         State := msHSh_sw;
+      end;
+   msHSh_sYh:
+      begin
+         if SD.MayYooHoo then SendStr(ccYooHoo + ccYooHoo);
+         SetTmr1(toEMSI_CR, msHSh_s1t); // visual
+         State := msHSh_sw;
+      end;
 
-      //===  Handshake  ( Receiver )  ===//
-      msHSh_r1:
-         begin
-            ClearTmr1;
-            SendStr(__EMSI_REQ);
-            if SD.MayRCC then SendStr(EMSI_RCC);
-            if SD.Station = nil then GetStationData;
-            SendStr(SD.LogonBanner);
-            State := msHSh_r2;
-         end;
-      msHSh_r2z:
+   //===  Handshake  ( Receiver )  ===//
+   msHSh_r1:
+      begin
+         ClearTmr1;
+         SendStr(__EMSI_REQ);
+         if SD.MayRCC then SendStr(EMSI_RCC);
+         if SD.Station = nil then GetStationData;
+         SendStr(SD.LogonBanner);
          State := msHSh_r2;
-      msHSh_r2:
-         begin
-            {$IFDEF USE_TAPI}
-            if (CP <> nil) and TapiDevice then begin
-               if (pos(#$7E#$FF#$7D, SD.InB) > 0) or
-                  (pos(#$7E#$FF#$03, SD.InB) > 0) or
-                  (pos(#$7E#$7D#$DF, SD.InB) > 0) or
-                  (pos(#$7D#$22#$7D, SD.InB) > 0) or
-                  (pos(#$7D#$20#$7D, SD.InB) > 0) then begin
-                  if (CP as TTAPIPort).Online = 1 then begin
-                     Log(ltInfo, 'RAS call detected, but RAS service is off.');
-                     (CP as TTAPIPort).DropCall;
-                     State := msHangup;
-                     exit;
-                  end;
-                  Log(ltInfo, 'LCP packet detected. Handing off to RAS.');
-                  (CP as TTAPIPort).HandOff;
-                  State := msIdle;
+      end;
+   msHSh_r2z:
+      State := msHSh_r2;
+   msHSh_r2:
+      begin
+         {$IFDEF USE_TAPI}
+         if (CP <> nil) and TapiDevice then begin
+            if (pos(#$7E#$FF#$7D, SD.InB) > 0) or
+               (pos(#$7E#$FF#$03, SD.InB) > 0) or
+               (pos(#$7E#$7D#$DF, SD.InB) > 0) or
+               (pos(#$7D#$22#$7D, SD.InB) > 0) or
+               (pos(#$7D#$20#$7D, SD.InB) > 0) then begin
+               if (CP as TTAPIPort).Online = 1 then begin
+                  Log(ltInfo, 'RAS call detected, but RAS service is off.');
+                  (CP as TTAPIPort).DropCall;
+                  State := msHangup;
                   exit;
                end;
+               Log(ltInfo, 'LCP packet detected. Handing off to RAS.');
+               (CP as TTAPIPort).HandOff;
+               State := msIdle;
+               exit;
             end;
-            {$ENDIF}
-            seq := IdentEMSISeq(SD.InB, iCRC);
-            if seq = es_None then
+         end;
+         {$ENDIF}
+         seq := IdentEMSISeq(SD.InB, iCRC);
+         if seq = es_None then begin
+            if GotExtApp then
+               State := msExtApp_0
+            else
+               ChkCR;
+            if GotRemCtrl then
             begin
-               if GotExtApp then
-                  State := msExtApp_0
-               else
-                  ChkCR;
-               if GotRemCtrl then
-               begin
-                  State := msRemCtrl_0;
-                  LogFmt(ltInfo, 'Remote Control started. Current dir is "%s"', [GetCurrentDir]);
-               end
-               else
-                  ChkCR; // visual - remote control
+               State := msRemCtrl_0;
+               LogFmt(ltInfo, 'Remote Control started. Current dir is "%s"', [GetCurrentDir]);
             end
             else
-            begin
-               if SD.MayEMSI then
-               begin
-                  SD.MayFTS1 := False;
-                  SD.MayYooHoo := False;
-               end;
-               case seq of
-                  es_NOC: State := msSE_SessionAborted;
-                  es_TZP:
-                     if SD.NiagaraAllowed then
-                        State := msHSh_TCP
-                     else
-                        RUnExp;
-                  es_RCC:
-                     if SD.NiagaraAllowed or not DialupLine then begin
-                        State := msHSh_TCP;
-                        SD.RemRCC := True;
-                     end else
-                        RUnExp;
-                  es_INQ,
-                  es_DATerror:
-                     if SD.MayEMSI then
-                        StartEMSI_Receiver(msEMSI_h2)
-                     else
-                        RUnExp;
-                  es_DAT:
-                     begin
-                        SD.NiagaraAllowed := False;
-                        StartEMSI_Receiver(msEMSI_h5)
-                     end;
+               ChkCR; // visual - remote control
+         end else begin
+            if SD.MayEMSI then begin
+               SD.MayFTS1 := False;
+               SD.MayYooHoo := False;
+            end;
+            case seq of
+            es_NOC: State := msSE_SessionAborted;
+            es_TZP:
+               if SD.NiagaraAllowed then
+                  State := msHSh_TCP
                else
                   RUnExp;
+            es_RCC:
+               if SD.NiagaraAllowed or not DialupLine then begin
+                  State := msHSh_TCP;
+                  SD.RemRCC := True;
+               end else
+                  RUnExp;
+            es_INQ,
+            es_DATerror:
+               if SD.MayEMSI then
+                  StartEMSI_Receiver(msEMSI_h2)
+               else
+                  RUnExp;
+            es_DAT:
+               begin
+                  SD.NiagaraAllowed := False;
+                  StartEMSI_Receiver(msEMSI_h5)
                end;
+            else
+               RUnExp;
             end;
          end;
-      msHSh_TCP:
-         begin
-            if SD.Station = nil then GetStationData;
-            ProtCore := ptBinkP;
-            FCP := AddNiagara(CP, SD.ActivePoll <> nil);
-            EnterCS(CP_CS);
-            CP := FCP;
-            LeaveCS(CP_CS);
-            SD.NiagaraSession := True;
-            State := msStartWZ;
-         end;
+      end;
+   msHSh_TCP:
+      begin
+         if SD.Station = nil then GetStationData;
+         ProtCore := ptBinkP;
+         FCP := AddNiagara(CP, SD.ActivePoll <> nil);
+         EnterCS(CP_CS);
+         CP := FCP;
+         LeaveCS(CP_CS);
+         SD.NiagaraSession := True;
+         State := msStartWZ;
+      end;
    else
       GlobalFail('%s', ['TMailerThread.DoHSh UnkState']);
    end;
@@ -8375,8 +8318,8 @@ var
 
    var
       day, month, year,
-         hour, min, sec,
-         h_off, m_off: word;
+      hour, min, sec,
+      h_off, m_off: word;
       m: string;
    begin
       day := StrToInt(Copy(s, 6, 2));
@@ -8386,8 +8329,7 @@ var
          month := MonthToInt(PChar(m));
       except on E: Exception do ProcessTrap(E.Message, 'MonthToInt');
       end;
-      if month = 0 then
-      begin
+      if month = 0 then begin
          LogFmt(ltInfo, 'Error decoding date. Month = %s', [m]);
          result := -1;
          exit;
@@ -8400,18 +8342,15 @@ var
       Result := Result + EncodeTime(hour, min, sec, 0);
       h_off := StrToInt(Copy(s, 28, 2));
       m_off := StrToInt(Copy(s, 30, 2));
-      if local then
-      begin
+      if local then begin
         case s[27] of
-           '+': Result := Result + EncodeTime(h_off, m_off, 0, 0); //  To local time
-           '-': Result := Result - EncodeTime(h_off, m_off, 0, 0); // / | \
+        '+': Result := Result + EncodeTime(h_off, m_off, 0, 0); //  To local time
+        '-': Result := Result - EncodeTime(h_off, m_off, 0, 0); // / | \
         end;
-      end
-      else
-      begin
+      end else begin
         case s[27] of
-           '+': Result := Result - EncodeTime(h_off, m_off, 0, 0); //  To system time
-           '-': Result := Result + EncodeTime(h_off, m_off, 0, 0); // / | \
+        '+': Result := Result - EncodeTime(h_off, m_off, 0, 0); //  To system time
+        '-': Result := Result + EncodeTime(h_off, m_off, 0, 0); // / | \
         end;
       end;
    end;
@@ -8419,7 +8358,6 @@ var
 var
    i: Integer;
    Node: TFidoNode;
-
    j: integer;
    SystemTime: TSystemTime;
 
@@ -8427,10 +8365,8 @@ var
    begin
       if Node = nil then
          Result := False
-      else
-      begin
-         if Node = CNone then
-         begin
+      else begin
+         if Node = CNone then begin
             Node := GetListedNode(SD.rmtPrimaryAddr);
             if Node <> nil then Log(ltEMSI, 'Displaying info from the nodelist');
          end;
@@ -8446,8 +8382,7 @@ begin
 
    Node := CNone;
 
-   if (not SD.rmtPrimaryAddrSet) and (SD.ActivePoll <> nil) then
-   begin
+   if (not SD.rmtPrimaryAddrSet) and (SD.ActivePoll <> nil) then begin
       SD.rmtPrimaryAddrSet := True;
       SD.rmtPrimaryAddr := SD.ActivePoll.Node.Addr;
       if SD.rmtAddrs = nil then SD.rmtAddrs := TFidoAddrColl.Create;
@@ -8455,8 +8390,7 @@ begin
       DS.rmtAddressList := Addr2Str(SD.rmtPrimaryAddr);
    end;
 
-   if SD.rmtPrimaryAddrSet then
-   begin
+   if SD.rmtPrimaryAddrSet then begin
       if (DS.rmtStationName = '') and ObtainNode then DS.rmtStationName := Node.Station;
       if (DS.rmtSysopName = '') and ObtainNode then DS.rmtSysopName := Node.Sysop;
       if (DS.rmtLocation = '') and ObtainNode then DS.rmtLocation := Node.Location;
@@ -8469,8 +8403,7 @@ begin
    if (SD.SessionCore = scEmsiWz) or (DS.rmtAddressList <> '') then
       Log(ltEMSI, '   Address : ' + DS.rmtAddressList);
    ShowIt('S: ' + DS.rmtAddressList, true);
-   if (SD.SessionCore = scEmsiWz) or ((DS.rmtSysOpName <> '') and (DS.rmtLocation <> '')) then
-   begin
+   if (SD.SessionCore = scEmsiWz) or ((DS.rmtSysOpName <> '') and (DS.rmtLocation <> '')) then begin
       Log(ltEMSI_1, Format(
          '     SysOp : %s from %s', [DS.rmtSysOpName, DS.rmtLocation]));
    end;
@@ -8482,59 +8415,50 @@ begin
          '     Flags : %s', [DS.rmtFlags]));
    if (SD.SessionCore = scEmsiWz) or (DS.rmtSoft <> '') then
       Log(ltEMSI_1, '    Mailer : ' + DS.rmtSoft);
-   if SD.EMSI_Addons <> nil then
-   begin
+   if SD.EMSI_Addons <> nil then begin
       for i := 0 to SD.EMSI_Addons.Count - 1 do
          Log(ltEMSI_1, SD.EMSI_Addons[i]);
       FreeObject(SD.EMSI_Addons);
    end;
    if SD.rmtTime <> '' then LogFmt(ltEMSI, '      Time : %s', [SD.rmtTime]);
 
-   if IsOldMailer(DS.rmtSoft) then
-   begin
+   if IsOldMailer(DS.rmtSoft) then begin
      localt := true;
-   end else
-   begin
+   end else begin
      localt := false;
    end;
 
    if SD.rmtAddrs <> nil then
-      //
-      if SD.rmtAddrs.Count > 0 then
-      begin
-         for j := 0 to SD.rmtAddrs.Count - 1 do
-         begin
-            if Addr2Str(SD.rmtAddrs.Addresses[j]) = Addr2Str(IniFile.Synch) then
+   //
+   if SD.rmtAddrs.Count > 0 then begin
+      for j := 0 to SD.rmtAddrs.Count - 1 do begin
+         if Addr2Str(SD.rmtAddrs.Addresses[j]) = Addr2Str(IniFile.Synch) then begin
+            REP := GetRegExpr('\D{3},\s\d{2}\s\D{3}\s\d{4}\s\d{2}:\d{2}:\d{2}\s(\+|\-)\d{4}');
+            if (REP.ErrPtr = 0) and (REP.Match(SD.rmtTime) > 0) then
             begin
-               REP := GetRegExpr('\D{3},\s\d{2}\s\D{3}\s\d{4}\s\d{2}:\d{2}:\d{2}\s(\+|\-)\d{4}');
-               if (REP.ErrPtr = 0) and (REP.Match(SD.rmtTime) > 0) then
-               begin
-                  dt := EmsiXDateTimeToDateTime(SD.rmtTime, localt);
-                  if dt = -1 then
-                     Log(ltInfo, 'Local time was NOT synchronized with ' + Addr2Str(IniFile.Synch))
-                  else
-                  begin
-                     TimeDiff := uGetSystemTime;
-                     DateTimeToSystemTime(dt, SystemTime);
-                     SystemTime.wHour := SystemTime.wHour + IniFile.TimeShift;
-                     if localt then SetLocalTime(SystemTime)
-                     else SetSystemTime(SystemTime);
-                     TimeDiff := TimeDiff - Integer(uGetSystemTime);
-                     if localt then Log(ltInfo, 'Local time was synchronized with ' + Addr2Str(IniFile.Synch))
-                     else Log(ltInfo, 'System time was synchronized with ' + Addr2Str(IniFile.Synch));
-                     Log(ltInfo, Format('Time difference %d', [TimeDiff]))
-                  end;
+               dt := EmsiXDateTimeToDateTime(SD.rmtTime, localt);
+               if dt = -1 then
+                  Log(ltInfo, 'Local time was NOT synchronized with ' + Addr2Str(IniFile.Synch))
+               else begin
+                  TimeDiff := uGetSystemTime;
+                  DateTimeToSystemTime(dt, SystemTime);
+                  SystemTime.wHour := SystemTime.wHour + IniFile.TimeShift;
+                  if localt then SetLocalTime(SystemTime)
+                  else SetSystemTime(SystemTime);
+                  TimeDiff := TimeDiff - Integer(uGetSystemTime);
+                  if localt then Log(ltInfo, 'Local time was synchronized with ' + Addr2Str(IniFile.Synch))
+                  else Log(ltInfo, 'System time was synchronized with ' + Addr2Str(IniFile.Synch));
+                  Log(ltInfo, Format('Time difference %d', [TimeDiff]))
                end;
-               REP.Unlock;
             end;
+            REP.Unlock;
          end;
       end;
+   end;
    //
    LogTrafInfo;
-   if (SD.PostEMSILogErrors <> nil) and not (SD.SessionCore in [scFTP, scHTTP]) then
-   begin
-      for i := 0 to SD.PostEMSILogErrors.Count - 1 do
-      begin
+   if (SD.PostEMSILogErrors <> nil) and not (SD.SessionCore in [scFTP, scHTTP]) then begin
+      for i := 0 to SD.PostEMSILogErrors.Count - 1 do begin
          Log(ltGlobalErr, SD.PostEMSILogErrors[i]);
       end;
    end;
@@ -8573,35 +8497,26 @@ var
    s, z: string;
 begin
    s := AFlags;
-   while s <> '' do
-   begin
+   while s <> '' do begin
       GetWrd(s, z, ',');
       z := UpperCase(z);
       if (z = 'NOHYD') then
          Exclude(SD.OurProtocols, ecHYD)
       else
-      if (z = 'NOZM') then
-      begin
+      if (z = 'NOZM') then begin
          eDZA;
          eZAP;
          eZMO;
-      end
-      else
-      if (z = 'NODZA') then
-      begin
+      end else
+      if (z = 'NODZA') then begin
          eDZA;
-      end
-      else
-      if (z = 'NOZAP') then
-      begin
+      end else
+      if (z = 'NOZAP') then begin
          eZAP;
-      end
-      else
-      if (z = 'NOZMO') then
-      begin
+      end else
+      if (z = 'NOZMO') then begin
          eZMO;
-      end
-      else
+      end else
       if (z = 'NONIAGARA') then
          SD.NiagaraAllowed := False
       else
@@ -8654,8 +8569,7 @@ begin
          SD.NiagaraAllowed := True;
          SD.OurProtocols := ecOurProtocols;
          if EP.VoidFound(eiHydra[OutPoll]) then Exclude(SD.OurProtocols, ecHYD);
-         if EP.VoidFound(eiZmodem[OutPoll]) then
-         begin
+         if EP.VoidFound(eiZmodem[OutPoll]) then begin
             Exclude(SD.OurProtocols, ecDZA);
             Exclude(SD.OurProtocols, ecZAP);
             Exclude(SD.OurProtocols, ecZMO);
@@ -8675,18 +8589,14 @@ begin
          SD.MayRCC := ((SD.MayRCC and SD.NiagaraAllowed) or not DialupLine) and not OutPoll;
          SD.MayEMSI := SD.MayEMSI and (not EP.VoidFound(eiEMSI[OutPoll]));
          SD.MayYooHoo := SD.MayYooHoo and (not EP.VoidFound(eiYooHoo[OutPoll]));
-      end
-      else
-      begin
+      end else begin
 {$IFDEF WS}
-         if not DialupLine then
-         begin
+         if not DialupLine then begin
             Result := False;
             LogFmt(ltGlobalErr, 'Failed to initiate encrypted session with %s', [Addr2Str(SD.ActivePoll.Node.Addr)]);
             Log(ltWarning, 'Encrypted sessions are possible on BinkP only');
             State := msSE_SessionAborted;
-         end
-         else
+         end else
 {$ENDIF}
          begin
             SD.NiagaraAllowed := True;
@@ -8821,18 +8731,18 @@ procedure TMailerThread.DoWZ;
       IsDialUp := True;
 {$ENDIF}
       prec.tzshift := SD.tzshift;
-      if SD.MayRCC and SD.RemRCC then
-      begin
+      if SD.MayRCC and SD.RemRCC then begin
         prec.ChatEnabled := false;
+        prec.CrypEnabled := false;
         prec.Addr := SD.rmtPrimaryAddr;
         prec.Sysop := '';
         prec.Station := '';
         prec.LogFName := LogFName;
         Result := CreateTransferProtocol(piRCC, CP, [], IsZModem, '', prec);
       end else
-      if SD.MayRCC and (SD.ActivePoll <> nil) then
-      begin
+      if SD.MayRCC and (SD.ActivePoll <> nil) then begin
         prec.ChatEnabled := false;
+        prec.CrypEnabled := false;
         prec.Addr := SD.rmtPrimaryAddr;
         prec.Sysop := '';
         prec.Station := '';
@@ -8846,6 +8756,7 @@ procedure TMailerThread.DoWZ;
         s := EP.StrValue(eiChatDisabled);
         if (s <> '') and (MatchMaskAddressListSingle(SD.ActivePoll.Node.Addr, s)) then ChatEnabled := false;
         prec.ChatEnabled := ChatEnabled;
+        prec.CrypEnabled := pos('CRYPT', SD.ActivePoll.Flags(DialupLine)) > 0;
         prec.Addr := SD.ActivePoll.Node.Addr;
         prec.Sysop := DS.rmtSysOpName;
         prec.Station := DS.rmtStationName;
@@ -8853,13 +8764,13 @@ procedure TMailerThread.DoWZ;
         Result := CreateTransferProtocol(Typ, CP, SD.rmtMailerFlags, IsZModem, SD.ActivePoll.Flags(IsDialUp), prec);
         s := EP.StrValue(eiChatBell);
         if (s <> '') then begin
-          if (s[1] <> '@') then result.ChatBell := s
-          else begin
-            if length(s) > 1 then begin
-              delete(s, 1 ,1);
-              result.ChatBell := GetSongPath(s, SD.ActivePoll.Node.Addr);
-            end;
-          end;
+           if (s[1] <> '@') then result.ChatBell := s
+           else begin
+              if length(s) > 1 then begin
+                 delete(s, 1 ,1);
+                 result.ChatBell := GetSongPath(s, SD.ActivePoll.Node.Addr);
+              end;
+           end;
         end else result.ChatBell := IniFile.ChatBell;
       end else begin
         an := FindNode(SD.rmtPrimaryAddr);
@@ -8870,22 +8781,23 @@ procedure TMailerThread.DoWZ;
         s := EP.StrValue(eiChatDisabled);
         if (s <> '') and (MatchMaskAddressListSingle(SD.rmtPrimaryAddr, s)) then ChatEnabled := false;
         prec.ChatEnabled := ChatEnabled;
+        prec.CrypEnabled := False;
         prec.Addr := SD.rmtPrimaryAddr;
         prec.Sysop := DS.rmtSysOpName;
         prec.Station := DS.rmtStationName;
         prec.LogFName := LogFName;
         Result := CreateTransferProtocol(Typ, CP, SD.rmtMailerFlags, IsZModem, flags, prec);
         if SD.rmtPrimaryAddr.Zone <> 0 then begin //Hydra
-          s := EP.StrValue(eiChatBell);
-          if (s <> '') then begin
-            if (s[1] <> '@') then result.ChatBell := s
-            else begin
-              if length(s) > 1 then begin
-                delete(s, 1 ,1);
-                result.ChatBell := GetSongPath(s, SD.rmtPrimaryAddr);
+           s := EP.StrValue(eiChatBell);
+           if (s <> '') then begin
+              if (s[1] <> '@') then result.ChatBell := s
+              else begin
+                 if length(s) > 1 then begin
+                    delete(s, 1 ,1);
+                    result.ChatBell := GetSongPath(s, SD.rmtPrimaryAddr);
+                 end;
               end;
-            end;
-          end else result.ChatBell := IniFile.ChatBell;
+           end else result.ChatBell := IniFile.ChatBell;
         end;
         FreeObject(an);
       end;
@@ -8902,13 +8814,11 @@ procedure TMailerThread.DoWZ;
       c: Char;
    begin
       SendEnq := False;
-      while SD.InB <> '' do
-      begin
+      while SD.InB <> '' do begin
          c := SD.InB[1];
          if c = ccYooHooHdr then
             Break
-         else
-         begin
+         else begin
             if c = ccYooHoo then SendEnq := True;
             Delete(SD.InB, 1, 1);
          end;
@@ -8917,29 +8827,25 @@ procedure TMailerThread.DoWZ;
       while (Length(SD.InB) > 128 + 2) and (SD.InB[1] = ccYooHooHdr) do
          Delete(SD.InB, 1, 1);
 
-      if Length(SD.InB) < 128 + 2 {CRC} then
-      begin
+      if Length(SD.InB) < 128 + 2 {CRC} then begin
          if SendEnq then CP.SendString(ccENQ);
          Exit;
       end;
 
       crc := CRC16USD_INIT;
-      for i := 1 to 130 do
+      for i := 1 to 130 do begin
          crc := UpdateCrc16Usd(Byte(SD.InB[i]), crc);
+      end;
       crc := UpdateCrc16Usd(0, crc);
       crc := UpdateCrc16Usd(0, crc);
-      if crc = CRC16USD_TEST then
-      begin
+      if crc = CRC16USD_TEST then begin
          SD.YooHooPkt := TYooHooPacket.Create;
          Move(SD.InB[1], SD.YooHooPkt.d, 128);
       end;
-      if crc <> CRC16USD_TEST then
-      begin
+      if crc <> CRC16USD_TEST then begin
          SD.InB := '';
          CP.SendString('?');
-      end
-      else
-      begin
+      end else begin
          Delete(SD.InB, 1, 130);
          State := msParseYooHoo;
          CP.SendString(ccACK);
@@ -8981,13 +8887,13 @@ procedure TMailerThread.DoWZ;
       if (i and yhDOES_Hydra <> 0) and (ecHYD in SD.OurProtocols) then
          DP := ecHYD
       else
-         if (i and yhZED_ZAPPER <> 0) and (ecZAP in SD.OurProtocols) then
-            DP := ecZAP
-         else
-            if (i and yhZED_ZIPPER <> 0) and (ecZMO in SD.OurProtocols) then
-               DP := ecZMO
-            else
-               DP := ecNCP;
+      if (i and yhZED_ZAPPER <> 0) and (ecZAP in SD.OurProtocols) then
+         DP := ecZAP
+      else
+      if (i and yhZED_ZIPPER <> 0) and (ecZMO in SD.OurProtocols) then
+         DP := ecZMO
+      else
+         DP := ecNCP;
 
       SD.DesiredProtocol := DP;
       SD.SessionCore := scEmsiWz;
@@ -9000,7 +8906,8 @@ procedure TMailerThread.DoWZ;
       function BuildPkt(var Pkt: TYooHooPacketData): Boolean;
       var
          Password: string;
-         s, z: string;
+         s,
+         z: string;
          a: TFidoAddress;
          OurProts: TEMSICapabilities;
          i: Integer;
@@ -9072,10 +8979,8 @@ procedure TMailerThread.DoWZ;
 
    begin
       if SD.YooHooPkt = nil then SD.YooHooPkt := TYooHooPacket.Create;
-      if SD.YooHooPkt.outd.Signal = 0 then
-      begin
-         if BuildPkt(SD.YooHooPkt.outd) then
-         begin
+      if SD.YooHooPkt.outd.Signal = 0 then begin
+         if BuildPkt(SD.YooHooPkt.outd) then begin
             State := msFinishWZ;
             Exit;
          end;
@@ -9088,33 +8993,30 @@ procedure TMailerThread.DoWZ;
    var
       c: Char;
    begin
-      while SD.InB <> '' do
-      begin
+      while SD.InB <> '' do begin
          c := SD.InB[1];
          case c of
-            ccACK:
-               begin
-                  Log(ltInfo, 'YooHoo - got ACK');
-                  if SD.ActivePoll = nil then
+         ccACK:
+            begin
+               Log(ltInfo, 'YooHoo - got ACK');
+               if SD.ActivePoll = nil then
+                  State := msStartWZ
+               else begin
+                  SD.InB := '';
+                  if SD.YooHooAcked then
                      State := msStartWZ
-                  else
-                  begin
-                     SD.InB := '';
-                     if SD.YooHooAcked then
-                        State := msStartWZ
-                     else
-                     begin
-                        SD.YooHooAcked := True;
-                        State := msWaitYooHooPkt;
-                     end;
+                  else begin
+                     SD.YooHooAcked := True;
+                     State := msWaitYooHooPkt;
                   end;
-                  Exit;
                end;
-            '?':
-               begin
-                  State := msSendYooHoo;
-                  Exit;
-               end;
+               Exit;
+            end;
+         '?':
+            begin
+               State := msSendYooHoo;
+               Exit;
+            end;
          end;
          Delete(SD.InB, 1, 1);
       end;
@@ -9124,11 +9026,9 @@ procedure TMailerThread.DoWZ;
    var
       c: Char;
    begin
-      while SD.InB <> '' do
-      begin
+      while SD.InB <> '' do begin
          c := SD.InB[1];
-         if c = ccENQ then
-         begin
+         if c = ccENQ then begin
             Log(ltInfo, 'YooHoo - got ENQ');
             SD.InB := '';
             State := msSendYooHoo;
@@ -9170,337 +9070,309 @@ procedure TMailerThread.DoWZ;
 
 begin
    case State of
-      msStartBinkP:
-         begin
-            SD.DesiredProtocol := ecBND;
-            CreateStation;
-{$IFDEF WS}
-            if not DialupLine then
-            begin
-               CfgEnter;
-               CopyIpStation;
-               CfgLeave;
-            end
-            else
-{$ENDIF}
-            begin
-               DoCopyDialupStation;
-            end;
-            if DoConnectStart then
-            begin
-               SD.SessionStart := uGetSystemTime;
-               SD.rmtMailerFlags := [rmfHFR];
-               State := msStartWZ;
-            end;
-         end;
-      msStartFTP,
-      msStartHTTP,
-      msStartSMTP,
-      msStartPOP3,
-      msStartGATE,
-      msStartNNTP:
-         begin
-            if DoConnectStart then
-            begin
-               SD.SessionStart := uGetSystemTime;
-               State := msStartWZ;
-            end;
-         end;
-      msStartYooHoo:
-         if SD.ActivePoll = nil then
-         begin
-            SD.InB := '';
-            CP.SendString(ccENQ);
-            State := msWaitYooHooPkt;
-            Log(ltInfo, 'YooHooStart (receiver)');
-         end
-         else
-         begin
-            State := msSendYooHoo;
-            Log(ltInfo, 'YooHooStart (sender)');
-         end;
-      msSendYooHoo:
-         begin
-            ClearTmr1;
-            SD.InB := '';
-            State := msWaitYooHooAck;
-            SendYooHooPkt;
-         end;
-      msInitYooHoo:
-         begin
-            SetTmr1(5, msInitYooHoo);
-            CP.SendString(ccYooHoo);
-            State := msWaitYooHooEnq;
-         end;
-      msWaitYooHooAck:
-         CheckYooHooAck;
-      msWaitYooHooEnq:
-         CheckYooHooEnq;
-      msWaitYooHooPkt:
-         begin
-            ClearTmr1;
-            CheckYooHooPkt;
-         end;
-      msParseYooHoo:
-         if not ParseYooHooPkt then begin
-            Log(ltWarning, 'Invalid YooHoo packed');
-            State := msFinishWZ;
+   msStartBinkP:
+      begin
+         SD.DesiredProtocol := ecBND;
+         CreateStation;
+         if not DialupLine then begin
+            CfgEnter;
+            CopyIpStation;
+            CfgLeave;
          end else begin
-            if SD.ActivePoll <> nil then
-               State := msStartWZ
-            else
-               State := msInitYooHoo;
+            DoCopyDialupStation;
          end;
-      msStartFTS1:
-         begin
-            SD.FTS1NeedRmtAddr := True;
-            SD.SessionCore := scFTS1;
+         if DoConnectStart then begin
+            SD.SessionStart := uGetSystemTime;
+            SD.rmtMailerFlags := [rmfHFR];
             State := msStartWZ;
          end;
-      msStartWZ:
-         begin
-            SD.SessionOK := False;
-            FstTic := GetTickCount;
-            if SD.rmtPrimaryAddr.Zone = 0 then;
-            SD.Accumulate := False;
-            Priority := tpNormal;
+      end;
+   msStartFTP,
+   msStartHTTP,
+   msStartSMTP,
+   msStartPOP3,
+   msStartGATE,
+   msStartNNTP:
+      begin
+         if DoConnectStart then begin
             SD.SessionStart := uGetSystemTime;
-            if ProtCore = ptBinkP then
-               SD.SessionCore := scBinkP
+            State := msStartWZ;
+         end;
+      end;
+   msStartYooHoo:
+      if SD.ActivePoll = nil then begin
+         SD.InB := '';
+         CP.SendString(ccENQ);
+         State := msWaitYooHooPkt;
+         Log(ltInfo, 'YooHooStart (receiver)');
+      end else begin
+         State := msSendYooHoo;
+         Log(ltInfo, 'YooHooStart (sender)');
+      end;
+   msSendYooHoo:
+      begin
+         ClearTmr1;
+         SD.InB := '';
+         State := msWaitYooHooAck;
+         SendYooHooPkt;
+      end;
+   msInitYooHoo:
+      begin
+         SetTmr1(5, msInitYooHoo);
+         CP.SendString(ccYooHoo);
+         State := msWaitYooHooEnq;
+      end;
+   msWaitYooHooAck:
+      CheckYooHooAck;
+   msWaitYooHooEnq:
+      CheckYooHooEnq;
+   msWaitYooHooPkt:
+      begin
+         ClearTmr1;
+         CheckYooHooPkt;
+      end;
+   msParseYooHoo:
+      if not ParseYooHooPkt then begin
+         Log(ltWarning, 'Invalid YooHoo packed');
+         State := msFinishWZ;
+      end else begin
+         if SD.ActivePoll <> nil then
+            State := msStartWZ
+         else
+            State := msInitYooHoo;
+      end;
+   msStartFTS1:
+      begin
+         SD.FTS1NeedRmtAddr := True;
+         SD.SessionCore := scFTS1;
+         State := msStartWZ;
+      end;
+   msStartWZ:
+      begin
+         SD.SessionOK := False;
+         FstTic := GetTickCount;
+         if SD.rmtPrimaryAddr.Zone = 0 then;
+         SD.Accumulate := False;
+         Priority := tpNormal;
+         SD.SessionStart := uGetSystemTime;
+         if ProtCore = ptBinkP then
+            SD.SessionCore := scBinkP
+         else
+         if ProtCore = ptFTP then
+            SD.SessionCore := scFTP
+         else
+         if ProtCore = ptHTTP then
+            SD.SessionCore := scHTTP
+         else
+         if ProtCore = ptSMTP then
+            SD.SessionCore := scSMTP
+         else
+         if ProtCore = ptPOP3 then
+            SD.SessionCore := scPOP3
+         else
+         if ProtCore = ptGATE then
+            SD.SessionCore := scGATE
+         else
+         if ProtCore = ptNNTP then
+            SD.SessionCore := scNNTP
+         else begin
+            LogHandshakeStart;
+            TDevicePort(CP).SetHoldStr(SD.InB);
+            TDevicePort(CP).MaxBPSOut := EP.DwordValueD(eiTrafShOut,IniFile.OutBandwidth);
+            TDevicePort(CP).MaxBPSIn := EP.DwordValueD(eiTrafShIn,IniFile.InBandwidth);
+            SD.InB := '';
+         end;
+         SD.StateDeltaDCD := msNone;
+         ClearTmrPublic;
+         ClearTmr1;
+         case SD.SessionCore of
+         scBinkP: SD.Prot := _CreateProtocol(piBinkP);
+         scFTS1: SD.Prot := _CreateProtocol(piFTS1);
+         scFTP:  SD.Prot := _CreateProtocol(piFTP);
+         scHTTP: SD.Prot := _CreateProtocol(piHTTP);
+         scSMTP: SD.Prot := _CreateProtocol(piSMTP);
+         scPOP3: SD.Prot := _CreateProtocol(piPOP3);
+         scGATE: SD.Prot := _CreateProtocol(piGATE);
+         scNNTP: SD.Prot := _CreateProtocol(piNNTP);
+         scEmsiWz:
+            case SD.DesiredProtocol of
+            ecHYD: SD.Prot := _CreateProtocol(piHydra);
+            ecZMO: SD.Prot := _CreateProtocol(piZModem);
+            ecZAP: SD.Prot := _CreateProtocol(piZModem8K);
+            ecDZA: SD.Prot := _CreateProtocol(piZModem8KD);
             else
-            if ProtCore = ptFTP then
-               SD.SessionCore := scFTP
-            else
-            if ProtCore = ptHTTP then
-               SD.SessionCore := scHTTP
-            else
-            if ProtCore = ptSMTP then
-               SD.SessionCore := scSMTP
-            else
-            if ProtCore = ptPOP3 then
-               SD.SessionCore := scPOP3
-            else
-            if ProtCore = ptGATE then
-               SD.SessionCore := scGATE
-            else
-            if ProtCore = ptNNTP then
-               SD.SessionCore := scNNTP
-            else
-            begin
-               LogHandshakeStart;
-               TDevicePort(CP).SetHoldStr(SD.InB);
-               TDevicePort(CP).MaxBPSOut := EP.DwordValueD(eiTrafShOut,IniFile.OutBandwidth);
-               TDevicePort(CP).MaxBPSIn := EP.DwordValueD(eiTrafShIn,IniFile.InBandwidth);
-               SD.InB := '';
+               begin
+                  Log(ltGlobalErr, 'No compatible protocols - disconnecting');
+                  State := msFinishWZ;
+               end;
             end;
-            SD.StateDeltaDCD := msNone;
-            ClearTmrPublic;
-            ClearTmr1;
-            case SD.SessionCore of
-               scBinkP: SD.Prot := _CreateProtocol(piBinkP);
-               scFTS1: SD.Prot := _CreateProtocol(piFTS1);
-               scFTP:  SD.Prot := _CreateProtocol(piFTP);
-               scHTTP: SD.Prot := _CreateProtocol(piHTTP);
-               scSMTP: SD.Prot := _CreateProtocol(piSMTP);
-               scPOP3: SD.Prot := _CreateProtocol(piPOP3);
-               scGATE: SD.Prot := _CreateProtocol(piGATE);
-               scNNTP: SD.Prot := _CreateProtocol(piNNTP);
-               scEmsiWz:
-                  case SD.DesiredProtocol of
-                     ecHYD: SD.Prot := _CreateProtocol(piHydra);
-                     ecZMO: SD.Prot := _CreateProtocol(piZModem);
-                     ecZAP: SD.Prot := _CreateProtocol(piZModem8K);
-                     ecDZA: SD.Prot := _CreateProtocol(piZModem8KD);
-                  else
-                     begin
-                        Log(ltGlobalErr, 'No compatible protocols - disconnecting');
-                        State := msFinishWZ;
-                     end;
-                  end;
+         end;
+         if SD.Prot = nil then
+            State := msFinishWZ
+         else begin
+            LogFmt(ltInfo, 'Establishing %s transfer protocol', [SD.Prot.Name]);
+            SD.Prot.ipAddr := ipAddr;
+            SD.Prot.aType := aType;
+            if SD.ActivePoll <> nil then begin
+               SD.Prot.FiAddr := SD.ActivePoll.Node.Addr;
             end;
-            if SD.Prot = nil then
-               State := msFinishWZ
-            else
-            begin
-               LogFmt(ltInfo, 'Establishing %s transfer protocol', [SD.Prot.Name]);
-               SD.Prot.ipAddr := ipAddr;
-               SD.Prot.aType := aType;
+            if SD.SessionCore = scBinkP then begin
+               if not DialupLine then
+                  SD.Prot.BinkPTimeout := 360
+               else
+                  SD.Prot.BinkPTimeout := 60;
+            end;
+            if SD.SessionCore = scFTP then begin
+               SD.Prot.BinkPTimeout := 120;
+            end else
+            if SD.SessionCore = scHTTP then begin
+               SD.Prot.BinkPTimeout := 120;
+            end else
+            if SD.SessionCore = scSMTP then begin
+               SD.Prot.BinkPTimeout := 120;
                if SD.ActivePoll <> nil then begin
-                  SD.Prot.FiAddr := SD.ActivePoll.Node.Addr;
+                  ChkAddrStr(Addr2Str(SD.ActivePoll.Node.Addr));
                end;
-               if SD.SessionCore = scBinkP then
-               begin
-{$IFDEF WS}
-                  if not DialupLine then
-                     SD.Prot.BinkPTimeout := 360
-                  else
-{$ENDIF}
-                     SD.Prot.BinkPTimeout := 60;
+            end else
+            if SD.SessionCore = scPOP3 then begin
+               SD.Prot.BinkPTimeout := 120;
+               if SD.ActivePoll <> nil then begin
+                  ChkAddrStr(Addr2Str(SD.ActivePoll.Node.Addr));
                end;
-               if SD.SessionCore = scFTP then
-               begin
-                  SD.Prot.BinkPTimeout := 120;
-               end else
-               if SD.SessionCore = scHTTP then
-               begin
-                  SD.Prot.BinkPTimeout := 120;
-               end else
-               if SD.SessionCore = scSMTP then
-               begin
-                  SD.Prot.BinkPTimeout := 120;
-                  if SD.ActivePoll <> nil then begin
-                     ChkAddrStr(Addr2Str(SD.ActivePoll.Node.Addr));
-                  end;
-               end else
-               if SD.SessionCore = scPOP3 then
-               begin
-                  SD.Prot.BinkPTimeout := 120;
-                  if SD.ActivePoll <> nil then begin
-                     ChkAddrStr(Addr2Str(SD.ActivePoll.Node.Addr));
-                  end;
-               end else
-               if SD.SessionCore = scGATE then
-               begin
-                  SD.Prot.BinkPTimeout := 120;
-                  if SD.ActivePoll <> nil then begin
-                     ChkAddrStr(Addr2Str(SD.ActivePoll.Node.Addr));
-                  end;
-               end else
-               if SD.SessionCore = scNNTP then
-               begin
-                  SD.Prot.BinkPTimeout := 120;
-                  if SD.ActivePoll <> nil then begin
-                     ChkAddrStr(Addr2Str(SD.ActivePoll.Node.Addr));
-                  end;
+            end else
+            if SD.SessionCore = scGATE then begin
+               SD.Prot.BinkPTimeout := 120;
+               if SD.ActivePoll <> nil then begin
+                  ChkAddrStr(Addr2Str(SD.ActivePoll.Node.Addr));
                end;
-               if SD.Prot.IsBiDir then
-                  State := msBiDirStartBatch1
-               else
-               begin
-                  if SD.ActivePoll <> nil then
-                     State := msOneWayStartTxBatch1
-                  else
-                     State := msOneWayStartRxBatch2;
-               end;
-               SD.Prot.FLogFile := LogFile;
-               SD.Prot.Speed := SD.ConnectSpeed;
-               if SD.Station = nil then GetStationData;
-               SD.Prot.Station := SD.Station;
-               SD.Prot.Originator := SD.ActivePoll <> nil;
-               DisplayData;
-               if SD.ActivePoll = nil then
-               begin
-                  if EP.VoidFound(eiAccNoCram) then SD.Prot.CramDisabled := True;
-               end
-               else
-               begin
-                  CheckTrsCram;
+            end else
+            if SD.SessionCore = scNNTP then begin
+               SD.Prot.BinkPTimeout := 120;
+               if SD.ActivePoll <> nil then begin
+                  ChkAddrStr(Addr2Str(SD.ActivePoll.Node.Addr));
                end;
             end;
+            if SD.Prot.IsBiDir then
+               State := msBiDirStartBatch1
+            else begin
+               if SD.ActivePoll <> nil then
+                  State := msOneWayStartTxBatch1
+               else
+                  State := msOneWayStartRxBatch2;
+            end;
+            SD.Prot.FLogFile := LogFile;
+            SD.Prot.Speed := SD.ConnectSpeed;
+            if SD.Station = nil then GetStationData;
+            SD.Prot.Station := SD.Station;
+            SD.Prot.Originator := SD.ActivePoll <> nil;
+            DisplayData;
+            if SD.ActivePoll = nil then begin
+               if EP.VoidFound(eiAccNoCram) then SD.Prot.CramDisabled := True;
+            end else begin
+               CheckTrsCram;
+            end;
          end;
-      msFinishWZ:
-         begin
-            ScanCounter := 1;
-            CommonStatx;
-            SaveTarifLog(self); // visual
-            if SD.SessionCore <> scEmsiWz then LogEMSIData;
-            PostMsgP(WM_CLEARTERMS, Self);
-            if (not SD.SessionOK) and (SD.Prot <> nil) then Log(ltInfo, SProtocolError[SD.Prot.ProtocolError]);
-            Enter;
-            FreeObject(SD.Prot);
-            Leave;
-{$IFDEF WS}
-            if DialupLine then
-{$ENDIF}
-               Priority := tpLower;
-            if SD.SessionOK then
-               State := msSE_OK
+      end;
+   msFinishWZ:
+      begin
+         ScanCounter := 1;
+         CommonStatx;
+         SaveTarifLog(self); // visual
+         if SD.SessionCore <> scEmsiWz then LogEMSIData;
+         PostMsgP(WM_CLEARTERMS, Self);
+         if (not SD.SessionOK) and (SD.Prot <> nil) then Log(ltInfo, SProtocolError[SD.Prot.ProtocolError]);
+         Enter;
+         FreeObject(SD.Prot);
+         Leave;
+         if DialupLine then
+            Priority := tpLower;
+         if SD.SessionOK then
+            State := msSE_OK
+         else begin
+            State := msSE_SessionAborted;
+            if (not SD.EMSI_Logged) and (NoAnyValidAddrs) then
+               State := ms_NoValidAddr
             else
-            begin
-               State := msSE_SessionAborted;
-               if (not SD.EMSI_Logged) and (NoAnyValidAddrs) then
-                  State := ms_NoValidAddr
+               if ((SD.ActivePoll <> nil) and not ValidConnection) then State := ms_WrongOutDial;
+         end;
+      end;
+   msWZOK:
+      begin
+         SD.SessionOK := True;
+         State := msFinishWZ;
+      end;
+   msOneWayStartTxBatch1,
+   msOneWayStartTxBatch3:
+      begin
+         BatchStart;
+         SD.Prot.Start(nil, nil, GetNextFile, FinishSend, ChangeOrder);
+         State := Succ(State);
+      end;
+   msOneWayStartRxBatch2:
+      begin
+         BatchStart;
+         SD.Prot.Start(AcceptFile, FinishRece, nil, nil, nil);
+         State := Succ(State);
+      end;
+   msBiDirStartBatch1,
+   msBiDirStartBatch2:
+      begin
+         BatchStart;
+         SD.Prot.Start(AcceptFile, FinishRece, GetNextFile, FinishSend, ChangeOrder);
+         State := Succ(State);
+      end;
+   msOneWayTxBatch1,
+   msOneWayRxBatch2,
+   msOneWayTxBatch3,
+   msBiDirBatch1,
+   msBiDirBatch2:
+      begin
+         // protocol checks for an abort by local console (Prot.CancelRequested)
+         // and carrier (CP.DCD)
+         if NeedRescan then DoRescan;
+         if SD.FileRefuse then begin
+            SD.Prot.FileRefuse := True;
+            SD.FileRefuse := False
+         end;
+         if SD.FileSkip then begin
+            SD.Prot.FileSkip := True;
+            SD.FileSkip := False
+         end;
+         if SD.PasswordProtected and IniFile.RequestTRS and (SD.Prot.ID = piBinkp) and (not SD.Prot.TransitRequested) then begin
+            FixTRS;
+         end;
+         if SD.Prot.ID in [piRCC, piFTP, piHTTP, piSMTP, piPOP3, piGATE, piNNTP] then
+         if SD.Prot.NextStep then else
+            if SD.Prot.ProtocolError = ecOK then State := msWZOK else State := msFinishWZ
+         else
+         if SD.Prot.NextStep then begin
+            if SD.Prot.ProtocolError <> ecOK then
+               State := msFinishWZ
+            else begin
+               if ProtCore = ptBinkP then
+                  State := msWZOK
                else
-                  if ((SD.ActivePoll <> nil) and not ValidConnection) then State := ms_WrongOutDial;
-            end;
-         end;
-      msWZOK:
-         begin
-            SD.SessionOK := True;
-            State := msFinishWZ;
-         end;
-      msOneWayStartTxBatch1,
-      msOneWayStartTxBatch3:
-         begin
-            BatchStart;
-            SD.Prot.Start(nil, nil, GetNextFile, FinishSend, ChangeOrder);
-            State := Succ(State);
-         end;
-      msOneWayStartRxBatch2:
-         begin
-            BatchStart;
-            SD.Prot.Start(AcceptFile, FinishRece, nil, nil, nil);
-            State := Succ(State);
-         end;
-      msBiDirStartBatch1,
-      msBiDirStartBatch2:
-         begin
-            BatchStart;
-            SD.Prot.Start(AcceptFile, FinishRece, GetNextFile, FinishSend, ChangeOrder);
-            State := Succ(State);
-         end;
-      msOneWayTxBatch1,
-      msOneWayRxBatch2,
-      msOneWayTxBatch3,
-      msBiDirBatch1,
-      msBiDirBatch2:
-         begin
-            // protocol checks for an abort by local console (Prot.CancelRequested)
-            // and carrier (CP.DCD)
-            if NeedRescan then DoRescan;
-            if SD.FileRefuse then begin
-               SD.Prot.FileRefuse := True;
-               SD.FileRefuse := False
-            end;
-            if SD.FileSkip then begin
-               SD.Prot.FileSkip := True;
-               SD.FileSkip := False
-            end;
-            if SD.PasswordProtected and IniFile.RequestTRS and (SD.Prot.ID = piBinkp) and (not SD.Prot.TransitRequested) then begin
-               FixTRS;
-            end;
-            if SD.Prot.ID in [piRCC, piFTP, piHTTP, piSMTP, piPOP3, piGATE, piNNTP] then
-            if SD.Prot.NextStep then else
-               if SD.Prot.ProtocolError = ecOK then State := msWZOK else State := msFinishWZ
-            else
-            if SD.Prot.NextStep then begin
-               if SD.Prot.ProtocolError <> ecOK then
-                  State := msFinishWZ
-               else begin
-                  if ProtCore = ptBinkP then
+               case State of
+               msOneWayRxBatch2:
+                  if SD.ActivePoll <> nil then State := msWZOK;
+               msOneWayTxBatch3:
+                  if SD.ActivePoll = nil then
                      State := msWZOK
                   else
-                  case State of
-                  msOneWayRxBatch2:
-                     if SD.ActivePoll <> nil then State := msWZOK;
-                  msOneWayTxBatch3:
-                     if SD.ActivePoll = nil then
-                        State := msWZOK
-                     else
-                        GlobalFail('%s', ['Batch  765 ???']);
-                  msBiDirBatch2: State := msWZOK;
-                  end;
-                  if State <> msWZOK then begin
-                     State := Succ(State);
-                     Inc(SD.Prot.BatchNo);
-                  end;
+                     GlobalFail('%s', ['Batch  765 ???']);
+               msBiDirBatch2: State := msWZOK;
+               end;
+               if State <> msWZOK then begin
+                  State := Succ(State);
+                  Inc(SD.Prot.BatchNo);
                end;
             end;
-            if SD.Prot.CP.Msg <> '' then begin
-               Log(ltWarning, SD.Prot.CP.Msg);
-               SD.Prot.CP.Msg := '';
-            end;
          end;
+         if SD.Prot.CP.Msg <> '' then begin
+            Log(ltWarning, SD.Prot.CP.Msg);
+            SD.Prot.CP.Msg := '';
+         end;
+      end;
    else
       GlobalFail('%s', ['TMailerThread.DoWZ ??']);
    end;
@@ -14076,6 +13948,7 @@ begin
    D.Initialized := True;
    PublicD := D;
    PublicDS := DS;
+   PublicD.isZMH := EP.VoidFound(eiZMHEvent);
    case State of
  msIdle,
  msIdleA,
@@ -15758,14 +15631,16 @@ end;
 
 procedure EnterFidoPolls;
 begin
-//   MailerThreads.Enter;
-   FidoPolls.Enter;
+   if FidoPolls <> nil then begin
+      FidoPolls.Enter;
+   end;
 end;
 
 procedure LeaveFidoPolls;
 begin
-   FidoPolls.Leave;
-//   MailerThreads.Leave;
+   if FidoPolls <> nil then begin
+      FidoPolls.Leave;
+   end;   
 end;
 
 const

@@ -1844,13 +1844,7 @@ begin
             end;
          WM_CHECKNETMAIL:
             begin
-               if (NetmailHolder = nil) and (IniFile.DynamicRouting or IniFile.ScanMSG) then begin
-                  NetmailHolder := TNetmail.Create;
-               end;
-               if NetmailHolder <> nil then begin
-                  NetmailHolder.ScanMSG;
-                  TMailerForm(Application.MainForm).RereadOutbound(True);
-               end;
+               ScanCounter := 1;
             end;
          WM_ROUTEEXPORT:
             begin
@@ -2075,8 +2069,7 @@ begin
    if OutMgrThread.Nodes <> nil then OutMgrNodes := OutMgrThread.Nodes.Copy;
    LeaveCS(OutMgrThread.NodesCS);
    E := False;
-   for i := 0 to CollMax(OutMgrNodes) do
-   begin
+   for i := 0 to CollMax(OutMgrNodes) do begin
       n := OutMgrNodes[i];
       if n.Files <> nil then n.Files.PurgeDuplicates;
       n.PrepareNfo;
@@ -2084,8 +2077,7 @@ begin
    end;
    UpdateViewOutMgr;
    SetEnabledO(bReread, wcb_Rescan, True);
-   if (Win32Platform = VER_PLATFORM_WIN32_NT) then
-   begin
+   if (Win32Platform = VER_PLATFORM_WIN32_NT) then begin
       aOutbound.Visible := False;
       aOutbound.Active := False;
    end;
@@ -2262,8 +2254,7 @@ begin
    ti := -1;
    c := 0;
    ic := MainTabControl.Tabs.Count;
-   for i := 0 to MailerThreads.Count - 1 do
-   begin
+   for i := 0 to MailerThreads.Count - 1 do begin
       m := MailerThreads.At(i);
 {$IFDEF WS}
       if not m.DialupLine then Continue;
@@ -2277,12 +2268,10 @@ begin
    if ActiveLine = PanelOwnerOutMgr then ti := c;
    DoAdd(LngStr(rsMMTabOutbound));
 {$IFDEF WS}
-   if DaemonStarted then
-   begin
+   if DaemonStarted then begin
       if ActiveLine = PanelOwnerDaemon then ti := c;
       DoAdd(LngStr(rsMMTabDaemon));
-      for i := 0 to MailerThreads.Count - 1 do
-      begin
+      for i := 0 to MailerThreads.Count - 1 do begin
          m := MailerThreads.At(i);
          if m.DialupLine then Continue;
          if ActiveLine = m then ti := c;
@@ -2290,8 +2279,7 @@ begin
       end;
    end;
 {$ENDIF}
-   while ic > c do
-   begin
+   while ic > c do begin
       Dec(ic);
       MainTabControl.Tabs.Delete(ic)
    end;
@@ -2300,13 +2288,11 @@ end;
 
 procedure TMailerForm.SetBar(B: TProgressBar; C, M: Integer; CI, MI: Twci);
 begin
-   if wci[MI] <> M then
-   begin
+   if wci[MI] <> M then begin
       wci[MI] := M;
       B.Max := M;
    end;
-   if wci[CI] <> C then
-   begin
+   if wci[CI] <> C then begin
       wci[CI] := C;
       B.Position := C;
    end;
@@ -2314,14 +2300,11 @@ end;
 
 procedure TMailerForm.SetGauge(G: TxGauge; C, M: Integer; CI, MI: Twci);
 begin
-   if wci[MI] <> M then
-   begin
+   if wci[MI] <> M then begin
       wci[MI] := M;
       G.MaxValue := M;
    end;
-
-   if wci[CI] <> C then
-   begin
+   if wci[CI] <> C then begin
       wci[CI] := C;
       G.Progress := C;
    end;
@@ -2334,16 +2317,14 @@ var
 begin
    if wcs[c] = s then Exit;
    wcs[c] := s;
-   if L is TLabel then
-   begin
+   if L is TLabel then begin
       Lbl.Caption := s;
       if Lbl.ShowHint then Lbl.Hint := s;
-   end
+   end else
+   if L is TMenuItem then
+      Mnu.Caption := s
    else
-      if L is TMenuItem then
-         Mnu.Caption := s
-      else
-         GlobalFail('TMailerForm.SetLabel(%s,...,"%s")', [L.ClassName, s]);
+      GlobalFail('TMailerForm.SetLabel(%s,...,"%s")', [L.ClassName, s]);
 end;
 
 procedure TMailerForm.SetEnabledO(L: TObject; c: TWcb; V: Boolean);
@@ -2357,11 +2338,11 @@ begin
       with L as TControl do
          Enabled := V
    else
-      if L is TMenuItem then
-         with L as TMenuItem do
-            Enabled := V
-      else
-         GlobalFail('TMailerForm.SetEnabled for %s', [L.ClassName]);
+   if L is TMenuItem then
+      with L as TMenuItem do
+         Enabled := V
+   else
+      GlobalFail('TMailerForm.SetEnabled for %s', [L.ClassName]);
 end;
 
 procedure TMailerForm.SetVisible(L: TControl; c: TWcb; V: Boolean);
@@ -3256,10 +3237,7 @@ procedure TMailerForm.UpdateView(fromcc: boolean);
       SetEnabledO(mlRefuse, wcb_mlRefuse, B);
       if (ActiveLine.SD <> nil) and (ActiveLine.SD.Prot <> nil) then begin
          ActiveLine.Enter;
-         if (ActiveLine.SD <> nil) and
-            (ActiveLine.SD.Prot <> nil) and
-            (ActiveLine.SD.Prot.Chat <> nil) then
-         begin
+         if (ActiveLine.SD.Prot.Chat <> nil) then begin
            try
              if ChatMemo1.Text <> ActiveLine.SD.Prot.Chat.Memo1Text.Text then begin
                 ChatMemo1.Text := ActiveLine.SD.Prot.Chat.Memo1Text.Text;
@@ -3283,10 +3261,8 @@ procedure TMailerForm.UpdateView(fromcc: boolean);
              ChatPan.Visible := false;
            end;
          end else ChatPan.Visible := false;
-         SetEnabledO(mlChat, wcb_mlChat, ActiveLine.SD.Prot.CanChat and
-            not ActiveLine.SD.Prot.ChatOpened);
-         SetEnabledO(bChat, wcb_bChat, ActiveLine.SD.Prot.CanChat and
-            not ActiveLine.SD.Prot.ChatOpened);
+         SetEnabledO(mlChat, wcb_mlChat, ActiveLine.SD.Prot.CanChat and not ActiveLine.SD.Prot.ChatOpened);
+         SetEnabledO(bChat, wcb_bChat, ActiveLine.SD.Prot.CanChat and not ActiveLine.SD.Prot.ChatOpened);
          ActiveLine.Leave;
       end else begin
          SetEnabledO(mlChat, wcb_mlChat, False);
@@ -3704,6 +3680,9 @@ begin
          TermRx.Invalidate;
          DoClearTerms := False;
          s := ActiveLine.Name;
+         if ActiveLine.PublicD.isZMH then begin
+            s := s + ' (ZMH)';
+         end;
          LogBox.Visible := true;
          if (ActiveLine.SD <> nil) and (ActiveLine.SD.Prot <> nil) and (ActiveLine.SD.Prot.Chat <> nil) then begin
            ChatPan.Visible := (ActiveLine.SD.Prot.Chat <> nil) and (ActiveLine.SD.Prot.Chat.Visible);
@@ -5277,10 +5256,17 @@ begin
 end;
 
 procedure TMailerForm.RereadOutbound(full: boolean);
+var
+   c: integer;
 begin
+   c := 0;
    while OutMgrThread.HandUpdate do begin
       Application.ProcessMessages;
       Sleep(100);
+      inc(c);
+      if c = 50 then begin
+         exit;
+      end;
    end;
    OutMgrThread.ForcedUpdate := True;
    FidoOut.ForcedRescan := True;

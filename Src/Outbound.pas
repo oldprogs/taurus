@@ -37,6 +37,7 @@ type
        Netm: string;
        Orig: string;
        Name: string;
+       Twin: string;
        fMSG: boolean;
        fATT: boolean;
        Nfo: TFileInfo;
@@ -151,7 +152,7 @@ const
               (ptpUnknown, ptpUnknown,
                ptpImm, ptpOutb, ptpOutb, ptpUnknown, ptpUnknown,
                ptpImm, ptpOutb, ptpOutb, ptpUnknown, ptpUnknown, ptpUnknown, ptpUnknown,
-               ptpBack, ptpUnknown, ptpUnknown, ptpUnknown);
+               ptpOutb, ptpUnknown, ptpUnknown, ptpUnknown);
 
 var FidoOut: TOutbound;
 
@@ -1333,7 +1334,7 @@ begin
    CfgLeave;
    fbc := FFileBoxes;
 
-   fbdc := TFileBoxDirColl.Create('fbdc');
+   fbdc := TFileBoxDirColl.Create;
 
    for i := 0 to fbc.Count - 1 do begin
       fb := fbc[i];
@@ -1607,7 +1608,7 @@ var
    j: Integer;
 begin
    Enter;
-   SC := TStringColl.Create('SC (PurgeDuplicates)');
+   SC := TStringColl.Create;
    SC.IgnoreCase := True;
    for i := 0 to Count - 1 do begin
       f := At(i);
@@ -1893,7 +1894,7 @@ begin
    end;
 end;
 
-procedure InsertMSGPoll(a: TFidoAddress; m: TNetmailMsg);
+function InsertMSGPoll(a: TFidoAddress; m: TNetmailMsg): boolean;
 var
    i: integer;
    n: TOutNode;
@@ -1906,6 +1907,7 @@ var
    t: string;
   an: TAdvNode;
 begin
+   Result := False;
    an := FindNode(a);
    if not OutColl.Search(@a, i) then begin
       n := TOutNode.Create;
@@ -1932,10 +1934,10 @@ begin
       s := osCrashMail;
       b := osCrash;
    end;
-   n.FStatus := n.FStatus + [s];
-   n.FPollType := n.FPollType + [p];
-   if (an <> nil) and (s <> osHoldMail) then begin
-      InsertPoll(an, [s], p);
+   if (an <> nil) and (s <> osHoldMail) and (m.Attr and FileAttached = 0) then begin
+      n.FStatus := n.FStatus + [s];
+      n.FPollType := n.FPollType + [p];
+      Result := InsertPoll(an, [s], p);
    end;
    if n.Files = nil then begin
       n.Files := TOutFileColl.Create;
@@ -1952,6 +1954,7 @@ begin
          f.KillAction := kaBsoKillAfter;
       end;
       n.Files.Add(f);
+      FidoOut.fOutboundSize := FidoOut.fOutboundSize + f.Nfo.Size;
    end;
    if m.attr and FileAttached > 0 then begin
       k := kaBsoNothingAfter;
@@ -1971,9 +1974,11 @@ begin
             f.Name := t;
             f.Nfo.Time := GetFileTime(t);
             f.Nfo.Size := GetFileSize(t);
+            n.FStatus := n.FStatus + [b];
             f.FStatus := b;
             f.KillAction := k;
             n.Files.Add(f);
+            FidoOut.fOutboundSize := FidoOut.fOutboundSize + f.Nfo.Size;
          end;
       end;
    end;
@@ -1997,152 +2002,146 @@ var
   ni: Integer;
   SR: TuFindData;
   fb: TFileBoxCfg;
-  Nfo: TFileInfo;
-  fbc: TFileBoxCfgColl;
-  fbdc: TFileBoxDirColl;
-  fbdr: TFileBoxDirRecord;
-  mask: string;
+ Nfo: TFileInfo;
+ fbc: TFileBoxCfgColl;
+fbdc: TFileBoxDirColl;
+fbdr: TFileBoxDirRecord;
+mask: string;
 begin
-  CurTime := uGetSystemTime;
-  ClearErrorMsg;
-  OutColl := TOutNodeColl.Create;
-
-  FileNames := TStringColl.Create;
-  FileNames.IgnoreCase := True;
-  FileInfos := TFileInfoColl.Create;
-  fOutboundSize := 0;
-  S := ExtractDir(dOutbound);
-  FSplit(S, Dr, Nm, Xt);
-  Mask := '*:*/*';
-  Nm := '*';
-  begin
-    if (Win32Platform = VER_PLATFORM_WIN32_NT) then fn := Dr + Nm + '.???'
-                                               else fn := Dr + Nm + '.*';
-    if uFindFirstEx(fn, SR, FindExSearchLimitToDirectories) then begin
+   CurTime := uGetSystemTime;
+   ClearErrorMsg;
+   OutColl := TOutNodeColl.Create;
+   FileNames := TStringColl.Create;
+   FileNames.IgnoreCase := True;
+   FileInfos := TFileInfoColl.Create;
+   fOutboundSize := 0;
+   S := ExtractDir(dOutbound);
+   FSplit(S, Dr, Nm, Xt);
+   Mask := '*:*/*';
+   Nm := '*';
+   if (Win32Platform = VER_PLATFORM_WIN32_NT) then fn := Dr + Nm + '.???'
+                                              else fn := Dr + Nm + '.*';
+   if uFindFirstEx(fn, SR, FindExSearchLimitToDirectories) then begin
       repeat
-        if SR.Info.Attr and FILE_ATTRIBUTE_DIRECTORY <> 0 then begin
-          if SR.FName[1] <> '.' then begin
-             Xt := ExtractWord(2, SR.FName, ['.']);
-             I := VlH(Xt);
-             if (I <> INVALID_VALUE) then begin
-                a := FidoAddress(I, 0, 0, 0, '');
-                if (I <> INVALID_VALUE) and
-                   MatchMaskAddressListSingle(a, Mask) then ScanDir(Dr + SR.FName, I, False);
-             end else begin
-                if Xt = '' then begin
-                   if Inifile.D5Out then begin
-                      ScanDir(Dr + SR.FName, DefaultZone, False);
-                   end else begin
-                      if UpperCase(Dr + SR.FName) = UpperCase(dOutbound) then begin
-                         ScanDir(Dr + SR.FName, DefaultZone, False);
-                      end;
-                   end;
-                end;
-             end;
-          end;
-        end;
+         if SR.Info.Attr and FILE_ATTRIBUTE_DIRECTORY <> 0 then begin
+            if SR.FName[1] <> '.' then begin
+               Xt := ExtractWord(2, SR.FName, ['.']);
+               I := VlH(Xt);
+               if (I <> INVALID_VALUE) then begin
+                  a := FidoAddress(I, 0, 0, 0, '');
+                  if (I <> INVALID_VALUE) and MatchMaskAddressListSingle(a, Mask) then ScanDir(Dr + SR.FName, I, False);
+               end else begin
+                  if Xt = '' then begin
+                     if Inifile.D5Out then begin
+                        ScanDir(Dr + SR.FName, DefaultZone, False);
+                     end else begin
+                        if UpperCase(Dr + SR.FName) = UpperCase(dOutbound) then begin
+                           ScanDir(Dr + SR.FName, DefaultZone, False);
+                        end;
+                     end;
+                  end;
+               end;
+            end;
+         end;
       until not uFindNext(SR);
       uFindClose(SR);
-    end;
-  end;
-
-  for ii := 0 to FileNames.Count - 1 do begin
-    s := FileNames[ii];
-    Nfo := PFileInfo(FileInfos[ii])^;
-    n := TOutNode.Create;
-    n.Address.Zone := -1;
-    n.Nfo.Size := Nfo.Size;
-    n.Nfo.Time := Nfo.Time;
-    n.Name := StrAsg(s);
-    n.FStatus := [osNone];
-    OutColl.AtInsert(0, n);
-  end;
-
-  FreeObject(FileNames);
-  FreeObject(FileInfos);
-
-  {}
-  fbdc := TFileBoxDirColl.Create;
-
-  fbc := FFileBoxes;
-  for ii := 0 to fbc.Count - 1 do begin
-    fb := fbc[ii];
-    GetFileBoxDirColl(fb.FAddr, fb.Dir(fbc.DefaultDir, 0), fb.FStatus, fbdc, nil, nil, nil);
-  end;
-
-  for ii := 0 to fbdc.Count - 1 do begin
-    fbdr := fbdc[ii];
-    if uFindFirst(MakeNormName(fbdr.Path, '*.*'), SR) then begin
-      repeat
-        if SR.Info.Attr and FAttachDisallowedAttr = 0 then begin
-          AddAddrOutNode(fbdr.Addr, fbdr.Status, OutColl, SR.Info.Size, SR.Info.Time);
-          fOutboundSize := fOutboundSize + SR.Info.Size;
-        end;
-      until not uFindNext(SR);
-      uFindClose(SR);
-    end;
-  end;
-
-  FreeObject(fbdc);
-
-  if NetmailHolder <> nil then begin
-     NetmailHolder.NetColl.Enter;
-     for ii := 0 to CollMax(NetmailHolder.NetColl) do begin
-        m := NetmailHolder.NetColl[ii];
-        if m.Fido and ((pos('DIR', m.Flgs) > 0) or (m.Attr and FileAttached > 0)) then begin
-           InsertMSGPoll(m.Addr, m);
-        end else
-        if m.Fido and (m.Attr and HoldForPickUp = 0) then begin
-           for nn := 0 to IniFile.NetmailAddrTo.Count - 1 do begin
-              s := IniFile.NetmailAddrTo[nn];
-              if s = '*' then continue;
-              s := IniFile.NetmailAddrFrom[nn];
-              e := '';
-              repeat
-                 GetWrd(s, t, ' ');
-                 if (t <> '') and (t[1] = '!') then begin
-                    Delete(t, 1, 1);
-                    e := e + ' ' + t;
-                 end;
-              until s = '';
-              repeat
-                 GetWrd(e, t, ' ');
-                 if MatchMaskAddress(m.Addr, t) then begin
-                    t := 'q';
-                    break;
-                 end;
-              until e = '';
-              if t = 'q' then begin
-                 continue;
-              end;
-              b := '';
-              s := IniFile.NetmailAddrFrom[nn];
-              for ni := 1 to WordCount(s, [' ']) do begin
-                 t := ExtractWord(ni, s, [' ']);
-                 if t[1] <> '!' then b := b + ' ' + t;
-              end;
-              s := b;
-              repeat
-                 GetWrd(s, t, ' ');
-                 if MatchMaskAddress(m.Addr, t) then begin
-                    t := IniFile.NetmailAddrTo[nn];
-                    if ParseAddress(t, a) then begin
-                       InsertMSGPoll(a, m);
-                    end else begin
-                       if MatchMaskAddress(m.Addr, t) then begin
-                          InsertMSGPoll(m.Addr, m);
-                       end;
-                    end;
-                 end;
-              until s = '';
-           end;
-        end;
-     end;
-     NetmailHolder.NetColl.Leave;
-  end;
-
-  if OutColl.Count = 0 then FreeObject(OutColl);
-  Result := OutColl;
+   end;
+   for ii := 0 to FileNames.Count - 1 do begin
+      s := FileNames[ii];
+      Nfo := PFileInfo(FileInfos[ii])^;
+      n := TOutNode.Create;
+      n.Address.Zone := -1;
+      n.Nfo.Size := Nfo.Size;
+      n.Nfo.Time := Nfo.Time;
+      n.Name := StrAsg(s);
+      n.FStatus := [osNone];
+      OutColl.AtInsert(0, n);
+   end;
+   FreeObject(FileNames);
+   FreeObject(FileInfos);
+   fbdc := TFileBoxDirColl.Create;
+   fbc := FFileBoxes;
+   for ii := 0 to fbc.Count - 1 do begin
+      fb := fbc[ii];
+      GetFileBoxDirColl(fb.FAddr, fb.Dir(fbc.DefaultDir, 0), fb.FStatus, fbdc, nil, nil, nil);
+   end;
+   for ii := 0 to fbdc.Count - 1 do begin
+      fbdr := fbdc[ii];
+      if uFindFirst(MakeNormName(fbdr.Path, '*.*'), SR) then begin
+         repeat
+            if SR.Info.Attr and FAttachDisallowedAttr = 0 then begin
+               AddAddrOutNode(fbdr.Addr, fbdr.Status, OutColl, SR.Info.Size, SR.Info.Time);
+               fOutboundSize := fOutboundSize + SR.Info.Size;
+            end;
+         until not uFindNext(SR);
+         uFindClose(SR);
+      end;
+   end;
+   FreeObject(fbdc);
+   if NetmailHolder <> nil then begin
+      NetmailHolder.NetColl.Enter;
+      for ii := 0 to CollMax(NetmailHolder.NetColl) do begin
+         m := NetmailHolder.NetColl[ii];
+         if m.Fido and ((pos('DIR', m.Flgs) > 0) or (m.Attr and HoldForPickUp > 0)) then begin
+            InsertMSGPoll(m.Addr, m);
+         end else
+         if m.Fido and (m.Attr and HoldForPickUp = 0) then begin
+            for nn := 0 to IniFile.NetmailAddrTo.Count - 1 do begin
+               s := IniFile.NetmailAddrTo[nn];
+               if s = '*' then continue;
+               s := IniFile.NetmailAddrFrom[nn];
+               e := '';
+               repeat
+                  GetWrd(s, t, ' ');
+                  if (t <> '') and (t[1] = '!') then begin
+                     Delete(t, 1, 1);
+                     e := e + ' ' + t;
+                  end;
+               until s = '';
+               repeat
+                  GetWrd(e, t, ' ');
+                  if MatchMaskAddress(m.Addr, t) then begin
+                     t := 'q';
+                     break;
+                  end;
+               until e = '';
+               if t = 'q' then begin
+                  continue;
+               end;
+               b := '';
+               s := IniFile.NetmailAddrFrom[nn];
+               for ni := 1 to WordCount(s, [' ']) do begin
+                  t := ExtractWord(ni, s, [' ']);
+                  if t[1] <> '!' then b := b + ' ' + t;
+               end;
+               s := b;
+               repeat
+                  GetWrd(s, t, ' ');
+                  if MatchMaskAddress(m.Addr, t) then begin
+                     t := IniFile.NetmailAddrTo[nn];
+                     if ParseAddress(t, a) then begin
+                        if InsertMSGPoll(a, m) then begin
+                           e := 'q';
+                           break;
+                        end;
+                     end else begin
+                        if MatchMaskAddress(m.Addr, t) then begin
+                           if InsertMSGPoll(m.Addr, m) then begin
+                              e := 'q';
+                              break;
+                           end;
+                        end;
+                     end;
+                  end;
+               until s = '';
+               if e = 'q' then break;
+            end;
+         end;
+      end;
+      NetmailHolder.NetColl.Leave;
+   end;
+   if OutColl.Count = 0 then FreeObject(OutColl);
+   Result := OutColl;
 end;
 
 function TOutNodeColl.Compare(Key1, Key2: Pointer): Integer;
@@ -2247,7 +2246,11 @@ function TOutbound._GetOutCollP(const Single, AFull, Scan: Boolean; const Addr: 
       n: TOutNode;
    begin
       if OutCache = nil then Result := nil else begin
-         if AFull then Result := OutCache.Copy else begin
+         if AFull then begin
+            EnterCS(CacheCS);
+            Result := OutCache.Copy;
+            LeaveCS(CacheCS);
+         end else begin
             Result := TOutNodeColl.Create;
             EnterCS(CacheCS);
             for i := 0 to OutCache.Count - 1 do begin
@@ -2297,6 +2300,7 @@ begin
    f.Link := StrAsg(Link);
    f.Name := StrAsg(Name);
    f.Netm := StrAsg(Netm);
+   f.Twin := StrAsg(Twin);
    f.MoveTo := StrAsg(MoveTo);
    f.Nfo.Size := Nfo.Size;
    f.Nfo.Time := Nfo.Time;
@@ -2417,7 +2421,7 @@ begin
       osBusyEx,
       osError : ;
       else
-         if not (osBusy in FStatus) and
+         if not (osBusy   in FStatus) and
             not (osBusyEx in FStatus) then
          begin
             f := TOutFile.Create;
