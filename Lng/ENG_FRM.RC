@@ -516,7 +516,7 @@ LANGUAGE LANG_ENGLISH,0
         "llAssumeSpeed|Speed\n"\
         "llSocksAddr|&Address\n"\
         "llSocksPort|&Port\n"\
-        "llLimit|Max connections\n"\
+        "llLimit|Connections\n"\
         "rgProxyType|Proxy type\n"\
         "llSocksAddr|Address\n"\
         "llSocksPort|Port\n"\

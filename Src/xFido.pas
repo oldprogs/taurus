@@ -4,7 +4,7 @@ unit xFido;
 
 interface
 
-uses xBase, CommCtrl, Windows;
+uses xBase, CommCtrl, Windows, MGrids;
 
 type
   TNodeType = (fntUnk, fntZone, fntRegion, fntNet, fntHub, fntNode, fntPoint);
@@ -829,6 +829,7 @@ function ValidCronRec(const s: string): Boolean;
 function ValidCronColl(c: TStringColl; var ErrLn: Integer; var Msg: string): Boolean;
 function ParseCronColl(c: TStringColl): TColl;
 function ValidateAddrs(const s: string; Handle: DWORD): Boolean;
+function ValidateAddrsMask(const g: TAdvGrid; r, c: integer; h: DWORD): Boolean;
 function ValidModemCmd(Idx: Integer; const Cmd, Name: string; Handle: DWORD): Boolean;
 function GetNodeType(N: TFidoNode): TNodeType;
 function IsArcMailExt(const AExt: string): Boolean;
@@ -934,6 +935,19 @@ begin
   a := CreateAddrCollMsg(s, Msg);
   Result := a <> nil;
   if Result then FreeObject(a) else DisplayError(Msg, Handle);
+end;
+
+function ValidateAddrsMask;
+var
+   i: integer;
+begin
+   Result := True;
+   for i := r to g.RowCount do begin
+      if not ValidMaskAddressList(g.Cells[c, i], h) then begin
+         Result := False;
+         exit;
+      end;
+   end;
 end;
 
 function IdentEMSISeq(var AStr: string; iCRC: DWORD): TEMSISeq;
@@ -1304,14 +1318,11 @@ begin
           s.Free;
        end;
     end;
-    if not ParseAddressMsgEx(w, Addr, PMsg) then
-    begin
-      if ASkip then
-      begin
+    if not ParseAddressMsgEx(w, Addr, PMsg) then begin
+      if ASkip then begin
         if InvAddrs <> nil then InvAddrs.Add(w);
         Continue;
-      end else
-      begin
+      end else begin
         FreeObject(C);
         Exit;
       end;
@@ -1350,14 +1361,12 @@ begin
   Result := CreateAddrCollMsg(A, Msg);
 end;
 
-
 function TFidoAddrColl.GetString: string;
 var
   i: Integer;
 begin
   Result := '';
-  for i := 0 to Count - 1 do
-  begin
+  for i := 0 to Count - 1 do begin
     if Result <> '' then AddStr(Result, ' ');
     Result := Result + Addr2Str(Addresses[i]);
   end;
@@ -1370,25 +1379,20 @@ var
 begin
   Result := False;
   L.FreeAll;
-  while S <> '' do
-  begin
+  while S <> '' do begin
     Z := '';
     DelFC(S);
     repeat
       if S = '' then Exit;
       C := S[1];
       DelFC(S);
-      if C <> AC then
-      begin
+      if C <> AC then begin
         AddStr(Z, C);
-      end else
-      begin
-        if (S <> '') and (S[1] = AC) then
-        begin
+      end else begin
+        if (S <> '') and (S[1] = AC) then begin
           DelFC(S);
           AddStr(Z, C);
-        end else
-        begin
+        end else begin
           L.Add(Z);
           Break;
         end;
@@ -1420,8 +1424,7 @@ begin
   SetLength(Z, SL);
   I := 1; ZL := 0;
   C := '?';
-  while I <= SL do
-  begin
+  while I <= SL do begin
     case S[I] of
       #0..#31, #128..#255: Exit;
       '\':
@@ -1461,34 +1464,33 @@ end;
 
 function IdentEMSIAddon(const S: string): TEMSIAddonType;
 var
-  C: TEMSIAddonType;
+   C: TEMSIAddonType;
   US: string;
 begin
-  Result := eaCustom;
-  US := UpperCase(S);
-  for C := Low(TEMSIAddonType) to High(TEMSIAddonType) do
-  begin
-    if US = SEMSIAddons[C] then begin Result := C; Exit end;
-  end;
+   Result := eaCustom;
+   US := UpperCase(S);
+   for C := Low(TEMSIAddonType) to High(TEMSIAddonType) do begin
+      if US = SEMSIAddons[C] then begin Result := C; Exit end;
+   end;
 end;
 
 function ValidMaskAddress(const AMask: string): Boolean;
 var
-  a: Ta4s;
+   a: Ta4s;
   RE: TPCRE;
-  s: string;
+   s: string;
 begin
-  Result := SplitAddress(AMask, a, True);
-  if Result then Exit;
-  RE := nil;//to avoid unintialized warning
-  if (Pos('~', AMask) <= 0) then begin Result := False; Exit end;
-  try
-    s := StrQuotePartEx(AMask, '~', 'G', 'H');
-    RE := GetRegExpr('^[\*0-9A-H]+\:[\*0-9A-H]+\/[\*0-9A-H]+(\.[\*0-9A-H]+)?$');
-    Result := (RE.ErrPtr = 0) and (RE.Match(s) > 0) and (RE[0] <> '');
-  finally
-    RE.Unlock;
-  end;
+   Result := SplitAddress(AMask, a, True);
+   if Result then Exit;
+   RE := nil;//to avoid unintialized warning
+   if (Pos('~', AMask) <= 0) then begin Result := False; Exit end;
+   try
+      s := StrQuotePartEx(AMask, '~', 'G', 'H');
+      RE := GetRegExpr('^[\*0-9A-H]+\:[\*0-9A-H]+\/[\*0-9A-H]+(\.[\*0-9A-H]+)?$');
+      Result := (RE.ErrPtr = 0) and (RE.Match(s) > 0) and (RE[0] <> '');
+   finally
+      RE.Unlock;
+   end;
 end;
 
 function MatchMaskAddress(const Addr: TFidoAddress; const AMask: string): Boolean;
@@ -1496,8 +1498,13 @@ var
   a: Ta4s;
   b: TFidoAddress;
   HiC: Char;
-  i, j, m: Integer;
-  s,z,k,n: string;
+  i,
+  j,
+  m: Integer;
+  s,
+  z,
+  k,
+  n: string;
   c: Char;
   RE: TPCRE;
   ok: Boolean;
@@ -1509,17 +1516,14 @@ begin
             (AMask = '*:*/*.*@*') or (AMask = '*:*/*@*');
   if Result then Exit;
   k := StrQuotePartEx(AMask, '~', #3, #4);
-  if (Pos(#3, k) <= 0) then
-  begin
+  if (Pos(#3, k) <= 0) then begin
     Replace(#4, '~', k);
     if not SplitAddress(k, a, True) then Exit;
     try
-    for i := 1 to 4 do
-    begin
+    for i := 1 to 4 do begin
       s := IntToStr(Addr.arr[i]);
       z := a[i];
-      if z[Length(z)] = '*' then
-      begin
+      if z[Length(z)] = '*' then begin
         DelLC(z);
         SetLength(s, Length(z));
       end else
@@ -1546,7 +1550,7 @@ begin
          if fc.Search(@Addr, j) then begin
             break;
          end;
-      end;   
+      end;
       if s <> z then Exit;
     end;
     if inifile.D5Out then begin
@@ -1558,18 +1562,15 @@ begin
        if fc <> nil then begin
           fc.DeleteAll;
           FreeObject(fc);
-       end;   
+       end;
     end;
-  end else
-  begin
+  end else begin
     j := 0;
     if not SplitAddressEx(k, a, True, True) then Exit;
-    for i := 1 to 4 do
-    begin
+    for i := 1 to 4 do begin
       k := a[i];
       n := '';
-      for m := 1 to Length(k) do
-      begin
+      for m := 1 to Length(k) do begin
         c := k[m];
         case j of
           0:
@@ -1608,7 +1609,8 @@ end;
 
 function MatchMaskAddressListMultiple(Addrs: TFidoAddrColl; const AMaskList: string): Boolean;
 var
-  s, z: string;
+  s,
+  z: string;
   a: TFidoAddress;
   IsSimpleAddress: Boolean;
   i: Integer;
@@ -1616,12 +1618,10 @@ var
 begin
   Result := False;
   s := AMaskList;
-  while s <> '' do
-  begin
+  while s <> '' do begin
     GetWrd(s, z, ' ');
     IsSimpleAddress := ParseAddress(z, a);
-    for i := 0 to Addrs.Count - 1 do
-    begin
+    for i := 0 to Addrs.Count - 1 do begin
       Addr := Addrs[i];
       if IsSimpleAddress then Result := CompareAddrs(Addr, a) = 0 else
                               Result := MatchMaskAddress(Addr, z);
@@ -1633,34 +1633,36 @@ end;
 
 function MatchMaskAddressListSingle(const Addr: TFidoAddress; const AMaskList: string): Boolean;
 var
-  c: TFidoAddrColl;
+   c: TFidoAddrColl;
 begin
-  c := TFidoAddrColl.Create;
-  c.Ins(Addr);
-  Result := MatchMaskAddressListMultiple(c, AMaskList);
-  c.Free;
+   c := TFidoAddrColl.Create;
+   c.Ins(Addr);
+   Result := MatchMaskAddressListMultiple(c, AMaskList);
+   c.Free;
 end;
 
 function ValidMaskAddressList(const AMaskList: string; AHandle: DWORD): Boolean;
 var
-  a: Ta4s;
-  s,z: string;
+   a: Ta4s;
+   s,
+   z: string;
 begin
-  Result := True;
-  s := AMaskList;
-  while s <> '' do
-  begin
-    GetWrd(s, z, ' ');
-    if SplitAddress(z, a, True) then Continue;
-    if AHandle <> INVALID_HANDLE_VALUE then DisplayError(FormatLng(rsXfNoValidAOM, [z]), AHandle);
-    Result := False;
-    Break;
-  end;
+   Result := True;
+   s := AMaskList;
+   while s <> '' do begin
+      GetWrd(s, z, ' ');
+      if SplitAddress(z, a, True) then Continue;
+      if AHandle <> INVALID_HANDLE_VALUE then DisplayError(FormatLng(rsXfNoValidAOM, [z]), AHandle);
+      Result := False;
+      Break;
+   end;
 end;
 
 function SplitAddressEx;
 var
-  i,j,k: Integer;
+  i,
+  j,
+  k: Integer;
   c: char;
   PrevMask: Boolean;
 const
@@ -1677,8 +1679,7 @@ begin
      Dec(j);
   end;
   k := 1;
-  for i := 1 to j do
-  begin
+  for i := 1 to j do begin
     c := Address[i];
     case c of
       '0'..'9':
@@ -1709,7 +1710,7 @@ begin
           if Strs[k] = '' then Exit;
           Inc(k);
         end;
-    end;
+     end;
   end;
   case k of
     1 : begin
@@ -1771,60 +1772,60 @@ end;
 function SplitAddress;
 //var s:Ta4s;
 begin
-  Result := SplitAddressEx(Address, strs, AllowMask, False);
+   Result := SplitAddressEx(Address, strs, AllowMask, False);
 end;
 
 function PureAddressMasks(const a: Ta4s): Boolean;
 var
-  i: Integer;
-  s: string;
+   i: Integer;
+   s: string;
 begin
-  Result := True;
-  for i := 1 to 5 do
-  begin
-    s := a[i];
-    if (Pos('*', s) > 0) and (s <> '*') then
-    begin
-      Result := False;
-      Break;
-    end;
-  end;
+   Result := True;
+   for i := 1 to 5 do begin
+      s := a[i];
+      if (Pos('*', s) > 0) and (s <> '*') then begin
+         Result := False;
+         Break;
+      end;
+   end;
 end;
 
 function ValidAddress(const Address: String): Boolean;
 var
-  A: TFidoAddress;
+   A: TFidoAddress;
 begin
-  Result := ParseAddress(Address, A);
+   Result := ParseAddress(Address, A);
 end;
 
 function ParseAddressMsg(const Address: String; var Addr: TFidoAddress; var Msg: string): Boolean;
 begin
-  Result := ParseAddressMsgEx(Address, Addr, @Msg);
+   Result := ParseAddressMsgEx(Address, Addr, @Msg);
 end;
 
 function FindFTNDOM(const a: TFidoAddress): string;
-var i: integer;
-    z: TZoneContainer;
+var
+   i: integer;
+   z: TZoneContainer;
 begin
-  Result := a.Domain;
-  if a.Zone = -1 then exit;
-  if a.Domain <> '' then exit;
-  if inifile = nil then exit;
-  if not inifile.D5Out then exit;
-  if NodeController = nil then exit;
-  for i := 0 to NodeController.Table.Count - 1 do begin
-     z := NodeController.Table[i];
-     if a.Zone = z.ZoneData.Zone then begin
-        Result := z.ZoneData.Domain;
-        break;
-     end;
-  end;
-  if (Result = '') then Result := inifile.MainAddr.Domain;
+   Result := a.Domain;
+   if a.Zone = -1 then exit;
+   if a.Domain <> '' then exit;
+   if inifile = nil then exit;
+   if not inifile.D5Out then exit;
+   if NodeController = nil then exit;
+   for i := 0 to NodeController.Table.Count - 1 do begin
+      z := NodeController.Table[i];
+      if a.Zone = z.ZoneData.Zone then begin
+         Result := z.ZoneData.Domain;
+         break;
+      end;
+   end;
+   if (Result = '') then Result := inifile.MainAddr.Domain;
 end;
 
 function FindFTNDOM(const a: string): string;
-var f: TFidoAddress;
+var
+   f: TFidoAddress;
 begin
    fillchar(f, sizeof(f), #0);
    f.Zone := strtoint(ExtractWord(1, a, [':']));
@@ -1833,24 +1834,24 @@ end;
 
 function A4s2Addr(const a: Ta4s; var Addr: TFidoAddress): Boolean;
 var
-  e,i: DWORD;
+   e,
+   i: DWORD;
 begin
-  Result := False;
-  for i := 1 to 4 do
-  begin
-    e := Vl(a[i]);
-    if (e = INVALID_VALUE) or (e > $FFFF) then Exit;
-    Addr.arr[i] := e;
-  end;
-  if inifile.D5Out then begin
-     if a[5] <> '' then begin
-        Addr.Domain := LowerCase(a[5]);
-        if a[5] = '*' then exit;
-     end else begin
-        Addr.Domain := FindFTNDOM(Addr);
-     end;
-  end;   
-  Result := True;
+   Result := False;
+   for i := 1 to 4 do begin
+      e := Vl(a[i]);
+      if (e = INVALID_VALUE) or (e > $FFFF) then Exit;
+      Addr.arr[i] := e;
+   end;
+   if inifile.D5Out then begin
+      if a[5] <> '' then begin
+         Addr.Domain := LowerCase(a[5]);
+         if a[5] = '*' then exit;
+      end else begin
+         Addr.Domain := FindFTNDOM(Addr);
+      end;
+   end;
+   Result := True;
 end;
 
 function ParseAddress;

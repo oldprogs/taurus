@@ -597,17 +597,17 @@ object MailerForm: TMailerForm
                   Visible = False
                   EraseBackGround = True
                   object lTimeout: TLabel
-                    Left = 71
+                    Left = 80
                     Top = 8
                     Width = 21
                     Height = 16
                     Caption = '999'
                   end
                   object bStart: TSpeedButton
-                    Left = 4
-                    Top = 3
-                    Width = 30
-                    Height = 26
+                    Left = 20
+                    Top = 5
+                    Width = 26
+                    Height = 22
                     Glyph.Data = {
                       36010000424D3601000000000000760000002800000014000000100000000100
                       040000000000C000000000000000000000001000000010000000000000000000
@@ -622,10 +622,10 @@ object MailerForm: TMailerForm
                     OnClick = bStartClick
                   end
                   object bAdd: TSpeedButton
-                    Left = 32
-                    Top = 3
-                    Width = 30
-                    Height = 26
+                    Left = 44
+                    Top = 5
+                    Width = 26
+                    Height = 22
                     Glyph.Data = {
                       36010000424D3601000000000000760000002800000011000000100000000100
                       040000000000C000000000000000000000001000000010000000000000000000

@@ -520,7 +520,7 @@ LANGUAGE LANG_RUSSIAN,0
         "llAssumeSpeed|Скорость\n"\
         "llSocksAddr|Адрес\n"\
         "llSocksPort|Порт\n"\
-        "llLimit|Лимит соединения\n"\
+        "llLimit|Соединения\n"\
         "rgProxyType|Тип прокси\n"\
         "llSocksAddr|Адрес\n"\
         "llSocksPort|Порт\n"\

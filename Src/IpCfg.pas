@@ -79,6 +79,10 @@ type
     tsNNTP: TTabSheet;
     lNNTPImport: TLabel;
     gNNTP: TAdvGrid;
+    xSpinCash: TxSpinEdit;
+    lCash1: TLabel;
+    lCash2: TLabel;
+    gbCash: TGroupBox;
     procedure FormActivate(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -195,6 +199,7 @@ begin
   eBan.SetTextBuf(PChar(Cfg.IPData.Banner));
   gAKA.SetData([Cfg.IpAkaCollA, Cfg.IpAkaCollB]);
   gDNS.SetData([Cfg.IPDomA, Cfg.IPDomB, AltCfg.ipDomC]);
+  xSpinCash.Value := IniFile.CashSize div (1024 * 1024);
 
   for i := 0 to gDNS.RowCount - 1 do begin
      if trim(gDNS.Cells[3, i]) = '' then begin
@@ -275,26 +280,24 @@ var
   s1,
   s2,
   s3: TStringColl;
-  s: string;
-  i: Integer;
+   s: string;
+   i: Integer;
 begin
-  Result := True;
-  s1 := TStringColl.Create;
-  s2 := TStringColl.Create;
-  s3 := TStringColl.Create;
-  gDNS.GetData([s1, s2, s3]);
-  for i := 0 to CollMax(s1) do
-  begin
-    s := s1[i];
-    if not ValidMaskAddressList(s, AHandle) then
-    begin
-      Result := False;
-      Break;
-    end;
-  end;
-  FreeObject(s1);
-  FreeObject(s2);
-  FreeObject(s3);
+   Result := True;
+   s1 := TStringColl.Create;
+   s2 := TStringColl.Create;
+   s3 := TStringColl.Create;
+   gDNS.GetData([s1, s2, s3]);
+   for i := 0 to CollMax(s1) do begin
+      s := s1[i];
+      if not ValidMaskAddressList(s, AHandle) then begin
+         Result := False;
+         Break;
+      end;
+   end;
+   FreeObject(s1);
+   FreeObject(s2);
+   FreeObject(s3);
 end;
 
 function TIPcfgForm.AllOK: Boolean;
@@ -315,67 +318,63 @@ end;
 
 function RestrOK: Boolean;
 var
-  R, F: TStringColl;
+   R,
+   F: TStringColl;
 begin
-  R := TStringColl.Create; gReqd.GetData(R);
-  F := TStringColl.Create; gForb.GetData(F);
-  Result := ChkRestr(R, 'Required') and ChkRestr(F, 'Forbidden');
-  FreeObject(R);
-  FreeObject(F);
+   R := TStringColl.Create; gReqd.GetData(R);
+   F := TStringColl.Create; gForb.GetData(F);
+   Result := ChkRestr(R, 'Required') and ChkRestr(F, 'Forbidden');
+   FreeObject(R);
+   FreeObject(F);
 end;
 
 function SocksValid: Boolean;
 var
-  s: string;
+   s: string;
 begin
-  Result := False;
-  s := _DelSpaces(lSocksPort.Text);
-  FSocksPort := Vl(s);
-  if (FSocksPort < 1) or (FSocksPort > 65535) then
-  begin
-    if s = '' then s := 'EMPTY';
-    DisplayError(Format('Valus of Socks Port (%s) is not valid', [s]), Handle);
-    Exit;
-  end;
-  Result := True;
+   Result := False;
+   s := _DelSpaces(lSocksPort.Text);
+   FSocksPort := Vl(s);
+   if (FSocksPort < 1) or (FSocksPort > 65535) then begin
+      if s = '' then s := 'EMPTY';
+      DisplayError(Format('Valus of Socks Port (%s) is not valid', [s]), Handle);
+      Exit;
+   end;
+   Result := True;
 end;
 
 begin
-  Result := False;
-
-  if not ValidateAddrs(gTpl[1, 1], Handle) then
-  begin
-    tb.ActivePage := lStation;
-    Exit;
-  end;
-
-  if not RestrOK then
-  begin
-    tb.ActivePage := lRestrict;
-    Exit;
-  end;
-
-  if not ValidAKAGrid(gAKA) then
-  begin
-    tb.ActivePage := lAKA;
-    Exit;
-  end;
-
-  if not ValidDNSGrid(gDNS, Handle) then
-  begin
-    tb.ActivePage := lDNS;
-    Exit;
-  end;
-
-  if not NdOvrVld then
-  begin
-    tb.ActivePage := lNodes;
-    Exit;
-  end;
-
-  if not SocksValid then Exit;
-
-  Result := True;
+   Result := False;
+   if not ValidateAddrs(gTpl[1, 1], Handle) then begin
+      tb.ActivePage := lStation;
+      Exit;
+   end;
+   if not RestrOK then begin
+      tb.ActivePage := lRestrict;
+      Exit;
+   end;
+   if not ValidAKAGrid(gAKA) then begin
+      tb.ActivePage := lAKA;
+      Exit;
+   end;
+   if not ValidDNSGrid(gDNS, Handle) then begin
+      tb.ActivePage := lDNS;
+      Exit;
+   end;
+   if not NdOvrVld then begin
+      tb.ActivePage := lNodes;
+      Exit;
+   end;
+   if not ValidateAddrsMask(gPOP3, 1, 4, Handle) then begin
+      tb.ActivePage := tsSMTP;
+      Exit;
+   end;
+   if not ValidateAddrsMask(gNNTP, 1, 0, Handle) then begin
+      tb.ActivePage := tsNNTP;
+      Exit;
+   end;
+   if not SocksValid then Exit;
+   Result := True;
 end;
 
 procedure TIPcfgForm.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
@@ -443,7 +442,6 @@ begin
   Cfg.IpEvtIds.EvtIds := CurEvtIds; CurEvtIds := nil;
   Cfg.Proxy.Addr := lSocksAddr.Text;
   Cfg.Proxy.Port := FSocksPort;
-// visual {
   Cfg.Proxy.Enabled := rgProxyType.ItemIndex > 0;
   IniFile.ProxyType := TProxyType(rgProxyType.ItemIndex);
 
@@ -453,10 +451,10 @@ begin
   IniFile.AllViaProxy := cbAllViaProxy.Checked;
   IniFile.EncryptProxyPassword := cbEncryptPassword.Checked;
 
-// visual }
   CfgLeave;
-  IniFile.InBandwidth := spSPin.Value; // visual
-  IniFile.OutBandwidth := spSPout.Value; // visual
+  IniFile.InBandwidth := spSPin.Value;
+  IniFile.OutBandwidth := spSPout.Value;
+  IniFile.CashSize := xSpinCash.Value * 1024 * 1024;
 
   StoreConfig(Handle);
   AltStoreConfig(Handle);

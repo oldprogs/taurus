@@ -186,6 +186,7 @@ type
             ProxyType: TProxyType;
             InBandwidth: integer;
             OutBandwidth: integer;
+            CashSize: integer;
             EnableProxyAuth: boolean;
             ProxyUserName: string;
             ProxyPassword: string;
@@ -264,9 +265,8 @@ const
   lognames = 'LogNames';
   _tapi = 'TAPI';
   sounds = 'Sounds';
-{$IFDEF EXTREME}
   smtp = 'SMTP';
-{$ENDIF}  
+  nntp = 'NNTP';
 
 procedure LoadIni;
 begin
@@ -785,6 +785,7 @@ begin
       AllViaProxy := ReadBool(IP, 'AllViaProxy', false);
       InBandwidth := ReadInteger(IP, 'InIpBandwidth', 0);
       OutBandwidth := ReadInteger(IP, 'OutIpBandwidth', 0);
+      CashSize := ReadInteger(NNTP, 'CashSize', 5 * 1024 * 1024);
       EnableProxyAuth := ReadBool(IP,'EnableProxyAuth',False);
       ProxyUserName := ReadString(IP, 'ProxyUserName', '');
       ProxyPassword := ReadString(IP, 'ProxyPassword', '');
@@ -1090,14 +1091,16 @@ begin
       WriteInteger(IP, 'ProxyType', Integer(ProxyType));
       WriteInteger(Ip, 'InIpBandwidth', InBandwidth);
       WriteInteger(IP, 'OutIpBandwidth', OutBandwidth);
+      WriteInteger(NNTP, 'CashSize', CashSize);
       WriteBool   (IP, 'EnableProxyAuth',EnableProxyAuth);
       WriteString (IP, 'ProxyUserName', ProxyUserName);
       WriteBool   (IP, 'EncryptProxyPassword', EncryptProxyPassword);
-      if EncryptProxyPassword then
+      if EncryptProxyPassword then begin
         WriteString (IP, 'ProxyPassword', EncodeStr(ProxyPassword))
-      else
+      end else begin
         WriteString (IP, 'ProxyPassword', ProxyPassword);
-      WriteBool   (IP, 'AllViaProxy',AllViaProxy);
+      end;  
+      WriteBool   (IP, 'AllViaProxy', AllViaProxy);
 {end}
     finally
       Free;

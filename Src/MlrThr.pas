@@ -6903,7 +6903,7 @@ begin
       ScanOut(True);
       P.DummyNextFile := False;
       if SD.SessionCore in [scNNTP] then begin
-         While (SD.TxFiles > IniFile.ReadInteger('NNTP', 'CashSize', 5000000)) and (SD.OutFiles.Count > 0) do begin
+         While (SD.TxFiles > IniFile.CashSize) and (SD.OutFiles.Count > 0) do begin
             f := SD.OutFiles[0];
             if pos('.PKT', UpperCase(f.Name)) > 0 then begin
                Log(ltInfo, 'Purging NNTP cash .. ' + JustFileName(f.Name) + ' deleted');

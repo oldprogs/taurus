@@ -6,7 +6,7 @@ object IPcfgForm: TIPcfgForm
   BorderWidth = 6
   Caption = 'TCP/IP Daemon  Configuration'
   ClientHeight = 314
-  ClientWidth = 673
+  ClientWidth = 678
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -23,12 +23,12 @@ object IPcfgForm: TIPcfgForm
   OnDestroy = FormDestroy
   OnKeyDown = FormKeyDown
   DesignSize = (
-    673
+    678
     314)
   PixelsPerInch = 96
   TextHeight = 15
   object bOK: TButton
-    Left = 595
+    Left = 600
     Top = 22
     Width = 75
     Height = 23
@@ -39,7 +39,7 @@ object IPcfgForm: TIPcfgForm
     TabOrder = 1
   end
   object bCancel: TButton
-    Left = 595
+    Left = 600
     Top = 50
     Width = 75
     Height = 23
@@ -50,7 +50,7 @@ object IPcfgForm: TIPcfgForm
     TabOrder = 2
   end
   object bHelp: TButton
-    Left = 595
+    Left = 600
     Top = 78
     Width = 75
     Height = 23
@@ -62,7 +62,7 @@ object IPcfgForm: TIPcfgForm
   object tb: TPageControl
     Left = 0
     Top = 0
-    Width = 588
+    Width = 593
     Height = 314
     ActivePage = lGeneral
     Align = alLeft
@@ -73,12 +73,12 @@ object IPcfgForm: TIPcfgForm
       BorderWidth = 6
       Caption = 'General'
       DesignSize = (
-        568
+        573
         272)
       object bvlSOCKS: TBevel
         Left = 0
         Top = 184
-        Width = 568
+        Width = 573
         Height = 88
         Align = alBottom
         Anchors = [akLeft, akTop, akRight]
@@ -92,9 +92,9 @@ object IPcfgForm: TIPcfgForm
         Caption = 'Incoming ports'
       end
       object llPassword: TLabel
-        Left = 385
+        Left = 379
         Top = 226
-        Width = 56
+        Width = 67
         Height = 15
         Alignment = taRightJustify
         Anchors = [akLeft, akTop, akRight]
@@ -120,9 +120,9 @@ object IPcfgForm: TIPcfgForm
         FocusControl = lSocksAddr
       end
       object llSocksPort: TLabel
-        Left = 479
+        Left = 473
         Top = 198
-        Width = 22
+        Width = 33
         Height = 15
         Alignment = taRightJustify
         Anchors = [akLeft, akTop, akRight]
@@ -132,7 +132,7 @@ object IPcfgForm: TIPcfgForm
       object gIn: TAdvGrid
         Left = -1
         Top = 15
-        Width = 386
+        Width = 398
         Height = 88
         FixedFont.Charset = DEFAULT_CHARSET
         FixedFont.Color = clWindowText
@@ -157,7 +157,7 @@ object IPcfgForm: TIPcfgForm
           266)
       end
       object llLimit: TGroupBox
-        Left = 399
+        Left = 404
         Top = 11
         Width = 169
         Height = 90
@@ -193,7 +193,7 @@ object IPcfgForm: TIPcfgForm
         end
         object spIn: TxSpinEdit
           Left = 93
-          Top = 15
+          Top = 13
           Width = 66
           Height = 24
           Increment = 4
@@ -204,7 +204,7 @@ object IPcfgForm: TIPcfgForm
         end
         object spOut: TxSpinEdit
           Left = 93
-          Top = 39
+          Top = 37
           Width = 66
           Height = 24
           MaxValue = 1024
@@ -214,7 +214,7 @@ object IPcfgForm: TIPcfgForm
         end
         object spSP: TxSpinEdit
           Left = 93
-          Top = 63
+          Top = 61
           Width = 66
           Height = 24
           Increment = 300
@@ -228,7 +228,7 @@ object IPcfgForm: TIPcfgForm
       object rgProxyType: TRadioGroup
         Left = 0
         Top = 104
-        Width = 392
+        Width = 397
         Height = 70
         Anchors = [akLeft, akTop, akRight, akBottom]
         Caption = 'Proxy type'
@@ -244,7 +244,7 @@ object IPcfgForm: TIPcfgForm
         OnClick = cbSOCKSClick
       end
       object GroupBox1: TGroupBox
-        Left = 399
+        Left = 404
         Top = 104
         Width = 169
         Height = 71
@@ -297,13 +297,13 @@ object IPcfgForm: TIPcfgForm
       object lSocksAddr: TEdit
         Left = 60
         Top = 194
-        Width = 410
+        Width = 415
         Height = 23
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 4
       end
       object lSocksPort: TEdit
-        Left = 505
+        Left = 510
         Top = 194
         Width = 52
         Height = 23
@@ -311,7 +311,7 @@ object IPcfgForm: TIPcfgForm
         TabOrder = 5
       end
       object lPassword: TEdit
-        Left = 445
+        Left = 450
         Top = 221
         Width = 112
         Height = 23
@@ -323,7 +323,7 @@ object IPcfgForm: TIPcfgForm
       object lUserName: TEdit
         Left = 153
         Top = 222
-        Width = 225
+        Width = 230
         Height = 23
         Anchors = [akLeft, akTop, akRight]
         Enabled = False
@@ -339,7 +339,7 @@ object IPcfgForm: TIPcfgForm
         OnClick = cbSOCKSClick
       end
       object cbEncryptPassword: TCheckBox
-        Left = 365
+        Left = 370
         Top = 249
         Width = 198
         Height = 17
@@ -362,7 +362,7 @@ object IPcfgForm: TIPcfgForm
       object gTpl: TAdvGrid
         Left = 0
         Top = 0
-        Width = 568
+        Width = 567
         Height = 124
         FixedFont.Charset = DEFAULT_CHARSET
         FixedFont.Color = clWindowText
@@ -444,7 +444,7 @@ object IPcfgForm: TIPcfgForm
       object p: TPageControl
         Left = 0
         Top = 0
-        Width = 576
+        Width = 581
         Height = 280
         ActivePage = tsRequired
         Align = alClient
@@ -457,7 +457,7 @@ object IPcfgForm: TIPcfgForm
           object gReqd: TAdvGrid
             Left = 0
             Top = 0
-            Width = 556
+            Width = 561
             Height = 240
             FixedFont.Charset = DEFAULT_CHARSET
             FixedFont.Color = clWindowText
@@ -488,12 +488,12 @@ object IPcfgForm: TIPcfgForm
           object gForb: TAdvGrid
             Left = 0
             Top = 0
-            Width = 553
+            Width = 561
             Height = 240
             FixedFont.Charset = DEFAULT_CHARSET
             FixedFont.Color = clWindowText
-            FixedFont.Height = -11
-            FixedFont.Name = 'MS Sans Serif'
+            FixedFont.Height = -12
+            FixedFont.Name = 'Arial'
             FixedFont.Style = []
             Align = alClient
             ColCount = 2
@@ -709,7 +709,7 @@ object IPcfgForm: TIPcfgForm
       object gSMTP: TAdvGrid
         Left = 0
         Top = 0
-        Width = 580
+        Width = 585
         Height = 284
         FixedFont.Charset = DEFAULT_CHARSET
         FixedFont.Color = clWindowText
@@ -744,7 +744,7 @@ object IPcfgForm: TIPcfgForm
       object gPOP3: TAdvGrid
         Left = 0
         Top = 0
-        Width = 580
+        Width = 585
         Height = 284
         FixedFont.Charset = DEFAULT_CHARSET
         FixedFont.Color = clWindowText
@@ -776,18 +776,21 @@ object IPcfgForm: TIPcfgForm
     object tsNNTP: TTabSheet
       BorderWidth = 10
       Caption = 'NNTP'
+      DesignSize = (
+        565
+        264)
       object lNNTPImport: TLabel
-        Left = 0
-        Top = 8
+        Left = 65
+        Top = 17
         Width = 168
         Height = 15
         Caption = 'Files to import NEWS List from'
       end
       object gNNTP: TAdvGrid
         Left = 0
-        Top = 39
-        Width = 560
-        Height = 225
+        Top = 60
+        Width = 565
+        Height = 204
         FileNameCol = 1
         FixedFont.Charset = DEFAULT_CHARSET
         FixedFont.Color = clWindowText
@@ -796,7 +799,7 @@ object IPcfgForm: TIPcfgForm
         FixedFont.Style = []
         Align = alBottom
         ColCount = 2
-        DefaultRowHeight = 18
+        DefaultRowHeight = 17
         FixedCols = 0
         RowCount = 2
         Font.Charset = DEFAULT_CHARSET
@@ -812,10 +815,51 @@ object IPcfgForm: TIPcfgForm
           64
           472)
       end
+      object gbCash: TGroupBox
+        Left = 355
+        Top = 7
+        Width = 209
+        Height = 45
+        Anchors = [akTop, akRight]
+        Caption = 'Cash'
+        TabOrder = 1
+        DesignSize = (
+          209
+          45)
+        object lCash1: TLabel
+          Left = 29
+          Top = 18
+          Width = 88
+          Height = 15
+          Alignment = taRightJustify
+          Anchors = [akTop, akRight]
+          Caption = 'NNTP cash size'
+        end
+        object lCash2: TLabel
+          Left = 182
+          Top = 18
+          Width = 16
+          Height = 15
+          Anchors = [akTop, akRight]
+          Caption = 'Mb'
+        end
+        object xSpinCash: TxSpinEdit
+          Left = 126
+          Top = 14
+          Width = 51
+          Height = 24
+          AutoSize = False
+          MaxLength = 3
+          MaxValue = 999
+          MinValue = 1
+          TabOrder = 0
+          Value = 5
+        end
+      end
     end
   end
   object bImport: TButton
-    Left = 595
+    Left = 600
     Top = 142
     Width = 75
     Height = 23
@@ -826,7 +870,7 @@ object IPcfgForm: TIPcfgForm
     OnClick = bImportClick
   end
   object bSort: TButton
-    Left = 595
+    Left = 600
     Top = 170
     Width = 75
     Height = 23
@@ -837,7 +881,7 @@ object IPcfgForm: TIPcfgForm
     OnClick = bSortClick
   end
   object bEditNode: TButton
-    Left = 593
+    Left = 598
     Top = 114
     Width = 75
     Height = 23
@@ -848,7 +892,7 @@ object IPcfgForm: TIPcfgForm
     OnClick = bEditNodeClick
   end
   object bExplain: TButton
-    Left = 595
+    Left = 600
     Top = 114
     Width = 75
     Height = 23
