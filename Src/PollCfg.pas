@@ -20,30 +20,37 @@ type
     sBusy: TxSpinEdit;
     sNoC: TxSpinEdit;
     sFail: TxSpinEdit;
-    gbTO: TGroupBox;
-    lRetry: TLabel;
-    lStandOff: TLabel;
-    sStandOff: TxSpinEdit;
-    sRetry: TxSpinEdit;
     cbTransmitHold: TCheckBox;
     gExternal: TAdvGrid;
     bOK: TButton;
     bCancel: TButton;
     bHelp: TButton;
     cbDirectAsNormal: TCheckBox;
-    lCallMin: TLabel;
-    sCallMin: TxSpinEdit;
     tsAdditional: TTabSheet;
     cbAskBeforeReject: TCheckBox;
     cbRejectNextTic: TCheckBox;
     cbAskBeforeSkip: TCheckBox;
     cbSkipNextTic: TCheckBox;
+    lRetry: TLabel;
+    sRetry: TxSpinEdit;
+    lCallMin: TLabel;
+    sCallMin: TxSpinEdit;
+    lStandOff: TLabel;
+    sStandOffBusy: TxSpinEdit;
+    sStandOffNoc: TxSpinEdit;
+    sStandOffFail: TxSpinEdit;
+    Label1: TLabel;
+    Label2: TLabel;
+    cbBusy: TCheckBox;
+    cbNoc: TCheckBox;
+    cbFail: TCheckBox;
     procedure FormActivate(Sender: TObject);
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure bHelpClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
+    procedure cbClick(Sender: TObject);
   private
     C: Pointer;
     Activated: Boolean;
@@ -124,7 +131,12 @@ begin
     sNoC.Value := IniFile.FPFlags.NoC;
     sFail.Value := IniFile.FPFlags.Fail;
     sRetry.Value := IniFile.FPFlags.Retry;
-    sStandOff.Value := IniFile.FPFlags.StandOff;
+    sStandOffBusy.Value := IniFile.FPFlags.StandOffBusy;
+    sStandOffNoc.Value := IniFile.FPFlags.StandOffNoc;
+    sStandOffFail.Value := IniFile.FPFlags.StandOffFail;
+    cbBusy.Checked := IniFile.FPFlags.uStandOffBusy;
+    cbNoc.Checked := IniFile.FPFlags.uStandOffNoc;
+    cbFail.Checked := IniFile.FPFlags.uStandOffFail;
     sCallMin.Value := IniFile.FPFlags.TimeDial;
     cbTransmitHold.Checked := IniFile.TransmitHold;
 //    pofHold in Flags;
@@ -173,6 +185,7 @@ begin
   SetDataPeriodical;
   SetDataOptions;
   SetDataExternal;
+  cbClick(nil);
 end;
 
 function TPollSetupForm.CalcCRC: DWORD;
@@ -318,8 +331,13 @@ begin
     Flags.NoC := sNoC.Value;
     Flags.Fail := sFail.Value;
     Flags.Retry := sRetry.Value;
-    Flags.StandOff := sStandOff.Value;
+    Flags.StandOffBusy := sStandOffBusy.Value;
+    Flags.StandOffNoc := sStandOffNoc.Value;
+    Flags.StandOffFail := sStandOffFail.Value;
     Flags.TimeDial := sCallMin.Value;
+    Flags.uStandOffBusy := cbBusy.Checked;
+    Flags.uStandOffNoc := cbNoc.Checked;
+    Flags.uStandOffFail := cbFail.Checked;
     IniFile.FPFlags := Flags;
 {    Flags.Free;}
     IniFile.TransmitHold := cbTransmitHold.Checked;
@@ -369,6 +387,13 @@ procedure TPollSetupForm.FormDestroy(Sender: TObject);
 begin
   FreeObject(C);
   FreeObject(PerPolls);
+end;
+
+procedure TPollSetupForm.cbClick(Sender: TObject);
+begin
+   sStandOffBusy.Enabled := not cbBusy.Checked;
+   sStandOffNoc.Enabled := not cbNoc.Checked;
+   sStandOffFail.Enabled := not cbFail.Checked;
 end;
 
 end.

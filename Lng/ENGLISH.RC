@@ -285,13 +285,10 @@ LANGUAGE LANG_ENGLISH,0
   LngBaseEnglish+rsRecsAuxDupOvr   "Auxiliary file in Config/Dial-up/Nodes"
   LngBaseEnglish+rsRecsAuxIpOvr    "Auxiliary file in Config/Daemon/Nodes"
 
-
   LngBaseEnglish+rsNewLine         "New line"
   LngBaseEnglish+rsNewStation      "New station"
   LngBaseEnglish+rsNewModem        "New modem"
   LngBaseEnglish+rsNewRestriction  "New restriction"
-
-
 
   LngBaseEnglish+rsSDidn           "Invalid directory name"
 
@@ -326,7 +323,6 @@ LANGUAGE LANG_ENGLISH,0
 
   LngBaseEnglish+rsXfTplChar       "%s (\"%s\") ends with \"%s\" character, but the usual ending character for the %s is \"%s\". This can cause further troubles. Continue anyway?"
   LngBaseEnglish+rsXfTplEmpty      "%s is empty, but the usual ending character for it is \"%s\". This can cause further troubles. Continue anyway?"
-
 
   LngBaseEnglish+rsCFagree         "&Agree"
   LngBaseEnglish+rsCFdisagree      "&Disagree"
@@ -424,6 +420,8 @@ LANGUAGE LANG_ENGLISH,0
   LngBaseEnglish+rsDlPfxNVnl       "\"%s\" is not a valid 'phone prefix"
   LngBaseEnglish+rsCloseQuestion   "Do you really want to close Taurus?"
 
+  LngBaseEnglish+rsPause           "Pause"
+  LngBaseEnglish+rsUnPause         "Unpause"
 
   LngBaseEnglishEvt+eiStart         "-"
 

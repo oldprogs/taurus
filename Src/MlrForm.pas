@@ -3370,11 +3370,9 @@ procedure TMailerForm.UpdateView(fromcc: boolean);
             Z := P.Owner.Name;
          end;
          S.Add(Z); // Owner
-         if FidoOut.Paused(P.Node.Addr) then
-         begin
+         if FidoOut.Paused(P.Node.Addr) then begin
             N := radBNPause;
-         end
-         else
+         end else
          if (P.Owner = nil) or (P.Owner = PollOwnerExtApp) then
             N := rsMMpsIdle
          else
@@ -3415,6 +3413,8 @@ procedure TMailerForm.UpdateView(fromcc: boolean);
    procedure SetLineCommands(B: Boolean);
    var
       Z: Boolean;
+      A: TFidoAddress;
+      S: string;
    begin
       SetEnabledO(mlClose, wcb_mlClose, B);
       SetEnabledO(mlAbortOperation, wcb_mlAbortOperation, B);
@@ -3451,6 +3451,16 @@ procedure TMailerForm.UpdateView(fromcc: boolean);
       SetEnabledO(ppTracePoll, wcb_ppTracePoll, Z);
 
       SetEnabledO(mpPause, wcb_mpPause, Z);
+      if Z then begin
+         ParseAddress(PollsListView.ItemFocused.Caption, A);
+         if FidoOut.Paused(A) then begin
+            s := LngStr(rsUnPause);
+            if mpPause.Caption <> s then mpPause.Caption := s;
+         end else begin
+            s := LngStr(rsPause);
+            if mpPause.Caption <> s then mpPause.Caption := s;
+         end;
+      end;
       SetEnabledO(bPause, wcb_bPause, Z);
       SetEnabledO(ppPause, wcb_ppPause, Z);
 
@@ -4876,16 +4886,13 @@ var
    ii: Integer;
 begin
    li := PollsListView.ItemFocused;
-   if li <> nil then
-   begin
+   if li <> nil then begin
       s := li.Caption;
       if not ParseAddress(s, a) then GlobalFail('TMailerForm.bTracePollClick, failed to parse "%s"', [s]);
       EnterFidoPolls;
-      for i := 0 to FidoPolls.Count - 1 do
-      begin
+      for i := 0 to FidoPolls.Count - 1 do begin
          p := FidoPolls[i];
-         if CompareAddrs(a, p.Node.Addr) = 0 then
-         begin
+         if CompareAddrs(a, p.Node.Addr) = 0 then begin
             AV := True;
             SC := TStringColl.Create;
             LC := TStringColl.Create;
@@ -4893,11 +4900,9 @@ begin
             AddHdr;
 
 {$IFDEF WS}
-            if DaemonStarted then
-            begin
+            if DaemonStarted then begin
                ChkPS(IPPolls.OwnPolls, PollOwnerDaemon);
-               if AV then
-               begin
+               if AV then begin
                   LC.Ins0('--- TCP/IP Daemon');
                   LC.Ins0('');
                end;
@@ -4905,15 +4910,13 @@ begin
             end;
 {$ENDIF}
 
-            for ii := 0 to MailerThreads.Count - 1 do
-            begin
+            for ii := 0 to MailerThreads.Count - 1 do begin
                m := MailerThreads[ii];
 {$IFDEF WS}
                if not m.DialupLine then Continue;
 {$ENDIF}
                ChkPS(m.OwnPolls, m);
-               if AV then
-               begin
+               if AV then begin
                   LC.Ins0((Format('--- %s', [m.Name])));
                   LC.Ins0('');
                end;
@@ -4921,8 +4924,7 @@ begin
 
             end;
             FreeObject(LC);
-            if AV then
-            begin
+            if AV then begin
                SC.Ins0('');
                SC.Ins0(LngStr(PtpTyp[p.typ]));
             end;
@@ -6675,23 +6677,17 @@ var
    a: TFidoAddress;
 begin
    li := PollsListView.ItemFocused;
-   if li <> nil then
-   begin
+   if li <> nil then begin
       s := li.Caption;
       if not ParseAddress(s, a) then GlobalFail('TMailerForm.mpPauseClick, failed to parse "%s"', [s]);
       EnterFidoPolls;
-      for i := 0 to FidoPolls.Count - 1 do
-      begin
+      for i := 0 to FidoPolls.Count - 1 do begin
          p := FidoPolls[i];
-         if CompareAddrs(a, p.Node.Addr) = 0 then
-         begin
-            if not FidoOut.Paused(P.Node.Addr) then
-            begin
+         if CompareAddrs(a, p.Node.Addr) = 0 then begin
+            if not FidoOut.Paused(P.Node.Addr) then begin
                FidoOut.Pause(P.Node.Addr);
                s := Format('Poll on address %s is paused', [Addr2Str(p.Node.Addr)]);
-            end
-            else
-            begin
+            end else begin
                FidoOut.Unpause(P.Node.Addr);
                s := Format('Poll on address %s is unpaused', [Addr2Str(p.Node.Addr)]);
             end;

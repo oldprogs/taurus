@@ -371,6 +371,8 @@ const
   rsIpSMTP          = 474; 
   rsIpPOP3          = 475;
   rsIpNNTP          = 476;
+  rsPause           = 477;
+  rsUnPause         = 478;
 
   rsCDCh            = 103;
   rsNBBoNotLtd      = 104;

@@ -711,9 +711,9 @@ begin
          begin
             R.d.FPos := R.d.FPos + DWORD(Length(a)) + 2;
             if z = '.' then begin
-               z := '--- ' + fEdit + #13;
+               z := #13'--- ' + Station[0] + #13;
                R.Stream.Write(z[1], Length(z));
-               z := ' * Origin: N-GATE/Taurus/' + ProductVersion + ' (' + Addr2Str(FiAddr) + ')'#13;
+               z := ' * Origin: N-GATE/TAURUS (' + Addr2Str(FiAddr) + ')'#13;
                R.Stream.Write(z[1], Length(z));
                z := #0#0#0;
                R.Stream.Write(z[1], 3);

@@ -42,7 +42,12 @@ type
     NoC : DWORD;
     Fail : DWORD;
     Retry : DWORD;
-    StandOff : DWORD;
+    StandOffBusy : DWORD;
+    StandOffNoc : DWORD;
+    StandOffFail : DWORD;
+    uStandOffBusy : boolean;
+    uStandOffNoc : boolean;
+    uStandOffFail : boolean;
     TimeDial : DWORD;
   end;
 
@@ -614,7 +619,12 @@ begin
   result.NoC := Ini.ReadInteger(polls, 'NoC', 10);
   result.Fail := Ini.ReadInteger(polls, 'Fail', 10);
   result.Retry := Ini.ReadInteger(polls, 'Retry', 100);
-  result.StandOff := Ini.ReadInteger(polls, 'StandOff', 1);
+  result.StandOffBusy := Ini.ReadInteger(polls, 'StandOffBusy', 30);
+  result.StandOffNoc := Ini.ReadInteger(polls, 'StandOffNoc', 30);
+  result.StandOffFail := Ini.ReadInteger(polls, 'StandOffFail', 30);
+  result.uStandOffBusy := Ini.ReadBool(polls, 'uStandOffBusy', False);
+  result.uStandOffNoc := Ini.ReadBool(polls, 'uStandOffNoc', False);
+  result.uStandOffFail := Ini.ReadBool(polls, 'uStandOffFail', False);
 end;
 
 begin
@@ -1019,7 +1029,12 @@ begin
       WriteInteger(polls, 'Busy', FPFlags.Busy);
       WriteInteger(polls, 'Fail', FPFlags.Fail);
       WriteInteger(polls, 'Retry', FPFlags.Retry);
-      WriteInteger(polls, 'StandOff', FPFlags.StandOff);
+      WriteInteger(polls, 'StandOffBusy', FPFlags.StandOffBusy);
+      WriteInteger(polls, 'StandOffNoc', FPFlags.StandOffNoc);
+      WriteInteger(polls, 'StandOffFail', FPFlags.StandOffFail);
+      WriteBool(polls, 'uStandOffBusy', FPFlags.uStandOffBusy);
+      WriteBool(polls, 'uStandOffNoc', FPFlags.uStandOffNoc);
+      WriteBool(polls, 'uStandOffFail', FPFlags.uStandOffFail);
 {end}
 
 {sizes}

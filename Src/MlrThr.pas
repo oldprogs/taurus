@@ -670,7 +670,9 @@ type
   TPollType = (ptpUnknown, ptpOutb, ptpCron, ptpManual, ptpImm, ptpBack, ptpRCC);
 
   TFidoPoll = class
-    FileSendDelayed: Boolean;
+    FileSendDelayedBusy: Boolean;
+    FileSendDelayedNoc: Boolean;
+    FileSendDelayedFail: Boolean;
     Birth: DWORD;
 //    CallNow: Boolean; // visual, by 2:5005/47
     DataIdx: DWORD;
@@ -1951,22 +1953,24 @@ end;
 procedure FinalizePollOK(var P: TFidoPoll);
 begin
    FidoPollsLog(Format('%s - session complete', [Addr2Str(P.Node.Addr)]));
-   if P.FileSendDelayed then
-   begin
-      NewTimerSecs(p.LastTry, inifile.FPFlags.Standoff * 60);
-      FidoPollsLog(Format('%s - file send delayed, stand-off timeout (%d minutes) has started', [Addr2Str(p.Node.Addr), inifile.FPFlags.Standoff]));
-   end
-   else
-   begin
+   if P.FileSendDelayedBusy then begin
+      NewTimerSecs(p.LastTry, inifile.FPFlags.StandoffBusy * 60);
+      FidoPollsLog(Format('%s - file send delayed, stand-off timeout (%d minutes) has started', [Addr2Str(p.Node.Addr), inifile.FPFlags.StandoffBusy]));
+   end else
+   if P.FileSendDelayedNoc then begin
+      NewTimerSecs(p.LastTry, inifile.FPFlags.StandoffNoc * 60);
+      FidoPollsLog(Format('%s - file send delayed, stand-off timeout (%d minutes) has started', [Addr2Str(p.Node.Addr), inifile.FPFlags.StandoffNoc]));
+   end else
+   if P.FileSendDelayedFail then begin
+      NewTimerSecs(p.LastTry, inifile.FPFlags.StandoffFail * 60);
+      FidoPollsLog(Format('%s - file send delayed, stand-off timeout (%d minutes) has started', [Addr2Str(p.Node.Addr), inifile.FPFlags.StandoffFail]));
+   end else begin
       EnterFidoPolls;
-      if not P.Keep then
-      begin
+      if not P.Keep then begin
          P.Done := pdnOK;
          FidoPolls.Delete(P);
          FreeObject(P);
-      end
-      else
-      begin
+      end else begin
          P.Keep := False;
       end;
       LeaveFidoPolls;
@@ -2189,10 +2193,8 @@ var
    begin
       Result := plsN_A;
       if (p.Owner = PollOwnerExtApp) and (not PubInst) then p.Owner := nil;
-      if p.Owner <> nil then
-      begin
-         if SC <> nil then
-         begin
+      if p.Owner <> nil then begin
+         if SC <> nil then begin
             SC.Add(FormatLng(rsMMobl, [PollOwnerName(p)]));
          end;
          Exit;
@@ -2205,8 +2207,7 @@ var
          case p.Node.PrefixFlag of
             nfPvt{$IFDEF WS}:
                begin
-                  if not DaemonStarted then
-                  begin
+                  if not DaemonStarted then begin
                      if SC <> nil then SC.Add(Format('The node has %s status in the nodelist. Use manual poll to connect anyway.', [cNodePrefixFlag[p.Node.PrefixFlag]]));
                      Exit;
                   end;
@@ -2223,17 +2224,18 @@ var
       if (p.Typ <> ptpManual) and
          (p.Typ <> ptpImm) and
          (p.Typ <> ptpBack) and
-        ((p.CountersExceeded) or (p.FileSendDelayed)) then
+        ((p.CountersExceeded) or (p.FileSendDelayedBusy) or (p.FileSendDelayedNoc) or (p.FileSendDelayedFail)) then
       begin
-         if TimerInstalled(p.LastTry) and TimerExpired(p.LastTry) then
-         begin
+         if TimerInstalled(p.LastTry) and TimerExpired(p.LastTry) then begin
             FidoPollsLog(Format('%s - stand-off timeout expired', [Addr2Str(p.Node.Addr)]));
             p.Reset;
-         end
-         else
-         begin
-            if not TimerInstalled(p.LastTry) then NewTimerSecs(p.LastTry, inifile.FPFlags.Standoff * 60);
-            if p.FileSendDelayed then begin
+         end else begin
+            if not TimerInstalled(p.LastTry) then begin
+               if p.FileSendDelayedBusy then NewTimerSecs(p.LastTry, inifile.FPFlags.StandoffBusy * 60) else
+               if p.FileSendDelayedNoc  then NewTimerSecs(p.LastTry, inifile.FPFlags.StandoffNoc  * 60) else
+               if p.FileSendDelayedFail then NewTimerSecs(p.LastTry, inifile.FPFlags.StandoffFail * 60);
+            end;
+            if p.FileSendDelayedBusy or p.FileSendDelayedNoc or p.FileSendDelayedFail then begin
                s := Format('%s - file send delayed, stand-off: %d minutes left. Busy[%s], NoConn[%s], Aborted[%s]', [Addr2Str(p.Node.Addr), MaxD(1, (RemainingTimeSecs(p.LastTry) + 30) div 60), p.STryBusy, p.STryNoC, p.STryFail]);
             end else begin
                s := Format('Try counter exceeded, stand-off: %d minutes left. Busy[%s], NoConn[%s], Aborted[%s]', [MaxD(1, (RemainingTimeSecs(p.LastTry) + 30) div 60), p.STryBusy, p.STryNoC, p.STryFail]);
@@ -2246,7 +2248,9 @@ var
             Exit;
          end;
       end else begin
-         if (p.FileSendDelayed) then p.FileSendDelayed := False; //bugfix by Denis Voituk
+         if p.FileSendDelayedBusy then p.FileSendDelayedBusy := False;
+         if p.FileSendDelayedNoc  then p.FileSendDelayedNoc  := False;
+         if p.FileSendDelayedBusy then p.FileSendDelayedFail := False;
       end;
       Result := plsFRB;
 
@@ -2254,14 +2258,12 @@ var
       if PP = nil then GlobalFail('%s', ['GetPollPtr=nil']);
 
 {$IFDEF WS}
-      if Mlr = PollOwnerDaemon then
-      begin
+      if Mlr = PollOwnerDaemon then begin
          CfgEnter;
          RR := Cfg.IPData.Restriction.Copy;
          CfgLeave;
          EP := DaemonEvents;
-      end
-      else
+      end else
 {$ENDIF}
       begin
          CfgEnter;
@@ -2276,42 +2278,36 @@ var
       if EP = nil then exit;
       R := EP.GetAtomList(eiRestrictRqd);
       F := EP.GetAtomList(eiRestrictFrb);
-      for II := 0 to CollMax(R) do
-         RR.Required.Add(TEvParString(R[II]).s);
-      for II := 0 to CollMax(F) do
-         RR.Forbidden.Add(TEvParString(F[II]).s);
+      for II := 0 to CollMax(R) do RR.Required.Add(TEvParString(R[II]).s);
+      for II := 0 to CollMax(F) do RR.Forbidden.Add(TEvParString(F[II]).s);
       FreeObject(R);
       FreeObject(F);
 
       if not PreparePoll(p, PP, NI, TQ, RR, SC{$IFDEF WS}, Mlr <> PollOwnerDaemon{$ENDIF}) then Exit;
 
-      if FidoOut.Paused(p.Node.Addr) then
-      begin
+      if FidoOut.Paused(p.Node.Addr) then begin
          Result := plsPSD;
          Exit;
       end;
 
-      if PubInst then
-      begin
+      if PubInst then begin
          Result := plsPUB;
          Exit;
       end;
 
       os := osBusyEx; //Always *.csy for waiting connect
 
-      if not FidoOut.Lock(p.Node.Addr, os, False) then
-      begin
+      if not FidoOut.Lock(p.Node.Addr, os, False) then begin
          p.Owner := PollOwnerExtApp;
          Result := plsBSY;
          Exit;
       end;
 
       Result := plsAVL;
-      if SC = nil then
-      begin
+      if SC = nil then begin
          PP.Idx := NI;
          p.Owner := Mlr;
-         NewTimerSecs(p.LastTry, inifile.FPFlags.Standoff * 60);
+// qqq         NewTimerSecs(p.LastTry, inifile.FPFlags.Standoff * 60);
 {         if (p.Typ <> ptpManual) and (p.CountersExceeded) then
          begin
             FidoPollsLog(Format('%s - stand-off timeout (%d minutes) has started', [Addr2Str(p.Node.Addr), inifile.FPFlags.Standoff]));
@@ -3870,9 +3866,18 @@ end;
 
 function TFidoPoll.CountersExceeded: Boolean;
 begin
-   Result := ((TryBusy >= inifile.FPFlags.Busy) or
-      (TryNoConnect >= inifile.FPFlags.NoC) or
-      (TrySessionAborted >= inifile.FPFlags.Fail));
+   FileSendDelayedBusy := TryBusy >= inifile.FPFlags.Busy;
+   FileSendDelayedNoc := TryNoConnect >= inifile.FPFlags.NoC;
+   FileSendDelayedFail := TrySessionAborted >= inifile.FPFlags.Fail;
+   if (FileSendDelayedBusy and inifile.FPFlags.uStandOffBusy) or
+      (FileSendDelayedNoc and inifile.FPFlags.uStandOffNoc) or
+      (FileSendDelayedFail and inifile.FPFlags.uStandOffFail) then
+   begin
+      FidoOut.Pause(Node.Addr);
+      FidoPollsLog('Paused: ' + Addr2Str(Node.Addr));
+      Reset;
+   end;
+   Result := FileSendDelayedBusy or FileSendDelayedNoc or FileSendDelayedFail;
 end;
 
 function TFidoPoll.STryNoC: string;
@@ -3913,20 +3918,15 @@ end;
 
 procedure TFidoPoll.Reset;
 begin
-   FileSendDelayed := False;
+   FileSendDelayedBusy := False;
+   FileSendDelayedNoc  := False;
+   FileSendDelayedFail := False;
    Logged := False;
    if (Owner = nil) or (Owner = PollOwnerExtApp) then ClearTimer(LastTry);
    TryBusy := 0;
    TryNoConnect := 0;
    TrySessionAborted := 0;
 end;
-
-// visual { by 2:5005/47
-{procedure TFidoPoll.DoCallNow;
-begin
-  if (Owner = nil) or (Owner = PollOwnerExtApp) then CallNow:=not FidoOut.Paused(Node.Addr);
-end;}
-// visual }
 
 procedure TFidoPoll.IncNoConnectTries;
 var
@@ -3936,8 +3936,7 @@ begin
    Inc(TryNoConnect);
    FidoPollsLog(Format('%s - no connect [%s]', [Addr2Str(Node.Addr), STryNoC]));
    CurrentTime := uGetSystemTime;
-   if (Typ = ptpBack) and (CurrentTime - Birth > 10 * 60) then
-   begin
+   if (Typ = ptpBack) and (CurrentTime - Birth > 10 * 60) then begin
       Typ := ptpOutb;
       FidoPollsLog(Format('*Poll/%s  %s  (%s)', ['Outb', Addr2Str(Node.Addr), NodeDataStr(Node, True)]));
    end;
@@ -3949,8 +3948,9 @@ var
    i: DWORD;
 begin
    s := Node.Ext.Opts;
-   for i := 0 to 3 do
+   for i := 0 to 3 do begin
       GetWrd(s, z, ' ');
+   end;
    Result := PollSleepMSecs(s);
 end;
 
@@ -5351,20 +5351,17 @@ begin
 
             ok := True;
 
-            if ok and (rmfNPU in SD.rmtMailerFlags) then
-            begin
+            if ok and (rmfNPU in SD.rmtMailerFlags) then begin
                LogOnce(ltInfo, Format('"%s" not sent - reason is no mail pickup desired by caller', [tof.Name]));
                ok := False;
             end;
 
-            if ok and (rmfHAT in SD.rmtMailerFlags) then
-            begin
+            if ok and (rmfHAT in SD.rmtMailerFlags) then begin
                LogOnce(ltInfo, Format('"%s" not sent - reason is answering system set to hold all traffic', [tof.Name]));
                ok := False;
             end;
 
-            if ok and (I >= 1) and (rmfPUP in SD.rmtMailerFlags) then
-            begin
+            if ok and (I >= 1) and (rmfPUP in SD.rmtMailerFlags) then begin
                LogOnce(ltInfo, Format('"%s" not sent - reason is caller set to pickup mail for primary address only', [tof.Name]));
                ok := False;
             end;
@@ -5381,11 +5378,10 @@ begin
                end;
             end;
 
-            if not ok then
-            begin
+            if not ok then begin
                SD.OutFiles.AtDelete(M);
                SD.SentFiles.Insert(tof);
-               if SD.ActivePoll <> nil then SD.ActivePoll.FileSendDelayed := True;
+               if SD.ActivePoll <> nil then SD.ActivePoll.FileSendDelayedFail := True;
                tof := nil;
             end;
 
@@ -5417,12 +5413,11 @@ begin
                      end;
                   end;
 
-                  if not RqdMatched then
-                  begin
+                  if not RqdMatched then begin
                      LogOnce(ltInfo, Format('"%s" not sent, reason is "%s" required', [tof.Name, STrsFilesRqd]));
                      SD.OutFiles.AtDelete(M);
                      SD.SentFiles.Insert(tof);
-                     if SD.ActivePoll <> nil then SD.ActivePoll.FileSendDelayed := True;
+                     if SD.ActivePoll <> nil then SD.ActivePoll.FileSendDelayedFail := True;
                      tof := nil;
                      if tof = nil then Continue;
                   end;
@@ -5438,12 +5433,11 @@ begin
                      end;
                   end;
 
-                  if FrbMatched then
-                  begin
+                  if FrbMatched then begin
                      Log(ltInfo, Format('"%s" not sent, reason is "%s" forbidden, matched "%s"', [tof.Name, STrsFilesFrb, sss]));
                      SD.OutFiles.AtDelete(M);
                      SD.SentFiles.Insert(tof);
-                     if SD.ActivePoll <> nil then SD.ActivePoll.FileSendDelayed := True;
+                     if SD.ActivePoll <> nil then SD.ActivePoll.FileSendDelayedFail := True;
                      tof := nil;
                      if tof = nil then Continue;
                   end;
@@ -6767,10 +6761,9 @@ begin
          case Action of
             aaAcceptLater:
                begin
-                  if SD.ActivePoll <> nil then SD.ActivePoll.FileSendDelayed := True;
+                  if SD.ActivePoll <> nil then SD.ActivePoll.FileSendDelayedFail := True;
                   LogFmt(ltWarning, 'Remote will accept ''%s'' later', [P.T.D.FName]);
-                  if (r <> nil) and (r.Orig <> '') and (r.Link = '') then
-                  begin
+                  if (r <> nil) and (r.Orig <> '') and (r.Link = '') then begin
                      FreeObject(P.T.Stream);
                      MergeMail(r.Address, r.Name, r.Orig);
                   end;
@@ -12991,8 +12984,8 @@ procedure TMailerThread.DoMisc;
                sc := s[1];
                if sc[i] = '' then begin
                   if SD.ActivePoll <> nil then begin
-                     NewTimerSecs(SD.ActivePoll.LastTry, inifile.FPFlags.Standoff * 60);
-                     SD.ActivePoll.FileSendDelayed := True;
+                     NewTimerSecs(SD.ActivePoll.LastTry, inifile.FPFlags.StandoffFail * 60);
+                     SD.ActivePoll.FileSendDelayedFail := True;
                      Log('Poll to ' + Addr2Str(SD.ActivePoll.Node.Addr) + ' was hold on');
                      LogPoll('Poll to ' + Addr2Str(SD.ActivePoll.Node.Addr) + ' was hold on by script (' + sp + ')');
                   end;
@@ -13001,8 +12994,8 @@ procedure TMailerThread.DoMisc;
                   for j := 0 to FidoPolls.Count - 1 do begin
                      p := FidoPolls[j];
                      if MatchMaskAddressListSingle(p.Node.Addr, sc[i]) then begin
-                        NewTimerSecs(p.LastTry, inifile.FPFlags.Standoff * 60);
-                        p.FileSendDelayed := True;
+                        NewTimerSecs(p.LastTry, inifile.FPFlags.StandoffFail * 60);
+                        p.FileSendDelayedFail := True;
                         Log('Poll to ' + Addr2Str(p.Node.Addr) + ' was hold on');
                         LogPoll('Poll to ' + Addr2Str(p.Node.Addr) + ' was hold on by script (' + sp + ')');
                      end;
@@ -13403,8 +13396,7 @@ begin
             ClearTmrPublic;
             if SD.AnswerAfterInit then
                State := msStartAnswer
-            else
-            begin
+            else begin
                if EP.VoidFound(eiAccNoIncoming) then
                   State := msInitFreeCP
                else
@@ -13571,11 +13563,14 @@ begin
 {$IFDEF USE_TAPI}
       msStartIdle_TAPI:
          begin
-            DoAccumulate;
             if (CP as TTAPIPort).RealOwner then SetTmr1(10, msIdleT_Expired);
             State := msIdle_TAPI;
             ShowIt('TAPI: line is busy', false);
             LogOnce(ltWarning, 'TAPI: line is busy');
+            DoAccumulate;
+            OldInC := SD.InC;
+            CheckModem;
+            DoIdle;
          end;
       msIdle_TAPI:
          begin
@@ -13587,7 +13582,6 @@ begin
                end;
             end;
             SetStatusMsg(rs_s, 'TAPI line is busy');
-            DoIdle;
             if (CP <> nil) and TapiDevice then begin
                (CP as TTAPIPort).DropCall;
                if ((CP as TTAPIPort).Call = 0) and (D.TimeSaved) then begin
@@ -13603,6 +13597,7 @@ begin
             end;
             DoAccumulate;
             CheckModem;
+            DoIdle;
          end;
       msIdleT_Expired:
          begin
@@ -15595,7 +15590,7 @@ begin
       FidoPolls.Enter;
       for i := 0 to FidoPolls.Count - 1 do begin
          p := FidoPolls[i];
-         h := h or (DialAllowed(RR, '', '', p.Node.Addr, s) and not p.FileSendDelayed and not p.Logged);
+         h := h or (DialAllowed(RR, '', '', p.Node.Addr, s) and not p.FileSendDelayedBusy and not p.FileSendDelayedNoc and not p.FileSendDelayedFail and not p.Logged);
       end;
       FidoPolls.Leave;
       FreeObject(RR);

@@ -259,7 +259,7 @@ LANGUAGE LANG_RUSSIAN,0
         "tpCancel|Отмена\n"\
         "mpPause|Пауза\n"\
         "ppPause|Пауза\n"\
-        "mfRestart|Перезапустить Радиус\n"\
+        "mfRestart|Перезапустить\n"\
         "llSessionCost|Стоимость:\n"\
         "llSessionTime|Прошло времени\n"\
         "llTotalAtInbound|Всего в инбоксе:\n"\

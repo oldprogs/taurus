@@ -186,7 +186,6 @@ LANGUAGE LANG_RUSSIAN,0
   LngBaseRussian+rsMMCrtFF         "Создать флаг на"
   LngBaseRussian+rsSelectDirectory "Укажите папку"
 
-
   LngBaseRussian+rsMMOwnByExt      "Занят внешним приложением"
 
   LngBaseRussian+rsMdmCfgStd       "Звонок|Соединение|OK|Занят|Нет несущей|Нет гудка|Ошибка|Голос|Звонки"
@@ -422,6 +421,9 @@ LANGUAGE LANG_RUSSIAN,0
   LngBaseRussian+rsDlPfxNVnl       "\"%s\" не является телефонным префиксом"
   LngBaseRussian+rsCloseQuestion   "Вы действительно хотите закрыть Taurus?"
 
+  LngBaseRussian+rsPause           "Пауза"
+  LngBaseRussian+rsUnPause         "Снять паузу"
+
   LngBaseRussianEvt+eiStart         "-"
 
   LngBaseRussianEvt+eiModemCmdInit    "Модем Команда Инициализации|Строка Инициализации"
@@ -485,7 +487,6 @@ LANGUAGE LANG_RUSSIAN,0
   LngBaseRussianEvt+eiAccNoFTS1       "Допуск FTS-0001 Запретить"
 
   LngBaseRussianEvt+eiAccNoIncoming   "Допуск Входящие Запретить"
-
 
   LngBaseRussianEvt+eiAccNoYooHoo     "Допуск YooHoo Запретить"
   LngBaseRussianEvt+eiTrsNoYooHoo     "Передача YooHoo Запретить"
