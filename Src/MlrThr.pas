@@ -5052,7 +5052,7 @@ begin
    end;
 end;
 
-function  GetNodeOutbound(const Addr: TFidoAddress; const Stat: TOutStatusSet; FC: TOutFileColl): TOutFileColl;
+function GetNodeOutbound(const Addr: TFidoAddress; const Stat: TOutStatusSet; FC: TOutFileColl): TOutFileColl;
 var
    i: integer;
    j: integer;
@@ -5076,6 +5076,33 @@ begin
       end;
    end;
    LeaveCS(OutMgrThread.NodesCS);
+end;
+
+procedure DelNodeOutBound(f: TOutFile);
+var
+   i: integer;
+   j: integer;
+   o: TOutFile;
+   n: TOutNode;
+begin
+   try
+      EnterCS(OutMgrThread.NodesCS);
+      for i := 0 to CollMax(OutMgrThread.Nodes) do begin
+         n := OutMgrThread.Nodes[i];
+         if CompareAddrs(f.Address, n.Address) = 0 then begin
+            for j := 0 to CollMax(n.Files) do begin
+               o := n.Files[j];
+               if (o.Name = f.Name) or
+                  (o.Name = f.Orig) then begin
+                  n.Files.AtFree(j);
+                  exit;
+               end;
+            end;
+         end;
+      end;
+   finally
+      LeaveCS(OutMgrThread.NodesCS);
+   end;
 end;
 
 procedure TMailerThread.ScanOut;
@@ -6586,54 +6613,54 @@ begin
                else
                case r.KillAction of
                   kaBsoNothingAfter:
-                     begin
-                        FreeObject(P.T.Stream);
+                  begin
+                     FreeObject(P.T.Stream);
+                  end;
+               kaBsoKillAfter:
+                  begin
+                     FreeObject(P.T.Stream);
+                     if SD.HReqDelete <> nil then begin
+                        if SD.HReqDelete.Search(@r.Name, I) then SD.HReqDelete.AtFree(I);
                      end;
-                  kaBsoKillAfter:
-                     begin
-                        FreeObject(P.T.Stream);
-                        if SD.HReqDelete <> nil then begin
-                           if SD.HReqDelete.Search(@r.Name, I) then SD.HReqDelete.AtFree(I);
-                        end;
-                        FidoOut.Lock(r.Address, osBusy, True);
-                        DeleteOutFile(r.Name);
+                     FidoOut.Lock(r.Address, osBusy, True);
+                     DeleteOutFile(r.Name);
+                     OA := True;
+                  end;
+               kaBsoTruncateAfter:
+                  begin
+                     P.T.Stream.Seek(0, FILE_BEGIN);
+                     SetEndOfFile(TDosStream(P.T.Stream).Handle);
+                     FreeObject(P.T.Stream);
+                     OA := True;
+                  end;
+               kaFbKillAfter:
+                  begin
+                     FreeObject(P.T.Stream);
+                     if not DelFile('FinishSend', PChar(r.Name)) then begin
+                        LogFmt(ltWarning, 'Cannot delete %s (%s)', [r.Name, SysErrorMessage(GetLastError)]);
+                     end else begin
                         OA := True;
                      end;
-                  kaBsoTruncateAfter:
-                     begin
-                        P.T.Stream.Seek(0, FILE_BEGIN);
-                        SetEndOfFile(TDosStream(P.T.Stream).Handle);
-                        FreeObject(P.T.Stream);
-                        OA := True;
-                     end;
-                  kaFbKillAfter:
-                     begin
-                        FreeObject(P.T.Stream);
-                        if not DelFile('FinishSend', PChar(r.Name)) then begin
-                           LogFmt(ltWarning, 'Cannot delete %s (%s)', [r.Name, SysErrorMessage(GetLastError)]);
-                        end else begin
+                  end;
+               kaFbMoveAfter:
+                  begin
+                     FreeObject(P.T.Stream);
+                     st := r.Status;
+                     MoveTo := ReplaceDirMacro(r.MoveTo, @r.Address, @st, [rmkTime, rmkAddr, rmkStatus], nil);
+                     if not CreateDirInheritance(MoveTo) then begin
+                        ChkErrMsg;
+                     end else begin
+                        sss := MakeNormName(MoveTo, ExtractFileName(r.Name));
+                        ok := MoveFileSmart(r.Name, sss, True, Overwritten);
+                        if Overwritten then LogOverwritten(sss);
+                        if not ok then
+                           ChkErrMsg
+                        else begin
+                           if not Overwritten then LogMoved(sss);
                            OA := True;
-                        end;
+                        end
                      end;
-                  kaFbMoveAfter:
-                     begin
-                        FreeObject(P.T.Stream);
-                        st := r.Status;
-                        MoveTo := ReplaceDirMacro(r.MoveTo, @r.Address, @st, [rmkTime, rmkAddr, rmkStatus], nil);
-                        if not CreateDirInheritance(MoveTo) then begin
-                           ChkErrMsg;
-                        end else begin
-                           sss := MakeNormName(MoveTo, ExtractFileName(r.Name));
-                           ok := MoveFileSmart(r.Name, sss, True, Overwritten);
-                           if Overwritten then LogOverwritten(sss);
-                           if not ok then
-                              ChkErrMsg
-                           else begin
-                              if not Overwritten then LogMoved(sss);
-                              OA := True;
-                           end
-                        end;
-                     end;
+                  end;
                else
                   begin
                      GlobalFail('%s', ['FinishSend - Unhandled aAction']);
@@ -6737,7 +6764,7 @@ begin
       SD.OutFiles.Enter;
       for i := CollMax(SD.OutFiles) downto 0 do begin
          t := SD.OutFiles[i];
-         if (t.Orig = r.Orig) and ((t.Name = r.Name) or (t.Name = r.Orig)) then begin
+         if (t.Name = r.Name) or (t.Name = r.Orig) then begin
             SD.OutFiles.AtDelete(i);
          end;
       end;
@@ -6745,6 +6772,7 @@ begin
       SD.SentFiles.Enter;
       SD.SentFiles.Insert(r);
       SD.SentFiles.Leave;
+      DelNodeOutbound(r);
    end;
    SD.txTran := 0;
    Inc(D.txBytes, P.T.D.FSize);
@@ -6854,12 +6882,10 @@ begin
             end;
          end;
       end;
-      if CollMax(SD.SentFiles) > -1 then begin
-         for i := SD.OutFiles.Count - 1 downto 0 do begin
-            f := SD.OutFiles[i];
-            if SD.SentFiles.Found(f) then begin
-               SD.OutFiles.AtFree(i);
-            end;
+      for i := CollMax(SD.OutFiles) downto 0 do begin
+         f := SD.OutFiles[i];
+         if SD.SentFiles.Found(f) then begin
+            SD.OutFiles.AtFree(i);
          end;
       end;
       if (SD.OutFiles.Count = 0) and not P.SendFTPFile then begin
@@ -6956,29 +6982,29 @@ begin
       ss := ExtractFileName(f.Name);
       PTDFName := ss;
       case f.FStatus of
-         osRequest:
-            if SD.rmtPrimaryAddr.Point <> 0 then
-               PTDFName := Format('%.4x%.4x.REQ', [SD.rmtPrimaryAddr.Net, SD.rmtPrimaryAddr.Node]);
-         osCallback:
-            if SD.rmtPrimaryAddr.Point <> 0 then
-               PTDFName := Format('%.4x%.4x.CLB', [SD.rmtPrimaryAddr.Net, SD.rmtPrimaryAddr.Node]);
-         osImmedMail, osCrashMail, osDirectMail, osNormalMail, osHoldMail:
-            begin
-               if GetPktFileType(f.Name) = pftP2K then
-                  zzz := '%.8x.P2K'
-               else
-                  zzz := '%.8x.PKT';
-               PTDFName := Format(zzz, [GetTickCount xor xRandom32]);
-               if inifile.DynamicOutbound then begin
-                  f.Orig := f.Name;
-                  f.Name[length(f.Name)] := '~';
-                  FidoOut.Lock(f.Address, osBusy, True);
-                  IgnoreNextEvent := True;
-                  RenameFile(f.Orig, f.Name);
-                  SD.txTran := f.Nfo.Size;
-                  FidoOut.Unlock(f.Address, osBusy);
-               end;
+      osRequest:
+         if SD.rmtPrimaryAddr.Point <> 0 then
+            PTDFName := Format('%.4x%.4x.REQ', [SD.rmtPrimaryAddr.Net, SD.rmtPrimaryAddr.Node]);
+      osCallback:
+         if SD.rmtPrimaryAddr.Point <> 0 then
+            PTDFName := Format('%.4x%.4x.CLB', [SD.rmtPrimaryAddr.Net, SD.rmtPrimaryAddr.Node]);
+      osImmedMail, osCrashMail, osDirectMail, osNormalMail, osHoldMail:
+         begin
+            if GetPktFileType(f.Name) = pftP2K then
+               zzz := '%.8x.P2K'
+            else
+               zzz := '%.8x.PKT';
+            PTDFName := Format(zzz, [GetTickCount xor xRandom32]);
+            if inifile.DynamicOutbound then begin
+               f.Orig := f.Name;
+               f.Name[length(f.Name)] := '~';
+               FidoOut.Lock(f.Address, osBusy, True);
+               IgnoreNextEvent := True;
+               RenameFile(f.Orig, f.Name);
+               SD.txTran := f.Nfo.Size;
+               FidoOut.Unlock(f.Address, osBusy);
             end;
+         end;
       end;
 
       if (f.Link <> '') and inifile.DynamicOutbound then begin
@@ -6995,13 +7021,16 @@ begin
                for i := 0 to l.Count - 1 do begin
                   if pos(UpperCase(f.Orig), UpperCase(l[i])) > 0 then begin
                      l[i] := '^' + f.Name;
+                     IgnoreNextEvent := True;
                      l.SaveToFile(zzz);
                      break;
                   end;
                end;
                l.Free;
+               IgnoreNextEvent := True;
                RenameFile(f.Orig, f.Name);
                if f.KillAction = kaBsoTruncateAfter then begin
+                  IgnoreNextEvent := True;
                   s := CreateDosStream(f.Orig, [cWrite]);
                   s.Free;
                   f.KillAction := kaFbKillAfter;
@@ -7014,8 +7043,8 @@ begin
       cf := [cRead, cExisting];
       case f.KillAction of
          kaBsoTruncateAfter,
-            kaFbKillAfter,
-            kaFbMoveAfter:
+         kaFbKillAfter,
+         kaFbMoveAfter:
             Include(cf, cWrite);
       end;
       s := CreateDosStream(f.Name, cf);
@@ -7024,9 +7053,9 @@ begin
          SetErrorMsg(f.Name);
          ChkErrMsg;
          Fre0;
-         if SD.OutFiles.Count > 0 then begin
-            SD.OutFiles.AtFree(0);
-         end;   
+//         if SD.OutFiles.Count > 0 then begin
+//            SD.OutFiles.AtFree(0);
+//         end;
          Continue;
       end;
 

@@ -4428,6 +4428,7 @@ begin
    LogBox.Brush.Color := IniFile.LoggerBack;
    LogBox.Font.Color := IniFile.LoggerFore;
    LogBox.dopaint(true);
+   PollBtnPanel.Color := IniFile.LoggerBack;
 
    SetHKSpace(IniFile.UseSpace);
 

@@ -607,6 +607,7 @@ begin
                   begin
                      PutString('340 continue posting');
                      R.d.FSize := fSize;
+                     rMsId := '';
                      State := bdSeek;
                   end;
                else
@@ -624,7 +625,6 @@ begin
             if z = 'FROM:' then begin
                nFrom := ExtractWord(1, ExtractWord(1, s, ['<']), ['"']);
                nDest := 'All';
-               rMsId := '';
             end else
             if z = 'REFERENCES:' then begin
                m := fEcho.FindMessage(s);
@@ -633,7 +633,7 @@ begin
                   aDest := m.From;
                   rMsId := m.MsId;
                   for i:= 1 to Length(rMsId) do begin
-                     if rMsId[i] = '#' then rMsId := ' ';
+                     if rMsId[i] = '#' then rMsId[i] := ' ';
                   end;
                end;
             end else
@@ -699,7 +699,7 @@ begin
                z := #1'MSGID: ' + Addr2Str(FiAddr) + ' ' + JustName(R.d.FName) + #13;
                R.Stream.Write(z[1], Length(z));
                if rMsId <> '' then begin
-                  z := #1'REPLY: ' + Addr2Str(aDest) + ' ' + rMsId + #13;
+                  z := #1'REPLY: ' + rMsId + #13;
                   R.Stream.Write(z[1], Length(z));
                end;
                if fChrs = '' then fChrs := 'IBMPC';
