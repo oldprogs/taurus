@@ -1,6 +1,6 @@
 object SetupForm: TSetupForm
-  Left = 208
-  Top = 154
+  Left = 509
+  Top = 313
   HelpContext = 11000
   BorderStyle = bsDialog
   Caption = 'Taurus Setup'

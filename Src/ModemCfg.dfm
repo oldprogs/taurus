@@ -2,6 +2,8 @@ object ModemEditor: TModemEditor
   Left = 225
   Top = 195
   HelpContext = 1090
+  HorzScrollBar.Visible = False
+  VertScrollBar.Visible = False
   BorderStyle = bsDialog
   BorderWidth = 6
   Caption = 'Modem configuration'
@@ -91,7 +93,7 @@ object ModemEditor: TModemEditor
       object lName: TEdit
         Left = 1
         Top = 18
-        Width = 444
+        Width = 443
         Height = 23
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 0
@@ -121,14 +123,6 @@ object ModemEditor: TModemEditor
         ParentFont = False
         TabOrder = 1
         CheckBoxes = False
-        RowHeights = (
-          18
-          18
-          18
-          18
-          18
-          18
-          18)
       end
     end
     object Responses: TTabSheet
@@ -136,16 +130,17 @@ object ModemEditor: TModemEditor
       Caption = 'Responses'
       object gStd: TAdvGrid
         Left = 0
-        Top = 0
+        Top = 19
         Width = 446
-        Height = 203
+        Height = 184
         FixedFont.Charset = DEFAULT_CHARSET
         FixedFont.Color = clWindowText
         FixedFont.Height = -12
         FixedFont.Name = 'Arial'
         FixedFont.Style = []
-        Align = alClient
+        Align = alBottom
         ColCount = 2
+        DefaultColWidth = 80
         DefaultRowHeight = 18
         RowCount = 9
         FixedRows = 0
@@ -154,14 +149,14 @@ object ModemEditor: TModemEditor
         Font.Height = -12
         Font.Name = 'Fixedsys'
         Font.Style = []
-        Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goEditing, goFixedNumCols]
+        Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goEditing, goFixedNumCols]
         ParentFont = False
         TabOrder = 0
         CheckBoxes = False
         RightMargin = 12
         ColWidths = (
-          62
-          378)
+          80
+          180)
       end
     end
     object Flags: TTabSheet
@@ -216,7 +211,7 @@ object ModemEditor: TModemEditor
       end
       object gbExt: TGroupBox
         Left = 8
-        Top = 73
+        Top = 76
         Width = 443
         Height = 61
         Caption = 'External Receiver settings'
@@ -246,7 +241,7 @@ object ModemEditor: TModemEditor
       end
       object rgExt: TRadioGroup
         Left = 8
-        Top = 4
+        Top = 11
         Width = 185
         Height = 45
         Caption = '&Fax receiver'

@@ -25,7 +25,9 @@ type
       Size: int64;
       Addy: integer;
       Body: Pointer;
+      Dele: boolean;
       function IChr: string;
+      function Date: string;
       destructor Destroy; override;
    end;
 
@@ -39,6 +41,14 @@ type
       function  GetAnItem(i: integer): TNetmailPkt;
       procedure SetItem(i: integer; p: TNetmailPkt);
       property  Items[i: integer]: TNetmailPkt read GetAnItem write SetItem;
+   end;
+
+   TNetColl = class(TColl)
+   protected
+      Procedure MarkDel;
+      function  GetNMsg(i: integer): TNetmailMSG;
+   public
+      property  Items[i: integer]: TNetmailMsg read GetNMsg; default;
    end;
 
    TLogProcedure = procedure(Tag: TLogTag; const Str: string) of object;
@@ -55,7 +65,7 @@ type
    public
       Echomail: boolean;
       NetWait: TRTLCriticalSection;
-      NetColl: TColl;
+      NetColl: TNetColl;
       LstColl: TStringList;
       constructor Create; virtual;
       destructor Destroy; override;
@@ -109,6 +119,11 @@ begin
    end;
 end;
 
+function TNetmailMSG.Date;
+begin
+   Result := copy(Head.DateTime, 1, 19);
+end;
+
 destructor TNetmailMsg.Destroy;
 begin
    if Body <> nil then begin
@@ -140,6 +155,20 @@ begin
    self[i] := p;
 end;
 
+procedure TNetColl.MarkDel;
+var
+   i: integer;
+begin
+   for i := 0 to Count - 1 do begin
+      Items[i].Dele := True;
+   end;
+end;
+
+function TNetColl.GetNMsg;
+begin
+   result := inherited Items[i];
+end;
+
 constructor TNetmail.Create;
 begin
    inherited Create;
@@ -147,7 +176,7 @@ begin
    MsgColl := TStringColl.Create;
    LstColl := TStringList.Create;
    LstColl.Sorted := True;
-   NetColl := TColl.Create;
+   NetColl := TNetColl.Create;
    InitializeCriticalSection(NetWait);
 end;
 
@@ -180,17 +209,14 @@ end;
 
 procedure TNetMail.ScanMail;
 var
+   i: integer;
    p: string;
    e: string;
   SR: tuFindData;
 begin
    EnterCS(NetWait);
-   if NetColl <> nil then begin
-      NetColl.Enter;
-      NetColl.Leave;
-   end;
-   FreeObject(NetColl);
-   NetColl := TColl.Create;
+   NetColl.Enter;
+   NetColl.MarkDel;
    p := ExtractFilePath(ExtractDir(inifile.Outbound));
    if uFindFirst(p + '*.*', SR) then begin
       repeat
@@ -210,6 +236,10 @@ begin
       until not uFindNext(SR);
       uFindClose(SR);
    end;
+   for i := CollMax(NetColl) downto 0 do begin
+      if NetColl[i].Dele then NetColl.AtFree(i);
+   end;
+   NetColl.Leave;
    LeaveCS(NetWait);
 end;
 
@@ -280,6 +310,7 @@ var
    a,
    e: integer;
    s: int64;
+   g: TNetmailMSG;
 
    procedure SetValue(var a: integer; const b: integer);
    begin
@@ -337,7 +368,7 @@ begin
                      GetWrd(t, z, ' ');
                      GetWrd(t, z, #13);
                      for j := 1 to Length(z) do begin
-                        if z[j] = ' ' then z[j] := '_';
+                        if z[j] = ' ' then z[j] := '#';
                      end;
                      l.MsId := z;
                   end else
@@ -397,8 +428,14 @@ begin
          if not EchoMail then begin
             GetMem(l.Body, l.Size);
             move(p^, l.Body^, l.Size);
-         end;   
-         NetColl.Add(l);
+         end;
+         g := FindMessage(l.MsId);
+         if g = nil then begin
+            NetColl.Add(l);
+         end else begin
+            FreeObject(l);
+            g.Dele := False;
+         end;
          Application.ProcessMessages;
       end;
       FreeMem(p, s);

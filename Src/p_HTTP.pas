@@ -447,7 +447,7 @@ begin
             fBody := fBody +
                   '<tr><td><a href=pkt?' + m.MsId + '><strong>' + m.MsId + '</strong></td><td width="30"></td>' +
                   '<td align=right>' + Size2KB(m.Size) + '</td><td width="30"></td>' +
-                  '<td>' + m.Head.DateTime + '</td><td width="30"></td>' +
+                  '<td>' + m.Date + '</td><td width="30"></td>' +
                   '<td><a href=remove?' + m.MsId + '>delete</td>';
             fBody := fBody + '</tr>';
          end;
@@ -575,7 +575,7 @@ begin
             end;
             fBody :=
               'Hi, ' + ExtractWord(1, m.Frnm, [' ']) + ' !'#13#13 +
-              m.Head.DateTime + ' you said me:'#13#13 + fBody + #13#13 +
+              m.Date + ' you said me:'#13#13 + fBody + #13#13 +
               'Best regards, '#13 +
               '              ' + ExtractWord(1, m.Tonm, [' ']) + #13#13 +
               '--- Taurus-Web-Service'#13;

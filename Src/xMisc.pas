@@ -922,6 +922,8 @@ var
   PortsColl  : TDevicePortColl;
   ZLibHandle : THandle;
   ZLibLoaded : Boolean;
+  BZipHandle : THandle;
+  BZipLoaded : Boolean;
   Compress_  : function(dest: pointer; var res: longint; src: pointer; len: longint; lev: integer): integer; stdcall;
   Uncompress_: function(dest: pointer; var res: longint; src: pointer; len: longint              ): integer; stdcall;
 
@@ -3110,13 +3112,13 @@ begin
    PutString('Ftn-Auth: ' + MD5);
    PutString;
    PutString('Ftn-File: ' + T.d.FName);
-   PutString('Ftn-File-Id: ' + T.d.FName + '.' + HexL(CRC));
+   PutString('Ftn-File-Id: ' + T.d.FName + '@' + HexL(CRC));
    PutString('Ftn-Date: ' + IntToStr(T.d.FTime));
    PutString('Ftn-Size: ' + IntToStr(T.d.FSize));
    PutString('Ftn-Crc32: ' + HexL(CRC));
    PutString('Ftn-Encoding: uuencode');
    PutString('Ftn-Seg: 1-1');
-   PutString('Ftn-Seg-Id: ' + HexL(CRC));
+   PutString('Ftn-Seg-Id: 1-1-' + T.d.FName + '@' + HexL(CRC));
    PutString('Ftn-Seg-Crc32: ' + HexL(CRC));
    PutString;
    PutString('begin 644 ' + T.d.FName);
@@ -3328,10 +3330,10 @@ begin
          fBuff := '';
          PutString;
          PutString('.');
-         FinisSend;
          SendFTPFile := True;
          CustomInfo := fName;
          FFinishSend(Self, aaOK);
+         FinisSend;
          break;
       end;
       if T.d.FPos mod 9000 = 0 then begin

@@ -5418,7 +5418,7 @@ begin
       end;
    end;
 
-   if EP.VoidFound(eiZMHEvent) then begin
+   if EP.VoidFound(eiZMHEvent) and not (SD.SessionCore in [scNNTP]) then begin
       FreeObject(TransmitRequired);
       STrsFilesRqd := CNetMailMask;
       TransmitRequired := TStringColl.Create;
@@ -8767,8 +8767,8 @@ begin
    SD.AcceptReq := not (foDisable in Cfg.FreqData.Options);
    CfgLeave;
    SD.AcceptReq := SD.AcceptReq and (not EP.VoidFound(eiAccNoFreqs));
-   SD.OutFiles := TOutFileColl.Create('SD.OutFiles');
-   SD.SentFiles := TOutFileColl.Create('SD.SentFiles');
+   SD.OutFiles := TOutFileColl.Create;
+   SD.SentFiles := TOutFileColl.Create;
    if OutPoll then SetSessionKey(SD.ActivePoll.Node.Addr);
 
    if not (ProtCore in [ptBinkP, ptFTP, ptHTTP, ptSMTP, ptPOP3, ptGATE, ptNNTP]) then

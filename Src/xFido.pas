@@ -3546,7 +3546,7 @@ procedure MergeMail(const a: TFidoAddress; const n, o: string);
 var
    i, p: TFileStream;
 begin
-   if FidoOut.Lock(a, osBusyEx, False) then begin
+   if FidoOut.Lock(a, osBusyEx, True) then begin
       if FidoOut.Lock(a, osBusy, True) then begin
          if not FileExists(o) then begin
             RenameFile(n, o);

@@ -55,6 +55,7 @@ type
       fArea: string;
       fChrs: string;
       fEdit: string;
+      rMsId: string;
       procedure DoStep;
    end;
 
@@ -155,6 +156,7 @@ end;
 
 procedure TNNTP.FinisSend;
 begin
+//   fEcho.DeleteMail(rMsId);
    State := bdIdle;
 end;
 
@@ -309,9 +311,9 @@ begin
                if i > -1 then begin
                   Group := s;
                   fNumb := Integer(fEcho.LstColl.Objects[i]);
-                  PutString('211 ' + IntToStr(fNumb) + ' 1 ' + IntToStr(fNumb) + ' ' + s);
+                  PutString('211 ' + IntToStr(MaxD(1, fNumb)) + ' ' + IntToStr(MinD(1, fNumb)) + ' ' + IntToStr(fNumb) + ' ' + s);
                end else begin
-                  PutString('411');
+                  PutString('411 group not found');
                end;
             end else
             if z = 'XOVER' then begin
@@ -331,7 +333,7 @@ begin
                            if m.Echo = Group then begin
                               inc(c);
                               if c = i then begin
-                                 PutString(IntToStr(i) + #9 + Dos2Win(m.Subj) + #9 + m.Frnm + #9 + copy(m.Head.DateTime, 1, 19) + #9 + m.MsId + #9 + m.Frnm + #9 + IntToStr(m.Size) + #9'100');
+                                 PutString(IntToStr(i) + #9 + Dos2Win(m.Subj) + #9 + m.Frnm + #9 + m.Date + #9 + m.MsId + #9 + m.Frnm + #9 + IntToStr(m.Size) + #9'100');
                                  break;
                               end;
                            end;
@@ -357,6 +359,7 @@ begin
                         SendFTPFile := True;
                         CustomInfo := m.Pack;
                         fName := m.Pack;
+                        rMsId := m.MsId;
                         FGetNextFile(Self);
                         if (t.d.FName <> '') and (T.Stream <> nil) then begin
                            PutString('220 ' + s + ' <' + m.MsId + '>');
@@ -364,7 +367,7 @@ begin
                            PutString('Reply-To: ' + m.Frnm + ' <' + Addr2Str(m.From) + '>');
                            PutString('NewsGroups: ' + Group);
                            PutString('Subject: ' + m.Subj);
-                           PutString('Date: ' + m.Head.DateTime);
+                           PutString('Date: ' + m.Date);
                            PutString('Message-ID: ' + m.MsId);
                            PutString('X-Mailer: ' + ProductName + '/' + ProductVersion);
                            PutString('Mime-Version: 1.0');

@@ -218,16 +218,21 @@ procedure LoadPlugins(const HomeDir: string);
 begin
 {ZLib}
   ZLibHandle := 0;
-  ZLibHandle := LoadLibrary(PChar(MakeNormName(HomeDir,'zlib.dll')));
+  ZLibHandle := LoadLibrary(PChar(MakeNormName(HomeDir, 'zlib.dll')));
   if ZLibHandle <> 0 then begin
     @compress_ := GetProcAddress(ZLibHandle, 'compress2');
     @uncompress_ := GetProcAddress(ZLibHandle, 'uncompress');
     ZLibLoaded := True;
   end;
 
-{next plugin}
-
-{and next...}
+{BZip}
+//  BZipHandle := 0;
+//  BZipHandle := LoadLibrary(PChar(MakeNormName(HomeDir, 'bzip.dll')));
+//  if BZipHandle <> 0 then begin
+//    @compress_ := GetProcAddress(BZipHandle, 'compress2');
+//    @uncompress_ := GetProcAddress(BZipHandle, 'uncompress');
+//    BZipLoaded := True;
+//  end;
 
 end;
 
@@ -236,10 +241,6 @@ begin
 {ZLib}
  if ZLibHandle <> 0 then FreeLibrary(ZLibHandle);
 
-{next plugin}
-
-{and next...}
-
 end;
 
 procedure DoComeOn;
@@ -247,6 +248,7 @@ var
   st2: string;
   s: string;
   v: TStringList;
+  h: THandle;
 begin
 //  fShowExceptionCallback := ShowExceptionCallback;
 
@@ -308,6 +310,8 @@ begin
   EntrLogFName := MakeNormName(dLog, 'Enter.log');
   CopyFile(PChar(EntrLogFName), PChar(MakeNormName(dLog, 'Enter.bak')), False);
   VersLogFName := MakeNormName(dLog, 'Tau_Ver');
+  h := _CreateFileDir(VersLogFName, [cWrite, cCanPending]);
+  ZeroHandle(h);
   v := TStringList.Create;
   v.Add(GetOSVer);
   v.Add('Taurus v.' + ProductVersion);

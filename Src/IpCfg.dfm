@@ -1,6 +1,6 @@
 object IPcfgForm: TIPcfgForm
-  Left = 215
-  Top = 166
+  Left = 331
+  Top = 382
   HelpContext = 1240
   BorderStyle = bsDialog
   BorderWidth = 6
@@ -787,13 +787,13 @@ object IPcfgForm: TIPcfgForm
       object eNNTPImport: TEdit
         Left = 0
         Top = 32
-        Width = 504
+        Width = 484
         Height = 23
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 0
       end
       object bNNTPImport: TButton
-        Left = 513
+        Left = 493
         Top = 32
         Width = 25
         Height = 25

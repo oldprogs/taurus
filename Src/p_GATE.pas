@@ -117,7 +117,7 @@ begin
             PutString('From: ' + m.Frnm + '<' + Addr2Str(m.From) + '>');
             PutString('To: '   + m.Tonm + '<' + Addr2Str(m.Addr) + '>');
             PutString('Subject: ' + m.Subj);
-            PutString('Date: ' + m.Head.DateTime);
+            PutString('Date: ' + m.Date);
             PutString('Message-ID: ' + m.MsId);
             PutString('X-Mailer: ' + ProductName + '/' + ProductVersion);
             PutString('Content-Type: text/plain; charset=' + m.IChr);
@@ -153,7 +153,7 @@ begin
                PutString('From: ' + m.Frnm + ' <' + Addr2Str(m.From) + '>');
                PutString('To: '   + m.Tonm + ' <' + Addr2Str(m.Addr) + '>');
                PutString('Subject: ' + m.Subj);
-               PutString('Date: ' + m.Head.DateTime);
+               PutString('Date: ' + m.Date);
                PutString('Message-ID: ' + m.MsId);
                PutString('X-Mailer: ' + ProductName + '/' + ProductVersion);
                PutString('Mime-Version: 1.0');

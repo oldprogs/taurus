@@ -550,7 +550,7 @@ var
   s: string;
   i: byte;
 begin
-  s := ini.ReadString(sizes, 'BWZListView', '70,70,70,70,70');
+  s := ini.ReadString(sizes, 'BWZListView', '133,60,60,63,57');
   for i := 0 to 4 do result[i] := StrToIntDef(ExtractWord(i + 1, s, [',']), 70);
 end;
 
@@ -559,7 +559,7 @@ var
   s: string;
   i: byte;
 begin
-  s := ini.ReadString(sizes, 'OutMgrHdr', '180,200,100,60,60,80');
+  s := ini.ReadString(sizes, 'OutMgrHdr', '349,142,81,53,70,80');
   for i := 0 to 5 do result[i] := StrToIntDef(ExtractWord(i + 1, s, [',']), 70);
 end;
 
@@ -567,19 +567,22 @@ function GetMF: TRadMFRec;
 var
   s: string;
 begin
-  s := Ini.ReadString(sizes, 'MainForm', '247,100,569,397,1');
-  result.Bounds[0] := StrToIntDef(ExtractWord(1, s,[',']), 247);
-  result.Bounds[1] := StrToIntDef(ExtractWord(2, s,[',']), 100);
-  result.Bounds[2] := StrToIntDef(ExtractWord(3, s,[',']), 569);
-  result.Bounds[3] := StrToIntDef(ExtractWord(4, s,[',']), 397);
-  result.Maximized := StrToIntDef(ExtractWord(5, s,[',']),   0);
+  s := Ini.ReadString(sizes, 'MainForm', '223,1,700,621,0');
+  result.Bounds[0] := StrToIntDef(ExtractWord(1, s, [',']), 223);
+  result.Bounds[1] := StrToIntDef(ExtractWord(2, s, [',']), 005);
+  result.Bounds[2] := StrToIntDef(ExtractWord(3, s, [',']), 700);
+  result.Bounds[3] := StrToIntDef(ExtractWord(4, s, [',']), 621);
+  result.Maximized := StrToIntDef(ExtractWord(5, s, [',']), 000);
+  if Result.Bounds[2] = 700 then begin
+     Result.Bounds[2] := Screen.Width  - 1 - Result.Bounds[0];
+  end;
 end;
 
 function GetNB: TRadMFRec;
 var
   s: string;
 begin
-  s := Ini.ReadString(sizes, 'NodeBrws', '138,194,617,496,0');
+  s := Ini.ReadString(sizes, 'NodeBrws', '391,12,619,470,0');
   result.Bounds[0] := StrToIntDef(ExtractWord(1, s,[',']), 138);
   result.Bounds[1] := StrToIntDef(ExtractWord(2, s,[',']), 194);
   result.Bounds[2] := StrToIntDef(ExtractWord(3, s,[',']), 617);
@@ -591,7 +594,7 @@ function GetPolls: TRadPolls;
 var
   s: string;
 begin
-  s := ini.ReadString(sizes, 'PollsListView', '247,100,569,397,1');
+  s := ini.ReadString(sizes, 'PollsListView', '141,298,77,54,54,53,48,49');
   result[0] := StrToIntDef(ExtractWord(1, s,[',']), 100);
   result[1] := StrToIntDef(ExtractWord(2, s,[',']), 170);
   result[2] := StrToIntDef(ExtractWord(3, s,[',']),  80);
@@ -674,10 +677,10 @@ begin
 
       BindAddr := ReadString(IP, 'BindAddr', 'ANY');
 
-      GaugeFore := Hex2Dec(ReadString(colors, 'GaugeFore', '0'));
+      GaugeFore := Hex2Dec(ReadString(colors, 'GaugeFore', '000000'));
       GaugeBack := Hex2Dec(ReadString(colors, 'GaugeBack', 'A0DFE0'));
-      LoggerFore := Hex2Dec(ReadString(colors, 'LoggerFore', 'FFFFFF'));
-      LoggerBack := Hex2Dec(ReadString(colors, 'LoggerBack', '957664'));
+      LoggerFore := Hex2Dec(ReadString(colors, 'LoggerFore', '000000'));
+      LoggerBack := Hex2Dec(ReadString(colors, 'LoggerBack', 'BBCACC'));
       BadWazooFore := Hex2Dec(ReadString(colors, 'BadWazooFore', '000000'));
       BadWazooBack := Hex2Dec(ReadString(colors, 'BadWazooBack', 'FFFFFF'));
       OldMail7Fore := Hex2Dec(ReadString(colors, 'OldMail7Fore',  '80000005'));
@@ -714,33 +717,29 @@ begin
       TransmitHold := ReadBool(polls, 'TransmitHold', true);
       DirectAsNormal := ReadBool(polls, 'DirectAsNormal', true);
       PollAddFlags := ReadString(polls, 'Flags', '1011');
-      if length(PollAddFlags)<4 then PollAddFlags := PadCh(PollAddFlags,'0',4-length(PollAddFlags));
+      if length(PollAddFlags)<4 then PollAddFlags := PadCh(PollAddFlags, '0', 4 - length(PollAddFlags));
 
       ShowBalloon := ReadBool(_Interface, 'ShowBalloon', true);
       ShowBalloonMin := ReadBool(_Interface, 'ShowBalloonMin', true);
       ShowMenuIcons := ReadBool(_Interface, 'ShowMenuIcons', true);
       GridInBWZ := ReadBool(_interface, 'GridLinesInBWZ', false);
       GridInPV := ReadBool(_interface, 'GridLinesInPV', false);
-      _lang := ReadInteger(_interface, 'language', 1);
+      _lang := ReadInteger(_interface, 'language', 0);
       helplang := ReadString(_interface, 'helplang', 'en');
-      {$IFDEF EXTREME}
       FormsFontName := ReadString(_interface, 'FormsFontName', 'Arial');
       FormsFontSize := ReadInteger(_interface, 'FormsFontSize', 9);
-      {$ELSE}
-      FormsFontName := ReadString(_interface, 'FormsFontName', 'MS Sans Serif');
-      FormsFontSize := ReadInteger(_interface, 'FormsFontSize', -11);
-      {$ENDIF}
       FormsFontAttr := ReadString(_interface, 'FormsFontAttr', '0000');
+
       LoggerFontName := ReadString(_interface, 'LoggerFontName', 'FixedSys');
-      LoggerFontSize := ReadInteger(_interface, 'LoggerFontSize', -15);
+      LoggerFontSize := ReadInteger(_interface, 'LoggerFontSize', 9);
       LoggerFontAttr := ReadString(_interface, 'LoggerFontAttr', '0000');
+
       if length(LoggerFontAttr) < 4 then LoggerFontAttr := PadCh(LoggerFontAttr, '0', 4 - length(LoggerFontAttr));
 
 {$IFDEF RASDIAL}
-      _StartRas:=-1;
-      if RASEnabled <> ReadBool(_RasDial, 'RASEnabled', True) then
-      begin
-        RASEnabled := not RASEnabled;
+      _StartRas := -1;
+      if RASEnabled <> ReadBool(_RasDial, 'RASEnabled', True) then begin
+         RASEnabled := not RASEnabled;
       end;
       iEntryName := ReadString(_RasDial, 'EntryName', 'Connection');
 {$ENDIF}
@@ -786,7 +785,7 @@ begin
       EnableProxyAuth := ReadBool(IP,'EnableProxyAuth',False);
       ProxyUserName := ReadString(IP, 'ProxyUserName', '');
       ProxyPassword := ReadString(IP, 'ProxyPassword', '');
-      EncryptProxyPassword := ReadBool(IP, 'EncryptProxyPassword',False);
+      EncryptProxyPassword := ReadBool(IP, 'EncryptProxyPassword', False);
       if EncryptProxyPassword then ProxyPassword := DecodeStr(ProxyPassword);
 
       l := TStringList.Create;
@@ -832,25 +831,24 @@ begin
     if Application.MainForm <> nil then PostMessage(Application.MainForm.Handle, WM_GRIDUPD,Ord(GridInPV), 1);//0 - BWZ; 1 - PV
     if Application.MainForm <> nil then PostMessage(Application.MainForm.Handle, WM_USESPACE,Ord(UseSpace), 0);
     if Application.MainForm <> nil then PostMessage(Application.MainForm.Handle, WM_SETCOLORS, 0, 0);
-    if uppercase(HelpLang)='en' then begin
-         Application.HelpFile := GetHelpFile(HomeDir, LangNames[lnEnglish]);
-         HelpLanguageId := HelpLanguageEnglish;
-         SetRegHelpLng(LangNames[lnEnglish]);
-       end
-    else if uppercase(HelpLang)='ru' then begin
-         Application.HelpFile := GetHelpFile(HomeDir, LangNames[lnRussian]);
-         HelpLanguageId := HelpLanguageRussian;
-         SetRegHelpLng(LangNames[lnRussian]);
-       end;
+    if uppercase(HelpLang) = 'en' then begin
+       Application.HelpFile := GetHelpFile(HomeDir, LangNames[lnEnglish]);
+       HelpLanguageId := HelpLanguageEnglish;
+       SetRegHelpLng(LangNames[lnEnglish]);
+    end else
+    if uppercase(HelpLang) = 'ru' then begin
+       Application.HelpFile := GetHelpFile(HomeDir, LangNames[lnRussian]);
+       HelpLanguageId := HelpLanguageRussian;
+       SetRegHelpLng(LangNames[lnRussian]);
+    end;
+
     if IsHtmlHelp <> not NoHTML then IsHtmlHelp := not NoHTML;
-    Application.HelpFile:=GetHelpFile(HomeDir, HelpLang);
+    Application.HelpFile := GetHelpFile(HomeDir, HelpLang);
 
-  if _lang<>lang then
-  begin
-    lang:=_lang;
-    if Application.MainForm <> nil then PostMessage(Application.MainForm.Handle,WM_SetLang,lang,1);
-  end;
-
+    if _lang <> lang then begin
+       lang := _lang;
+       if Application.MainForm <> nil then PostMessage(Application.MainForm.Handle, WM_SetLang, lang, 1);
+    end;
 end;
 
 procedure TConfig.WriteConfig;

@@ -1,6 +1,6 @@
 object MailerForm: TMailerForm
-  Left = 243
-  Top = 168
+  Left = 363
+  Top = 316
   Width = 661
   Height = 422
   HelpContext = 1500

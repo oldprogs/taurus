@@ -955,6 +955,13 @@ begin
 
       PC := TFidoNet.Create;
       ndls := '';
+      If NodeController.Lists = nil then begin
+//         ZeroHandle(ST);
+//         Terminated := True;
+//         LeaveNlCs;
+//         exit;
+         NodeController.Lists := TStringList.Create;
+      end;
       NodeController.Lists.Clear;
       for I := 0 to Cfg.Nodelist.Files.Count - 1 do
       begin

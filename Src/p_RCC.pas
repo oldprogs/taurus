@@ -74,8 +74,8 @@ end;
 constructor TRCC.Create;
 begin
    inherited Create(ACP);
-   LList := TStringColl.Create('');
-   SList := TStringColl.Create('');
+   LList := TStringColl.Create;
+   SList := TStringColl.Create;
    pRCC  := self;
 end;
 

@@ -4,7 +4,6 @@ interface
 
 {$I DEFINE.INC}
 
-
 uses
   SysUtils, Windows, Messages, Classes, Graphics, Controls, 
   StdCtrls, ExtCtrls, Forms, ComCtrls, 
@@ -45,7 +44,6 @@ type
     procedure SetData;
     procedure InvalidateCbExt;
   end;
-
 
 function EditModem(Modem: Pointer): Boolean;
 
@@ -90,7 +88,6 @@ begin
   for i := Low(OldStrs) to High(OldStrs) do OldStrs[i] := Modem.Cmds[i];
 end;
 
-
 procedure TModemEditor.FormClose(Sender: TObject; var Action: TCloseAction);
 var
   o : TModemOptions;
@@ -129,13 +126,11 @@ begin
   CanClose := True;
 end;
 
-
-
 procedure TModemEditor.FormCreate(Sender: TObject);
 begin
+  gStd.ColWidths[0] := 80;
   FillForm(Self, rsModemEditor);
 end;
-
 
 procedure TModemEditor.InvalidateCbExt;
 const
@@ -150,7 +145,6 @@ begin
   gbIntFax.Enabled := not B;
   cbDTE.Enabled := not B;
 end;
-
 
 procedure TModemEditor.rgExtClick(Sender: TObject);
 begin
