@@ -20,7 +20,7 @@
 { Unit which provides a central place for all resource strings used in the JCL                     }
 {                                                                                                  }
 { Unit owner: Marcel van Brakel                                                                    }
-{ Last modified: March 12, 2002                                                                    }
+{ Last modified: September 5, 2002                                                                 }
 {                                                                                                  }
 {**************************************************************************************************}
 
@@ -66,6 +66,13 @@ resourcestring
   RsComplexInvalidString = 'Failed to create a complex number from the string provided';
 
 //--------------------------------------------------------------------------------------------------
+// JclConsole
+//--------------------------------------------------------------------------------------------------
+
+resourcestring
+  RsCannotRaiseSignal = 'Cannot raise %s signal.';
+
+//--------------------------------------------------------------------------------------------------
 // JclCounter
 //--------------------------------------------------------------------------------------------------
 
@@ -95,6 +102,86 @@ resourcestring
   RsDebugMapFileExtension = '.map'; // do not localize
   RsDebugNoProcessInfo    = 'Unable to obtain process information';
   RsDebugSnapshot         = 'Failure creating toolhelp32 snapshot';
+
+//--------------------------------------------------------------------------------------------------
+// JclEDI
+//--------------------------------------------------------------------------------------------------
+
+resourcestring
+  EDIError001 = 'Could not set interchange at index [%s], Index too high.';
+  EDIError002 = 'Could not set interchange at index [%s], Index too low.';
+  EDIError003 = 'Could not set interchange at index [%s].';
+  EDIError004 = 'Could not save edi file.  File name and path not specified.';
+  EDIError005 = 'Could not save edi file.  File name and path not specified.';
+  EDIError006 = 'Could not open edi file.  File not specified.';
+  EDIError007 = 'Could not get interchange at index [%s], Interchanges does not exist.';
+  EDIError008 = 'Could not get interchange at index [%s], Index too high.';
+  EDIError009 = 'Could not get interchange at index [%s], Index too low.';
+  EDIError010 = 'Could not get interchanges at index [%s], There were no interchanges to get.';
+  EDIError011 = 'Could not find interchange control header.';
+  EDIError012 = 'Could not find interchange control trailer segment terminator.';
+  EDIError013 = 'Could not find interchange control trailer.';
+  EDIError014 = 'Could not find interchange control trailer or garbage at end of file.';
+  EDIError015 = 'Could not delete interchanges at index [%s].';
+  EDIError016 = 'Could not delete interchange at index [%s].';
+  EDIError017 = 'Could not set functional group at index [%s], Index too high.';
+  EDIError018 = 'Could not set functional group at index [%s], Index too low.';
+  EDIError019 = 'Could not set functional group at index [%s].';
+  EDIError020 = 'Could not get functional group at index [%s], Functional Group does not exist.';
+  EDIError021 = 'Could not get functional group at index [%s], Index too high.';
+  EDIError022 = 'Could not get functional group at index [%s], Index too low.';
+  EDIError023 = 'Could not get functional group at index [%s], There were no functional groups to get.';
+  EDIError024 = 'Delimiters have not been assigned to interchange.  Dissassemble cancelled.';
+  EDIError025 = 'Could not find interchange control header segment terminator.';
+  EDIError026 = 'Could not find interchange control header.';
+  EDIError027 = 'Could not find functional group header.';
+  EDIError028 = 'Could not find functional group trailer segment terminator.';
+  EDIError029 = 'Could not find functional group trailer.';
+  EDIError030 = 'Could not find interchange control trailer segment terminator.';
+  EDIError031 = 'Could not find interchange control trailer.';
+  EDIError032 = 'Could not delete functional groups at index [%s].';
+  EDIError033 = 'Could not delete functional group at index [%s].';
+  EDIError034 = 'Delimiters have not been assigned to interchange.  Assemble cancelled.';
+  EDIError035 = 'Could not set transaction set at index [%s], Index too high.';
+  EDIError036 = 'Could not set transaction set at index [%s], Index too low.';
+  EDIError037 = 'Could not set transaction set at index [%s].';
+  EDIError038 = 'Could not get transaction set at index [%s], Transaction Set does not exist.';
+  EDIError039 = 'Could not get transaction set at index [%s], Index too high.';
+  EDIError040 = 'Could not get transaction set at index [%s], Index too low.';
+  EDIError041 = 'Could not get transaction set at index [%s], There were no Transaction Sets to get.';
+  EDIError042 = 'Could not assign delimiters to functional group.  Dissassemble cancelled.';
+  EDIError043 = 'Could not find functional group header segment terminator.';
+  EDIError044 = 'Could not find functional group header.';
+  EDIError045 = 'Could not find transaction set header.';
+  EDIError046 = 'Could not find transaction set trailer segment terminator.';
+  EDIError047 = 'Could not find transaction set trailer.';
+  EDIError048 = 'Could not find functional group trailer segment terminator.';
+  EDIError049 = 'Could not find functional group trailer..';
+  EDIError050 = 'Could not delete transaction sets at index [%s].';
+  EDIError051 = 'Could not delete transaction set at index [%s].';
+  EDIError052 = 'Could not assign delimiters to functional group.  Assemble cancelled.';
+  EDIError053 = 'Could not set segment at index [%s], Index too high.';
+  EDIError054 = 'Could not set segment at index [%s], Index too low.';
+  EDIError055 = 'Could not set segment at index [%s].';
+  EDIError056 = 'Could not get segment at index [%s], Segment does not exist.';
+  EDIError057 = 'Could not get segment at index [%s], Index too high.';
+  EDIError058 = 'Could not get segment at index [%s], Index too low.';
+  EDIError059 = 'Could not get segment at index [%s], There were no segments to get.';
+  EDIError060 = 'Could not assign delimiters to transaction set.  Dissassemble cancelled.';
+  EDIError061 = 'Could not delete segment at index [%s].';
+  EDIError062 = 'Could not delete segment at index [%s].';
+  EDIError063 = 'Could not assign delimiters to transaction set.  Assemble cancelled.';
+  EDIError064 = 'Could not set element at index [%s], Index too high.';
+  EDIError065 = 'Could not set element at index [%s], Index too low.';
+  EDIError066 = 'Could not set element at index [%s].';
+  EDIError067 = 'Could not get element at index [%s], Element does not exist.';
+  EDIError068 = 'Could not get element at index [%s], Index too high.';
+  EDIError069 = 'Could not get element at index [%s], Index too low.';
+  EDIError070 = 'Could not get element at index [%s], There were no elements to get.';
+  EDIError071 = 'Could not assign delimiters to segment.  Dissassemble cancelled.';
+  EDIError072 = 'Could not delete element at index [%s].';
+  EDIError073 = 'Could not delete element at index [%s].';
+  EDIError074 = 'Could not assign delimiters to segment.  Assemble cancelled.';
 
 //--------------------------------------------------------------------------------------------------
 // JclExprEval
@@ -323,6 +410,28 @@ resourcestring
   RsNoNaN              = 'NaN expected';
   RsNaNTagError        = 'NaN Tag value %d out of range';
   RsNaNSignal          = 'NaN signaling %d';
+
+//--------------------------------------------------------------------------------------------------
+// JclMidi
+//--------------------------------------------------------------------------------------------------
+
+resourcestring
+  RsOctaveC      = 'C';
+  RsOctaveCSharp = 'C#';
+  RsOctaveD      = 'D';
+  RsOctaveDSharp = 'D#';
+  RsOctaveE      = 'E';
+  RsOctaveF      = 'F';
+  RsOctaveFSharp = 'F#';
+  RsOctaveG      = 'G';
+  RsOctaveGSharp = 'G#';
+  RsOctaveA      = 'A';
+  RsOctaveASharp = 'A#';
+  RsOctaveB      = 'B';
+
+  RsMidiInUnknownError    = 'Unknown MIDI-In error No. %d';
+  RsMidiOutUnknownError   = 'Unknown MIDI-Out error No. %d';
+  RsInvalidMidiChannelNum = 'Invalid MIDI channel number (%d)';
 
 //--------------------------------------------------------------------------------------------------
 // JclMiscel
@@ -679,20 +788,26 @@ resourcestring
   RsRTTIVarType =           'Variant type: ';
 
 //--------------------------------------------------------------------------------------------------
-// JclSscanf
+// JclSchedule
 //--------------------------------------------------------------------------------------------------
 
 resourcestring
-  RsSscanfBadSet       = 'Bad set: ';
-  RsSscanfBadFormat    = 'Bad format string';
-  RsSscanfInsufficient = 'Insufficient pointers for format specifiers';
-
+  RsScheduleInvalidTime     = 'Invalid time specification';
+  RsScheduleEndBeforeStart  = 'End time can not be before start time';
+  RsScheduleIntervalZero    = 'Interval should be larger than 0';
+  RsScheduleNoDaySpecified  = 'At least one day of the week should be specified';
+  RsScheduleIndexValueSup   = 'Property IndexValue not supported for current IndexKind';
+  RsScheduleIndexValueZero  = 'IndexValue can not be 0';
+  RsScheduleDayNotSupported = 'Property Day not supported for current IndexKind';
+  RsScheduleDayInRange      = 'Day values should fall in the range 1 .. 31';
+  RsScheduleMonthInRange    = 'Month values should fall in the range 1 .. 12';
+  
 //--------------------------------------------------------------------------------------------------
 // JclStrings
 //--------------------------------------------------------------------------------------------------
 
 resourcestring
-  RsInvalidEmptyStringItem = 'String list passed to StringsToMultiSz cannot contain empty strings.';
+  RsInvalidEmptyStringItem  = 'String list passed to StringsToMultiSz cannot contain empty strings.';
   RsNumericConstantTooLarge = 'Numeric constant too large.';
   
 //--------------------------------------------------------------------------------------------------

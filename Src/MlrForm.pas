@@ -1142,14 +1142,16 @@ begin
       z := TFidoPoll(cr.p).IPAddr;
       if cr.Prot = ptSMTP then begin
          ss := IniFile.ReadSection('Grids', 'gPOP3');
-         for i := 0 to ss.Count - 1 do begin
-            s := IniFile.ReadString('Grids', ss[i]);
-            if MatchMaskAddressListSingle(TFidoPoll(cr.p).Node.Addr, ExtractWord(5, s, ['|'])) then begin
-               z := ExtractWord(1, s, ['|']);
-               break;
+         if ss <> nil then begin
+            for i := 0 to ss.Count - 1 do begin
+               s := IniFile.ReadString('Grids', ss[i]);
+               if MatchMaskAddressListSingle(TFidoPoll(cr.p).Node.Addr, ExtractWord(5, s, ['|'])) then begin
+                  z := ExtractWord(1, s, ['|']);
+                  break;
+               end;
             end;
-         end;
-         ss.Free;
+            ss.Free;
+         end;   
       end;
       if (cr.ResolvedAddr = INADDR_NONE) then begin
          s := 'Unresolved'
@@ -3346,7 +3348,7 @@ procedure TMailerForm.UpdateView(fromcc: boolean);
 
    procedure UpdatePolls;
    const
-      PT: array[TPollType] of Integer = (-1, rsMMptAuto, rsMMptCron, rsMMptManual, rsMMptImm, rsMMptBack, rsMMptRCC, rsMMptNetm);
+      PT: array[TPollType] of Integer = (-1, rsMMptAuto, rsMMptCron, rsMMptManual, rsMMptImm, rsMMptBack, rsMMptRCC, rsMMptNetm, rsMMptNmIm);
    var
       C: TColl;
       S: TStringColl;
@@ -3458,17 +3460,20 @@ procedure TMailerForm.UpdateView(fromcc: boolean);
       SetEnabledO(bTracePoll, wcb_bTracePoll, Z);
       SetEnabledO(ppTracePoll, wcb_ppTracePoll, Z);
 
-      SetEnabledO(mpPause, wcb_mpPause, Z);
       if Z then begin
          ParseAddress(PollsListView.ItemFocused.Caption, A);
          if FidoOut.Paused(A) then begin
             s := LngStr(rsUnPause);
-            if mpPause.Caption <> s then mpPause.Caption := s;
          end else begin
             s := LngStr(rsPause);
-            if mpPause.Caption <> s then mpPause.Caption := s;
+         end;
+         if mpPause.Caption <> s then begin
+            mpPause.Caption := s;
          end;
       end;
+
+      SetEnabledO(mpPause, wcb_mpPause, Z);
+
       SetEnabledO(bPause, wcb_bPause, Z);
       SetEnabledO(ppPause, wcb_ppPause, Z);
 
@@ -4459,6 +4464,7 @@ begin
       if LoggerFontAttr[4] = '1' then LogBox.Font.Style := LogBox.Font.Style + [fsStrikeOut];
 
       LInfo1.Font.Assign(LogBox.Font);
+      ChatPan.Font.Assign(LogBox.Font);
 
       PollsListView.GridLines := GridInPV;
       BWListView.GridLines := GridInBWZ;
@@ -4817,7 +4823,7 @@ var
    end;
 
 const
-   PtpTyp: array[TPollType] of Integer = (0, rsMMptpiOutb, rsMMptpiCron, rsMMptpiManual, rsMMptpiImm, rsMMptpiBack, rsMMptpiRCC, rsMMptpiNetm);
+   PtpTyp: array[TPollType] of Integer = (0, rsMMptpiOutb, rsMMptpiCron, rsMMptpiManual, rsMMptpiImm, rsMMptpiBack, rsMMptpiRCC, rsMMptpiNetm, rsMMptpiNmIm);
 
 var
    s: string;

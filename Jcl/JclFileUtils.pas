@@ -25,7 +25,7 @@
 { routines as well but they are specific to the Windows shell.                                     }
 {                                                                                                  }
 { Unit owner: Marcel van Brakel                                                                    }
-{ Last modified: March 25, 2002                                                                    }
+{ Last modified: September 2, 2002                                                                 }
 {                                                                                                  }
 {**************************************************************************************************}
 
@@ -102,11 +102,13 @@ type
   TDelTreeProgress = function (const FileName: string; Attr: DWORD): Boolean;
   TFileListOption  = (flFullNames, flRecursive, flMaskedSubfolders);
   TFileListOptions = set of TFileListOption;
+  TJclAttributeMatch = (amAny, amExact, amSubSetOf, amSuperSetOf, amCustom);
+  TFileMatchFunc = function(const Attr: Integer; const FileInfo: TSearchRec): Boolean;
 
 function BuildFileList(const Path: string; const Attr: Integer; const List: TStrings): Boolean;
-function AdvBuildFileList(const Path: string; const Attr: Integer;
-  const Files: TStrings; const Options: TFileListOptions = [];
-  const SubfoldersMask: string = ''): Boolean;
+function AdvBuildFileList(const Path: string; const Attr: Integer; const Files: TStrings;
+  const AttributeMatch: TJclAttributeMatch = amSubsetOf; const Options: TFileListOptions = [];
+  const SubfoldersMask: string = ''; const FileMatchFunc: TFileMatchFunc = nil): Boolean;
 function CloseVolume(var Volume: THandle): Boolean;
 procedure CreateEmptyFile(const FileName: string);
 function DeleteDirectory(const DirectoryName: string; MoveToRecycleBin: Boolean): Boolean;
@@ -372,10 +374,17 @@ type
 // TJclMappedTextReader
 //--------------------------------------------------------------------------------------------------
 
+  TJclMappedTextReaderIndex = (tiNoIndex, tiFull);
+
+  PPCharArray = ^TPCharArray;
+  TPCharArray = array [0..0] of PChar;
+
   TJclMappedTextReader = class (TPersistent)
   private
     FContent: PChar;
     FEnd: PChar;
+    FIndex: PPCharArray;
+    FIndexOption: TJclMappedTextReaderIndex;
     FFreeStream: Boolean;
     FLastLineNumber: Integer;
     FLastPosition: PChar;
@@ -393,12 +402,15 @@ type
     procedure SetPosition(const Value: Integer);
   protected
     procedure AssignTo(Dest: TPersistent); override;
+    procedure CreateIndex;
     procedure Init;
     function PtrFromLine(LineNumber: Integer): PChar;
     function StringFromPosition(var StartPos: PChar): string;
   public
-    constructor Create(MemoryStream: TCustomMemoryStream; FreeStream: Boolean = True); overload;
-    constructor Create(const FileName: string); overload;
+    constructor Create(MemoryStream: TCustomMemoryStream; FreeStream: Boolean = True;
+      const AIndexOption: TJclMappedTextReaderIndex = tiNoIndex); overload;
+    constructor Create(const FileName: string;
+      const AIndexOption: TJclMappedTextReaderIndex = tiNoIndex); overload;
     destructor Destroy; override;
     procedure GoBegin;
     function Read: Char;
@@ -407,6 +419,7 @@ type
     property Chars[Index: Integer]: Char read GetChars;
     property Content: PChar read FContent;
     property Eof: Boolean read GetEof;
+    property IndexOption: TJclMappedTextReaderIndex read FIndexOption;
     property Lines[LineNumber: Integer]: string read GetLines;
     property LineCount: Integer read GetLineCount;
     property PositionFromLine[LineNumber: Integer]: Integer read GetPositionFromLine;
@@ -940,20 +953,61 @@ end;
 
 //--------------------------------------------------------------------------------------------------
 
-constructor TJclMappedTextReader.Create(MemoryStream: TCustomMemoryStream; FreeStream: Boolean);
+constructor TJclMappedTextReader.Create(MemoryStream: TCustomMemoryStream; FreeStream: Boolean;
+  const AIndexOption: TJclMappedTextReaderIndex);
 begin
   FMemoryStream := MemoryStream;
   FFreeStream := FreeStream;
+  FIndexOption := AIndexOption;
   Init;
 end;
 
 //--------------------------------------------------------------------------------------------------
 
-constructor TJclMappedTextReader.Create(const FileName: string);
+constructor TJclMappedTextReader.Create(const FileName: string;
+  const AIndexOption: TJclMappedTextReaderIndex);
 begin
   FMemoryStream := TJclFileMappingStream.Create(FileName);
   FFreeStream := True;
+  FIndexOption := AIndexOption;
   Init;
+end;
+
+//--------------------------------------------------------------------------------------------------
+
+procedure TJclMappedTextReader.CreateIndex;
+var
+  P, LastLineStart: PChar;
+  I: Integer;
+begin
+  {$RANGECHECKS OFF}
+  P := FContent;
+  I := 0;
+  LastLineStart := P;
+  while P < FEnd do
+  begin
+    if P^ = AnsiLineFeed then
+    begin
+      if I and $FFFF = 0 then
+        ReallocMem(FIndex, (I + $10000) * SizeOf(Pointer));
+      FIndex[I] := LastLineStart;
+      Inc(I);
+      LastLineStart := P + 1;
+    end;
+    Inc(P);
+  end;
+  if P > LastLineStart then
+  begin
+    ReallocMem(FIndex, (I + 1) * SizeOf(Pointer));
+    FIndex[I] := LastLineStart;
+    Inc(I);
+  end
+  else
+    ReallocMem(FIndex, I * SizeOf(Pointer));
+  FLineCount := I;
+  {$IFDEF RANGECHECKS_ON}
+  {$RANGECHECKS ON}
+  {$ENDIF RANGECHECKS_ON}
 end;
 
 //--------------------------------------------------------------------------------------------------
@@ -962,6 +1016,7 @@ destructor TJclMappedTextReader.Destroy;
 begin
   if FFreeStream then
     FMemoryStream.Free;
+  FreeMem(FIndex);
   inherited;
 end;
 
@@ -991,28 +1046,6 @@ end;
 //--------------------------------------------------------------------------------------------------
 
 function TJclMappedTextReader.GetLineCount: Integer;
-{var
-  P: PChar;
-  L: Integer;
-  C: Cardinal;
-begin
-  if FLineCount = -1 then
-  begin
-    P := FContent;
-    L := 0;
-    while P < FEnd do
-    begin
-      if P^ = AnsiLineFeed then
-        Inc(L);
-      Inc(P);
-    end;
-    Dec(P);
-    if (P >= FContent) and (P^ <> AnsiLineFeed) then
-      Inc(L);
-    FLineCount := L;
-  end;
-  Result := FLineCount;
-end;}
 
   function CountLines(StartPtr: PChar; Len: Integer): Integer; assembler;
   asm
@@ -1070,6 +1103,8 @@ begin
   FLineCount := -1;
   FLastLineNumber := 0;
   FLastPosition := FContent;
+  if IndexOption = tiFull then
+    CreateIndex;
 end;
 
 //--------------------------------------------------------------------------------------------------
@@ -1092,53 +1127,62 @@ var
   LineOffset: Integer;
 begin
   Result := nil;
-  LineOffset := LineNumber - FLastLineNumber;
-  if (FLineCount <> -1) and (LineNumber > 0) then
+  {$RANGECHECKS OFF}
+  if (IndexOption <> tiNoIndex) and (LineNumber < FLineCount) and (FIndex[LineNumber] <> nil) then
+    Result := FIndex[LineNumber]
+  {$IFDEF RANGECHECKS_ON}
+  {$RANGECHECKS ON}
+  {$ENDIF RANGECHECKS_ON}
+  else
   begin
-    if -LineOffset > LineNumber then
+    LineOffset := LineNumber - FLastLineNumber;
+    if (FLineCount <> -1) and (LineNumber > 0) then
     begin
-      FLastLineNumber := 0;
-      FLastPosition := FContent;
-      LineOffset := LineNumber;
+      if -LineOffset > LineNumber then
+      begin
+        FLastLineNumber := 0;
+        FLastPosition := FContent;
+        LineOffset := LineNumber;
+      end
+      else
+      if LineOffset > FLineCount - LineNumber then
+      begin
+        FLastLineNumber := FLineCount;
+        FLastPosition := FEnd;
+        LineOffset := LineNumber - FLineCount;
+      end;
+    end;
+    if LineNumber <= 0 then
+      Result := FContent
+    else
+    if LineOffset = 0 then
+      Result := FLastPosition
+    else
+    if LineOffset > 0 then
+    begin
+      Result := FLastPosition;
+      while (Result < FEnd) and (LineOffset > 0) do
+      begin
+        if Result^ = AnsiLineFeed then
+          Dec(LineOffset);
+        Inc(Result);
+      end;
     end
     else
-    if LineOffset > FLineCount - LineNumber then
+    if LineOffset < 0 then
     begin
-      FLastLineNumber := FLineCount;
-      FLastPosition := FEnd;
-      LineOffset := LineNumber - FLineCount;
+      Result := FLastPosition;
+      while (Result >= FContent) and (LineOffset < 1) do
+      begin
+        if Result^ = AnsiLineFeed then
+          Inc(LineOffset);
+        Dec(Result);
+      end;
+      Inc(Result, 2);
     end;
+    FLastLineNumber := LineNumber;
+    FLastPosition := Result;
   end;
-  if LineNumber <= 0 then
-    Result := FContent
-  else
-  if LineOffset = 0 then
-    Result := FLastPosition
-  else
-  if LineOffset > 0 then
-  begin
-    Result := FLastPosition;
-    while (Result < FEnd) and (LineOffset > 0) do
-    begin
-      if Result^ = AnsiLineFeed then
-        Dec(LineOffset);
-      Inc(Result);
-    end;
-  end
-  else
-  if LineOffset < 0 then
-  begin
-    Result := FLastPosition;
-    while (Result >= FContent) and (LineOffset < 1) do
-    begin
-      if Result^ = AnsiLineFeed then
-        Inc(LineOffset);
-      Dec(Result);
-    end;
-    Inc(Result, 2);
-  end;
-  FLastLineNumber := LineNumber;
-  FLastPosition := Result;
 end;
 
 //--------------------------------------------------------------------------------------------------
@@ -2109,6 +2153,7 @@ function GetDirectorySize(const Path: string): Int64;
   var
     F: TSearchRec;
     R: Integer;
+    TempSize: TULargeInteger;
   begin
     Result := 0;
     R := SysUtils.FindFirst(Path + '*.*', faAnyFile, F);
@@ -2121,7 +2166,11 @@ function GetDirectorySize(const Path: string): Int64;
           if (F.Attr and faDirectory) = faDirectory then
             Inc(Result, RecurseFolder(Path + F.Name + '\'))
           else
-            Result := Result + (F.FindData.nFileSizeHigh shl 32) + F.FindData.nFileSizeLow;
+          begin
+            TempSize.LowPart := F.FindData.nFileSizeLow;
+            TempSize.HighPart := F.FindData.nFileSizeHigh;
+            Inc(Result, TempSize.QuadPart);
+          end;
         end;
         R := SysUtils.FindNext(F);
       end;
@@ -2287,13 +2336,16 @@ function GetSizeOfFile(const FileName: string): Int64;
 var
   Handle: THandle;
   FindData: TWin32FindData;
+  Size: TULargeInteger;
 begin
   Result := 0;
   Handle := FindFirstFile(PChar(FileName), FindData);
   if Handle <> INVALID_HANDLE_VALUE then
   begin
     Windows.FindClose(Handle);
-    Result := (FindData.nFileSizeHigh shl 32) + FindData.nFileSizeLow;
+    Size.LowPart := FindData.nFileSizeLow;
+    Size.HighPart := FindData.nFileSizeHigh;
+    Result := Size.QuadPart;
   end
   else
     RaiseLastOSError;
@@ -2592,29 +2644,26 @@ end;
 
 //--------------------------------------------------------------------------------------------------
 
-// todoc Author: Jeff
-
 function Win32BackupFile(const FileName: string; Move: Boolean): Boolean;
 begin
   if Move then
-    Result := MoveFile(PChar(FileName), PChar(GetBackupFileName(FileName)))
+    Result := MoveFileEx(PChar(FileName), PChar(GetBackupFileName(FileName)), MOVEFILE_REPLACE_EXISTING)
   else
     Result := CopyFile(PChar(FileName), PChar(GetBackupFileName(FileName)), False)
 end;
 
 //--------------------------------------------------------------------------------------------------
 
-// todoc Author: Jeff
-
 function Win32RestoreFile(const FileName: string): Boolean;
-var
+var 
   TempFileName: string;
 begin
   Result := False;
   TempFileName := FileGetTempName('');
-  if MoveFile(PChar(GetBackupFileName(FileName)), PChar(TempFileName)) then
-    if Win32BackupFile(FileName, False) then
-      Result := MoveFile(PChar(TempFileName), PChar(FileName));
+
+   if MoveFileEx(PChar(GetBackupFileName(FileName)), PChar(TempFileName), MOVEFILE_REPLACE_EXISTING) then
+     if Win32BackupFile(FileName, False) then
+       Result := MoveFileEx(PChar(TempFileName), PChar(FileName), MOVEFILE_REPLACE_EXISTING); 
 end;
 
 //==================================================================================================
@@ -3339,8 +3388,10 @@ end;
 
 //--------------------------------------------------------------------------------------------------
 
-function AdvBuildFileList(const Path: string; const Attr: Integer;
-  const Files: TStrings; const Options: TFileListOptions; const SubfoldersMask: string): Boolean;
+function AdvBuildFileList(const Path: string; const Attr: Integer; const Files: TStrings;
+  const AttributeMatch: TJclAttributeMatch; const Options: TFileListOptions;
+  const SubfoldersMask: string; const FileMatchFunc: TFileMatchFunc): Boolean;
+
 var
   FileMask: string;
   RootDir: string;
@@ -3356,6 +3407,7 @@ var
   begin
     Counter := Folders.Count - 1;
     CurrentItem := 0;
+
     while CurrentItem <= Counter do
     begin
       // searching for subfolders
@@ -3366,6 +3418,7 @@ var
           if (FindInfo.Name <> '.') and (FindInfo.Name <> '..') and
             (FindInfo.Attr and faDirectory = faDirectory) then
             Folders.Add(Folders[CurrentItem] + FindInfo.Name + PathSeparator);
+
           Rslt := FindNext(FindInfo);
         end;
       finally
@@ -3381,21 +3434,32 @@ var
     FindInfo: TSearchRec;
     Rslt: Integer;
     CurrentFolder: String;
-    FileAttr: Integer;
+    Matches: Boolean;
 
   begin
     CurrentFolder := Folders[CurrentCounter];
     Rslt := FindFirst(CurrentFolder + FileMask, LocAttr, FindInfo);
+
     try
       while Rslt = 0 do
       begin
-        FileAttr := FindInfo.Attr and not FILE_ATTRIBUTE_NORMAL; // Include all normal files
+         Matches := False;
 
-        if (LocAttr and FileAttr) = FileAttr  then
+         case AttributeMatch of
+           amAny: Matches := (LocAttr and FindInfo.Attr) <> 0;
+           amExact: Matches := LocAttr = FindInfo.Attr;
+           amSuperSetOf: Matches := (LocAttr and FindInfo.Attr) = FindInfo.Attr;
+           amSubSetOf: Matches := (LocAttr and FindInfo.Attr) = LocAttr;
+           amCustom: if @FileMatchFunc <> nil then
+                       Matches := FileMatchFunc(LocAttr,  FindInfo);
+         end;
+
+         if Matches then
           if flFullNames in Options then
             Files.Add(CurrentFolder + FindInfo.Name)
           else
             Files.Add(FindInfo.Name);
+
         Rslt := FindNext(FindInfo);
       end;
     finally
@@ -3424,14 +3488,15 @@ begin
 
     for Counter := 0 to Folders.Count - 1 do
     begin
-      if (((flMaskedSubfolders in Options) and (StrMatches(SubfoldersMask, Folders[Counter], 1))) or
-        (not (flMaskedSubfolders in Options))) then
-        FillFileList(Counter);
+      if (((flMaskedSubfolders in Options) and (StrMatches(SubfoldersMask,
+        Folders[Counter], 1))) or (not (flMaskedSubfolders in Options))) then
+          FillFileList(Counter);
     end;
   finally
     Folders.Free;
   end;
   Result := True;
 end;
+
 
 end.

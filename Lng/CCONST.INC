@@ -375,6 +375,8 @@ const
   rsUnPause         = 478;
   rsMMptNetm        = 479;
   rsMMptpiNetm      = 480;
+  rsMMptNmIm        = 481;
+  rsMMptpiNmIm      = 482;
 
   rsCDCh            = 103;
   rsNBBoNotLtd      = 104;

@@ -27,7 +27,7 @@
 { retrieving the coprocessor's status word.                                                        }
 {                                                                                                  }
 { Unit owner: Eric S. Fisher                                                                       }
-{ Last modified: March 10, 2002                                                                    }
+{ Last modified: September 25, 2002                                                                }
 {                                                                                                  }
 {**************************************************************************************************}
 
@@ -50,9 +50,9 @@ uses
 // Pointer manipulation
 //--------------------------------------------------------------------------------------------------
 
-{$IFNDEF DELPHI5_UP}
+{$IFNDEF COMPILER5_UP}
 procedure FreeAndNil(var Obj);
-{$ENDIF DELPHI5_UP}
+{$ENDIF COMPILER5_UP}
 
 procedure GetAndFillMem(var P: Pointer; const Size: Integer; const Value: Byte);
 procedure FreeMemAndNil(var P: Pointer);
@@ -159,7 +159,7 @@ type
   end;
 
 //--------------------------------------------------------------------------------------------------
-// replacement for the C ternary conditional operator ? :
+// Replacement for the C ternary conditional operator ? :
 //--------------------------------------------------------------------------------------------------
 
 function Iff(const Condition: Boolean; const TruePart, FalsePart: string): string; overload;
@@ -171,6 +171,7 @@ function Iff(const Condition: Boolean; const TruePart, FalsePart: Float): Float;
 function Iff(const Condition: Boolean; const TruePart, FalsePart: Boolean): Boolean; overload;
 function Iff(const Condition: Boolean; const TruePart, FalsePart: Pointer): Pointer; overload;
 function Iff(const Condition: Boolean; const TruePart, FalsePart: Int64): Int64; overload;
+function Iff(const Condition: Boolean; const TruePart, FalsePart: Variant): Variant; overload;
 
 //--------------------------------------------------------------------------------------------------
 // Classes information and manipulation
@@ -272,7 +273,6 @@ function IsObject(Address: Pointer): Boolean;
 //--------------------------------------------------------------------------------------------------
 
 function GetImplementorOfInterface(const I: IInterface): TObject;
-{ TODO -cDOC : Original code by Hallvard Vassbotn }
 
 //--------------------------------------------------------------------------------------------------
 // Numeric formatting routines
@@ -302,9 +302,9 @@ function WriteModuleData(Module: TModuleHandle; SymbolName: string; var Buffer; 
 
 {$ENDIF MSWINDOWS}
 
-//==================================================================================================
+//--------------------------------------------------------------------------------------------------
 // Conversion Utilities
-//==================================================================================================
+//--------------------------------------------------------------------------------------------------
 
 type
   EJclConversionError = class (EJclError);
@@ -312,6 +312,13 @@ type
 function StrToBoolean(const S: string): Boolean;
 function IntToBool(I: Integer): Boolean;
 function BoolToInt(B: Boolean): Integer;
+
+//--------------------------------------------------------------------------------------------------
+// RTL package information
+//--------------------------------------------------------------------------------------------------
+
+function SystemTObjectInstance: LongWord;
+function IsCompiledWithPackages: Boolean;
 
 implementation
 
@@ -323,7 +330,7 @@ uses
 // Pointer manipulation
 //==================================================================================================
 
-{$IFNDEF DELPHI5_UP}
+{$IFNDEF COMPILER5_UP}
 
 procedure FreeAndNil(var Obj);
 var
@@ -334,7 +341,7 @@ begin
   O.Free;
 end;
 
-{$ENDIF DELPHI5_UP}
+{$ENDIF COMPILER5_UP}
 
 //--------------------------------------------------------------------------------------------------
 
@@ -1016,7 +1023,7 @@ end;
 // replacement for the C distfix operator ? :
 //==================================================================================================
 
-function Iff(const Condition: Boolean; const TruePart, FalsePart: string): string; overload;
+function Iff(const Condition: Boolean; const TruePart, FalsePart: string): string;
 begin
   if Condition then
     Result := TruePart
@@ -1026,7 +1033,7 @@ end;
 
 //--------------------------------------------------------------------------------------------------
 
-function Iff(const Condition: Boolean; const TruePart, FalsePart: Char): Char; overload;
+function Iff(const Condition: Boolean; const TruePart, FalsePart: Char): Char;
 begin
   if Condition then
     Result := TruePart
@@ -1036,7 +1043,7 @@ end;
 
 //--------------------------------------------------------------------------------------------------
 
-function Iff(const Condition: Boolean; const TruePart, FalsePart: Byte): Byte; overload;
+function Iff(const Condition: Boolean; const TruePart, FalsePart: Byte): Byte;
 begin
   if Condition then
     Result := TruePart
@@ -1046,7 +1053,7 @@ end;
 
 //--------------------------------------------------------------------------------------------------
 
-function Iff(const Condition: Boolean; const TruePart, FalsePart: Integer): Integer; overload;
+function Iff(const Condition: Boolean; const TruePart, FalsePart: Integer): Integer;
 begin
   if Condition then
     Result := TruePart
@@ -1056,7 +1063,7 @@ end;
 
 //--------------------------------------------------------------------------------------------------
 
-function Iff(const Condition: Boolean; const TruePart, FalsePart: Cardinal): Cardinal; overload;
+function Iff(const Condition: Boolean; const TruePart, FalsePart: Cardinal): Cardinal;
 begin
   if Condition then
     Result := TruePart
@@ -1066,7 +1073,7 @@ end;
 
 //--------------------------------------------------------------------------------------------------
 
-function Iff(const Condition: Boolean; const TruePart, FalsePart: Float): Float; overload;
+function Iff(const Condition: Boolean; const TruePart, FalsePart: Float): Float;
 begin
   if Condition then
     Result := TruePart
@@ -1076,7 +1083,7 @@ end;
 
 //--------------------------------------------------------------------------------------------------
 
-function Iff(const Condition: Boolean; const TruePart, FalsePart: Boolean): Boolean; overload;
+function Iff(const Condition: Boolean; const TruePart, FalsePart: Boolean): Boolean;
 begin
   if Condition then
     Result := TruePart
@@ -1086,7 +1093,7 @@ end;
 
 //--------------------------------------------------------------------------------------------------
 
-function Iff(const Condition: Boolean; const TruePart, FalsePart: Pointer): Pointer; overload;
+function Iff(const Condition: Boolean; const TruePart, FalsePart: Pointer): Pointer;
 begin
   if Condition then
     Result := TruePart
@@ -1096,7 +1103,17 @@ end;
 
 //--------------------------------------------------------------------------------------------------
 
-function Iff(const Condition: Boolean; const TruePart, FalsePart: Int64): Int64; overload;
+function Iff(const Condition: Boolean; const TruePart, FalsePart: Int64): Int64;
+begin
+  if Condition then
+    Result := TruePart
+  else
+    Result := FalsePart;
+end;
+
+//--------------------------------------------------------------------------------------------------
+
+function Iff(const Condition: Boolean; const TruePart, FalsePart: Variant): Variant;
 begin
   if Condition then
     Result := TruePart
@@ -1357,6 +1374,7 @@ end;
 //==================================================================================================
 
 function GetImplementorOfInterface(const I: IInterface): TObject;
+{ TODO -cDOC : Original code by Hallvard Vassbotn }
 { TODO -cTesting : Check the implemetation for any further version of compiler }
 const
   AddByte = $04244483; // opcode for ADD DWORD PTR [ESP+4], Shortint
@@ -1489,7 +1507,7 @@ end;
 { TODOC
   Author: Jeff
 
-  StrToBoolean: converts a string S to a boolean. S may be 'Yes/No', 'True/False' or '0/1'.
+  StrToBoolean: converts a string S to a boolean. S may be 'Yes/No', 'True/False' or '0/1' or 'T/F' or 'Y/N'.
                 raises an EJclConversionError exception on failure.
   IntToBool: converts an integer to a boolean where 0 means false and anything else is tue.
   BoolToInt: converts a boolean to an integer: True=>1 and False=>0
@@ -1505,11 +1523,18 @@ const
 //--------------------------------------------------------------------------------------------------
 
 function StrToBoolean(const S: string): Boolean;
+var
+  LowerCasedText: string;
 begin
-  Result := ((S = '1') or (LowerCase(S) = LowerCase(DefaultTrueBoolStr)) or (LowerCase(S) = LowerCase(DefaultYesBoolStr)));
+  LowerCasedText := LowerCase(S);
+  Result := ((S = '1') or
+    (LowerCasedText = LowerCase(DefaultTrueBoolStr)) or (LowerCasedText = LowerCase(DefaultYesBoolStr))) or
+    (LowerCasedText = LowerCase(DefaultTrueBoolStr[1])) or (LowerCasedText = LowerCase(DefaultYesBoolStr[1]));
   if not Result then
   begin
-    Result := not ((S = '0') or (LowerCase(S) = LowerCase(DefaultFalseBoolStr)) or (LowerCase(S) = LowerCase(DefaultNoBoolStr)));
+    Result := not ((S = '0') or
+      (LowerCasedText = LowerCase(DefaultFalseBoolStr)) or (LowerCasedText = LowerCase(DefaultNoBoolStr)) or
+      (LowerCasedText = LowerCase(DefaultFalseBoolStr[1])) or (LowerCasedText = LowerCase(DefaultNoBoolStr[1])));
     if Result then
       raise EJclConversionError.CreateResRecFmt(@RsStringToBoolean, [S]);
   end;
@@ -1528,5 +1553,27 @@ function BoolToInt(B: Boolean): Integer;
 begin
   Result := Ord(B);
 end;
+
+//==================================================================================================
+// RTL package information
+//==================================================================================================
+
+function SystemTObjectInstance: LongWord;
+begin
+  {$IFDEF COMPILER4}
+  Result := LongWord(FindClassHInstance(System.TObject));
+  {$ELSE COMPILER4}
+  Result := FindClassHInstance(System.TObject);
+  {$ENDIF COMPILER4}
+end;
+
+//--------------------------------------------------------------------------------------------------
+
+function IsCompiledWithPackages: Boolean;
+begin
+  Result := SystemTObjectInstance <> HInstance;
+end;
+
+//--------------------------------------------------------------------------------------------------
 
 end.

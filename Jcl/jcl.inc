@@ -21,7 +21,7 @@
 { the JEDI.INC file which is shared with the JEDI VCL.                                             }
 {                                                                                                  }
 { Unit owner: Marcel van Brakel                                                                    }
-{ Last modified: January 29, 2001                                                                  }
+{ Last modified: July 5, 2002                                                                      }
 {                                                                                                  }
 {**************************************************************************************************}
 
@@ -47,6 +47,10 @@
 
 {.$DEFINE MATH_EXT_EXTREMEVALUES}
 
+// JclHookExcept support for hooking exceptions from DLLs
+
+{.$DEFINE HOOK_DLL_EXCEPTIONS}
+
 // Free Pascal specific
 
 {$DEFINE UseRegAsm}
@@ -66,5 +70,11 @@
 
 {$IFDEF DELPHI6_UP}
   {$WARN SYMBOL_PLATFORM OFF}  // Platform warnings off
+{$ENDIF}
+
+{$IFDEF DELPHI7_UP}
+  {$WARN UNSAFE_TYPE OFF}
+  {$WARN UNSAFE_CODE OFF}
+  {$WARN UNSAFE_CAST OFF}
 {$ENDIF}
 

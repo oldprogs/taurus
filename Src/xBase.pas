@@ -1305,13 +1305,12 @@ begin
   if ScanCounter > 0 then begin
      Inc(ScanCounter);
   end;
-  if (LiveCounter > 20 * 60 * 2) or (WindCounter > 20 * 60 * 2) and IniFile.UseAntiHang then begin
+  if (LiveCounter > 20 * 60 * 2) or (WindCounter > 20 * 60 * 2) then begin
      GlobalFail('Taurus hanged up: %d %d', [LiveCounter, WindCounter]);
   end;
   if ScanCounter > 20 * 5 then begin
      if Application.MainForm <> nil then begin
         PostMessage(Application.MainForm.Handle, WM_OUTBOUNDALERT, 1, 0);
-        beep;
      end;
      ScanCounter := 0;
   end;
@@ -4424,15 +4423,12 @@ begin
   Search := False;
   L := 0;
   H := Count - 1;
-  while L <= H do
-  begin
+  while L <= H do begin
     I := (L + H) shr 1;
     C := Compare(KeyOf(FList^[I]), Key);
-    if C < 0 then L := I + 1 else
-    begin
+    if C < 0 then L := I + 1 else begin
       H := I - 1;
-      if C = 0 then
-      begin
+      if C = 0 then begin
         Search := True;
         if not Duplicates then L := I;
       end;

@@ -21,7 +21,7 @@
 { versions of Delphi as well as FPC.                                                               }
 {                                                                                                  }
 { Unit owner: Marcel van Brakel                                                                    }
-{ Last modified: March 15, 2002                                                                    }
+{ Last modified: July 5, 2002                                                                      }
 {                                                                                                  }
 {**************************************************************************************************}
 
@@ -45,9 +45,9 @@ uses
 
 const
   JclVersionMajor   = 1;    // 0=pre-release|beta/1, 2, ...=final
-  JclVersionMinor   = 20;   // Forth minor release JCL 1.20
+  JclVersionMinor   = 22;   // Forth minor release JCL 1.22
   JclVersionRelease = 1;    // 0=pre-release|beta/1=release
-  JclVersionBuild   = 779;  // build number, days since march 1, 2000
+  JclVersionBuild   = 965;  // build number, days since march 1, 2000
   JclVersion = (JclVersionMajor shl 24) or (JclVersionMinor shl 16) or
                (JclVersionRelease shl 15) or (JclVersionBuild shl 0);
 
@@ -183,12 +183,13 @@ type
   TDynSingleArray   = array of Single;
   TDynFloatArray    = array of Float;
   TDynPointerArray  = array of Pointer;
+  TDynStringArray   = array of string;
 
 //--------------------------------------------------------------------------------------------------
 // TObjectList
 //--------------------------------------------------------------------------------------------------
 
-{$IFNDEF DELPHI5_UP}
+{$IFNDEF COMPILER5_UP}
 type
   TObjectList = class (TList)
   private
@@ -201,15 +202,15 @@ type
     property Items[Index: Integer]: TObject read GetItems write SetItems; default;
     property OwnsObjects: Boolean read FOwnsObjects write FOwnsObjects;
   end;
-{$ENDIF DELPHI5_UP}
+{$ENDIF COMPILER5_UP}
 
 //--------------------------------------------------------------------------------------------------
 // Cross-Platform Compatibility
 //--------------------------------------------------------------------------------------------------
 
-{$IFNDEF DELPHI6_UP}
+{$IFNDEF COMPILER6_UP}
 procedure RaiseLastOSError;
-{$ENDIF DELPHI6_UP}
+{$ENDIF COMPILER6_UP}
 
 //--------------------------------------------------------------------------------------------------
 // Interface compatibility
@@ -228,14 +229,14 @@ type
 // TStringList.CustomSort compatibility
 //--------------------------------------------------------------------------------------------------
 
-{$IFDEF DELPHI4}
+{$IFDEF COMPILER4}
 
 type
   TStringListCustomSortCompare = function(List: TStringList; Index1, Index2: Integer): Integer;
 
 procedure StringListCustomSort(StringList: TStringList; SortFunc: TStringListCustomSortCompare);
 
-{$ENDIF DELPHI4}
+{$ENDIF COMPILER4}
 
 implementation
 
@@ -386,7 +387,7 @@ end;
 // TObjectList
 //==================================================================================================
 
-{$IFNDEF DELPHI5_UP}
+{$IFNDEF COMPILER5_UP}
 
 procedure TObjectList.Clear;
 var
@@ -420,26 +421,26 @@ begin
   Put(Index, Value);
 end;
 
-{$ENDIF DELPHI5_UP}
+{$ENDIF COMPILER5_UP}
 
 //==================================================================================================
 // Cross=Platform Compatibility
 //==================================================================================================
 
-{$IFNDEF DELPHI6_UP}
+{$IFNDEF COMPILER6_UP}
 
 procedure RaiseLastOSError;
 begin
   RaiseLastWin32Error;
 end;
 
-{$ENDIF DELPHI6_UP}
+{$ENDIF COMPILER6_UP}
 
 //==================================================================================================
 // TStringList.CustomSort compatibility
 //==================================================================================================
 
-{$IFDEF DELPHI4}
+{$IFDEF COMPILER4}
 
 procedure StringListCustomSort(StringList: TStringList; SortFunc: TStringListCustomSortCompare);
 
@@ -478,6 +479,6 @@ begin
   QuickSort(0, StringList.Count - 1);
 end;
 
-{$ENDIF DELPHI4}
+{$ENDIF COMPILER4}
 
 end.

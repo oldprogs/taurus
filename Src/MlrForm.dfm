@@ -1177,6 +1177,12 @@ object MailerForm: TMailerForm
         Height = 108
         Align = alClient
         BevelOuter = bvNone
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -13
+        Font.Name = 'Courier New'
+        Font.Style = []
+        ParentFont = False
         TabOrder = 3
         Visible = False
         OnResize = ChatPanResize
@@ -2214,7 +2220,6 @@ object MailerForm: TMailerForm
   end
   object MainMenu: TMainMenu
     Images = ilMainMenu
-    OwnerDraw = True
     Left = 458
     Top = 290
     object mSystem: TMenuItem
@@ -2371,7 +2376,6 @@ object MailerForm: TMailerForm
         Caption = '&Pause'
         Enabled = False
         ImageIndex = 15
-        ShortCut = 190
         OnClick = mpPauseClick
       end
       object mnuNow2: TMenuItem

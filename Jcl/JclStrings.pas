@@ -20,7 +20,7 @@
 { Various character and string routines (searching, testing and transforming)                      }
 {                                                                                                  }
 { Unit owner: Azret Botash                                                                         }
-{ Last modified: March 19, 2002                                                                    }
+{ Last modified: September 30, 2002                                                                    }
 {                                                                                                  }
 {**************************************************************************************************}
 
@@ -28,6 +28,8 @@
 // mvb 20 jan 2002 added AllowEmptyString parameter to StringsToStr function
 // mvb 20 jan 2002 added AddStringToStrings() by Jeff
 
+// - StrIToStrings default parameter now true
+// - StrToStrings default parameter now true
 // - Rewrote StrSmartCase to fix a bug.
 // - Fixed a bug in StrIsAlphaNumUnderscore
 // - Fixed a bug in StrIsSubset
@@ -303,12 +305,12 @@ function CharReplace(var S: AnsiString; const Search, Replace: AnsiChar): Intege
 
 type
   PCharVector = ^PChar;
-{
+
 function StringsToPCharVector(var Dest: PCharVector; const Source: TStrings): PCharVector;
 function PCharVectorCount(const Source: PCharVector): Integer;
 procedure PCharVectorToStrings(const Dest: TStrings; const Source: PCharVector);
 procedure FreePCharVector(var Dest: PCharVector);
-}
+
 //--------------------------------------------------------------------------------------------------
 // MultiSz Routines
 //--------------------------------------------------------------------------------------------------
@@ -321,8 +323,8 @@ procedure FreeMultiSz(var Dest: PChar);
 // TStrings Manipulation
 //--------------------------------------------------------------------------------------------------
 
-procedure StrIToStrings(S, Sep: AnsiString; const List: TStrings; const AllowEmptyString: Boolean = False);
-procedure StrToStrings(S, Sep: AnsiString; const List: TStrings; const AllowEmptyString: Boolean = False);
+procedure StrIToStrings(S, Sep: AnsiString; const List: TStrings; const AllowEmptyString: Boolean = True);
+procedure StrToStrings(S, Sep: AnsiString; const List: TStrings; const AllowEmptyString: Boolean = True);
 function StringsToStr(const List: TStrings; const Sep: AnsiString;const AllowEmptyString: Boolean = True): AnsiString;
 procedure TrimStrings(const List: TStrings; DeleteIfEmpty: Boolean = True );
 procedure TrimStringsRight(const List: TStrings; DeleteIfEmpty: Boolean = True);
@@ -1393,22 +1395,9 @@ end;
 //--------------------------------------------------------------------------------------------------
 
 function StrReverse(const S: AnsiString): AnsiString;
-var
-  P1, P2: PChar;
-  C: AnsiChar;
 begin
   Result := S;
-  UniqueString(Result);
-  P1 := PChar(Result);
-  P2 := P1 + SizeOf(AnsiChar) * (Length(Result) - 1);
-  while P1 < P2 do
-  begin
-    C := P1^;
-    P1^ := P2^;
-    P2^ := C;
-    Inc(P1);
-    Dec(P2);
-  end;
+  StrReverseInplace(Result);
 end;
 
 //--------------------------------------------------------------------------------------------------
@@ -1445,14 +1434,16 @@ var
   Source, Dest: PChar;
 
 begin
+  Result := '';
+
   if Delimiters = [] then
     Include(Delimiters, AnsiSpace);
 
   if S <> '' then
   begin
-    SetLength(Result, Length(S));
     Result := S;
-
+    UniqueString(Result);
+    
     Source  := PChar(S);
     Dest := PChar(Result);
 
@@ -3066,8 +3057,6 @@ begin
   Result := AnsiCharTypes[C];
 end;
 
-{$IFDEF SUPPORTS_DYNAMICARRAYS}
-
 //==================================================================================================
 // PCharVector
 //==================================================================================================
@@ -3147,8 +3136,6 @@ begin
     Dest := nil;
   end;
 end;
-
-{$ENDIF SUPPORTS_DYNAMICARRAYS}
 
 //==================================================================================================
 // Character Transformation Routines
@@ -3321,7 +3308,7 @@ end;
 // TStrings Manipulation
 //==================================================================================================
 
-procedure StrToStrings(S, Sep: AnsiString; const List: TStrings; const AllowEmptyString: Boolean = False);
+procedure StrToStrings(S, Sep: AnsiString; const List: TStrings; const AllowEmptyString: Boolean = True);
 var
   I, L: Integer;
   Left: AnsiString;
@@ -3344,7 +3331,7 @@ end;
 
 //--------------------------------------------------------------------------------------------------
 
-procedure StrIToStrings(S, Sep: AnsiString; const List: TStrings; const AllowEmptyString: Boolean = False);
+procedure StrIToStrings(S, Sep: AnsiString; const List: TStrings; const AllowEmptyString: Boolean = True);
 var
   I, L: Integer;
   LowerCaseStr: string;

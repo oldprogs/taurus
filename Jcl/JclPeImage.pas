@@ -23,7 +23,7 @@
 { structures and name unmangling.                                                                  }
 {                                                                                                  }
 { Unit owner: Petr Vones                                                                           }
-{ Last modified: March 11, 2002                                                                    }
+{ Last modified: July 16, 2002                                                                     }
 {                                                                                                  }
 {**************************************************************************************************}
 
@@ -37,9 +37,9 @@ interface
 
 uses
   Windows, Classes, ImageHlp, SysUtils, TypInfo,
-  {$IFDEF DELPHI5_UP}
+  {$IFDEF COMPILER5_UP}
   Contnrs,
-  {$ENDIF DELPHI5_UP}
+  {$ENDIF COMPILER5_UP}
   JclBase, JclDateTime, JclFileUtils, JclStrings, JclSysInfo, JclWin32;
 
 //--------------------------------------------------------------------------------------------------
@@ -359,6 +359,7 @@ type
     function GetDataEntry: PImageResourceDataEntry;
     function GetIsDirectory: Boolean;
     function GetIsName: Boolean;
+    function GetLangID: LANGID;
     function GetList: TJclPeResourceList;
     function GetName: string;
     function GetParameterName: string;
@@ -380,6 +381,7 @@ type
     property Image: TJclPeImage read FImage;
     property IsDirectory: Boolean read GetIsDirectory;
     property IsName: Boolean read GetIsName;
+    property LangID: LANGID read GetLangID;
     property List: TJclPeResourceList read GetList;
     property Level: Byte read FLevel;
     property Name: string read GetName;
@@ -652,6 +654,7 @@ type
     function RawToVa(Raw: DWORD): Pointer;
     function RvaToSection(Rva: DWORD): PImageSectionHeader;
     function RvaToVa(Rva: DWORD): Pointer;
+    function RvaToVaEx(Rva: DWORD): Pointer;
     function StatusOK: Boolean;
     procedure TryGetNamesForOrdinalImports;
     function VerifyCheckSum: Boolean;
@@ -699,6 +702,7 @@ type
   private
     FAvailable: Boolean;
     FContains: TStrings;
+    FDcpName: string;
     FRequires: TStrings;
     FFlags: Integer;
     FDescription: string;
@@ -723,6 +727,7 @@ type
     property ContainsNames[Index: Integer]: string read GetContainsNames;
     property ContainsFlags[Index: Integer]: Byte read GetContainsFlags;
     property Description: string read FDescription;
+    property DcpName: string read FDcpName;
     property EnsureExtension: Boolean read FEnsureExtension write FEnsureExtension;
     property Flags: Integer read FFlags;
     property Requires: TStrings read FRequires;
@@ -921,6 +926,8 @@ function PeMapImgFindSection(const NtHeaders: PImageNtHeaders;
 
 function PeMapImgExportedVariables(const Module: HMODULE; const VariablesList: TStrings): Boolean;
 
+function PeMapImgResolvePackageThunk(Address: Pointer): Pointer;
+
 function PeMapFindResource(const Module: HMODULE; const ResourceType: PChar;
   const ResourceName: string): Pointer;
 
@@ -973,6 +980,7 @@ type
     class function IsWin9xDebugThunk(P: Pointer): Boolean;
     class function ReplaceImport(Base: Pointer; ModuleName: string; FromProc, ToProc: Pointer): Boolean;
     class function SystemBase: Pointer;
+    procedure UnhookAll;
     function UnhookByNewAddress(NewAddress: Pointer): Boolean;
     property Items[Index: Integer]: TJclPeMapImgHookItem read GetItems; default;
     property ItemFromOriginalAddress[OriginalAddress: Pointer]: TJclPeMapImgHookItem read GetItemFromOriginalAddress;
@@ -1023,6 +1031,7 @@ uses
 
 const
   BPLExtension      = '.bpl';
+  DCPExtension      = '.dcp';
   MANIFESTExtension = '.manifest';
 
   PackageInfoResName    = 'PACKAGEINFO';
@@ -1449,12 +1458,10 @@ end;
 procedure TJclPeImportLibItem.CreateList;
 var
   FuncItem: TJclPeImportFuncItem;
-  ImageBase: DWORD;
   OrdinalName: PImageImportByName;
 begin
   if FThunk = nil then
     Exit;
-  ImageBase := Image.OptionalHeader.ImageBase;
   while FThunk^.Function_ <> 0 do
   begin
     FuncItem := TJclPeImportFuncItem.Create;
@@ -1471,7 +1478,7 @@ begin
         ikImport, ikBoundImport:
           OrdinalName := PImageImportByName(Image.RvaToVa(DWORD(FThunk^.AddressOfData)));
         ikDelayImport:
-          OrdinalName := PImageImportByName(Image.RvaToVa(DWORD(FThunk^.AddressOfData - ImageBase)));
+          OrdinalName := PImageImportByName(Image.RvaToVaEx(DWORD(FThunk^.AddressOfData)));
       else
         OrdinalName := nil;
       end;
@@ -1588,7 +1595,6 @@ var
   ImportDesc: PImageImportDescriptor;
   LibItem: TJclPeImportLibItem;
   DelayImportDesc: PImgDelayDescr;
-  ImageBase: DWORD;
   BoundImports, BoundImport: PImageBoundImportDescriptor;
   S: string;
   I: Integer;
@@ -1627,14 +1633,13 @@ begin
     DelayImportDesc := DirectoryEntryToData(IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT);
     if DelayImportDesc <> nil then
     begin
-      ImageBase := OptionalHeader.ImageBase;
       while DelayImportDesc^.szName <> 0 do
       begin
         LibItem := TJclPeImportLibItem.Create(Image);
         LibItem.FImportKind := ikDelayImport;
         LibItem.FImportDescriptor := DelayImportDesc;
-        LibItem.FName := RvaToVa(DelayImportDesc^.szName - ImageBase);
-        LibItem.FThunk := PImageThunkData(RvaToVa(DelayImportDesc^.pINT.AddressOfData - ImageBase));
+        LibItem.FName := RvaToVaEx(DelayImportDesc^.szName);
+        LibItem.FThunk := PImageThunkData(RvaToVaEx(DelayImportDesc^.pINT.AddressOfData));
         Add(LibItem);
         FUniqueNamesList.AddObject(AnsiLowerCase(LibItem.Name), LibItem);
         Inc(DelayImportDesc);
@@ -2436,8 +2441,14 @@ end;
 //==================================================================================================
 
 function TJclPeResourceItem.CompareName(AName: PChar): Boolean;
+var
+  P: PChar;
 begin
-  Result := CompareResourceName(AName, PChar(Entry^.Name));
+  if IsName then
+    P := PChar(Name)
+  else
+    P := PChar(FEntry^.Name and $FFFF);
+  Result := CompareResourceName(AName, P);
 end;
 
 //--------------------------------------------------------------------------------------------------
@@ -2485,6 +2496,22 @@ end;
 function TJclPeResourceItem.GetIsName: Boolean;
 begin
   Result := FEntry^.Name and IMAGE_RESOURCE_NAME_IS_STRING <> 0;
+end;
+
+//--------------------------------------------------------------------------------------------------
+
+function TJclPeResourceItem.GetLangID: LANGID;
+begin
+  if IsDirectory then
+  begin
+    GetList;
+    if FList.Count = 1 then
+      Result := StrToIntDef(FList[0].Name, 0)
+    else
+      Result := 0;
+  end
+  else
+    Result := StrToIntDef(Name, 0);
 end;
 
 //--------------------------------------------------------------------------------------------------
@@ -2763,7 +2790,7 @@ end;
 function TJclPeRootResourceList.ListResourceNames(ResourceType: TJclPeResourceKind;
   const Strings: TStrings): Boolean;
 var
-  ResTypeItem: TJclPeResourceItem;
+  ResTypeItem, TempItem: TJclPeResourceItem;
   I: Integer;
 begin
   ResTypeItem := FindResource(ResourceType, '');
@@ -2771,7 +2798,10 @@ begin
   if Result then
     with ResTypeItem.List do
       for I := 0 to Count - 1 do
-        Strings.Add(Items[I].Name);
+      begin
+        TempItem := Items[I];
+        Strings.AddObject(TempItem.Name, Pointer(TempItem.IsName));
+      end;  
 end;
 
 //==================================================================================================
@@ -3844,6 +3874,15 @@ end;
 
 //--------------------------------------------------------------------------------------------------
 
+function TJclPeImage.RvaToVaEx(Rva: DWORD): Pointer;
+begin
+  if (Rva > FLoadedImage.SizeOfImage) and (Rva > OptionalHeader.ImageBase) then
+    Dec(Rva, OptionalHeader.ImageBase);
+  Result := RvaToVa(Rva);
+end;
+
+//--------------------------------------------------------------------------------------------------
+
 procedure TJclPeImage.SetFileName(const Value: TFileName);
 begin
   if FFileName <> Value then
@@ -4057,6 +4096,10 @@ begin
         FContains.AddObject(Name, Pointer(AFlags));
       ntRequiresPackage:
         FRequires.Add(Name);
+      {$IFDEF COMPILER6_UP}
+      ntDcpBpiName:
+        FDcpName := Name;
+      {$ENDIF COMPILER6_UP}
     end;
 end;
 
@@ -4069,6 +4112,8 @@ begin
   if FAvailable then
   begin
     GetPackageInfo(ALibHandle, Self, FFlags, PackageInfoProc);
+    if FDcpName = '' then
+      FDcpName := PathExtractFileNameNoExt(GetModulePath(ALibHandle)) + DCPExtension;
     TStringList(FContains).Sort;
     TStringList(FRequires).Sort;
   end;
@@ -5151,6 +5196,28 @@ end;
 
 //--------------------------------------------------------------------------------------------------
 
+function PeMapImgResolvePackageThunk(Address: Pointer): Pointer;
+const
+  JmpInstructionCode = $25FF;
+type
+  PPackageThunk = ^TPackageThunk;
+  TPackageThunk = packed record
+    JmpInstruction: Word;
+    JmpAddress: PPointer;
+  end;
+begin
+  if not IsCompiledWithPackages then
+    Result := Address
+  else
+  if not IsBadReadPtr(Address, SizeOf(TPackageThunk)) and
+    (PPackageThunk(Address)^.JmpInstruction = JmpInstructionCode) then
+    Result := PPackageThunk(Address)^.JmpAddress^
+  else
+    Result := nil;
+end;
+
+//--------------------------------------------------------------------------------------------------
+
 function PeMapFindResource(const Module: HMODULE; const ResourceType: PChar;
   const ResourceName: string): Pointer;
 var
@@ -5355,6 +5422,7 @@ var
   CurrName: PChar;
   ImportEntry: PImageThunkData;
   FoundProc: Boolean;
+  BW: DWORD;
 begin
   Result := False;
   FromProcDebugThunk := PWin9xDebugThunk(FromProc);
@@ -5381,11 +5449,9 @@ begin
         end
         else
           FoundProc := Pointer(ImportEntry^.Function_) = FromProc;
-        if FoundProc and not IsBadStringPtr(Pointer(ImportEntry^.Function_), 4) then
-        begin
-          Pointer(ImportEntry^.Function_) := ToProc;
-          Result := True;
-        end;
+        if FoundProc and WriteProcessMemory(GetCurrentProcess, Pointer(@ImportEntry^.Function_),
+          @ToProc, SizeOf(ToProc), BW) and (BW = SizeOf(ToProc)) then
+            Result := True;
         Inc(ImportEntry);
       end;
     end;
@@ -5397,7 +5463,19 @@ end;
 
 class function TJclPeMapImgHooks.SystemBase: Pointer;
 begin
-  Result := Pointer(FindClassHInstance(System.TObject));
+  Result := Pointer(SystemTObjectInstance);
+end;
+
+//--------------------------------------------------------------------------------------------------
+
+procedure TJclPeMapImgHooks.UnhookAll;
+var
+  I: Integer;
+begin
+  I := 0;
+  while I < Count do
+    if not Items[I].Unhook then
+      Inc(I);
 end;
 
 //--------------------------------------------------------------------------------------------------

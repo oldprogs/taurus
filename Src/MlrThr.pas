@@ -667,7 +667,7 @@ type
   end;
 
   TPollDone = (pdnUnknown, pdnShutDown, pdnOK, pdnDeleted, pdnDeleteAll, pdnAttachLost, pdnNodeDestroyed);
-  TPollType = (ptpUnknown, ptpOutb, ptpCron, ptpManual, ptpImm, ptpBack, ptpRCC, ptpNetm);
+  TPollType = (ptpUnknown, ptpOutb, ptpCron, ptpManual, ptpImm, ptpBack, ptpRCC, ptpNetm, ptpNmIm);
 
   TFidoPoll = class
     FileSendDelayedBusy: Boolean;
@@ -2149,7 +2149,8 @@ begin
       if (P.Typ <> ptpManual) and
          (P.Typ <> ptpImm) and
          (P.Typ <> ptpRCC) and
-         (P.Typ <> ptpBack) then
+         (P.Typ <> ptpBack) and
+         (P.Typ <> ptpNmIm) then
       begin
          t := NodeFSC62TimeEx(d.Flags, P.Node.Addr, False);
          if not (TQ in t) then begin
@@ -2197,7 +2198,8 @@ var
       if (p.Typ <> ptpManual) and
          (p.Typ <> ptpImm) and
          (p.Typ <> ptpRCC) and
-         (p.Typ <> ptpBack) then
+         (p.Typ <> ptpBack) and
+         (p.Typ <> ptpNmIm) then
       begin
          case p.Node.PrefixFlag of
             nfPvt{$IFDEF WS}:
@@ -2219,6 +2221,7 @@ var
       if (p.Typ <> ptpManual) and
          (p.Typ <> ptpImm) and
          (p.Typ <> ptpBack) and
+         (p.Typ <> ptpNmIm) and
         ((p.CountersExceeded) or (p.FileSendDelayedBusy) or (p.FileSendDelayedNoc) or (p.FileSendDelayedFail)) then
       begin
          if TimerInstalled(p.LastTry) and TimerExpired(p.LastTry) then begin
@@ -2373,7 +2376,8 @@ begin
                      if (p.Typ = ptpManual) or
                         (p.Typ = ptpImm) or
                         (p.Typ = ptpRCC) or
-                        (p.Typ = ptpBack) then
+                        (p.Typ = ptpBack) or
+                        (p.Typ = ptpNmIm) then
                      begin
                         LocLog(s);
                      end;
@@ -2499,11 +2503,13 @@ end;
 
 procedure InsertPoll(var ANode: TAdvNode; Status: TOutStatusSet; ATyp: TPollType);
 var
-   OldTyp, NewTyp: TPollType;
-   P, AP: TFidoPoll;
-   I: Integer;
+   OldTyp,
+   NewTyp: TPollType;
+    P,
+   AP: TFidoPoll;
+    I: Integer;
 const
-   CTyp: array[TPollType] of string = ('???', 'Outb', 'Cron', 'Manual', 'Outb/Imm', 'Callback', 'Mirror', 'MSG');
+   CTyp: array[TPollType] of string = ('???', 'Outb', 'Cron', 'Manual', 'Outb/Imm', 'Callback', 'Mirror', 'MSG', 'MSG/Imm');
 begin
    EnterFidoPolls;
    AP := nil;
@@ -2511,7 +2517,7 @@ begin
       P := FidoPolls[i];
       if CompareAddrs(ANode.Addr, p.Node.Addr) = 0 then begin
          AP := P;
-         AP.Flav := Status;
+         AP.Flav := AP.Flav + Status;
          Break;
       end;
    end;
@@ -2594,11 +2600,14 @@ begin
             p.Flav := p.Flav + n.FStatus;
             if  (p.Typ = ptpOutb) and ((osImmed in n.FStatus) or (osImmedMail in n.FStatus)) then p.Typ := ptpImm;
             if  (p.Typ = ptpImm ) and not (osImmed in n.FStatus) and not (osImmedMail in n.FStatus) then p.Typ := ptpOutb;
-            if ((p.Typ = ptpOutb) or
-                (p.Typ = ptpImm)) and (not OutDial(n.FStatus, DirAsNormal)) then FreePoll_I_P;
+            if ((p.Typ = ptpOutb) {or (p.Typ = ptpImm) or (p.Typ = ptpNmIm)}) and
+                (not OutDial(n.FStatus, DirAsNormal)) then
+            begin
+                FreePoll_I_P;
+            end;
             c.AtFree(j);
          end else begin
-            if (p.Typ = ptpOutb) or (p.Typ = ptpImm) or (p.Typ = ptpNetm) then FreePoll_I_P;
+            if (p.Typ = ptpOutb) or (p.Typ = ptpImm) or (p.Typ = ptpNetm) or (p.Typ = ptpNmIm) then FreePoll_I_P;
          end;
       end;
    end;
@@ -3860,37 +3869,30 @@ end;
 
 function TFidoPoll.STryNoC: string;
 begin
-   if (Typ = ptpManual) or (Typ = ptpImm) or (Typ = ptpBack) then
+   if (Typ = ptpManual) or (Typ = ptpImm) or (Typ = ptpBack) or (Typ = ptpNmIm) then
       Result := Format('%d+', [TryNoConnect])
    else
    begin
-//      EnterFidoPolls;
       Result := Format('%d/%d', [TryNoConnect, inifile.FPFlags.NoC]);
-//      LeaveFidoPolls;
    end;
 end;
 
 function TFidoPoll.STryBusy: string;
 begin
-   if (Typ = ptpManual) or (Typ = ptpImm) or (Typ = ptpBack) then
+   if (Typ = ptpManual) or (Typ = ptpImm) or (Typ = ptpBack) or (Typ = ptpNmIm) then
       Result := Format('%d+', [TryBusy])
-   else
-   begin
-//      EnterFidoPolls;
+   else begin
       Result := Format('%d/%d', [TryBusy, inifile.FPFlags.Busy]);
-//      LeaveFidoPolls;
    end;
 end;
 
 function TFidoPoll.STryFail: string;
 begin
-   if (Typ = ptpManual) or (Typ = ptpImm) or (Typ = ptpBack) then
+   if (Typ = ptpManual) or (Typ = ptpImm) or (Typ = ptpBack) or (Typ = ptpNmIm) then
       Result := Format('%d+', [TrySessionAborted])
    else
    begin
-//      EnterFidoPolls;
       Result := Format('%d/%d', [TrySessionAborted, inifile.FPFlags.Fail]);
-//      LeaveFidoPolls;
    end;
 end;
 
@@ -5222,7 +5224,7 @@ begin
       //Don't use dynamic routing in case of unsecure _incoming_ session!
       if (IniFile.DynamicRouting) and
          (SD.PasswordProtected or (SD.ActivePoll <> nil)) and
-         (NetmailHolder <> nil) and not (SD.SessionCore in [scNNTP]) then NetmailHolder.Route(SD.rmtAddrs[n], Log);
+         (NetmailHolder <> nil) and not (SD.SessionCore in [scNNTP]) then NetmailHolder.Route(SD.rmtAddrs[n], SD.ActivePoll <> nil, Log);
    end;
    CfgLeave;
    if ScanActive then begin
@@ -5234,6 +5236,7 @@ begin
          Sleep(100);
          Application.ProcessMessages;
          if N = 100 then break;
+         inc(N);
       end;
    end;
    N := 0;
@@ -5677,21 +5680,17 @@ function TMailerThread.AcceptFile(P: TBaseProtocol): TTransferFileAction;
       end;
 
       ss := ExpandSuperMask(EP.StrValue(eiAccFilesFrK));
-      if ss <> '' then
-      begin
+      if ss <> '' then begin
          osss := ss;
          Match := False;
-         while ss <> '' do
-         begin
+         while ss <> '' do begin
             GetWrd(ss, sss, ' ');
-            if MatchMask(P.R.D.FName, sss) then
-            begin
+            if MatchMask(P.R.D.FName, sss) then begin
                Match := True;
                Break;
             end;
          end;
-         if Match then
-         begin
+         if Match then begin
             LogFmt(ltWarning, '"%s" will be deleted at remote, reason is "%s" forbidden, matched "%s"', [P.R.D.FName, osss, sss]);
             Result := aaRefuse;
             Exit;
