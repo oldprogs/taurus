@@ -477,7 +477,7 @@ begin
   IniFile.AlwaysInTray := cbAlwaysInTray.Checked;
   IniFile.Stealth := cbStealth.Checked;
   IniFile.PopupKey := hkPopup.HotKey;
-  if IniFile.Stealth then SetHotKey;
+  SetHotKey;
   IniFile.ShowBalloon := cbBalloon.Checked;
   IniFile.ShowBalloonMin := cbBalloonMin.Checked;
 //Tray end

@@ -244,7 +244,7 @@ end;
 
 function GetBinkFileName(var S: String): TKillAction;
 begin
-   S := Trim(S); if Length(S)<2 then begin Result := kaBsoNothingAfter; S := ''; Exit end;
+   S := Trim(S); if Length(S) < 2 then begin Result := kaBsoNothingAfter; S := ''; Exit end;
    Result := TKillAction(Pos(S[1], SKillActionB));
    if Result <> kaBsoNothingAfter then DelFC(S);
    case S[1] of ';', '~': begin S := ''; Exit end end;

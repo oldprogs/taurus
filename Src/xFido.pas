@@ -3152,7 +3152,8 @@ begin
   (s = 'WE') or
   (s = 'TH') or
   (s = 'FR') or
-  (s = 'SA');
+  (s = 'SA') or
+  (s = 'TM');
 end;
 
 function IsNetMailExt(const AExt: string): Boolean;

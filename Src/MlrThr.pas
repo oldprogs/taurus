@@ -14002,7 +14002,9 @@ procedure TMailerThread.FreeSD;
 begin
    if SD <> nil then begin
       FreeFaxModem;
+      Enter;
       FreeObject(SD);
+      Leave;
    end;
 end;
 

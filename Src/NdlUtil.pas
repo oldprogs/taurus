@@ -1477,6 +1477,7 @@ function FindAdvNode(const Addr: TFidoAddress): TAdvNode;
 var
    Nodes: array[Boolean] of TFidoNode;
    Base: Boolean;
+   o,
    n: TFidoNode;
    DialupData,
    IPData,
@@ -1515,7 +1516,11 @@ begin
    f := nfOver;
    Base := False;
    Clear(Nodes, SizeOf(Nodes));
-   n := GetListedNode(Addr);
+   o := GetListedNode(Addr);
+   n := o;
+   if o <> nil then begin
+      n := o.Copy;
+   end;
    if (n <> nil) and (n.Addr.Point = 0) then begin
       s1 := n.Phone;
       case IdentOvrItem(s1, False, False) of
@@ -1594,6 +1599,7 @@ begin
    Result.Addr := Addr;
    Result.DialupData := DialupData;
    Result.IPData := IPData;
+   FreeObject(n);
 end;
 
 type

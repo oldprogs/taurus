@@ -32,9 +32,12 @@ type
       procedure bHelpClick(Sender: TObject);
     procedure lAddressKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
+    procedure lAddressKeyUp(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
    private
-      Activated,
+     Activated,
          Multi: Boolean;
+   CtrlPressed: boolean;
       AddrColl: TFidoAddrColl;
    public
       OA: PFidoAddress;
@@ -171,11 +174,27 @@ var
    i: integer;
 begin
    case Key of
+   17:
+      begin
+         CtrlPressed := True;
+      end;
    46:
       begin
-         i := lAddress.ItemIndex;
-         HistoryDel(lAddress.HistoryID, lAddress.Items[i]);
-         lAddress.Items.Delete(i);
+         if CtrlPressed then begin
+            i := lAddress.ItemIndex;
+            HistoryDel(lAddress.HistoryID, lAddress.Items[i]);
+            lAddress.Items.Delete(i);
+         end;
+      end;
+   end;
+end;
+
+procedure TFidoAddressInput.lAddressKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+   case Key of
+   17:
+      begin
+         CtrlPressed := False;
       end;
    end;
 end;

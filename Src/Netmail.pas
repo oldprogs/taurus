@@ -448,10 +448,10 @@ begin
       s.Write(Pointer(Integer(m.Body) + o)^, m.Size - o - 1);
       s.Free;
       NetmailLogger.MLogger := L;
-      NetmailLogger.LogMSG(m, x, 'unpack');
+      NetmailLogger.LogMSG(m, x, '+');
       NetmailLogger.MLogger := nil;
       if (m.Attr and AuditRequest > 0) or
-         ((m.Attr and ReturnReceiptRequest > 0) and (AddrColl.Search(@m.Addr, o))) then
+        ((m.Attr and ReturnReceiptRequest > 0) and (AddrColl.Search(@m.Addr, o))) then
       begin
          NewMessage(m.From, m.Frnm, 'Transit confirmation');
          WriteLine(
@@ -493,10 +493,11 @@ begin
          FreeObject(n);
          exit;
       end;
-      if i > 0 then begin
-         m.HRec.PktType := 0;
+      if i = 0 then begin
+         NetmailLogger.Log('');
       end;
-      NetmailLogger.LogMSG(m, 0, 'router');
+      m.HRec.PktType := 0;
+      NetmailLogger.LogMSG(m, 0, '-');
       if (m.Attr and AuditRequest > 0) then begin
          NewMessage(m.From, m.Frnm, 'Transit confirmation');
          WriteLine(
@@ -1544,6 +1545,7 @@ begin
       a.Node  := m.HRec.DestNode;
       a.Point := m.HRec.DestPoint;
       s := 'PKT: ' + s + Addr2Str(a);
+      Log('');
       Log(s);
       if MLogger <> nil then begin
          MLogger.Log(ltInfo, s);

@@ -1552,6 +1552,15 @@ begin
    PostMsg(WM_UPDATEMENUS);
 end;
 
+const
+   PBT_APMQUERYSUSPEND  = $0000;
+   PBT_APMQUERYSTANDBY  = $0001;
+   PBT_APMSUSPEND       = $0004;
+   PBT_APMSTANDBY       = $0005;
+   PBT_APMRESUMESUSPEND = $0007;
+   PBT_APMRESUMESTANDBY = $0008;
+   BROADCAST_QUERY_DENY = $424D5144;
+
 procedure TMsgDispatcher.WndProc(var Msg: TMessage);
 var
    DummyMsg: TMsg;
@@ -1561,6 +1570,7 @@ var
           i: integer;
           l: TLineRec;
           s: string;
+          b: boolean;
          cd: TCopyDataStruct;
    LinesCnt: integer;
 begin
@@ -1568,6 +1578,45 @@ begin
    if (Msg.Msg in [WM_QUERYENDSESSION, WM_ENDSESSION]) and (IniFile.IgnoreEndSession) then begin
       MSG.Result := 1;
       exit;
+   end;
+   if Msg.Msg = WM_POWERBROADCAST then begin
+      case Msg.WParam of
+      PBT_APMQUERYSUSPEND:
+         begin
+            MailerThreads.Enter;
+            for i := CollMax(MailerThreads) downto 0 do begin
+               MlrT := MailerThreads[i];
+               if MlrT.DialupLine then begin
+                  MlrT.Enter;
+                  if (MlrT.SD <> nil) and (MlrT.SD.Prot <> nil) then begin
+                     MlrT.SD.Prot.ProtocolError := ecAbortByLocal;
+                  end;
+                  MlrT.Leave;
+               end;
+            end;
+            MailerThreads.Leave;
+            repeat
+               b := True;
+               MailerThreads.Enter;
+               for i := CollMax(MailerThreads) downto 0 do begin
+                  MlrT := MailerThreads[i];
+                  if MlrT.DialupLine then begin
+                     b := b and (MlrT.State = msIdle);
+                  end;
+               end;
+               MailerThreads.Leave;
+               Sleep(500);
+            until b;
+            Msg.Result := 1;
+         end;
+      PBT_APMRESUMESUSPEND:
+         begin
+            if EventsThr <> nil then begin
+               SetEvt(EventsThr.oEvt);
+            end;
+            Msg.Result := 1;
+         end;
+      end;
    end;
    if RASConnect and (RASThread <> nil) then RASThread.CheckConnection;
    if Cfg = nil then Exit;
@@ -2097,10 +2146,11 @@ begin
    lRcvSize.Left := llRcvSize.Left + llRcvSize.Width + 6;
 
    lFileSndTime.Left := llFileSndTime.Left + llFileSndTime.Width + 6;
-   llTotalSndTime.Left := lFileSndTime.Left + lFileSndTime.Width + 6;
+//   llTotalSndTime.Left := lFileSndTime.Left + lFileSndTime.Width + 6;
    lTotalSndTime.Left := llTotalSndTime.Left + llTotalSndTime.Width + 6;
+
    lFileRcvTime.Left := llFileRcvTime.Left + llFileRcvTime.Width + 6;
-   llTotalRcvTime.Left := lFileRcvTime.Left + lFileRcvTime.Width + 6;
+//   llTotalRcvTime.Left := lFileRcvTime.Left + lFileRcvTime.Width + 6;
    lTotalRcvTime.Left := llTotalRcvTime.Left + llTotalRcvTime.Width + 6;
 
    lSessionTime.Left := llSessionTime.Left + llSessionTime.Width + 6;
@@ -3209,8 +3259,8 @@ procedure TMailerForm.UpdateView(fromcc: boolean);
       if D.SkipIs then B := False;
       SetEnabledO(mlSkip, wcb_mlSkip, B);
       SetEnabledO(mlRefuse, wcb_mlRefuse, B);
+      ActiveLine.Enter;
       if (ActiveLine.SD <> nil) and (ActiveLine.SD.Prot <> nil) then begin
-         ActiveLine.Enter;
          if (ActiveLine.SD.Prot.Chat <> nil) then begin
            try
              if ChatMemo1.Text <> ActiveLine.SD.Prot.Chat.Memo1Text.Text then begin
@@ -3237,12 +3287,12 @@ procedure TMailerForm.UpdateView(fromcc: boolean);
          end else ChatPan.Visible := false;
          SetEnabledO(mlChat, wcb_mlChat, ActiveLine.SD.Prot.CanChat and not ActiveLine.SD.Prot.ChatOpened);
          SetEnabledO(bChat, wcb_bChat, ActiveLine.SD.Prot.CanChat and not ActiveLine.SD.Prot.ChatOpened);
-         ActiveLine.Leave;
       end else begin
          SetEnabledO(mlChat, wcb_mlChat, False);
          SetEnabledO(bChat, wcb_bChat, False);
          ChatPan.Visible := false;
       end;
+      ActiveLine.Leave;
       SetEnabledO(bSkip, wcb_bSkip, B);
       SetEnabledO(bRefuse, wcb_bRefuse, B);
       SetEnabledO(mlAnswer, wcb_mlAnswer, D.CanAnswer);
@@ -3868,6 +3918,12 @@ begin
    for i := FidoPolls.Count - 1 downto 0 do begin
       p := FidoPolls[i];
       if All or (p.Owner = PollOwnerExtApp) or (p.Owner = nil) then begin
+         if (p.Owner is TMailerThread) then begin
+            if (p.Owner.SD <> nil) and (p.Owner.SD.ActivePoll <> nil) then begin
+               p.Owner.InsertEvt(TMlrEvtChStatus.Create(msCancel));
+               p.Owner.SD.ActivePoll := nil;
+            end;
+         end;
          p.Done := Action;
          FidoPolls.AtFree(i);
       end;

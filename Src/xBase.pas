@@ -1847,7 +1847,11 @@ begin
    if (Name = JustFileName(Name)) or (Pos('%', Name) > 0) then begin
       Result := Result + Name;
    end else begin
-      Result := Name;
+      if pos(':', Name) > 0 then begin
+         Result := Name;
+      end else begin
+         Result := Result + Name;
+      end;
    end;
 end;
 

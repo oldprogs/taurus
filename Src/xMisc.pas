@@ -2877,8 +2877,6 @@ begin
    end;
 end;
 
-{$IFDEF EXTREME}
-
 constructor TInetProtocol.Create;
 begin
    inherited;
@@ -3025,7 +3023,7 @@ end;
 
 function TInetProtocol.CanSend: Boolean;
 begin
-  Result := (CP.OutUsed < 4096);
+   Result := (CP.OutUsed < 4096);
 end;
 
 procedure TInetProtocol.CheckInput;
@@ -3370,45 +3368,43 @@ begin
    end;
 end;
 
-{$ENDIF}
-
 function TOneWayProtocol.TimeoutValue: DWORD;
 begin
-  TimeoutValue := MultiTimeout([TimeoutTimer]);
+   TimeoutValue := MultiTimeout([TimeoutTimer]);
 end;
 
 procedure TOneWayProtocol.SignalFinish;
 begin
-  if ProtocolError = ecOk then begin
-    case ProtocolStatus of
+   if ProtocolError = ecOk then begin
+      case ProtocolStatus of
       psAbortByLocal   : ProtocolError := ecAbortByLocal;
       psAbortByRemote  : ProtocolError := ecAbortByRemote;
       psTimeout        : ProtocolError := ecTimeout;
       psAbortNoCarrier : ProtocolError := ecAbortNoCarrier;
-    end;
-  end;
+      end;
+   end;
 end;
 
 function TOneWayProtocol.IsBiDir: Boolean;
 begin
-  Result := False;
+   Result := False;
 end;
 
 function TBiDirProtocol.IsBiDir: Boolean;
 begin
-  Result := True;
+   Result := True;
 end;
 
 procedure TBiDirProtocol.Start;
 begin
-  FAcceptFile := AAcceptFile;
-  FFinishRece := AFinishRece;
-  FGetNextFile := AGetNextFile;
-  FFinishSend := AFinishSend;
-  FChangeOrder := AChangeOrder;
-  DoStart;
-  T := TBatch.Create;
-  R := TBatch.Create;
+   FAcceptFile := AAcceptFile;
+   FFinishRece := AFinishRece;
+   FGetNextFile := AGetNextFile;
+   FFinishSend := AFinishSend;
+   FChangeOrder := AChangeOrder;
+   DoStart;
+   T := TBatch.Create;
+   R := TBatch.Create;
 end;
 
 procedure TBiDirProtocol.ProcessLST;

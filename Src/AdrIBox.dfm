@@ -56,6 +56,7 @@ object FidoAddressInput: TFidoAddressInput
       HistoryID = 22
       TabOrder = 0
       OnKeyDown = lAddressKeyDown
+      OnKeyUp = lAddressKeyUp
     end
     object bBrowse: TButton
       Left = 251
