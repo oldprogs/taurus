@@ -22,7 +22,6 @@ type
    bdBody,
    bdSend,
    bdRece,
-   bdFile,
    bdDone
    );
 
@@ -810,8 +809,6 @@ begin
                   if (fHTML = '/') or (pos('/delete?', fHTML) = 1) then begin
                      if fMeth = mGet then begin
                         MakeList;
-                     end else begin
-                        State := bdFile;
                      end;
                   end else
                   if (pos('/LIST?', UpperCase(fHTML)) = 1) then begin
@@ -878,13 +875,6 @@ begin
                   fCont := cnPost;
                   fRepl := '400 File is too large';
                end;
-            end;
-         end;
-      bdFile:
-         begin
-            if z = 'CONTENT-DISPOSITION:' then begin
-            end else
-            if z = 'CONTENT-TYPE:' then begin
             end;
          end;
       else

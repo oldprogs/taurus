@@ -1,11 +1,11 @@
 object SetupForm: TSetupForm
-  Left = 509
-  Top = 313
+  Left = 357
+  Top = 181
   HelpContext = 11000
   BorderStyle = bsDialog
   Caption = 'Taurus Setup'
-  ClientHeight = 395
-  ClientWidth = 507
+  ClientHeight = 397
+  ClientWidth = 509
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -128,6 +128,7 @@ object SetupForm: TSetupForm
     Top = 27
     Width = 356
     Height = 319
+    PageIndex = 2
     TabOrder = 1
     object TPage
       Left = 0

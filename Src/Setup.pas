@@ -1260,6 +1260,13 @@ var
    begin
       for i := 0 to o.ComponentCount - 1 do begin
          c := o.Components[i];
+         if c is TLabel then begin
+            if ((c as TLabel).Name =  'lFormsFont') or
+               ((c as TLabel).Name = 'lLoggerFont') then begin
+               s := (c as TLabel).Caption;
+               CRC := CRC32Str(s, CRC);
+            end;
+         end else
          if c is TCheckBox then begin
             CRC := UpdateCRC32(byte((c as TCheckBox).Checked), CRC);
          end else

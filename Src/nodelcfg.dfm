@@ -18,6 +18,7 @@ object NodeListCfgForm: TNodeListCfgForm
   OldCreateOrder = True
   Position = poScreenCenter
   PrintScale = poPrintToFit
+  Scaled = False
   OnActivate = FormActivate
   OnClose = FormClose
   OnCloseQuery = FormCloseQuery

@@ -1935,14 +1935,14 @@ var
   p: Pointer;
   b: byte;
   sz: Integer;
+  v: boolean;
 begin
+  v := False;
   d := OpenRead(ConfigFName);
   if d = nil then
   begin
-//    if not AcceptLicence then Halt;
-{$IFNDEF dll}
-    StartupWizzard;
-{$ENDIF}
+     v := True;
+     StartupWizzard;
   end else
   begin
     s := GetMemoryStream;
@@ -1974,9 +1974,10 @@ begin
   end;
   LoadTarifPlan(TarifPlan); // visual
   Cfg.Refill;
-
   UpdateGlobalEvtUpdateFlag;
-  if StartWizDialProps<>nil then StoreConfig(0);
+  if (StartWizDialProps <> nil) or v then begin
+     StoreConfig(0);
+  end;
 end;
 
 function StoreConfig(Handle: DWORD): Boolean;

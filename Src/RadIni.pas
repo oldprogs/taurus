@@ -726,6 +726,7 @@ begin
       GridInPV := ReadBool(_interface, 'GridLinesInPV', false);
       _lang := ReadInteger(_interface, 'language', 0);
       helplang := ReadString(_interface, 'helplang', 'en');
+
       FormsFontName := ReadString(_interface, 'FormsFontName', 'Arial');
       FormsFontSize := ReadInteger(_interface, 'FormsFontSize', 9);
       FormsFontAttr := ReadString(_interface, 'FormsFontAttr', '0000');
