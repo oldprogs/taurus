@@ -43,7 +43,7 @@ type
   _fido_subtype     = array [0..71] of char;
   _fido_datetype    = array [0..19] of char;
 
- _fidomsgtype =
+ _fidomsgtype = packed
     record
       from         : _fido_fromtype; (* 0 *)
       towhom       : _fido_totype;   (* 35 *)
