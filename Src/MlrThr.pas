@@ -1327,12 +1327,13 @@ type
     NotFlushedLogStr: string;
 
     NeedRescan: boolean;
-//    EscapeChar: Char;
 
     oEvt: DWORD;
 
     ipAddr: string;
     aType: DWORD;
+
+    OldInC: string;
 
     function GetThrErrorMsg: string; override;
     procedure TossBWZ(Manual: boolean);
@@ -1527,35 +1528,24 @@ begin
    b := false;
    if IniFile.ShowBalloon and (not (Application.MainForm as TMailerForm).TrayIcon.Minimized) then b := true;
    if IniFile.ShowBalloonMin and (Application.MainForm as TMailerForm).TrayIcon.Minimized then b := true;
-   if (MailerThreads <> nil) and (MailerThreads.Count <= 1) then
-   begin
+   if (MailerThreads <> nil) and (MailerThreads.Count <= 1) then begin
       Application.Title := '  ' + S;
-      if Application.MainForm <> nil then
-      begin
-         if (Application.MainForm as TMailerForm).TrayIcon <> nil then
-         begin
-            if (Application.MainForm as TMailerForm).TrayIcon.Hint <> 'Taurus: ' + S then
-            begin
-               if b then
-               begin
+      if Application.MainForm <> nil then begin
+         if (Application.MainForm as TMailerForm).TrayIcon <> nil then begin
+            if (Application.MainForm as TMailerForm).TrayIcon.Hint <> 'Taurus: ' + S then begin
+               if b then begin
                   (Application.MainForm as TMailerForm).TrayIcon.ShowHint('Taurus Info', S);
                end;
                (Application.MainForm as TMailerForm).TrayIcon.Hint := 'Taurus: ' + S;
             end;
          end;
       end;
-   end
-   else
-   begin
+   end else begin
       if (MailerThreads <> nil) then Application.Title := Format('Taurus: %d lines', [MailerThreads.Count]);
-      if Application.MainForm <> nil then
-      begin
-         if (Application.MainForm as TMailerForm).TrayIcon <> nil then
-         begin
-            if (Application.MainForm as TMailerForm).TrayIcon.Hint <> 'Taurus: ' + S then
-            begin
-               if b then
-               begin
+      if Application.MainForm <> nil then begin
+         if (Application.MainForm as TMailerForm).TrayIcon <> nil then begin
+            if (Application.MainForm as TMailerForm).TrayIcon.Hint <> 'Taurus: ' + S then begin
+               if b then begin
                   (Application.MainForm as TMailerForm).TrayIcon.ShowHint('Taurus Info', S);
                end;
                (Application.MainForm as TMailerForm).TrayIcon.Hint := 'Taurus: ' + S;
@@ -6912,6 +6902,18 @@ begin
    if (SD.SessionCore in [scFTP, scPOP3, scGATE, scNNTP]) and P.DummyNextFile then begin
       ScanOut(True);
       P.DummyNextFile := False;
+      if SD.SessionCore in [scNNTP] then begin
+         While (SD.TxFiles > IniFile.ReadInteger('NNTP', 'CashSize', 5000000)) and (SD.OutFiles.Count > 0) do begin
+            f := SD.OutFiles[0];
+            if pos('.PKT', UpperCase(f.Name)) > 0 then begin
+               Log(ltInfo, 'Purging NNTP cash .. ' + JustFileName(f.Name) + ' deleted');
+               FidoOut.DeleteFile(f.Address, f.Name, f.FStatus);
+               DelFile('NNTP Cash', f.Name);
+            end;
+            SD.txFiles := SD.txFiles - f.Nfo.Size;
+            SD.OutFiles.AtFree(0);
+         end;
+      end;
       exit;
    end;
    repeat
@@ -13579,8 +13581,9 @@ begin
          begin
             if SD <> nil then begin
                SD.ConnectSpeedGot := False;
-               if SD.InC <> '' then begin
+               if SD.InC <> OldInC then begin
                   State := msStartIdle_TAPI;
+                  OldInC := SD.InC;
                end;
             end;
             SetStatusMsg(rs_s, 'TAPI line is busy');
@@ -14518,6 +14521,7 @@ begin
          if ToSleep > 0 then
          begin
             NumEvents := 1;
+            ResetEvt(oEvt);
             WaitEvts[0] := oEvt;
             if SD.NiagaraSession then
                ToSleep := 20
@@ -15860,7 +15864,7 @@ begin
    Update := ForcedUpdate;
    ForcedUpdate := False;
    ChangeFlag := False;
-//   FidoOut.ForcedRescan := True;
+   FidoOut.ForcedRescan := True;
    NewNodes := FidoOut.GetOutColl(True);
    FileNames := TStringColl.Create;
    FileNames.IgnoreCase := True;
