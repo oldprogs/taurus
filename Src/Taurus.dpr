@@ -84,7 +84,6 @@ uses
   Cmdln in 'Cmdln.pas',
   Tapi in 'Tapi.pas',
   xTAPI in 'xTAPI.pas',
-  RadDW_NT in 'RadDW_NT.pas',
   Netmail in 'Netmail.pas',
   UnitOK in 'UnitOK.pas',
   LogView in 'LogView.pas' {LogViewer};

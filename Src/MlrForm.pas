@@ -3317,7 +3317,7 @@ procedure TMailerForm.UpdateView(fromcc: boolean);
 
    procedure UpdatePolls;
    const
-      PT: array[TPollType] of Integer = (-1, rsMMptAuto, rsMMptCron, rsMMptManual, rsMMptImm, rsMMptBack, rsMMptRCC, rsMMptNetm, rsMMptNmIm);
+      PT: array[TPollType] of Integer = (-1, rsMMptAuto, rsMMptCron, rsMMptManual, rsMMptImm, rsMMptBack, rsMMptRCC, rsMMptNetm, rsMMptNmIm, rsMMptTest);
    var
       C: TColl;
       S: TStringColl;
@@ -3899,11 +3899,11 @@ begin
       end;
       Inifile.SplitA := Panel2.Width;
       Inifile.SplitB := TermsPanel.Width;
-      IniFile.StoreCFG;
       s := ExtractWord(1, lInfo1.Caption, [#13, #10]);
       IniFile.WriteString('Store', 'LastIn', s);
       s := ExtractWord(2, lInfo1.Caption, [#13, #10]);
       IniFile.WriteString('Store', 'LastOut', s);
+      IniFile.StoreCFG;
       FreeLibrary(ModuleHandle);
       ExitNow := true;
    end;
@@ -4794,7 +4794,7 @@ var
    end;
 
 const
-   PtpTyp: array[TPollType] of Integer = (0, rsMMptpiOutb, rsMMptpiCron, rsMMptpiManual, rsMMptpiImm, rsMMptpiBack, rsMMptpiRCC, rsMMptpiNetm, rsMMptpiNmIm);
+   PtpTyp: array[TPollType] of Integer = (0, rsMMptpiOutb, rsMMptpiCron, rsMMptpiManual, rsMMptpiImm, rsMMptpiBack, rsMMptpiRCC, rsMMptpiNetm, rsMMptpiNmIm, rsMMptpiTest);
 
 var
    s: string;

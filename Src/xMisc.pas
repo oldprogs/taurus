@@ -182,7 +182,8 @@ type
     lfCRYP,
     lfBREK,
 
-    lfDelete
+    lfDelete,
+    lfTRSASK
 
   );
 
@@ -453,6 +454,8 @@ type
      FLogFile            : TLogFileProc;
      ChatBuf             : string;
      ListBuf             : TStringColl;
+     TRSList             : TStringColl;
+     TransitRequested    : boolean;    
      Chat                : TChat;
      ChatOpened          : boolean;
      ChatBell            : string;
@@ -499,6 +502,8 @@ type
      function NextStep: Boolean; virtual; abstract;
      procedure StartChat(const LogFName: string; local: boolean; const ChatBell: string); virtual;
      function CanChat: Boolean; virtual;
+     procedure SendTRSNAK(const a: string);
+     procedure SendTRSACK(const a: string);
      function Compress(dest: pointer; var res: longint; src: pointer; len: longint): integer;
      function Uncompress(dest: pointer; var res: longint; src: pointer; len: longint): integer;
   end;
@@ -2736,6 +2741,7 @@ begin
     _uncompress := uncompress_;
   end;
   ListBuf := TStringColl.Create;
+  TRSList := TStringColl.Create;
 end;
 
 constructor TOneWayProtocol.Create;
@@ -2751,6 +2757,7 @@ begin
   FreeObject(RemImage);
   FreeObject(RecFiles);
   FreeObject(ListBuf);
+  FreeObject(TRSList);
   if T <> nil then FreeObject(T.Stream);
   if R <> nil then FreeObject(R.Stream);
   Finish;
@@ -2819,6 +2826,16 @@ end;
 function TBaseProtocol.CanChat;
 begin
    Result := False;
+end;
+
+procedure TBaseProtocol.SendTRSNAK;
+begin
+   ListBuf.Add('TRS ' + a + ' NAK');
+end;
+
+procedure TBaseProtocol.SendTRSACK;
+begin
+   ListBuf.Add('TRS ' + a + ' ACK');
 end;
 
 function TBaseProtocol.Compress;

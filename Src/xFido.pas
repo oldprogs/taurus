@@ -1895,15 +1895,15 @@ end;
 
 function FidoAddress;
 begin
-  Result.Zone := Zone;
-  Result.Net := Net;
-  Result.Node := Node;
-  Result.Point := Point;
-  Result.Domain := Domain;
-  if Domain = '' then begin
-     Result.Domain := FindFTNDOM(Result);
-     if (Result.Domain = '') and (Zone in [1..6]) then Result.Domain := 'fidonet';
-  end;
+   Result.Zone := Zone;
+   Result.Net := Net;
+   Result.Node := Node;
+   Result.Point := Point;
+   Result.Domain := Domain;
+   if Domain = '' then begin
+      Result.Domain := FindFTNDOM(Result);
+      if (Result.Domain = '') and (Zone in [1..6]) then Result.Domain := 'fidonet';
+   end;
 end;
 
 function CompareAddrs(const a, b: TFidoAddress): Integer;

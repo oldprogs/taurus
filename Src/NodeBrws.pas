@@ -689,13 +689,6 @@ begin
     x3.Bounds[3]  := Height;
     IniFile.RadNB := x3;
   end;
-{  with TIniFile.Create(IniFName) do
-  try
-    WriteString('sizes', 'NodeBrws', Format('%d,%d,%d,%d,%d', [Self.Top, Self.Left, Self.Width, Self.Height, Integer(Self.WindowState)]));
-  finally
-    free;
-  end;}
-
   if NodeController = nil then Exit;
   EnterNlCS;
   p := NodeController.Cache.FList;
@@ -705,31 +698,18 @@ begin
 end;
 
 procedure TNodelistBrowser.FormCreate(Sender: TObject);
-{var
-//  _s: String;
-  x3: TRadMFRec;
-  wp: MClasses._TWindowPlacement;}
 begin
-    if ((IniFile.RadNB.Bounds[0] <> 32767) and
-        (IniFile.RadNB.Bounds[1] <> 32767) and
-        (IniFile.RadNB.Bounds[2] <> 32767) and
-        (IniFile.RadNB.Bounds[3] <> 32767)) and
-        (IniFile.RadNB.Bounds[0] < screen.Width) and (IniFile.RadNB.Bounds[1] + IniFile.RadNB.Bounds[3] > 0)
-       then
-    SetBounds(IniFile.RadNB.Bounds[0], IniFile.RadNB.Bounds[1], IniFile.RadNB.Bounds[2], IniFile.RadNB.Bounds[3]);
-    if IniFile.RadNB.Maximized = 1 then WindowState := wsMaximized;
-{  with TIniFile.Create(IniFName) do
-  try
-    _s := ReadString(sizes, 'NodeBrws', Format('%d,%d,%d,%d,%d', [Self.Top, Self.Left, Self.Width, Self.Height, Integer(Self.WindowState = wsMaximized)]));
-    Self.Left := StrToIntDef(ExtractWord(1, _s, [',']), Self.Top);
-    Self.Top := StrToIntDef(ExtractWord(2, _s, [',']), Self.Left);
-    Self.Width := StrToIntDef(ExtractWord(3, _s, [',']), Self.Width);
-    Self.Height := StrToIntDef(ExtractWord(4, _s, [',']), Self.Height);
-    Self.WindowState := TWindowState(StrToIntDef(ExtractWord(5, _s, [',']), 2));
-  finally
-    free;
-  end;}
-  FillForm(Self, rsNodelistBrowser);
+   if ((IniFile.RadNB.Bounds[0] <> 32767) and
+       (IniFile.RadNB.Bounds[1] <> 32767) and
+       (IniFile.RadNB.Bounds[2] <> 32767) and
+       (IniFile.RadNB.Bounds[3] <> 32767)) and
+       (IniFile.RadNB.Bounds[0] < screen.Width) and
+       (IniFile.RadNB.Bounds[1] + IniFile.RadNB.Bounds[3] > 0) then
+   begin
+      SetBounds(IniFile.RadNB.Bounds[0], IniFile.RadNB.Bounds[1], IniFile.RadNB.Bounds[2], IniFile.RadNB.Bounds[3]);
+   end;
+   if IniFile.RadNB.Maximized = 1 then WindowState := wsMaximized;
+   FillForm(Self, rsNodelistBrowser);
 end;
 
 procedure TNodelistBrowser.bHelpClick(Sender: TObject);

@@ -2846,7 +2846,7 @@ object SetupForm: TSetupForm
     Top = 360
   end
   object tmCRC: TTimer
-    Interval = 100
+    Interval = 200
     OnTimer = tmCRCTimer
     Left = 104
     Top = 360

@@ -43,7 +43,7 @@ type
     ocBackToMain,
     ocExit
   );
-  
+
   AttachCmd =(
     acHold,
     acNormal,
@@ -59,42 +59,12 @@ type
     se_cTruncate,
     se_cEscape
   );
-  
-    
-(*  Cmd = (
-    rcHelp,
-
-//shell routines
-    rcDirList,
-    rcMoveFile,
-    rcCopyFile,
-    rcChangeDir,
-    rcMakeDir,
-    rcRemDir,
-    rcExecute,
-    rcDelFile,
-//    rcProcList,
-    rcDate,
-    rcTime,
-
-//Radius routines
-    rcVer,
-    rcFullOutb,
-    rcOutb,
-    rcAttach,
-{$IFDEF WS}
-    rcSwitchDaemon,
-//    rcOpenDaemon,
-//    rcCloseDaemon,
-{$ENDIF}
-    rcExit
-  );*)
 
 const
 
   CRLF = #13#10;
 
-  CNetMailMask = '*.iut *.cut *.dut *.out *.hut';
+  CNetMailMask = '*.?ut *.msg';
 
   txMainMenu: array[MainCmd] of string = (
     'V)ersion',
@@ -1138,11 +1108,13 @@ type
 
     EvtNew: Boolean;
 
-    PrevRemCtrlBuf,RemCtrlBuf: string;
+    PrevRemCtrlBuf,
+    RemCtrlBuf: string;
 
     tempAddress: TFidoAddress;
     HideInput: boolean;
     SoundsON: boolean;
+    TRSLIst: TStringColl;
 
 {3}
     procedure LogOverwritten(const FName: string);
@@ -1460,7 +1432,8 @@ var
   FileFlags: TColl;
   FidoPolls: TPollColl;
   MailerThreads,
-  MailerForms: TColl;
+  MailerForms,
+  MailerTransit: TColl;
   OutMgrThread: TOutMgrThread;
   CronThr: TCronThread;
 {$IFDEF WS}
@@ -1484,6 +1457,7 @@ function GetPortRec(LineId: DWORD): TPortRec;
 function OpenSerialPort(R: TPortRec): TPort;
 procedure InsertPoll(var ANode: TAdvNode; Status: TOutStatusSet; ATyp: TPollType);
 function PollOwnerName(p: TFidoPoll): string;
+procedure SendTRSMSG(p: TFidoPoll; c: string; ss: string);
 function GetPollState(AOwnPolls: TColl; P: TFidoPoll; PubInst: Boolean; Mlr: TMailerThread; SC: TStringColl; TQ: TFSC62Quant): TPollState;
 procedure RollPoll(var ActivePoll: TFidoPoll);
 procedure EnterFidoPolls;
@@ -1555,8 +1529,7 @@ end;
 
 procedure RefreshOutbound;
 begin
-   if OutMgrThread <> nil then
-   begin
+   if OutMgrThread <> nil then begin
       OutMgrThread.HandUpdate := True;
       SetEvt(OutMgrThread.oEvt);
    end;
@@ -1947,6 +1920,8 @@ begin
 end;
 
 procedure FinalizePollOK(var P: TFidoPoll);
+var
+   s: string;
 begin
    FidoPollsLog(Format('%s - session complete', [Addr2Str(P.Node.Addr)]));
    if P.FileSendDelayedBusy then begin
@@ -1962,9 +1937,14 @@ begin
       FidoPollsLog(Format('%s - file send delayed, stand-off timeout (%d minutes) has started', [Addr2Str(p.Node.Addr), inifile.FPFlags.StandoffFail]));
    end else begin
       EnterFidoPolls;
+      if p.Typ = ptpTest then begin
+         s := '';
+         SendTRSMSG(p, 'ACK', s);
+         FidoPollsLog(s);
+      end;
       if not P.Keep then begin
          P.Done := pdnOK;
-         FidoPolls.Delete(P);
+         Fidopolls.Delete(P);
          FreeObject(P);
       end else begin
          P.Keep := False;
@@ -2168,13 +2148,50 @@ begin
    end;
 end;
 
+procedure SendTRSMSG(p: TFidoPoll; c: string; ss: string);
+var
+   i: integer;
+   j: integer;
+   m: TMailerThread;
+   s: string;
+   a: TFidoAddress;
+begin
+   if ss <> '' then ss := #13#10;
+   ss := ss + FidoPolls.Log.FormatSelf('Test connect to: ' + Addr2Str(p.Node.Addr));
+   if c = 'ACK' then begin
+      ss := ss + ' succeeded';
+   end else begin
+      ss := ss + ' failed';
+   end;
+   p.Typ := ptpOutb;
+   MailerTransit.Enter;
+   For i := CollMax(MailerTransit) downto 0 do begin
+      m := MailerTransit[i];
+      for j := 0 to CollMax(m.TRSList) do begin
+         s := m.TRSLIst[j];
+         ParseAddress(s, a);
+         if CompareAddrs(a, p.Node.Addr) = 0 then begin
+            m.TRSLIst.AtFree(j);
+            ss := ss + #13#10 + FidoPolls.Log.FormatSelf(s + ' removed from test queue');
+            if m.TRSLIst.Count = 0 then begin
+               ss := ss + #13#10 + FidoPolls.Log.FormatSelf('Test queue removed');
+               MailerTransit.Delete(m);
+            end;
+            m.SD.Prot.SendTRSNAK(s);
+         end;
+      end;
+   end;
+   MailerTransit.Leave;
+end;
+
 function GetPollState(AOwnPolls: TColl; P: TFidoPoll; PubInst: Boolean; Mlr: TMailerThread; SC: TStringColl; TQ: TFSC62Quant): TPollState;
 var
    RR: TRestrictionData;
 
    procedure DoIt;
    var
-      R, F: TColl;
+      R,
+      F: TColl;
       PP: TPollPtr;
       EP: TAbstractEventProcessor;
       NI: DWORD;
@@ -2182,7 +2199,7 @@ var
       os: TOutStatus;
       lRestrictions,
       lLines: TElementColl;
-      s: string;
+      ss: string;
    begin
       Result := plsN_A;
       if (p.Owner = PollOwnerExtApp) and (not PubInst) then p.Owner := nil;
@@ -2231,15 +2248,18 @@ var
                if p.FileSendDelayedFail then NewTimerSecs(p.LastTry, inifile.FPFlags.StandoffFail * 60);
             end;
             if p.FileSendDelayedBusy or p.FileSendDelayedNoc or p.FileSendDelayedFail then begin
-               s := Format('%s - file send delayed, stand-off: %d minutes left. Busy[%s], NoConn[%s], Aborted[%s]', [Addr2Str(p.Node.Addr), MaxD(1, (RemainingTimeSecs(p.LastTry) + 30) div 60), p.STryBusy, p.STryNoC, p.STryFail]);
+               ss := Format('%s - file send delayed, stand-off: %d minutes left. Busy[%s], NoConn[%s], Aborted[%s]', [Addr2Str(p.Node.Addr), MaxD(1, (RemainingTimeSecs(p.LastTry) + 30) div 60), p.STryBusy, p.STryNoC, p.STryFail]);
+               if p.Typ = ptpTest then begin
+                  SendTRSMSG(p, 'NAK', ss);
+               end;
             end else begin
-               s := Format('Try counter exceeded, stand-off: %d minutes left. Busy[%s], NoConn[%s], Aborted[%s]', [MaxD(1, (RemainingTimeSecs(p.LastTry) + 30) div 60), p.STryBusy, p.STryNoC, p.STryFail]);
+               ss := Format('Try counter exceeded, stand-off: %d minutes left. Busy[%s], NoConn[%s], Aborted[%s]', [MaxD(1, (RemainingTimeSecs(p.LastTry) + 30) div 60), p.STryBusy, p.STryNoC, p.STryFail]);
             end;
             if not p.Logged then begin
-               FidoPollsLog(s);
+               FidoPollsLog(ss);
                p.Logged := True;
             end;
-            if SC <> nil then SC.Add(s);
+            if SC <> nil then SC.Add(ss);
             Exit;
          end;
       end else begin
@@ -2248,8 +2268,8 @@ var
 //         if p.FileSendDelayedBusy then p.FileSendDelayedFail := False;
          if TimerInstalled(p.LastTry) and not TimerExpired(p.LastTry) then begin
             if SC <> nil then begin
-               s := Format('%s - stand-off: %d minutes left.', [Addr2Str(p.Node.Addr), MaxD(1, (RemainingTimeSecs(p.LastTry) + 30) div 60)]);
-               SC.Add(s);
+               ss := Format('%s - stand-off: %d minutes left.', [Addr2Str(p.Node.Addr), MaxD(1, (RemainingTimeSecs(p.LastTry) + 30) div 60)]);
+               SC.Add(ss);
             end;
             result := plsN_A;
             exit;
@@ -2513,7 +2533,7 @@ var
    AP: TFidoPoll;
     I: Integer;
 const
-   CTyp: array[TPollType] of string = ('???', 'Outb', 'Cron', 'Manual', 'Outb/Imm', 'Callback', 'Mirror', 'MSG', 'MSG/Imm');
+   CTyp: array[TPollType] of string = ('???', 'Outb', 'Cron', 'Manual', 'Outb/Imm', 'Callback', 'Mirror', 'MSG', 'MSG/Imm', 'Test');
 begin
    EnterFidoPolls;
    AP := nil;
@@ -2525,12 +2545,12 @@ begin
          Break;
       end;
    end;
-
+   OldTyp := ptpUnknown;
    if AP <> nil then begin
       OldTyp := AP.Typ;
 //      NewTyp := TPollType(MaxD(DWORD(OldTyp), DWORD(ATyp)));
       NewTyp := ATyp;
-      if (OldTyp <> NewTyp) and (OldTyp <> ptpManual) then begin
+      if (OldTyp <> NewTyp) and (OldTyp <> ptpManual) and (OldTyp <> ptpTest) then begin
          FidoPollsLog(Format('*Poll/%s  %s  (%s)', [CTyp[NewTyp], Addr2Str(ANode.Addr), NodeDataStr(ANode, True)]));
          AP.Typ := NewTyp;
          AP.Reset;
@@ -2556,6 +2576,16 @@ begin
 {$IFDEF WS}
       if IPPolls <> nil then InsertOwnPoll(IPPolls.OwnPolls, P);
 {$ENDIF}
+      AP := P;
+   end;
+   if (AP.Typ = ptpTest) then begin
+      if (OldTyp <> ptpTest) then begin
+         AP.Reset;
+      end;
+      ClearTimer(AP.LastTry);
+      if IPPolls <> nil then begin
+         SetEvt(IPPolls.oSleep);
+      end;
    end;
    LeaveFidoPolls;
 end;
@@ -2563,13 +2593,13 @@ end;
 function OutDial(A: TOutStatusSet; DirAsNormal: Boolean): Boolean;
 begin
    Result := (osImmed in A) or
-      (osImmedMail in A) or
-      (osCrash in A) or
-      (osCrashMail in A) or
-      (osCallback in A);
+             (osImmedMail in A) or
+             (osCrash in A) or
+             (osCrashMail in A) or
+             (osCallback in A);
    if (not Result) and (not DirAsNormal) then
       Result := (osDirect in A) or
-         (osDirectMail in A);
+                (osDirectMail in A);
 end;
 
 procedure RecreatePolls(c: TOutNodeColl);
@@ -4014,23 +4044,44 @@ end;
 
 function TFidoPoll.IPFlags: string;
 begin
-   if node <> nil then
+   if node <> nil then begin
       Result := _Flags(Node.IPData)
-   else
+   end else begin
       Result := '';
+   end;   
 end;
 
 destructor TFidoPoll.Destroy;
 var
    i: Integer;
+   n: TOutNode;
 const
    Msg: array[TPollDone] of string = ('???', 'SysShutDown', 'OK', 'Deleted', 'Deleted(all)', 'AttachLost', 'Node destroyed');
 
 begin
    FidoPollsLog(Format('-Poll/%s  %s', [Msg[Done], Addr2Str(Node.Addr)]));
+   if Done = pdnOK then begin
+      EnterCS(OutMgrThread.NodesCS);
+      EnterCS(FidoOut.CacheCS);
+      for i := CollMax(OutMgrThread.Nodes) downto 0 do begin
+         n := OutMgrThread.Nodes[i];
+         if CompareAddrs(n.Address, Node.Addr) = 0 then begin
+            OutMgrThread.Nodes.AtFree(i);
+         end;
+      end;
+      for i := CollMax(FidoOut.OutCache) downto 0 do begin
+         n := FidoOut.OutCache[i];
+         if CompareAddrs(n.Address, Node.Addr) = 0 then begin
+            FidoOut.OutCache.AtFree(i);
+         end;
+      end;
+      LeaveCS(FidoOut.CacheCS);
+      LeaveCS(OutMgrThread.NodesCS);
+   end;
    MailerThreads.Enter;
-   for i := 0 to MailerThreads.Count - 1 do
+   for i := 0 to MailerThreads.Count - 1 do begin
       FreeOwnPoll(TMailerThread(MailerThreads[I]).OwnPolls, Self);
+   end;
 {$IFDEF WS}
    if IPPolls <> nil then FreeOwnPoll(IPPolls.OwnPolls, Self);
 {$ENDIF}
@@ -4046,6 +4097,12 @@ begin
    FidoOut.UnLock(Node.Addr, osBusyEx); //Always *.csy for waiting connect
    Owner := nil;
    ScanCounter := 1;
+   if Typ = ptpTest then begin
+      ClearTimer(LastPoll);
+      if IPPolls <> nil then begin
+         SetEvt(IPPolls.oSleep);
+      end;
+   end;
 end;
 
 // --- TMailerThreadInitData
@@ -4965,6 +5022,28 @@ const
       end;
    end;
 
+   procedure MakeTest(P: TBaseProtocol);
+   var
+      a: TFidoAddress;
+      n: TAdvNode;
+   begin
+      if ParseAddress(P.CustomInfo, a) then begin
+         n := FindNode(a);
+         if n <> nil then begin
+            InsertPoll(n, [osCrash], ptpTest);
+            MailerTransit.Add(Self);
+            if TRSList = nil then begin
+               TRSList := TStringColl.Create;
+            end;
+            TRSList.Add(P.CustomInfo);
+         end else begin
+            P.CustomInfo := 'NAK'
+         end;
+      end else begin
+         P.CustomInfo := 'NAK'
+      end;
+   end;
+
 begin
    case AStatus of
       lfNAK: Log(ltFileErr, 'NAK received');
@@ -5060,6 +5139,10 @@ begin
       lfDelete:
          begin
             PerformDelete(P.CustomInfo);
+         end;
+      lfTRSASK:
+         begin
+            MakeTest(P);
          end;
    else
       GlobalFail('%s', ['TMailerThread.LogFile']);
@@ -9076,6 +9159,24 @@ procedure TMailerThread.DoWZ;
       if MatchMaskAddressListSingle(SD.ActivePoll.Node.Addr, s) then SD.Prot.CramDisabled := True;
    end;
 
+   procedure FixTRS;
+   var
+      i: integer;
+      p: TFidoPoll;
+   begin
+      EnterfidoPolls;
+      for i := 0 to CollMax(FidoPolls) do begin
+         p := FidoPolls[i];
+         if p.FileSendDelayedNoc then begin
+            if SD.Prot.TRSList.Matched(Addr2Str(p.Node.Addr)) = -1 then begin
+               SD.Prot.TRSList.Ins(Addr2Str(p.Node.Addr));
+            end;
+         end;
+      end;
+      LeaveFidoPolls;
+      SD.Prot.TransitRequested := True;
+   end;
+
 begin
    case State of
       msStartBinkP:
@@ -9150,13 +9251,10 @@ begin
             CheckYooHooPkt;
          end;
       msParseYooHoo:
-         if not ParseYooHooPkt then
-         begin
+         if not ParseYooHooPkt then begin
             Log(ltWarning, 'Invalid YooHoo packed');
             State := msFinishWZ;
-         end
-         else
-         begin
+         end else begin
             if SD.ActivePoll <> nil then
                State := msStartWZ
             else
@@ -9378,6 +9476,9 @@ begin
             begin
                SD.Prot.FileSkip := True;
                SD.FileSkip := False
+            end;
+            if IniFile.RequestTRS and (SD.Prot.ID = piBinkp) and (not SD.Prot.TransitRequested) then begin
+               FixTRS;
             end;
             if SD.Prot.ID in [piRCC, piFTP, piHTTP, piSMTP, piPOP3, piGATE, piNNTP] then
             if SD.Prot.NextStep then else
@@ -14095,18 +14196,14 @@ begin
    ExitNow := False;
    repeat
       EnterCS(EvtCS);
-      if (EvtQueue.Count = 0) or (Count >= EvtPerPass) then
-      begin
-         if EvtQueue.Count = 0 then
-         begin
+      if (EvtQueue.Count = 0) or (Count >= EvtPerPass) then begin
+         if EvtQueue.Count = 0 then begin
             ResetEvt(oEvt);
             EvtNew := False;
          end;
          MlrEvt := nil;
          ExitNow := True;
-      end
-      else
-      begin
+      end else begin
          MlrEvt := EvtQueue[0];
          EvtQueue.AtDelete(0);
          Inc(Count);
@@ -14471,6 +14568,7 @@ begin
    FreeObject(PubBatchT);
    FreeObject(PubBatchR);
    FreeObject(ActiveFile);
+   FreeObject(TRSList);
 
    // Close Handles
 
@@ -15269,8 +15367,7 @@ var
    Typ: DWORD;
    Thr: TDaemonExtPollThread;
 begin
-   if p.Node.Ext <> nil then
-   begin
+   if p.Node.Ext <> nil then begin
       Thr := TDaemonExtPollThread.Create;
       DaemonExtPollThreads.Enter;
       DaemonExtPollThreads.Insert(Thr);
@@ -15281,8 +15378,12 @@ begin
       Exit;
    end;
    if SetPortTyp(p.IPAddr, p.Node.Addr, p.IPFlags, Port, Prot, Typ) then begin
-      NewTimerSecs(p.LastPoll, 0);
-     _WSAConnect(p.IPAddr, p, Prot, Port, Typ);
+      if (P.Typ <> ptpTest) or (Prot = ptBinkP) then begin
+         NewTimerSecs(p.LastPoll, 0);
+        _WSAConnect(p.IPAddr, p, Prot, Port, Typ);
+      end else begin
+         p.Release;
+      end;
    end else begin
       p.Release;
    end;
@@ -15505,6 +15606,7 @@ begin
 //   FidoPolls.Enter;
 //   FidoPolls.Leave;
    MailerThreads := CreateTCollEL('MailerThreads');
+   MailerTransit := CreateTCollEL('MailerTransit');
    MailerForms := CreateTCollEL('MailerForms');
    Zombies := CreateTCollEL('Zombies');
    FileFlags := CreateTCollEL('FileFlags');
@@ -15530,6 +15632,7 @@ begin
       (FidoPolls.Count > 0) or
       (PortsColl.Count > 0) then GlobalFail('DoneMailers, MailerThreads.Count=%d, MailerForms.Count=%d, FidoPolls.Count=%d, PortsColl.Count=%d', [MailerThreads.Count, MailerForms.Count, FidoPolls.Count, PortsColl.Count]);
    FreeObject(MailerThreads);
+   FreeObject(MailerTransit);
    FreeObject(MailerForms);
    FreeObject(FidoPolls);
    FreeObject(FileFlags);

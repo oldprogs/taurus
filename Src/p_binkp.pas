@@ -154,6 +154,7 @@ type
     keysout: tkeys;
     LogFName: string;
     ChatEnabled: boolean;
+    RemoteCanTRS: boolean;
     function MakePwdStr(const AStr: string): string;
     procedure FreeChallenge;
     function RxPktKnown: Boolean;
@@ -584,6 +585,9 @@ begin
         end else
         if k = 'CRYPT' then begin
            RemoteCanCryp := IniFile.RequestCRYPT;
+        end else
+        if k = 'TRS' then begin
+           RemoteCanTRS := True;
         end;
      end;
   end;
@@ -591,7 +595,8 @@ end;
 
 procedure TBinkP.LogNul;
 var
-  s: string;
+   i: integer;
+   s: string;
 begin
   if UpperCase(copy(InMsg, 1, 3)) = 'CHT' then begin
      s := copy(InMsg, 5, Length(InMsg) - 4);
@@ -604,6 +609,30 @@ begin
 {        FLogFile(Self, lfBinkPNul);}
         StartChat(LogFName, false, ChatBell);
         Chat.AddMsg(s);
+     end;
+  end else
+  if UpperCase(copy(InMsg, 1, 3)) = 'TRS' then begin
+     if UpperCase(copy(InMsg, 1, 7)) = 'TRS ASK' then begin
+        CustomInfo := ExtractWord(3, InMsg, [' ']);
+        FLogFile(Self, lfTRSASK);
+     end else
+     if ExtractWord(3, InMsg, [' ']) = 'NAK' then begin
+        for i := 0 to CollMax(TRSList) do begin
+           s := TRSList[i];
+           if ExtractWord(1, s, [' ']) = ExtractWord(2, InMsg, [' ']) then begin
+              s := ExtractWord(1, s, [' ']) + ' NAK';
+              TRSList[i] := s;
+           end;
+        end;
+     end else
+     if ExtractWord(3, InMsg, [' ']) = 'ACK' then begin
+        for i := 0 to CollMax(TRSList) do begin
+           s := TRSList[i];
+           if ExtractWord(1, s, [' ']) = ExtractWord(2, InMsg, [' ']) then begin
+              s := ExtractWord(1, s, [' ']) + ' ACK';
+              TRSList[i] := s;
+           end;
+        end;
      end;
   end else
   if UpperCase(copy(InMsg, 1, 4)) = 'LIST' then begin
@@ -745,6 +774,12 @@ begin
   if IniFile.RequestCRYPT and not CramDisabled then Result := ' CRYPT';
 end;
 
+function CanTRS: string;
+begin
+   if IniFile.RequestTRS then Result := ' TRS'
+                         else Result := '';
+end;
+
 procedure SendAddr;
 begin
   FLogFile(Self, lfBinkPgAddr);
@@ -813,7 +848,7 @@ begin
         if not Originator then begin
            SendMsg(M_NUL, 'OPT' + GetCramStr);
         end;
-        CustomInfo := CanZIP + CanCHT + CanLST + AskCRYPT;
+        CustomInfo := CanZIP + CanCHT + CanLST + AskCRYPT + CanTRS;
         if CustomInfo <> '' then begin
            SendMsg(M_NUL, 'OPT' + CustomInfo);
         end;
@@ -991,25 +1026,48 @@ begin
 end;
 
 procedure TBinkP.DoChat;
+var
+   i: integer;
+   s: string;
 begin
-  if (ChatBuf <> '') and RemoteCanChat and CanSend then begin
-     SendMsg(M_NUL, 'CHT ' + ChatBuf);
-     SendDummy;
-     ChatBuf := '';
-  end;
-  if Chat <> nil then begin
-     if ChatBuf = '' then begin
-        ChatBuf := Chat.ChatBuf;
-     end;
-     if not Chat.Visible and ChatOpened then begin
-        ChatBuf := 'BYE';
-        ChatOpened := False;
-     end;
-  end;
-  while ListBuf.Count > 0 do begin
-     SendMsg(M_NUL, ListBuf[0]);
-     ListBuf.AtFree(0);
-  end;
+   if (ChatBuf <> '') and RemoteCanChat and CanSend then begin
+      SendMsg(M_NUL, 'CHT ' + ChatBuf);
+      SendDummy;
+      ChatBuf := '';
+   end;
+   if Chat <> nil then begin
+      if ChatBuf = '' then begin
+         ChatBuf := Chat.ChatBuf;
+      end;
+      if not Chat.Visible and ChatOpened then begin
+         ChatBuf := 'BYE';
+         ChatOpened := False;
+      end;
+   end;
+   while ListBuf.Count > 0 do begin
+      SendMsg(M_NUL, ListBuf[0]);
+      ListBuf.AtFree(0);
+   end;
+   for i := CollMax(TRSList) downto 0 do begin
+      s := TRSList[i];
+      if WordCount(s, [' ']) = 1 then begin
+         CustomInfo := 'Requesting transit to: ' + s;
+         FLogFile(Self, lfLog);
+         SendMsg(M_NUL, 'TRS ASK ' + s);
+         s := s + ' ASK';
+         TRSList[i] := s;
+      end else
+      if ExtractWord(2, s, [' ']) = 'ACK' then begin
+         CustomInfo := 'Transit request for: ' + ExtractWord(1, s, [' ']) + ' succeeded';
+         FLogFile(Self, lfLog);
+         TRSList.AtFree(i);
+      end else
+      if ExtractWord(2, s, [' ']) = 'NAK' then begin
+         CustomInfo := 'Transit request for: ' + ExtractWord(1, s, [' ']) + ' failed';
+         FLogFile(Self, lfLog);
+         TRSList.AtFree(i);
+      end;
+   end;
 end;
 
 procedure TBinkP.DoTx;
@@ -1022,16 +1080,13 @@ function GotM_GET: Boolean;
   z2: string;
   jd: DWORD;
 begin
-  if M_GET_Coll.Count = 0 then Result := False else
-  begin
+  if M_GET_Coll.Count = 0 then Result := False else begin
     Result := True;
     s1 := M_GET_COll[0];
     s2 := FileStr(T, False);
     z1 := ''; z2 := '';
-    for jd := 0 to 3 do
-    begin
-      if UpperCase(z1) <> UpperCase(z2) then
-      begin
+    for jd := 0 to 3 do begin
+      if UpperCase(z1) <> UpperCase(z2) then begin
         SendMsg(M_ERR, Format('File names mismatch: %s / %s', [z1, z2]));
         State := bdFinishFail;
         Exit;
@@ -1067,7 +1122,7 @@ end;
 procedure Got__(Coll: TStringColl; Action: TTransferFileAction);
 begin
    if UpperCase(Coll[0]) <> UpperCase(FileStr(T, False)) then
-   State := bdFinishFail else begin
+      State := bdFinishFail else begin
       Coll.AtFree(0);
       FFinishSend(Self, Action);
       tx := bdtxGetNextFile;
@@ -1083,8 +1138,7 @@ begin
     bdtxDone : ;
     bdtxInitX :
       begin
-        if count > 2 then
-        begin
+        if count > 2 then begin
           tx := bdtxInit;
         end;
         inc(count);
@@ -1238,6 +1292,9 @@ begin
       end;
     bdtxSendSecondEOB:
       begin
+         if RemoteCanTRS and (TRSList.Count > 0) then begin
+            //
+         end else
          if rx in [bdrxGot_M_EOB, bdrxWaitEOB, bdrxDone] then begin
             SendId(M_EOB);
             SendDummy;

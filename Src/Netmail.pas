@@ -106,7 +106,7 @@ implementation
 
 uses
    RadIni, RRegExp, SysUtils, Wizard, Outbound, DateUtils,
-   IniFiles, Forms, Watcher;
+   Forms, Watcher;
 
 procedure FreeNetmailHolder;
 begin
@@ -319,7 +319,7 @@ var
    PK: TNetmailPKT;
 begin
    if not IniFile.ScanMSG then exit;
-   FP := AddBackSlash(IniFile.ReadString('MSG', 'Netmail', ''));
+   FP := AddBackSlash(IniFile.NetmailDir);
    if uFindFirst(FP + '*.MSG', SR) then begin
       Application.ProcessMessages;
       NetColl.Enter;

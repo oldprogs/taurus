@@ -251,32 +251,32 @@ begin
        end;
     1:
        begin
-         if (not Terminated) and (Application <> nil) and (Application.MainForm <> nil) then begin
-            PostMessage(Application.MainForm.Handle, WM_CHECKFILEFLAGS, 0, 0);
-            FindNextChangeNotification(hFileFlagsWatcher);
-            FindNextChangeNotification(hFileFlagsWatcher);
-         end;
+          if (not Terminated) and (Application <> nil) and (Application.MainForm <> nil) then begin
+             PostMessage(Application.MainForm.Handle, WM_CHECKFILEFLAGS, 0, 0);
+             FindNextChangeNotification(hFileFlagsWatcher);
+             FindNextChangeNotification(hFileFlagsWatcher);
+          end;
        end;
     2:
        begin
-         if (not Terminated) and (Application <> nil) and (Application.MainForm <> nil) then begin
-           getfiletime(SysUtils.FileOpen(IniFName, SysUtils.fmShareDenyNone), nil, nil, @p3);
-           if (p3.dwLowDateTime <> FTime.dwLowDateTime) or (p3.dwHighDateTime <> FTime.dwHighDateTime) then begin
-             PostMessage(Application.MainForm.Handle, WM_CFGREREAD, 0, 0);
-             FTime.dwLowDateTime := p3.dwLowDateTime;
-             FTime.dwHighDateTime := p3.dwHighDateTime;
-           end;
-           FindNextChangeNotification(hHomeDirWatcher);
-           FindNextChangeNotification(hHomeDirWatcher);
-         end;
+          if (not Terminated) and (Application <> nil) and (Application.MainForm <> nil) then begin
+             getfiletime(SysUtils.FileOpen(IniFName, SysUtils.fmShareDenyNone), nil, nil, @p3);
+             if (p3.dwLowDateTime <> FTime.dwLowDateTime) or (p3.dwHighDateTime <> FTime.dwHighDateTime) then begin
+                PostMessage(Application.MainForm.Handle, WM_CFGREREAD, 0, 0);
+                FTime.dwLowDateTime := p3.dwLowDateTime;
+                FTime.dwHighDateTime := p3.dwHighDateTime;
+             end;
+             FindNextChangeNotification(hHomeDirWatcher);
+             FindNextChangeNotification(hHomeDirWatcher);
+          end;
        end;
     3:
        begin
-         if (not Terminated) and (Application <> nil) and (Application.MainForm <> nil) then begin
-            PostMessage(MainWinHandle, WM_CHECKNETMAIL, 0, 0);
-            FindNextChangeNotification(hNetmailWatcher);
-            FindNextChangeNotification(hNetmailWatcher);
-         end;
+          if (not Terminated) and (Application <> nil) and (Application.MainForm <> nil) then begin
+             PostMessage(MainWinHandle, WM_CHECKNETMAIL, 0, 0);
+             FindNextChangeNotification(hNetmailWatcher);
+             FindNextChangeNotification(hNetmailWatcher);
+          end;
        end;
 {    wtOutReader:
        begin

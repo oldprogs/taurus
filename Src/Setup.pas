@@ -354,6 +354,7 @@ type
     { Private declarations }
     Edits: array[0..12] of TSoundRec;
     wdCRC: DWORD;
+    inCRC: boolean;
   public
     procedure SetData(i: integer);
     procedure GetData;
@@ -470,8 +471,8 @@ begin
        WriteBool('Sounds', 'c_' + copy(Edits[_i].ed.Name, 3, 10), Edits[_i].cb.Checked);
     end;
   finally
-    IniFile.Leave;
     free;
+    IniFile.Leave;
   end;
 //System end
 
@@ -736,8 +737,8 @@ begin
        Edits[n].cb.Checked := ReadBool('Sounds', 'c_' + copy(Edits[n].ed.Name, 3, 10), True);
     end;
   finally
-    IniFile.Leave;
     free;
+    IniFile.Leave;
   end;
   case IniFile.Priority of
     IDLE_PRIORITY_CLASS: n := 0;
@@ -990,21 +991,25 @@ end;
 
 procedure TSetupForm.FormClose(Sender: TObject; var Action: TCloseAction);
 var
-  canclose: boolean;
+   canclose: boolean;
 begin
-  if (sender <> nil) and (ModalResult <> mrOK) then Exit;
-  canClose := ParseAddress(eMainAKA.Text, FidoAddr1);
-  if canClose then begin
-    canClose := ParseAddress(eSynchClock.Text, FidoAddr2);
-    if not canClose then begin
+   if (sender <> nil) and (ModalResult <> mrOK) then Exit;
+   canClose := ParseAddress(eMainAKA.Text, FidoAddr1);
+   if canClose then begin
+      canClose := ParseAddress(eSynchClock.Text, FidoAddr2);
+      if not canClose then begin
+         DisplayErrorLng(rsAdrInNoValidAdr, Handle);
+        _FlashWindow(eSynchClock)
+      end;
+   end else begin
       DisplayErrorLng(rsAdrInNoValidAdr, Handle);
-      _FlashWindow(eSynchClock)
-    end;
-  end else begin
-    DisplayErrorLng(rsAdrInNoValidAdr, Handle);
-    _FlashWindow(eMainAKA)
-  end;
-  if not CanClose then Action := caNone;
+     _FlashWindow(eMainAKA)
+   end;
+   if not CanClose then begin
+      Action := caNone;
+      tmCRC.Enabled := False;
+      While inCRC do Sleep(100);
+   end;
 end;
 
 procedure TSetupForm.sbMainAKABrowseClick(Sender: TObject);
@@ -1288,11 +1293,12 @@ var
          end;
          if c is TComponent then begin
             CalcCRC(c);
-         end;   
+         end;
       end;
    end;
 
 begin
+   inCRC := True;
    CRC := CRC32_INIT;
    CalcCRC(SetupForm);
    if SetupForm.wdCRC = 0 then begin
@@ -1301,6 +1307,7 @@ begin
    if SetupForm <> nil then begin
       SetupForm.btnApply.Enabled := CRC <> SetupForm.wdCRC;
    end;
+   inCRC := False;
 end;
 
 procedure TSetupForm.bNetmailClick(Sender: TObject);
@@ -1310,7 +1317,7 @@ begin
    s := Browse(Handle, eNetmail.Text);
    if s <> '' then begin
       eNetmail.Text := s;
-   end;   
+   end;
 end;
 
 procedure TSetupForm.cbScanMSGClick(Sender: TObject);

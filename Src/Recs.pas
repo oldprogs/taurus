@@ -3357,8 +3357,7 @@ begin
     FStream := TDosStream.Create(FHandle);
     T := CreateTextReaderByStream(FStream);
     if T = nil then GlobalFail('OpenBWZLog (%s) CreateTextReaderByStream (Error %d ??)', [BWZColl.FName, GetLastError]);
-    while not T.Eof do
-    begin
+    while not T.Eof do begin
       S := T.GetStr;
       BWZColl.LastS := BWZColl.LastS + S + #13#10;
       if S = '' then Continue;

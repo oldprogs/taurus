@@ -8,7 +8,7 @@ interface
 uses Windows, Classes, SysUtils, xBase, xFido;
 
 type
-     TPollType = (ptpUnknown, ptpOutb, ptpCron, ptpManual, ptpImm, ptpBack, ptpRCC, ptpNetm, ptpNmIm);
+     TPollType = (ptpUnknown, ptpOutb, ptpCron, ptpManual, ptpImm, ptpBack, ptpRCC, ptpNetm, ptpNmIm, ptpTest);
 
      TOutStatusSet = Set of TOutStatus;
      TPollTypeSet = Set of TPollType;
@@ -104,12 +104,12 @@ type
      TOutbound = class
        private
          FFileBoxes: Pointer;
-         CacheCS: TRTLCriticalSection;
          fOutboundSize: DWORD;
          function _GetOutColl: TOutNodeColl;
          function _GetOutCollP(const Single, AFull, Scan: Boolean; const Addr: TFidoAddress): TOutNodeColl;
          function  GetOutboundSize: longint;
        public
+         CacheCS: TRTLCriticalSection;
          BusyFlags: TColl;
          OutCache: TOutNodeColl;
          ForcedRescan: Boolean;
@@ -2064,8 +2064,9 @@ end;
 
 destructor TOutNode.Destroy;
 begin
-  if Files <> nil then
-    Files.FreeAll;
+  if Files <> nil then begin
+     Files.FreeAll;
+  end;
   FreeObject(Files);
   inherited Destroy;
 end;

@@ -378,6 +378,9 @@ const
   rsMMptNmIm        = 481;
   rsMMptpiNmIm      = 482;
   rsMMOutNMSG       = 483;
+  rsMMptTest        = 484;
+  rsMMptpiTest      = 485;
+  rsMMOutTest       = 486;
 
   rsCDCh            = 103;
   rsNBBoNotLtd      = 104;
