@@ -2653,7 +2653,7 @@ begin
          if c.Search(@p.Node.Addr, j) then begin
             n := c[j];
             p.Flav := p.Flav + n.FStatus;
-            if not (p.Typ in [ptpManual, ptpTest]) then begin
+            if not (p.Typ in [ptpCron, ptpTest, ptpManual]) then begin
                for t := Low(TPollType) to High(TPollType) do begin
                   if (t in n.FPollType) then p.Typ := t;
                end;
@@ -6650,10 +6650,13 @@ begin
             r.KillAction := kaBsoKillAfter
          else
             SD.KillSentREQ := True;
-      end;
+      end else
       if (UpperCase(ExtractFileExt(r.Name)) = '.CLB') then begin
          SD.KillSentREQ := True;
          SD.Prot.ProtocolError := ecAbortByLocal;
+      end else
+      if (UpperCase(ExtractFileExt(P.T.d.FName)) = '.PKT') then begin
+         FinalizePKT(r.Address, r.Name);
       end;
    end;
 

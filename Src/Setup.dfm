@@ -2002,16 +2002,16 @@ object SetupForm: TSetupForm
       Caption = 'Netmail'
       object lNetmail: TLabel
         Left = 8
-        Top = 33
+        Top = 39
         Width = 60
         Height = 15
         Caption = 'MSG folder'
       end
       object gNetmail: TAdvGrid
         Left = 0
-        Top = 82
+        Top = 88
         Width = 418
-        Height = 293
+        Height = 287
         FixedFont.Charset = DEFAULT_CHARSET
         FixedFont.Color = clWindowText
         FixedFont.Height = -12
@@ -2032,7 +2032,7 @@ object SetupForm: TSetupForm
           95)
       end
       object cbDynamicRouting: TCheckBox
-        Left = 9
+        Left = 8
         Top = 11
         Width = 191
         Height = 17
@@ -2041,14 +2041,14 @@ object SetupForm: TSetupForm
       end
       object eNetmail: TEdit
         Left = 8
-        Top = 50
-        Width = 370
+        Top = 58
+        Width = 372
         Height = 23
         TabOrder = 2
       end
       object bNetmail: TButton
         Left = 382
-        Top = 49
+        Top = 57
         Width = 27
         Height = 25
         Caption = '...'
@@ -2063,6 +2063,14 @@ object SetupForm: TSetupForm
         Caption = 'Scan MSG area'
         TabOrder = 4
         OnClick = cbScanMSGClick
+      end
+      object cbUnpackPKT: TCheckBox
+        Left = 206
+        Top = 32
+        Width = 203
+        Height = 17
+        Caption = 'Unpack arrived PKTs'
+        TabOrder = 5
       end
     end
     object TPage

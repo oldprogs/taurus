@@ -31,6 +31,8 @@ type
       Fido: boolean;
       Attr: system.word;
       Flgs: string;
+      Klug: TStringColl;
+      Text: boolean;
       function IChr: string;
       function Date: string;
       destructor Destroy; override;
@@ -51,6 +53,7 @@ type
 
    TPktColl = class(TColl)
       function  FindName(const n: string): integer;
+      procedure DeleName(const n: string);
       function  GetAnItem(i: integer): TNetmailPkt;
       procedure SetItem(i: integer; p: TNetmailPkt);
       property  Items[i: integer]: TNetmailPkt read GetAnItem write SetItem; default;
@@ -100,6 +103,10 @@ type
 procedure FreeNetmailHolder;
 procedure ClearAttach(m, a: string);
 procedure UnpackPKT(p: string);
+procedure FinalizePKT(a: TFidoAddress; p: string);
+procedure NewMessage(a: TFidoAddress; o, u: string);
+procedure WriteLine(n: string);
+procedure EndMessage;
 
 var
    NetmailHolder: TNetmail;
@@ -155,18 +162,73 @@ begin
          end;
       end;
       if b then begin
-         if t = '' then begin
-            DelFile('ClearAttach', m);
-         end else begin
-            FillChar(h.subject, SizeOf(h.subject), #0);
+         FillChar(h.subject, SizeOf(h.subject), #0);
+         if t <> '' then begin
             move(t[1], h.subject, Length(t));
-            n.Position := 0;
-            n.Write(h, SizeOf(h));
-            n.SaveToFile(m);
+         end else begin
+            h.attr := h.attr and (not FileAttached);
          end;
+         n.Position := 0;
+         n.Write(h, SizeOf(h));
+         n.SaveToFile(m);
       end;
       n.Free;
    end;
+end;
+
+var
+   s: TFileStream;
+
+procedure NewMessage;
+var
+   h: _fidomsgtype;
+   t: string;
+   x: integer;
+begin
+   x := NetmailHolder.MaxMSG;
+   FillChar(h, SizeOf(h), #0);
+   t := 'Taurus ' + CProductVersionA + '/W32';
+   move(t[1], h.from, Length(t));
+   move(o[1], h.towhom, Length(o));
+   move(u[1], h.subject, Length(u));
+   t := FormatDateTime('dd mmm yy  hh:nn:ss', Date + Time);
+   move(t[1], h.azdate, Length(t));
+   h.dest_node := a.Node;
+   h.orig_node := IniFile.MainAddr.Node;
+   h.orig_net  := IniFile.MainAddr.Net;
+   h.dest_net  := a.Net;
+   h.attr := Pvt or Local or KillSent;
+   repeat
+      inc(x);
+      t := AddBackSlash(IniFile.NetmailDir) + IntToStr(x) + '.MSG';
+   until not ExistFile(t);
+   s := TFileStream.Create(t, fmCreate or fmShareExclusive);
+   s.Write(h, SizeOf(h));
+   t := #1'MSGID: ' + Addr2Str(IniFile.MainAddr) + ' ' + Format('%.8x', [GetTickCount xor xRandom32]) + #13;
+   s.Write(t[1], Length(t));
+   t := #1'INTL ' +
+          ExtractWord(1, ExtractWord(1, Addr2Str(a), ['@']), ['.']) + ' ' +
+          ExtractWord(1, ExtractWord(1, Addr2Str(IniFile.MainAddr), ['@']), ['.']) + #13;
+   s.Write(t[1], Length(t));
+   if a.Point <> 0 then begin
+      t := #1'TOPT ' + IntToStr(a.Point) + #13;
+      s.Write(t[1], Length(t));
+   end;
+   if IniFile.MainAddr.Point <> 0 then begin
+      t := #1'FMPT ' + IntToStr(IniFile.MainAddr.Point) + #13;
+      s.Write(t[1], Length(t));
+   end;
+end;
+
+procedure WriteLine;
+begin
+   s.Write(n[1], Length(n));
+end;
+
+procedure EndMessage;
+begin
+   WriteLine(#13'--- Taurus ' + CProductVersionA + '/W32'#13);
+   s.Free;
 end;
 
 procedure UnpackPKT;
@@ -205,52 +267,65 @@ begin
       o := m.bOff - m.Offs - SizeOf(PackedMsgHeaderRec);
       s.Write(Pointer(Integer(m.Body) + o)^, m.Size - o - 1);
       s.Free;
-      if pos('CFM', m.Flgs) > 0 then begin
-         FillChar(h, SizeOf(h), #0);
-         t := 'Taurus ' + CProductVersionA + '/W32';
-         move(t[1], h.from, Length(t));
-         move(m.Frnm[1], h.towhom, Length(m.Frnm));
-         t := 'Transit confirmation';
-         move(t[1], h.subject, Length(t));
-         t := FormatDateTime('dd mmm yy  hh:nn:ss', Date + Time);
-         move(t[1], h.azdate, Length(t));
-         h.dest_node := m.From.Node;
-         h.orig_node := IniFile.MainAddr.Node;
-         h.orig_net  := IniFile.MainAddr.Net;
-         h.dest_net  := m.From.Net;
-         h.attr := Pvt or Local or KillSent or AuditRequest;
-         repeat
-            inc(x);
-            t := AddBackSlash(IniFile.NetmailDir) + IntToStr(x) + '.MSG';
-         until not ExistFile(t);
-         s := TFileStream.Create(t, fmCreate or fmShareExclusive);
-         s.Write(h, SizeOf(h));
-         t := #1'MSGID: ' + Addr2Str(IniFile.MainAddr) + ' ' + Format('%.8x', [GetTickCount xor xRandom32]) + #13;
-         s.Write(t[1], Length(t));
-         t := #1'INTL ' +
-                ExtractWord(1, ExtractWord(1, Addr2Str(m.From), ['@']), ['.']) + ' ' +
-                ExtractWord(1, ExtractWord(1, Addr2Str(IniFile.MainAddr), ['@']), ['.']) + #13;
-         s.Write(t[1], Length(t));
-         if m.From.Point <> 0 then begin
-            t := #1'TOPT ' + IntToStr(m.From.Point) + #13;
-            s.Write(t[1], Length(t));
-         end;
-         if IniFile.MainAddr.Point <> 0 then begin
-            t := #1'FMPT ' + IntToStr(IniFile.MainAddr.Point) + #13;
-            s.Write(t[1], Length(t));
-         end;
-         t := #13' Your message to: ' + Addr2Str(m.Addr) + ' (' + m.Tonm + ')'#13 +
+      if (m.Attr and AuditRequest > 0) then begin
+         NewMessage(m.From, m.Frnm, 'Transit confirmation');
+         WriteLine(
+              #13' Your message to: ' + Addr2Str(m.Addr) + ' (' + m.Tonm + ')'#13 +
                  '            from: ' + m.Date + #13 +
                  '         subject: ' + m.Subj + #13 +
               #13' was received at: ' + Addr2Str(IniFile.MainAddr) + #13 +
-                 '              on: ' + FormatDateTime('dd mmm yy  hh:nn:ss', Date + Time) + #13 +
-              #13'--- Taurus ' + CProductVersionA + '/W32'#13;
-         s.Write(t[1], Length(t));
-         s.Free;
+                 '              on: ' + FormatDateTime('dd mmm yy  hh:nn:ss', Date + Time) + #13#13 +
+              #13'   Message route:'#13#13
+                  );
+         for o := 0 to CollMax(m.Klug) do begin
+            t := m.Klug[o];
+            if copy(t, 2, 4) = 'Via ' then begin
+               t[1] := '@';
+               WriteLine(t);
+            end;
+         end;
+         WriteLine(#13);
+         EndMessage;
       end;
    end;
    FreeObject(n);
    DelFile('UnpackPKT', p);
+end;
+
+procedure FinalizePKT;
+var
+   n: TNetmail;
+   i: integer;
+   m: TNetmailMSG;
+   t: string;
+   o: integer;
+begin
+   n := TNetmail.Create;
+   n.ScanPacket(p);
+   for i := 0 to CollMax(n.NetColl) do begin
+      m := n.NetColl[i];
+      if (m.Attr and AuditRequest > 0) then begin
+         NewMessage(m.From, m.Frnm, 'Transit confirmation');
+         WriteLine(
+              #13' Your message to: ' + Addr2Str(m.Addr) + ' (' + m.Tonm + ')'#13 +
+                 '            from: ' + m.Date + #13 +
+                 '         subject: ' + m.Subj + #13 +
+              #13'  was routed via: ' + Addr2Str(a) + #13 +
+                 '              on: ' + FormatDateTime('dd mmm yy  hh:nn:ss', Date + Time) + #13#13 +
+              #13'   Message route:'#13#13
+                  );
+         for o := 0 to CollMax(m.Klug) do begin
+            t := m.Klug[o];
+            if copy(t, 2, 4) = 'Via ' then begin
+               t[1] := '@';
+               WriteLine(t);
+            end;
+         end;
+         WriteLine(#13);
+         EndMessage;
+      end;
+   end;
+   FreeObject(n);
 end;
 
 function TNetmailMsg.IChr;
@@ -296,6 +371,7 @@ begin
    if Body <> nil then begin
       FreeMem(Body, Size);
    end;
+   FreeObject(Klug);
    inherited;
 end;
 
@@ -365,6 +441,16 @@ begin
          Result := i;
          exit;
       end;
+   end;
+end;
+
+procedure TPktColl.DeleName;
+var
+   i: integer;
+begin
+   i := FindName(n);
+   if i > -1 then begin
+      AtFree(i);
    end;
 end;
 
@@ -500,6 +586,7 @@ var
    i: integer;
    p: string;
    e: string;
+   m: TNetmailMSG;
   SR: tuFindData;
 begin
    ScanMSG;
@@ -525,7 +612,11 @@ begin
       uFindClose(SR);
    end;
    for i := CollMax(NetColl) downto 0 do begin
-      if NetColl[i].Dele then NetColl.AtFree(i);
+      if NetColl[i].Dele then begin
+         m := NetColl[i];
+         PktColl.DeleName(m.Pack);
+         NetColl.AtFree(i);
+      end;
    end;
    NetColl.Leave;
 end;
@@ -656,28 +747,38 @@ begin
          if b = 01 then t := '';
          t := t + chr(b);
          if (b = 13) or (b = 0) then begin
-            if copy(t, 2, 5) = 'TOPT ' then begin
-               a := StrToInt(ExtractWord(1, ExtractWord(2, t, [' ']), [#13]));
-            end else
-            if copy(t, 2, 5) = 'FMPT ' then begin
-               e := StrToInt(ExtractWord(1, ExtractWord(2, t, [' ']), [#13]));
-            end else
-            if copy(t, 2, 5) = 'INTL ' then begin
-               ParseAddress(ExtractWord(1, ExtractWord(2, t, [' ']), [#13]), l.Addr);
-               ParseAddress(ExtractWord(1, ExtractWord(3, t, [' ']), [#13]), l.From);
-            end else
-            if copy(t, 3, 5) = 'SGID:' then begin
-               GetWrd(t, z, ' ');
-               GetWrd(t, z, #13);
-               for j := 1 to Length(z) do begin
-                  if z[j] = ' ' then z[j] := '#';
+            if t[1] = #1 then begin
+               if l.Klug = nil then begin
+                  l.Klug := TStringColl.Create;
                end;
-               l.MsId := z;
-            end else
-            if copy(t, 2, 5) = 'CHRS:' then begin
-               GetWrd(t, z, ' ');
-               GetWrd(t, z, #13);
-               l.Chrs := z;
+               l.Klug.Add(t);
+               if copy(t, 2, 5) = 'TOPT ' then begin
+                  a := StrToInt(ExtractWord(1, ExtractWord(2, t, [' ']), [#13]));
+               end else
+               if copy(t, 2, 5) = 'FMPT ' then begin
+                  e := StrToInt(ExtractWord(1, ExtractWord(2, t, [' ']), [#13]));
+               end else
+               if copy(t, 2, 5) = 'INTL ' then begin
+                  ParseAddress(ExtractWord(1, ExtractWord(2, t, [' ']), [#13]), l.Addr);
+                  ParseAddress(ExtractWord(1, ExtractWord(3, t, [' ']), [#13]), l.From);
+               end else
+               if copy(t, 3, 5) = 'SGID:' then begin
+                  GetWrd(t, z, ' ');
+                  GetWrd(t, z, #13);
+                  for j := 1 to Length(z) do begin
+                     if z[j] = ' ' then z[j] := '#';
+                  end;
+                  l.MsId := z;
+               end else
+               if copy(t, 2, 5) = 'FLAGS' then begin
+                  GetWrd(t, z, ' ');
+                  l.Flgs := copy(t, 1, Length(t) - 1);
+               end else
+               if copy(t, 2, 5) = 'CHRS:' then begin
+                  GetWrd(t, z, ' ');
+                  GetWrd(t, z, #13);
+                  l.Chrs := z;
+               end;
             end else
             if copy(t, 1, 5) = 'AREA:' then begin
                GetWrd(t, z, ':');
@@ -694,13 +795,11 @@ begin
                l.Numb := r.base + r.numb;
                LstColl.Objects[j] := Pointer(r);
             end else
-            if copy(t, 2, 5) = 'FLAGS' then begin
-               GetWrd(t, z, ' ');
-               l.Flgs := copy(t, 1, Length(t) - 1);
-            end else
             if copy(t, 2, 9) = '* Origin:' then begin
                z := ExtractWord(1, ExtractWord(WordCount(t, ['(']), t, ['(']), [')']);
                ParseAddress(z, l.From);
+            end else begin
+               l.Text := True;
             end;
             if b = 13 then begin
                t := '';

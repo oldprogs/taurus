@@ -356,41 +356,53 @@ end;
 
 function TOutBound.DeleteFile;
 var
-  sc: TStringColl;
+   sc: TStringColl;
 begin
-  Result := False;
-  case Status of
-    osImmed, osCrash, osDirect, osNormal, osHold, osHReq: ;
-    else Exit;
-  end;
-  sc := TStringColl.Create;
-  sc.Add(AFName);
-  Result := MoveFiles(sc, @Address, nil, @Status, nil, False, False, False);
-  FreeObject(sc);
+   Result := False;
+   case Status of
+   osImmed,
+   osCrash,
+   osDirect,
+   osNormal,
+   osHold,
+   osHReq: ;
+   else Exit;
+   end;
+   sc := TStringColl.Create;
+   sc.Add(AFName);
+   Result := MoveFiles(sc, @Address, nil, @Status, nil, False, False, False);
+   FreeObject(sc);
 end;
 
 function TOutBound.ChangeAttachStatusFile(const Address: TFidoAddress; const AFName: string; OldStatus, NewStatus: TOutStatus): Boolean;
 var
-  sc: TStringColl;
+   sc: TStringColl;
 begin
-  sc := TStringColl.Create;
-  sc.Add(AFName);
-  Result := MoveFiles(sc, @Address, @Address, @OldStatus, @NewStatus, False, False, False);
-  FreeObject(sc);
+   sc := TStringColl.Create;
+   sc.Add(AFName);
+   Result := MoveFiles(sc, @Address, @Address, @OldStatus, @NewStatus, False, False, False);
+   FreeObject(sc);
 end;
 
 //* for Victor Symov
 
 function TOutBound.MoveFiles;
 var
-  FOutbound, SrcFName, DstFName, s: string;
-  DS, AuxS: TDosStream;
-  AC, L: TStringColl;
-  FHandle: DWORD;
-  SLN, I, Files: Integer;
-  OK: Boolean;
-  os: TOutStatus;
-  ka: TKillAction;
+   FOutbound,
+   SrcFName,
+   DstFName,
+   s: string;
+   DS,
+   AuxS: TDosStream;
+   AC,
+   L: TStringColl;
+   FHandle: DWORD;
+   SLN,
+   I,
+   Files: Integer;
+   OK: Boolean;
+   os: TOutStatus;
+   ka: TKillAction;
 
 function Moved: Boolean;
 var
@@ -422,178 +434,177 @@ end;
 // файлы ?
 
 begin
-  ClearErrorMsg;
-  FOutbound := dOutbound;
-  AC := nil;
-  DS := nil;
-  AuxS := nil;
-  Result := CollCount(AFNames) = 0;
-  if Result then Exit;
-  SrcFName := GetOutFileName(SrcAddr^, SrcStat^);
-  if DstStat <> nil then
-  begin
-    if HardCore or Purge then GlobalFail('%s', ['TOutBound.MoveFiles, HardCore / Purge']);
-    if (CompareAddrs(SrcAddr^, DstAddr^) = 0) then
-    begin
-      if (SrcStat^ = osRequest) or
-         (SrcStat^ = osCallback) or
-         (SrcStat^ = osHReq) or
-         (SrcStat^ = DstStat^) then
-      begin
-        Result := True;
-        Exit;
+   ClearErrorMsg;
+   FOutbound := dOutbound;
+   AC := nil;
+   DS := nil;
+   AuxS := nil;
+   Result := CollCount(AFNames) = 0;
+   if Result then Exit;
+   SrcFName := GetOutFileName(SrcAddr^, SrcStat^);
+   if DstStat <> nil then begin
+      if HardCore or Purge then GlobalFail('%s', ['TOutBound.MoveFiles, HardCore / Purge']);
+      if (CompareAddrs(SrcAddr^, DstAddr^) = 0) then begin
+         if (SrcStat^ = osRequest) or
+            (SrcStat^ = osCallback) or
+            (SrcStat^ = osHReq) or
+            (SrcStat^ = DstStat^) then
+         begin
+            Result := True;
+            Exit;
+         end;
       end;
-    end;
-    if SrcStat^ = osRequest then os := osRequest else
-    if SrcStat^ = osCallback then os := osCallback else
-    case DstStat^ of
-      osImmed, osCrash, osDirect, osNormal, osHold, osHReq : os := DstStat^;
+      if SrcStat^ = osRequest then os := osRequest else
+      if SrcStat^ = osCallback then os := osCallback else
+      case DstStat^ of
+      osImmed,
+      osCrash,
+      osDirect,
+      osNormal,
+      osHold,
+      osHReq : os := DstStat^;
       osImmedMail  : os := osImmed;
       osCrashMail  : os := osCrash;
       osDirectMail : os := osDirect;
       osNormalMail : os := osNormal;
       osHoldMail   : os := osHold;
-      else begin GlobalFail('%s', ['TOutBound.MoveFiles, DstStat^ ??']); Exit end;
-    end;
-    DstFName := GetOutFileName(DstAddr^, os);
-  end;
-  case SrcStat^ of
-    osImmed, osCrash, osDirect, osNormal, osHold, osHReq : ;
-    else
-    begin
-      if Purge then begin Result := True; Exit end;
-      if CollCount(AFNames) <> 1 then GlobalFail('TOutBound.MoveFiles CollCount(AFNames) = %d', [CollCount(AFNames)]);
-      if DstAddr = nil then
+      else
+         begin
+            GlobalFail('%s', ['TOutBound.MoveFiles, DstStat^ ??']); Exit;
+         end;
+      end;
+      DstFName := GetOutFileName(DstAddr^, os);
+   end;
+   case SrcStat^ of
+   osImmed,
+   osCrash,
+   osDirect,
+   osNormal,
+   osHold,
+   osHReq : ;
+   else
       begin
-        if not HardCore then Result := True else
-        begin
-          Result := DelFile('MoveFile1', SrcFName);
+         if Purge then begin Result := True; Exit end;
+         if CollCount(AFNames) <> 1 then GlobalFail('TOutBound.MoveFiles CollCount(AFNames) = %d', [CollCount(AFNames)]);
+         if DstAddr = nil then begin
+            if not HardCore then Result := True else begin
+               Result := DelFile('MoveFile1', SrcFName);
 //*          AFNames.AtDelete(AFNames.IdxOf(SrcFName));
-          if not Result then SetErrorMsg(SrcFName);
-        end;
-      end else
-      begin
-        DS := CreateDosStream(DstFName, [cWrite]);
-        if DS = nil then Exit;
-        if SeekEOF(DS.Handle) = INVALID_FILE_SIZE then
-        begin
-          FreeObject(DS);
-          SetErrorMsg(DstFName);
-          Exit;
-        end;
-        case SrcStat^ of
-          osImmedMail, osCrashMail, osDirectMail, osNormalMail, osHoldMail :
-          begin
-            if GetPktFileType(SrcFName) = pftP2K then s := '%s%.8x.P2K' else s := '%s%.8x.PKT';
-            s := Format(s, [ExtractFilePath(SrcFName), xRandom32]);
-            if not DS.WriteLn('^' + s) then
-            begin
-              FreeObject(DS);
-              SetErrorMsg(DstFName);
-              Exit;
+               if not Result then SetErrorMsg(SrcFName);
             end;
-            FreeObject(DS);
-            i := 0;
-            repeat
-              Inc(i);
-              if Moved then
-              begin
-                Result := True;
-                Break;
-              end else
-              begin
-                SetErrorMsg(Format('%s -> %s', [SrcFName, s]));
-                case GetLastError of
-                  ERROR_ALREADY_EXISTS,
-                  ERROR_FILE_EXISTS:
-                  else Break;
-                end;
-              end;
-            until i < $1000;
-          end;
-          osRequest,
-          osCallback:
-          begin
-            AuxS := CreateDosStream(SrcFName, [cRead]);
-            if AuxS = nil then
-            begin
-              FreeObject(DS);
-              SetErrorMsg(SrcFName);
-              Exit;
+         end else begin
+            DS := CreateDosStream(DstFName, [cWrite]);
+            if DS = nil then Exit;
+            if SeekEOF(DS.Handle) = INVALID_FILE_SIZE then begin
+               FreeObject(DS);
+               SetErrorMsg(DstFName);
+               Exit;
             end;
-            DS.CopyFrom(AuxS, 0);
-            FreeObject(AuxS);
-            FreeObject(DS);
-            if not DelFile('MoveFile2', SrcFName) then SetErrorMsg(SrcFName);
-            Result := True;
-          end;
-          else GlobalFail('%s', ['TOutBound.MoveFiles SrcStat^ ??']);
-        end;
-      end {DstAddr <> nil};
-      Exit;
-    end {non-list};
-  end {case};
-  Files := 0;
-  if DstAddr <> nil then
-  begin
-    AuxS := CreateDosStream(DstFName, [cWrite]);
-    if AuxS = nil then Exit;
-    if SeekEOF(AuxS.Handle) = INVALID_FILE_SIZE then
-    begin
-      FreeObject(AuxS);
-      SetErrorMsg(DstFName);
-      Exit;
-    end;
-  end;
+            case SrcStat^ of
+            osImmedMail,
+            osCrashMail,
+            osDirectMail,
+            osNormalMail,
+            osHoldMail :
+               begin
+                  if GetPktFileType(SrcFName) = pftP2K then s := '%s%.8x.P2K' else s := '%s%.8x.PKT';
+                  s := Format(s, [ExtractFilePath(SrcFName), xRandom32]);
+                  if not DS.WriteLn('^' + s) then begin
+                     FreeObject(DS);
+                     SetErrorMsg(DstFName);
+                     Exit;
+                  end;
+                  FreeObject(DS);
+                  i := 0;
+                  repeat
+                     Inc(i);
+                     if Moved then begin
+                        Result := True;
+                        Break;
+                     end else begin
+                        SetErrorMsg(Format('%s -> %s', [SrcFName, s]));
+                        case GetLastError of
+                        ERROR_ALREADY_EXISTS,
+                        ERROR_FILE_EXISTS:
+                        else Break;
+                        end;
+                     end;
+                  until i < $1000;
+               end;
+            osRequest,
+            osCallback:
+               begin
+                  AuxS := CreateDosStream(SrcFName, [cRead]);
+                  if AuxS = nil then begin
+                     FreeObject(DS);
+                     SetErrorMsg(SrcFName);
+                     Exit;
+                  end;
+                  DS.CopyFrom(AuxS, 0);
+                  FreeObject(AuxS);
+                  FreeObject(DS);
+                  if not DelFile('MoveFile2', SrcFName) then SetErrorMsg(SrcFName);
+                  Result := True;
+               end;
+            else GlobalFail('%s', ['TOutBound.MoveFiles SrcStat^ ??']);
+            end;
+         end {DstAddr <> nil};
+         Exit;
+      end {non-list};
+   end {case};
+   Files := 0;
+   if DstAddr <> nil then begin
+      AuxS := CreateDosStream(DstFName, [cWrite]);
+      if AuxS = nil then Exit;
+      if SeekEOF(AuxS.Handle) = INVALID_FILE_SIZE then begin
+         FreeObject(AuxS);
+         SetErrorMsg(DstFName);
+         Exit;
+      end;
+   end;
 
-  DS := nil;
-  if ExistFile(SrcFName) then begin
-     DS := CreateDosStream(SrcFName, [cRead, cWrite, cExisting]);
-  end;
-  if DS = nil then
-  begin
-    FreeObject(AuxS);
+   DS := nil;
+   if ExistFile(SrcFName) then begin
+      DS := CreateDosStream(SrcFName, [cRead, cWrite, cExisting]);
+   end;
+   if DS = nil then begin
+      FreeObject(AuxS);
 //*    FixBoxes;
-    Exit;
-  end;
-  L := TStringColl.Create;
-  if not L.LoadFromStream(DS) then
-  begin
-    FreeObject(DS);
-    FreeObject(AuxS);
-    FreeObject(L);
+      Exit;
+   end;
+   L := TStringColl.Create;
+   if not L.LoadFromStream(DS) then begin
+      FreeObject(DS);
+      FreeObject(AuxS);
+      FreeObject(L);
 //*    FixBoxes;
-    Exit;
-  end;
-  for i := L.Count - 1 downto 0 do
-  begin
-    s := L[i];
-    ka := GetBinkFileName(s);
-    if s = '' then Continue;
-    s := MakeFullDir(FOutbound, s);
-    Inc(Files);
-    if AFNames.Found(s) then
-    begin
-      if DstAddr <> nil then
-      begin
-        if AC = nil then AC := TStringColl.Create('');
-        AC.AtInsert(0, NewStr(L[i]));
-      end;
-      if Purge and (FileExists(s)) then Continue;
-      L.AtFree(i);
-      if HardCore then
-      begin
-        case ka of
-          kaBsoKillAfter:
-            DeleteOutFile(s);
-          kaBsoTruncateAfter:
-            begin
-              FHandle := _CreateFile(s, [cTruncate, cEnsureNew]);
-              if FHandle <> INVALID_HANDLE_VALUE then ZeroHandle(FHandle);
+      Exit;
+   end;
+   for i := L.Count - 1 downto 0 do begin
+      s := L[i];
+      ka := GetBinkFileName(s);
+      if s = '' then Continue;
+      s := MakeFullDir(FOutbound, s);
+      Inc(Files);
+      if AFNames.Found(s) then begin
+         if DstAddr <> nil then begin
+           if AC = nil then AC := TStringColl.Create;
+            AC.AtInsert(0, NewStr(L[i]));
+         end;
+         if Purge and (FileExists(s)) then Continue;
+         L.AtFree(i);
+         if HardCore then begin
+            case ka of
+            kaBsoKillAfter:
+               DeleteOutFile(s);
+            kaBsoTruncateAfter:
+               begin
+                  FHandle := _CreateFile(s, [cTruncate, cEnsureNew]);
+                  if FHandle <> INVALID_HANDLE_VALUE then ZeroHandle(FHandle);
+               end;
+            kaBsoNothingAfter: ;
             end;
-          kaBsoNothingAfter: ;
-        end;
-      end;
+         end;
 //*      AFNames.AtDelete(AFNames.IdxOf(s));
 //*    end else begin
 //*       if not FileExists(s) then begin
@@ -603,185 +614,180 @@ begin
 //*  непрерывная прополка. Такое надо ?
 //*
 //*  Нет, а как ты предлагаешь? Последние закомментированные строчки раскомментировать?
-    end;
-  end;
-  if AC <> nil then
-  begin
-    s := AC.LongString;
-    FreeObject(AC);
-    SLN := Length(s);
-    if SLN > 0 then AuxS.Write(s[1], SLN);
-  end;
-  FreeObject(AuxS);
-  i := L.Count;
-  DS.Position := 0;
-  OK := L.SaveToStream(DS);
-  FreeObject(L);
-  OK := DS.Truncate and OK;
-  FreeObject(DS);
-  if ((Unlink or Purge or HardCore or (DstAddr <> nil)) and ((i = 0) or (Files = 0))) or
-     ((not Purge) and (not HardCore) and (DstAddr <> nil) and (Files = 0)) then
-  begin
-    if not DelFile('MoveFile3', SrcFName) then
-    begin
-      SetErrorMsg(SrcFName);
-      OK := False;
-    end;
-  end;
+      end;
+   end;
+   if AC <> nil then begin
+      s := AC.LongString;
+      FreeObject(AC);
+      SLN := Length(s);
+      if SLN > 0 then AuxS.Write(s[1], SLN);
+   end;
+   FreeObject(AuxS);
+   i := L.Count;
+   DS.Position := 0;
+   OK := L.SaveToStream(DS);
+   FreeObject(L);
+   OK := DS.Truncate and OK;
+   FreeObject(DS);
+   if ((Unlink or Purge or HardCore or (DstAddr <> nil)) and ((i = 0) or (Files = 0))) or
+      ((not Purge) and (not HardCore) and (DstAddr <> nil) and (Files = 0)) then
+   begin
+      if not DelFile('MoveFile3', SrcFName) then begin
+         SetErrorMsg(SrcFName);
+         OK := False;
+      end;
+   end;
 //*  FixBoxes;
-  ForcedRescan := True;
-  Result := OK;
+   ForcedRescan := True;
+   Result := OK;
 end;
 
 function TOutBound.AttachFiles(const Address: TFidoAddress; Files: TStringColl; Status: TOutStatus; KillAction: TKillAction): Boolean;
 var
-  FOutbound, S, US: String;
-  DS: TDosStream;
-  L, FoundFiles: TStringColl;
-  I: Integer;
-  AddNew: Boolean;
+   FOutbound,
+   S,
+   US: String;
+   DS: TDosStream;
+   L, FoundFiles: TStringColl;
+   I: Integer;
+   AddNew: Boolean;
 begin
-  Result := False;
-  FOutbound := dOutbound;
-  ClearErrorMsg;
-  if Files.Count = 0 then Exit;
-  S := GetOutFileName(Address, Status);
-  DS := CreateDosStreamDir(S, [cRead, cWrite]);
-  if DS = nil then Exit;
-  L := TStringColl.Create('');
-  L.LoadFromStream(DS);
-  FoundFiles := TStringColl.Create('FoundFiles');
-  AddNew := False;
-  for i := 0 to L.Count - 1 do
-  begin
-    S := L[i];
-    GetBinkFileName(S);
-    if S = '' then Continue;
-    S := MakeFullDir(FOutbound, S);
-    FoundFiles.Ins(UpperCase(S));
-  end;
-  for i := 0 to Files.Count - 1 do
-  begin
-    S := Files[i]; US := UpperCase(S);
-    if FoundFiles.Found(US) then Continue;
-    AddNew := True;
-    L.Add(SKillActionA[KillAction]+S);
-  end;
-  FreeObject(FoundFiles);
-  if AddNew then
-  begin
-    DS.Position := 0;
-    L.SaveToStream(DS);
-    DS.Truncate;
-  end;
-  FreeObject(L);
-  FreeObject(DS);
-  ForcedRescan := True;
-  Result := True;
+   Result := False;
+   FOutbound := dOutbound;
+   ClearErrorMsg;
+   if Files.Count = 0 then Exit;
+   S := GetOutFileName(Address, Status);
+   DS := CreateDosStreamDir(S, [cRead, cWrite]);
+   if DS = nil then Exit;
+   L := TStringColl.Create('');
+   L.LoadFromStream(DS);
+   FoundFiles := TStringColl.Create('FoundFiles');
+   AddNew := False;
+   for i := 0 to L.Count - 1 do begin
+      S := L[i];
+      GetBinkFileName(S);
+      if S = '' then Continue;
+      S := MakeFullDir(FOutbound, S);
+      FoundFiles.Ins(UpperCase(S));
+   end;
+   for i := 0 to Files.Count - 1 do begin
+      S := Files[i]; US := UpperCase(S);
+      if FoundFiles.Found(US) then Continue;
+      AddNew := True;
+      L.Add(SKillActionA[KillAction]+S);
+   end;
+   FreeObject(FoundFiles);
+   if AddNew then begin
+      DS.Position := 0;
+      L.SaveToStream(DS);
+      DS.Truncate;
+   end;
+   FreeObject(L);
+   FreeObject(DS);
+   ForcedRescan := True;
+   Result := True;
 end;
 
 procedure TOutBound.RewriteFREQ;
-  var FN: String;
+var
+   FN: String;
 begin
-  FN := GetOutFileName(Address, osRequest);
-  DelFile('RewriteFREQ', FN);
-  if (Files <> nil) and (Files.Count > 0) then
-     try
-       CreateDirInheritance(ExtractFilePath(FN));
-       Files.SaveToFile(FN)
-     except end;
+   FN := GetOutFileName(Address, osRequest);
+   DelFile('RewriteFREQ', FN);
+   if (Files <> nil) and (Files.Count > 0) then
+   try
+      CreateDirInheritance(ExtractFilePath(FN));
+      Files.SaveToFile(FN)
+   except
+   end;
 end;
 
 function ScanBinkAttach(const Status: TOutStatus; const Address: TFidoAddress; const FName, FOutbound: string; L: TOutFileColl; AFileNames: TStringColl; AFileInfos: TFileInfoColl): Boolean;
 var
-  T: TTextReader;
-  S: String;
-  N: String;
-  Nfo: TFileInfo;
-  ks: TKillAction;
-  F: TOutFile;
-  e: Integer;
-  b: Boolean;
+   T: TTextReader;
+   S: String;
+   N: String;
+   Nfo: TFileInfo;
+   ks: TKillAction;
+   F: TOutFile;
+   e: Integer;
+   b: Boolean;
 begin
-  Result := True;
-  S := FName + SAttachExt[Status];
-  N := S;
-  T := CreateTextReader(S);
-  if T = nil then
-  begin
-    if GetErrorNum = ERROR_FILE_NOT_FOUND then ClearErrorMsg;
-    exit;
+   Result := True;
+   S := FName + SAttachExt[Status];
+   N := S;
+   T := CreateTextReader(S);
+   if T = nil then begin
+      if GetErrorNum = ERROR_FILE_NOT_FOUND then ClearErrorMsg;
+      exit;
 //    if GetLastError = ERROR_FILE_NOT_FOUND then ClearErrorMsg;
 //    Exit;
-  end;
+   end;
 
-  while not T.EOF do
-  begin
-    S := T.GetStr;
-    if S = '' then Continue;
-    ks := GetBinkFileName(S);
-    S := MakeFullDir(FOutbound, S);
+   while not T.EOF do begin
+      S := T.GetStr;
+      if S = '' then Continue;
+      ks := GetBinkFileName(S);
+      S := MakeFullDir(FOutbound, S);
 
-    if (AFileNames = nil) or (AFileInfos = nil) then b := False else begin
-      b := AFileNames.Search(@S, e);
-      if b then Nfo := PFileInfo(AFileInfos[e])^;
-    end;
-    if not b then b := GetFileNfo(S, Nfo, False);
-    if b then begin
-      F := TOutFile.Create;
-      F.Error := 0;
-      F.Link := N;
-      F.Name := StrAsg(S);
-      F.Nfo := Nfo;
-      F.KillAction := ks;
-      F.Address := Address;
-      F.FStatus := Status;
-      L.Insert(F);
-      FidoOut.fOutboundSize := FidoOut.fOutboundSize + Nfo.Size;
-    end else begin
-      e := GetLastError;
-      SetErrorMsg(S);
-      F := TOutFile.Create;
-      F.Error := e;
-      F.Link := N;
-      F.Name := StrAsg(S);
-      F.Address := Address;
-      F.FStatus := Status;
-      L.Insert(F);
-    end;
-  end;
-  FreeObject(T);
-  Result := False;
+      if (AFileNames = nil) or (AFileInfos = nil) then b := False else begin
+         b := AFileNames.Search(@S, e);
+         if b then Nfo := PFileInfo(AFileInfos[e])^;
+      end;
+      if not b then b := GetFileNfo(S, Nfo, False);
+      if b then begin
+         F := TOutFile.Create;
+         F.Error := 0;
+         F.Link := N;
+         F.Name := StrAsg(S);
+         F.Nfo := Nfo;
+         F.KillAction := ks;
+         F.Address := Address;
+         F.FStatus := Status;
+         L.Insert(F);
+         FidoOut.fOutboundSize := FidoOut.fOutboundSize + Nfo.Size;
+      end else begin
+         e := GetLastError;
+         SetErrorMsg(S);
+         F := TOutFile.Create;
+         F.Error := e;
+         F.Link := N;
+         F.Name := StrAsg(S);
+         F.Address := Address;
+         F.FStatus := Status;
+         L.Insert(F);
+      end;
+   end;
+   FreeObject(T);
+   Result := False;
 end;
 
 procedure AddFile(A: TOutStatus; KA: TKillAction; const Address: TFidoAddress; L: TOutFileColl; const FName: string; AFileNames: TStringColl; AFileInfos: TFileInfoColl);
 var
-  Nfo: TFileInfo;
-  s: string;
-  F: TOutFile;
-  b: Boolean;
-  e: Integer;
+   Nfo: TFileInfo;
+   s: string;
+   F: TOutFile;
+   b: Boolean;
+   e: Integer;
 begin
-  s := FName + SAttachExt[A];
+   s := FName + SAttachExt[A];
 
-  if (AFileNames = nil) or (AFileInfos = nil) then b := False else
-  begin
-    b := AFileNames.Search(@S, e);
-    if b then Nfo := PFileInfo(AFileInfos[e])^;
-  end;
-  if not b then b := GetFileNfo(S, Nfo, False);
+   if (AFileNames = nil) or (AFileInfos = nil) then b := False else begin
+      b := AFileNames.Search(@S, e);
+      if b then Nfo := PFileInfo(AFileInfos[e])^;
+   end;
+   if not b then b := GetFileNfo(S, Nfo, False);
 
-  if b then
-  begin
-    F := TOutFile.Create;
-    F.Name := StrAsg(s);
-    F.Nfo := Nfo;
-    F.KillAction := KA;
-    F.Address := Address;
-    F.FStatus := A;
-    L.Insert(F);
-    FidoOut.fOutboundSize := FidoOut.fOutboundSize + Nfo.Size;
-  end;
+   if b then begin
+      F := TOutFile.Create;
+      F.Name := StrAsg(s);
+      F.Nfo := Nfo;
+      F.KillAction := KA;
+      F.Address := Address;
+      F.FStatus := A;
+      L.Insert(F);
+      FidoOut.fOutboundSize := FidoOut.fOutboundSize + Nfo.Size;
+   end;
 end;
 
 procedure DoGetOutbound(const FName, FOutbound: string; L: TOutFileColl; const Address: TFidoAddress; const Status: TOutStatusSet; AFileNames: TStringColl; AFileInfos: TFileInfoColl; backup: boolean);
@@ -806,456 +812,484 @@ const
   (a: osRequest;    b: True;  c: kaBsoNothingAfter),
   (a: osCallback;   b: True;  c: kaBsoKillAfter));
 var
-  i: Integer;
+   i: Integer;
 begin
-  for i := Low(osa) to High(osa) do if osa[i].a in Status then begin
-    if osa[i].b then begin
-      AddFile(osa[i].a, osa[i].c, Address, L, FName, AFileNames, AFileInfos);
-    end else begin
-      ScanBinkAttach(osa[i].a, Address, FName, FOutbound, L, AFileNames, AFileInfos);
-    end;
-  end;
+   for i := Low(osa) to High(osa) do if osa[i].a in Status then begin
+      if osa[i].b then begin
+         AddFile(osa[i].a, osa[i].c, Address, L, FName, AFileNames, AFileInfos);
+      end else begin
+         ScanBinkAttach(osa[i].a, Address, FName, FOutbound, L, AFileNames, AFileInfos);
+      end;
+   end;
 end;
 
 type
-  TgfbPosMacro = class
-    FPos: Integer;
-    FDirMacro: TDirMacro;
-  end;
+   TgfbPosMacro = class
+      FPos: Integer;
+      FDirMacro: TDirMacro;
+   end;
 
-  TFileBoxUnparsedRecord = class
-    a: Ta4s;
-    Status: TOutStatus;
-    Name: string;
-  end;
+   TFileBoxUnparsedRecord = class
+      a: Ta4s;
+      Status: TOutStatus;
+      Name: string;
+   end;
 
 function GetFileBoxDirColl(const AAddr, ADir: string; AStatus: TOutStatus; AColl: TFileBoxDirColl; PErrorMsg: PString; AMoveTo: PString; AKillAction: PKillAction): Boolean;
 var
-  re: TPcre;
-  Match,
-  NeedPass2,
-  IsRegExp: Boolean;
-  CopyRE: Integer;
-  LoChar, c: Char;
-  v: DWORD;
-  AuxAddr, a, aa: Ta4s;
-  m: TDirMacro;
-  Mask,
-  SearchMask,
-  s, z, k, n: string;
-  r: TFileBoxDirRecord;
-  FStatus: TOutStatus;
-  Addr: TFidoAddress;
-  i, j: Integer;
-  IdxFirst, IdxLast: Integer;
-  MPcoll: TColl;
-  MPrec: TgfbPosMacro;
-  SR: TuFindData;
-  FbuR: TFileBoxUnparsedRecord;
-  FbuC: TColl;
+   re: TPcre;
+   Match,
+   NeedPass2,
+   IsRegExp: Boolean;
+   CopyRE: Integer;
+   LoChar, c: Char;
+   v: DWORD;
+   AuxAddr, a, aa: Ta4s;
+   m: TDirMacro;
+   Mask,
+   SearchMask,
+   s, z, k, n: string;
+   r: TFileBoxDirRecord;
+   FStatus: TOutStatus;
+   Addr: TFidoAddress;
+   i, j: Integer;
+   IdxFirst, IdxLast: Integer;
+   MPcoll: TColl;
+   MPrec: TgfbPosMacro;
+   SR: TuFindData;
+   FbuR: TFileBoxUnparsedRecord;
+   FbuC: TColl;
 
-procedure AE(const s: string);
-begin
-  if PErrorMsg = nil then Exit;
-  if PErrorMsg^ <> '' then PErrorMsg^ := PErrorMsg^ + ', ';
-  PErrorMsg^ := PErrorMsg^ + s;
-end;
+   procedure AE(const s: string);
+   begin
+      if PErrorMsg = nil then Exit;
+      if PErrorMsg^ <> '' then PErrorMsg^ := PErrorMsg^ + ', ';
+      PErrorMsg^ := PErrorMsg^ + s;
+   end;
 
-function Add: Boolean;
-begin
-  Result := True;
-  if AColl.Search(@s, I) then begin
-    if PErrorMsg <> nil then begin
-      r := AColl[I];
-      PErrorMsg^ := FormatLng(rsOutbSameFBox, [AAddr, OutStatus2Char(AStatus), Addr2Str(r.Addr), OutStatus2Char(r.Status), s]);
-    end;
-    Result := False;
-  end else begin
-    if not A4s2Addr(a, Addr) then begin
-      if PErrorMsg <> nil then begin
-        PErrorMsg^ := '';
-        if a[1] = '*' then AE('zone');
-        if a[2] = '*' then AE('net');
-        if a[3] = '*' then AE('node');
-        if a[4] = '*' then AE('point');
-        if a[5] = '*' then AE('domain');
-        if PErrorMsg <> nil then PErrorMsg^ := FormatLng(rsOutbNoMacroX, [PErrorMsg^]);
+   function Add: Boolean;
+   begin
+      Result := True;
+      if AColl.Search(@s, I) then begin
+         if PErrorMsg <> nil then begin
+            r := AColl[I];
+            PErrorMsg^ := FormatLng(rsOutbSameFBox, [AAddr, OutStatus2Char(AStatus), Addr2Str(r.Addr), OutStatus2Char(r.Status), s]);
+         end;
+         Result := False;
+      end else begin
+         if not A4s2Addr(a, Addr) then begin
+            if PErrorMsg <> nil then begin
+               PErrorMsg^ := '';
+               if a[1] = '*' then AE('zone');
+               if a[2] = '*' then AE('net');
+               if a[3] = '*' then AE('node');
+               if a[4] = '*' then AE('point');
+               if a[5] = '*' then AE('domain');
+               if PErrorMsg <> nil then PErrorMsg^ := FormatLng(rsOutbNoMacroX, [PErrorMsg^]);
+            end;
+            Result := False;
+            Exit;
+         end;
+         if (AStatus = osNone) then begin
+            if PErrorMsg <> nil then PErrorMsg^ := LngStr(rsOutbNoMacroS);
+            Result := False;
+            Exit;
+         end;
+         r := TFileBoxDirRecord.Create;
+         r.Addr := Addr;
+         r.Status := AStatus;
+         r.Path := s;
+         if AMoveTo <> nil then r.MoveTo := AMoveTo^;
+         if AKillAction <> nil then r.KillAction := AKillAction^;
+         AColl.AtInsert(I, r);
       end;
-      Result := False;
-      Exit;
-    end;
-    if (AStatus = osNone) then begin
-      if PErrorMsg <> nil then PErrorMsg^ := LngStr(rsOutbNoMacroS);
-      Result := False;
-      Exit;
-    end;
-    r := TFileBoxDirRecord.Create;
-    r.Addr := Addr;
-    r.Status := AStatus;
-    r.Path := s;
-    if AMoveTo <> nil then r.MoveTo := AMoveTo^;
-    if AKillAction <> nil then r.KillAction := AKillAction^;
-    AColl.AtInsert(I, r);
-  end;
-end;
+   end;
 
 begin
-  IdxLast := 0;   // to avoid uninitialized
-  IdxFirst := 0;  // to avoid warning
-  LoChar := #0;   // to avoid warning
-  Result := False;
-  if IniFile = nil then exit;
-  IsRegExp := False;
-  MPColl := nil;
-  RE := nil;
-  if not SplitAddress(AAddr, a, True) then Exit;
-  repeat
-    NeedPass2 := False;
-    s := StrQuotePartEx(ADir, '~', #3, #4);
-    if (not IsRegExp) and (s <> ADir) then begin
-      IsRegExp := True;
-      Continue;
-    end;
-
-    z := s;
-    repeat
-      s := ReplaceDirMacro(z, nil, nil, [rmkAddr, rmkStatus, rmkOnce], @m);
-      if s = z then begin
-        Result := Add;
-        Exit;
+   IdxLast := 0;   // to avoid uninitialized
+   IdxFirst := 0;  // to avoid warning
+   LoChar := #0;   // to avoid warning
+   Result := False;
+   if IniFile = nil then exit;
+   IsRegExp := False;
+   MPColl := nil;
+   RE := nil;
+   if not SplitAddress(AAddr, a, True) then Exit;
+   repeat
+      NeedPass2 := False;
+      s := StrQuotePartEx(ADir, '~', #3, #4);
+      if (not IsRegExp) and (s <> ADir) then begin
+         IsRegExp := True;
+         Continue;
       end;
+
       z := s;
-      s := StrQuotePartEx(s, '~', #3, #4);
-      if (not IsRegExp) and (s <> z) then begin
-        IsRegExp := True;
-        NeedPass2 := True;
-        Break;
-      end;
-      z := s;
-      i := Pos(#1, s);
-      IdxFirst := i;
-      while (IdxFirst > 0) and (s[IdxFirst] <> '\') do Dec(IdxFirst);
-    until IdxFirst > 0;
-    if NeedPass2 then Continue;
-    IdxLast := i;
-    while (IdxLast <= Length(s)) and (s[IdxLast] <> '\') do Inc(IdxLast);
-    z := Copy(s, IdxFirst + 1, IdxLast - IdxFirst - 1);
-    if not IsRegExp then IsRegExp := Pos('*', z) > 0;
-    repeat
-      case m of
-        dmZONE,
-        dmNET,
-        dmNODE,
-        dmPOINT,
-        dmDOMAIN:
-          begin
-            case m of
-              dmZONE:  j := 1;
-              dmNET:   j := 2;
-              dmNODE:  j := 3;
-              dmPOINT: j := 4;
-              {dmPOINT:} else j := 5;  // to avoid uninitialized warning
-            end;
-            Mask := a[j];
-            if (Mask = '*') and (z[Length(z)] <> #1) then begin
-              if not IsRegExp then begin
-                IsRegExp := True;
-                if CollCount(MpColl) > 0 then begin
-                  FreeObject(MPColl);
-                  NeedPass2 := True;
-                  Break;
-                end;
-              end;
-            end;
-          end;
-        dmXZONE:
-          if a[1] = '*' then Mask := '??' else Mask := H32_2(Vl(a[1]));
-        dmXPOINT:
-          if a[4] = '*' then Mask := '??' else Mask := H32_2(Vl(a[4]));
-        dmHZONE:
-          if a[1] = '*' then Mask := '???' else Mask := Hex3(Vl(a[1]));
-        dmDZONE:
-          if a[1] = '*' then Mask := '*' else
-          if a[1] = inttostr(Inifile.MainAddr.Zone) then Mask := '*'
-                                                    else Mask := Hex3(Vl(a[1]));
-        dmXNET:
-          if a[2] = '*' then Mask := '???' else Mask := H32_3(Vl(a[2]));
-        dmXNODE:
-          if a[3] = '*' then Mask := '???' else Mask := H32_3(Vl(a[3]));
-        dmHNET:
-          if a[2] = '*' then Mask := '????' else Mask := Hex4(Vl(a[2]));
-        dmHNODE:
-          if a[3] = '*' then Mask := '????' else Mask := Hex4(Vl(a[3]));
-        dmHPOINT:
-          if a[4] = '*' then Mask := '????' else Mask := Hex4(Vl(a[4]));
-        dmSTATUS:
-          if AStatus = osNone then Mask := '?' else Mask := OutStatus2Char(AStatus);
-        dmTSTATUS:
-          if AStatus = osNone then
-          begin
-            if (z[Length(z)] <> #1) then
-            begin
-              if PErrorMsg <> nil then
-              begin
-                PErrorMsg^ := LngStr(rsOutbVlSm);
-              end;
-              Exit;
-            end;
-            Mask := '*';
-          end else Mask := OutStatus2StrTMail(AStatus);
-      end;
-
-      j := Pos(#1, z);
-      Delete(z, j, 1);
-
-      if (Mask = '*') or (Pos('?', Mask) > 0) then begin
-        if IsRegExp then Mask := #2;
-        MPrec := TgfbPosMacro.Create;
-        MPrec.FPos := j;
-        MPRec.FDirMacro := m;
-        if MPColl = nil then MPColl := TColl.Create('MPColl');
-        MPColl.Add(MPrec);
-      end;
-
-      Insert(Mask, z, j);
-
-      i := 0;
       repeat
-        k := ReplaceDirMacro(z, nil, nil, [rmkAddr, rmkStatus, rmkOnce], @m);
-        if k = z then Break;
-        i := Pos(#1, k);
-        z := k;
-      until i > 0;
-    until i = 0;
-  until not NeedPass2;
-
-  k := Copy(s, 1, IdxFirst);
-
-  FbuC := TColl.Create('FbuC');
-
-  if CollCount(MPColl) = 0 then begin
-    FBuR := TFileBoxUnparsedRecord.Create;
-    FBuR.a := a;
-    FBuR.Status := AStatus;
-    FBuR.Name := z;
-    FBuC.Add(FBuR);
-  end else begin
-    if not IsRegExp then SearchMask := z else begin
-      CopyRE := 0;
-      SearchMask := '$'; // Match the end of the line
-      j := CollMax(MPColl);
-      for i := Length(z) downto 1 do begin
-        c := z[i];
-        case CopyRE of
-          0:
+         s := ReplaceDirMacro(z, nil, nil, [rmkAddr, rmkStatus, rmkOnce], @m);
+         if s = z then begin
+            Result := Add;
+            Exit;
+         end;
+         z := s;
+         s := StrQuotePartEx(s, '~', #3, #4);
+         if (not IsRegExp) and (s <> z) then begin
+            IsRegExp := True;
+            NeedPass2 := True;
+            Break;
+         end;
+         z := s;
+         i := Pos(#1, s);
+         IdxFirst := i;
+         while (IdxFirst > 0) and (s[IdxFirst] <> '\') do Dec(IdxFirst);
+      until IdxFirst > 0;
+      if NeedPass2 then Continue;
+      IdxLast := i;
+      while (IdxLast <= Length(s)) and (s[IdxLast] <> '\') do Inc(IdxLast);
+      z := Copy(s, IdxFirst + 1, IdxLast - IdxFirst - 1);
+      if not IsRegExp then IsRegExp := Pos('*', z) > 0;
+      repeat
+         case m of
+         dmZONE,
+         dmNET,
+         dmNODE,
+         dmPOINT,
+         dmDOMAIN:
             begin
-              n := '';
-              case c of
-                #4: SearchMask := '~' + SearchMask;
-                #3: CopyRE := 3;
-                #2:
-                   begin
-                    MPRec := MPColl[j]; Dec(j);
-                    case MPREc.FDirMacro of
-                      dmZONE,
-                      dmNET,
-                      dmNODE,
-                      dmPOINT:   n := '[0-9]{1,5}';
-                      dmXZONE,
-                      dmXPOINT:  n := '[a-vA-V0-9]{2}';
-                      dmHZONE:   n := '[a-fA-F0-9]{3}';
-                      dmDZONE:   begin n := '[.]{0,1}[a-fA-F0-9]{0,3}'; CopyRE := 4; end;
-                      dmXNET,
-                      dmXNODE:   n := '[a-vA-V0-9]{3}';
-                      dmHNET,
-                      dmHNODE,
-                      dmHPOINT:  n := '[a-fA-F0-9]{4}';
-                      dmDOMAIN:  n := '[a-zA-Z0-9]{1,8}';
-                      dmSTATUS:  n := '[ICDNHicdnh]';
-                      dmTSTATUS: n := '[ICDNHicdnh]{0,1}';
-                    end;
-                    //if Pos('(', n) = 0 then
-                    n := '(' + n + ')';
+               case m of
+               dmZONE:  j := 1;
+               dmNET:   j := 2;
+               dmNODE:  j := 3;
+               dmPOINT: j := 4;
+              {dmPOINT:} else j := 5;  // to avoid uninitialized warning
+               end;
+               Mask := a[j];
+               if (Mask = '*') and (z[Length(z)] <> #1) then begin
+                  if not IsRegExp then begin
+                     IsRegExp := True;
+                     if CollCount(MpColl) > 0 then begin
+                        FreeObject(MPColl);
+                        NeedPass2 := True;
+                        Break;
+                     end;
                   end;
-                '*': n := '.*';
-                '?': n := '.';
-                'a'..'z', 'A'..'Z', '0'..'9': n := c;
-                else n := '\x' + Hex2(Byte(c));
-              end;
-              SearchMask := n + SearchMask;
+               end;
             end;
+         dmXZONE:
+            if a[1] = '*' then Mask := '??' else Mask := H32_2(Vl(a[1]));
+         dmXPOINT:
+            if a[4] = '*' then Mask := '??' else Mask := H32_2(Vl(a[4]));
+         dmHZONE:
+            if a[1] = '*' then Mask := '???' else Mask := Hex3(Vl(a[1]));
+         dmDZONE:
+            if a[1] = '*' then Mask := '*' else
+            if a[1] = inttostr(Inifile.MainAddr.Zone) then Mask := '*'
+                                                      else Mask := Hex3(Vl(a[1]));
+         dmXNET:
+            if a[2] = '*' then Mask := '???' else Mask := H32_3(Vl(a[2]));
+         dmXNODE:
+            if a[3] = '*' then Mask := '???' else Mask := H32_3(Vl(a[3]));
+         dmHNET:
+            if a[2] = '*' then Mask := '????' else Mask := Hex4(Vl(a[2]));
+         dmHNODE:
+            if a[3] = '*' then Mask := '????' else Mask := Hex4(Vl(a[3]));
+         dmHPOINT:
+            if a[4] = '*' then Mask := '????' else Mask := Hex4(Vl(a[4]));
+         dmSTATUS:
+            if AStatus = osNone then Mask := '?' else Mask := OutStatus2Char(AStatus);
+         dmTSTATUS:
+            if AStatus = osNone then begin
+               if (z[Length(z)] <> #1) then begin
+                  if PErrorMsg <> nil then begin
+                     PErrorMsg^ := LngStr(rsOutbVlSm);
+                  end;
+                  Exit;
+               end;
+               Mask := '*';
+            end else Mask := OutStatus2StrTMail(AStatus);
+         end;
+
+         j := Pos(#1, z);
+         Delete(z, j, 1);
+
+         if (Mask = '*') or (Pos('?', Mask) > 0) then begin
+            if IsRegExp then Mask := #2;
+            MPrec := TgfbPosMacro.Create;
+            MPrec.FPos := j;
+            MPRec.FDirMacro := m;
+            if MPColl = nil then MPColl := TColl.Create('MPColl');
+            MPColl.Add(MPrec);
+         end;
+
+         Insert(Mask, z, j);
+
+         i := 0;
+         repeat
+            k := ReplaceDirMacro(z, nil, nil, [rmkAddr, rmkStatus, rmkOnce], @m);
+            if k = z then Break;
+            i := Pos(#1, k);
+            z := k;
+         until i > 0;
+      until i = 0;
+   until not NeedPass2;
+
+   k := Copy(s, 1, IdxFirst);
+
+   FbuC := TColl.Create('FbuC');
+
+   if CollCount(MPColl) = 0 then begin
+      FBuR := TFileBoxUnparsedRecord.Create;
+      FBuR.a := a;
+      FBuR.Status := AStatus;
+      FBuR.Name := z;
+      FBuC.Add(FBuR);
+   end else begin
+      if not IsRegExp then SearchMask := z else begin
+         CopyRE := 0;
+         SearchMask := '$'; // Match the end of the line
+         j := CollMax(MPColl);
+         for i := Length(z) downto 1 do begin
+            c := z[i];
+            case CopyRE of
+            0:
+               begin
+                  n := '';
+                  case c of
+                  #4: SearchMask := '~' + SearchMask;
+                  #3: CopyRE := 3;
+                  #2:
+                     begin
+                        MPRec := MPColl[j]; Dec(j);
+                        case MPREc.FDirMacro of
+                        dmZONE,
+                        dmNET,
+                        dmNODE,
+                        dmPOINT:   n := '[0-9]{1,5}';
+                        dmXZONE,
+                        dmXPOINT:  n := '[a-vA-V0-9]{2}';
+                        dmHZONE:   n := '[a-fA-F0-9]{3}';
+                        dmDZONE:
+                           begin
+                              n := '[.]{0,1}[a-fA-F0-9]{0,3}'; CopyRE := 4;
+                           end;
+                        dmXNET,
+                        dmXNODE:   n := '[a-vA-V0-9]{3}';
+                        dmHNET,
+                        dmHNODE,
+                        dmHPOINT:  n := '[a-fA-F0-9]{4}';
+                        dmDOMAIN:  n := '[a-zA-Z0-9]{1,8}';
+                        dmSTATUS:  n := '[ICDNHicdnh]';
+                        dmTSTATUS: n := '[ICDNHicdnh]{0,1}';
+                        end;
+                    //if Pos('(', n) = 0 then
+                        n := '(' + n + ')';
+                     end;
+                  '*': n := '.*';
+                  '?': n := '.';
+                  'a'..'z', 'A'..'Z', '0'..'9': n := c;
+                  else n := '\x' + Hex2(Byte(c));
+                  end;
+                  SearchMask := n + SearchMask;
+               end;
 {          1:
             begin
               HiChar := c; CopyRE := 2;
             end;}
-          2:
-            begin
-              SearchMask := Char(VlH(c+LoChar)) + SearchMask; CopyRE := 3;
-            end;
-          3:
-            begin
-              if c = #3 then
-              CopyRE := 0
-              else begin LoChar := c; CopyRe := 2 end;
-            end;
-          4:
-            begin
-              CopyRE := 0;
-            end;
-        end;
-      end;
-      z := '(?i)^' + SearchMask;
-      SearchMask := '*.*';
-    end;
-    if uFindFirstEx(k + SearchMask, SR, FindExSearchLimitToDirectories) then begin
-      repeat
-        v := INVALID_VALUE;
-        if SR.Info.Attr and FILE_ATTRIBUTE_DIRECTORY <> 0 then begin
-          n := SR.FName;
-          if (n <> '.') and (n <> '..') then begin
-            Match := True;
-            if IsRegExp then begin
-              if RE = nil then RE := GetRegExpr(z);
-              Match := (RE.ErrPtr = 0) and (RE.Match(n) > 0) and (RE[0] <> '');
-            end;
-            if Match then begin
-              aa := a;
-              FStatus := AStatus;
-              for i := 0 to CollMax(MPColl) do begin
-                MPRec := MPColl[i];
-                m := MPRec.FDirMacro;
-                if IsRegExp then Mask := RE[i + 1] else begin
-                  j := MPRec.FPos;
-                  case m of
-                    dmZONE, dmNET, dmNODE, dmPOINT:
-                      Mask := CopyLeft(n, j);
-                    dmSTATUS, dmTSTATUS:
-                      Mask := Copy(n, j, 1);
-                    dmXZONE, dmXPOINT:
-                      Mask := Copy(n, j, 2);
-                    dmHZONE, dmXNET, dmXNODE:
-                      Mask := Copy(n, j, 3);
-                    dmDZONE:
-                      Mask := Copy(n, j, 3);
-                    dmHNET, dmHNODE, dmHPOINT:
-                      Mask := Copy(n, j, 4);
-                    dmDOMAIN:
-                      MASK := Copy(n, 1, j);
+            2:
+               begin
+                  SearchMask := Char(VlH(c+LoChar)) + SearchMask; CopyRE := 3;
+               end;
+            3:
+               begin
+                  if c = #3 then CopyRE := 0 else begin
+                     LoChar := c; CopyRe := 2;
                   end;
-                end;
-                v := INVALID_VALUE;
-                case m of
-                  dmSTATUS:
-                    begin
-                      if Mask = '' then FStatus := osError else FStatus := Char2OutStatus(Mask[1]);
-                      if FStatus = osError then Break else v := 0;
-                    end;
-                  dmTSTATUS:
-                    begin
-                      if Mask = '' then FStatus := osNormal else begin
-                        FStatus := Char2OutStatus(Mask[1]);
-                        if FStatus = osNormal then FStatus := osError;
-                      end;
-                      if FStatus = osError then Break else v := 0;
-                    end;
-                  dmDOMAIN:
-                    begin
-                       aa[5] := Mask;
-                    end;
-                  dmZONE..dmXPOINT:
-                    begin
-                      case m of
-                        dmZONE, dmNET, dmNODE, dmPOINT:
-                          v := Vl(Mask);
-                        dmHZONE, dmHNET, dmHNODE, dmHPOINT:
-                          v := VlH(Mask);
-                        dmDZONE:
-                          begin
-                             Delete(Mask, 1, 1);
-                             v := VlH(Mask);
-                             if (v = INVALID_VALUE) and
-                                ((aa[5] = Inifile.MainAddr.Domain) or (IniFile.MainAddr.Domain = ''))
-                             then v := Inifile.MainAddr.Zone;
-                          end;
-                        dmXZONE, dmXNET, dmXNODE, dmXPOINT:
-                          v := VlX(Mask);
-                      end;
-                      if v = INVALID_VALUE then Break;
-                      case m of
-                        dmZONE, dmHZONE, dmDZONE, dmXZONE:
-                          j := 1;
-                        dmNET, dmHNET, dmXNET:
-                          j := 2;
-                        dmNODE, dmHNODE, dmXNODE:
-                          j := 3;
-                        dmPOINT, dmHPOINT, dmXPOINT:
-                          j := 4;
-                        else
-                        begin
-                          j := GlobalFail('%s', ['GetFileBoxDirColl'])
-                        end;
-                      end;
-                      aa[j] := IntToStr(v);
-                    end;
-                end;
-              end;
-              if (v <> INVALID_VALUE) and SplitAddress(A4sToAddrStr(aa), AuxAddr, True) and PureAddressMasks(AuxAddr) then begin
-                FBuR := TFileBoxUnparsedRecord.Create;
-                FBuR.a := aa;
-                FBuR.Status := FStatus;
-                FBuR.Name := n;
-                FBuC.Add(FBuR);
-              end;
+               end;
+            4:
+               begin
+                  CopyRE := 0;
+               end;
             end;
-          end;
-        end;
-      until not uFindNext(SR);
-      uFindClose(SR);
-    end;
-    if RE <> nil then begin
-      RE.Unlock;
-    end;
-  end;
-  FreeObject(MPColl);
-  Mask := CopyLeft(s, IdxLast);
-  Result := True;
-  for i := 0 to FBuC.Count - 1 do begin
-    FBuR := FBuC[i];
-    if not GetFileBoxDirColl(A4sToAddrStr(FBuR.a), k + FBuR.Name + Mask, FBuR.Status, AColl, PErrorMsg, AMoveTo, AKillAction) then begin
-      Result := False;
-      Break;
-    end;
-  end;
-  FreeObject(FBuC);
+         end;
+         z := '(?i)^' + SearchMask;
+         SearchMask := '*.*';
+      end;
+      if uFindFirstEx(k + SearchMask, SR, FindExSearchLimitToDirectories) then begin
+         repeat
+            v := INVALID_VALUE;
+            if SR.Info.Attr and FILE_ATTRIBUTE_DIRECTORY <> 0 then begin
+               n := SR.FName;
+               if (n <> '.') and (n <> '..') then begin
+                  Match := True;
+                  if IsRegExp then begin
+                     if RE = nil then RE := GetRegExpr(z);
+                     Match := (RE.ErrPtr = 0) and (RE.Match(n) > 0) and (RE[0] <> '');
+                  end;
+                  if Match then begin
+                     aa := a;
+                     FStatus := AStatus;
+                     for i := 0 to CollMax(MPColl) do begin
+                        MPRec := MPColl[i];
+                        m := MPRec.FDirMacro;
+                        if IsRegExp then Mask := RE[i + 1] else begin
+                           j := MPRec.FPos;
+                           case m of
+                           dmZONE,
+                           dmNET,
+                           dmNODE,
+                           dmPOINT:
+                              Mask := CopyLeft(n, j);
+                           dmSTATUS,
+                           dmTSTATUS:
+                              Mask := Copy(n, j, 1);
+                           dmXZONE,
+                           dmXPOINT:
+                              Mask := Copy(n, j, 2);
+                           dmHZONE,
+                           dmXNET,
+                           dmXNODE:
+                              Mask := Copy(n, j, 3);
+                           dmDZONE:
+                              Mask := Copy(n, j, 3);
+                           dmHNET,
+                           dmHNODE,
+                           dmHPOINT:
+                              Mask := Copy(n, j, 4);
+                           dmDOMAIN:
+                              MASK := Copy(n, 1, j);
+                           end;
+                        end;
+                        v := INVALID_VALUE;
+                        case m of
+                        dmSTATUS:
+                           begin
+                              if Mask = '' then FStatus := osError else FStatus := Char2OutStatus(Mask[1]);
+                              if FStatus = osError then Break else v := 0;
+                           end;
+                        dmTSTATUS:
+                           begin
+                              if Mask = '' then FStatus := osNormal else begin
+                                 FStatus := Char2OutStatus(Mask[1]);
+                                 if FStatus = osNormal then FStatus := osError;
+                              end;
+                              if FStatus = osError then Break else v := 0;
+                           end;
+                        dmDOMAIN:
+                           begin
+                              aa[5] := Mask;
+                           end;
+                        dmZONE..dmXPOINT:
+                           begin
+                              case m of
+                              dmZONE,
+                              dmNET,
+                              dmNODE,
+                              dmPOINT:
+                                 v := Vl(Mask);
+                              dmHZONE,
+                              dmHNET,
+                              dmHNODE,
+                              dmHPOINT:
+                                 v := VlH(Mask);
+                              dmDZONE:
+                                 begin
+                                    Delete(Mask, 1, 1);
+                                    v := VlH(Mask);
+                                    if (v = INVALID_VALUE) and
+                                      ((aa[5] = Inifile.MainAddr.Domain) or
+                                       (IniFile.MainAddr.Domain = ''))
+                                    then v := Inifile.MainAddr.Zone;
+                                 end;
+                              dmXZONE,
+                              dmXNET,
+                              dmXNODE,
+                              dmXPOINT:
+                                 v := VlX(Mask);
+                              end;
+                              if v = INVALID_VALUE then Break;
+                              case m of
+                              dmZONE,
+                              dmHZONE,
+                              dmDZONE,
+                              dmXZONE:
+                                 j := 1;
+                              dmNET,
+                              dmHNET,
+                              dmXNET:
+                                 j := 2;
+                              dmNODE,
+                              dmHNODE,
+                              dmXNODE:
+                                 j := 3;
+                              dmPOINT,
+                              dmHPOINT,
+                              dmXPOINT:
+                                 j := 4;
+                              else
+                                 begin
+                                    j := GlobalFail('%s', ['GetFileBoxDirColl'])
+                                 end;
+                              end;
+                              aa[j] := IntToStr(v);
+                           end;
+                        end;
+                     end;
+                     if (v <> INVALID_VALUE) and SplitAddress(A4sToAddrStr(aa), AuxAddr, True) and PureAddressMasks(AuxAddr) then begin
+                        FBuR := TFileBoxUnparsedRecord.Create;
+                        FBuR.a := aa;
+                        FBuR.Status := FStatus;
+                        FBuR.Name := n;
+                        FBuC.Add(FBuR);
+                     end;
+                  end;
+               end;
+            end;
+         until not uFindNext(SR);
+         uFindClose(SR);
+      end;
+      if RE <> nil then begin
+         RE.Unlock;
+      end;
+   end;
+   FreeObject(MPColl);
+   Mask := CopyLeft(s, IdxLast);
+   Result := True;
+   for i := 0 to FBuC.Count - 1 do begin
+      FBuR := FBuC[i];
+      if not GetFileBoxDirColl(A4sToAddrStr(FBuR.a), k + FBuR.Name + Mask, FBuR.Status, AColl, PErrorMsg, AMoveTo, AKillAction) then begin
+         Result := False;
+         Break;
+      end;
+   end;
+   FreeObject(FBuC);
 end;
 
 function TFileBoxDirColl.Compare(Key1, Key2: Pointer): Integer;
 begin
-  Compare := CompareStr(PString(Key1)^, PString(Key2)^);
+   Compare := CompareStr(PString(Key1)^, PString(Key2)^);
 end;
 
 function TFileBoxDirColl.KeyOf(Item: Pointer): Pointer;
 begin
-  Result := @TFileBoxDirRecord(Item).Path;
+   Result := @TFileBoxDirRecord(Item).Path;
 end;
 
 function TOutBound.GetOutbound;
 
 var
-  L: TOutFileColl;
+   L: TOutFileColl;
 
 procedure ScanBinkleyOutboud(backup: boolean);
 var
-  FName: string;
-  FOutbound: string;
+   FName: string;
+   FOutbound: string;
 begin
-  FName := GetOutFileName(Address, osNone);
-  FOutbound := dOutbound;
-  case DirExists(ExtractFilePath(FName)) of
+   FName := GetOutFileName(Address, osNone);
+   FOutbound := dOutbound;
+   case DirExists(ExtractFilePath(FName)) of
    -1 : SetErrorMsg(ExtractFilePath(FName));
     0 : ;
     1 : DoGetOutbound(FName, FOutbound, L, Address, Status, AFileNames, AFileInfos, backup);
-  end;
+   end;
 end;
 
 procedure ScanFileBoxes;
@@ -1263,23 +1297,23 @@ procedure ScanFileBoxes;
 procedure CheckStatus(AStatus: TOutStatus; const APath, AMoveToDir: string; AKillAction: TKillAction);
 var
   SR: TuFindData;
-  F: TOutFile;
+   F: TOutFile;
 begin
-  if not (AStatus in Status) then Exit;
-  if not uFindFirst(MakeNormName(APath, '*.*'), SR) then Exit;
-  repeat
-    if SR.Info.Attr and FAttachDisallowedAttr = 0 then begin
-      F := TOutFile.Create;
-      F.Name := MakeNormName(APath, SR.FName);
-      F.Nfo := SR.Info;
-      F.KillAction := AKillAction;
-      F.Address := Address;
-      F.FStatus := AStatus;
-      F.MoveTo := StrAsg(AMoveToDir);
-      L.Insert(F);
-    end;
-  until not uFindNext(SR);
-  uFindClose(SR);
+   if not (AStatus in Status) then Exit;
+   if not uFindFirst(MakeNormName(APath, '*.*'), SR) then Exit;
+   repeat
+      if SR.Info.Attr and FAttachDisallowedAttr = 0 then begin
+         F := TOutFile.Create;
+         F.Name := MakeNormName(APath, SR.FName);
+         F.Nfo := SR.Info;
+         F.KillAction := AKillAction;
+         F.Address := Address;
+         F.FStatus := AStatus;
+         F.MoveTo := StrAsg(AMoveToDir);
+         L.Insert(F);
+      end;
+   until not uFindNext(SR);
+   uFindClose(SR);
 end;
 
 var
@@ -1291,160 +1325,162 @@ var
    FMoveTo: string;
    ka: TKillAction;
 begin
-  CfgEnter;
-  if not Cfg.FileBoxes.Copied then begin
-    FreeObject(FFileBoxes);
-    FFileBoxes := Cfg.FileBoxes.Copy;
-  end;
-  CfgLeave;
-  fbc := FFileBoxes;
+   CfgEnter;
+   if not Cfg.FileBoxes.Copied then begin
+      FreeObject(FFileBoxes);
+      FFileBoxes := Cfg.FileBoxes.Copy;
+   end;
+   CfgLeave;
+   fbc := FFileBoxes;
 
-  fbdc := TFileBoxDirColl.Create('fbdc');
+   fbdc := TFileBoxDirColl.Create('fbdc');
 
-  for i := 0 to fbc.Count - 1 do begin
-    fb := fbc[i];
-    if (not MatchMaskAddress(Address, fb.FAddr)) then Continue;
-    FMoveTo := fb.Dir(fbc.DefaultDir, 1);
-    ka := fb.KillAction;
-    GetFileBoxDirColl(Addr2Str(Address), fb.Dir(fbc.DefaultDir, 0), fb.FStatus, fbdc, nil, @FMoveTo, @ka);
-  end;
+   for i := 0 to fbc.Count - 1 do begin
+      fb := fbc[i];
+      if (not MatchMaskAddress(Address, fb.FAddr)) then Continue;
+      FMoveTo := fb.Dir(fbc.DefaultDir, 1);
+      ka := fb.KillAction;
+      GetFileBoxDirColl(Addr2Str(Address), fb.Dir(fbc.DefaultDir, 0), fb.FStatus, fbdc, nil, @FMoveTo, @ka);
+   end;
 
-  for i := 0 to fbdc.Count - 1 do begin
-    fbdr := fbdc[i];
-    CheckStatus(fbdr.Status, fbdr.Path, fbdr.MoveTo, fbdr.KillAction);
-  end;
-  FreeObject(fbdc);
+   for i := 0 to fbdc.Count - 1 do begin
+      fbdr := fbdc[i];
+      CheckStatus(fbdr.Status, fbdr.Path, fbdr.MoveTo, fbdr.KillAction);
+   end;
+   FreeObject(fbdc);
 
 end;
 
 var
-  Local, Locked, ScanAllowed: Boolean;
+   Local,
+   Locked,
+   ScanAllowed: Boolean;
 
 begin
-  ClearErrorMsg;
-  if AC = nil then L := TOutFileColl.Create else L := AC;
-  ScanAllowed := True;
-  Locked := False;
-  if ALock then begin
-     IgnoreNextEvent := True;
-     Locked := LockEx(Address, osBusy, Local, False);
-     if (not Local) then ScanAllowed := False;
-  end;
-  if ScanAllowed then begin
-     ScanBinkleyOutboud(Backup);
-     ScanFileBoxes;
-  end;
-  if Locked then Unlock(Address, osBusy);
-  if (AC = nil) and (L.Count = 0) then FreeObject(L);
-  Result := L;
+   ClearErrorMsg;
+   if AC = nil then L := TOutFileColl.Create else L := AC;
+   ScanAllowed := True;
+   Locked := False;
+   if ALock then begin
+      IgnoreNextEvent := True;
+      Locked := LockEx(Address, osBusy, Local, False);
+      if (not Local) then ScanAllowed := False;
+   end;
+   if ScanAllowed then begin
+      ScanBinkleyOutboud(Backup);
+      ScanFileBoxes;
+   end;
+   if Locked then Unlock(Address, osBusy);
+   if (AC = nil) and (L.Count = 0) then FreeObject(L);
+   Result := L;
 end;
 
 function CompareOutNodes(P1, P2: Pointer): Integer;
 begin
-  Result := CompareAddrs(TOutNode(P1).Address, TOutNode(P2).Address);
+   Result := CompareAddrs(TOutNode(P1).Address, TOutNode(P2).Address);
 end;
 
 function  TOutbound.Lock(const Address: TFidoAddress; const Status: TOutStatus; const Wait: Boolean): Boolean;
 var
-  Local: Boolean;
+   Local: Boolean;
 begin
-  Result := LockEx(Address, Status, Local, Wait);
+   Result := LockEx(Address, Status, Local, Wait);
 end;
 
 function TOutbound.Paused(const Address: TFidoAddress):boolean;
 var
-  S: string;
+   S: string;
 begin
-  S := GetOutFileName(Address, osPause);
-  result := FileExists(s);
+   S := GetOutFileName(Address, osPause);
+   result := FileExists(s);
 end;
 
 procedure TOutbound.Pause(const Address: TFidoAddress);
 var
-  S: string;
-  I: DWORD;
+   S: string;
+   I: DWORD;
 begin
-  S := GetOutFileName(Address, osPause);
-  I := _CreateFileDir(S, [cWrite, cEnsureNew]);
-  if I <> INVALID_HANDLE_VALUE then ZeroHandle(I);
+   S := GetOutFileName(Address, osPause);
+   I := _CreateFileDir(S, [cWrite, cEnsureNew]);
+   if I <> INVALID_HANDLE_VALUE then ZeroHandle(I);
 end;
 
 procedure TOutbound.Unpause(const Address: TFidoAddress);
 var
-  S: string;
+   S: string;
 begin
-  S := GetOutFileName(Address, osPause);
-  DelFile('Unpause', s);
+   S := GetOutFileName(Address, osPause);
+   DelFile('Unpause', s);
 end;
 
 function  TOutbound.LockEx(const Address: TFidoAddress; const Status: TOutStatus; var Local: Boolean; const Wait: Boolean): Boolean;
 var
-  c: Integer;
-  b: TBusyFlag;
-  t: THandle;
+   c: Integer;
+   b: TBusyFlag;
+   t: THandle;
 begin
-  Result := False;
-  if IniFile = nil then exit;
-  ClearErrorMsg;
-  Local := False;
-  t := GetCurrentThreadID;
-  try
-  BusyFlags.Enter;
-  for c := BusyFlags.Count - 1 downto 0 do begin
-    b := BusyFlags[c];
-    if (CompareAddrs(b.Address, Address) = 0) and
-       (b.Status = Status) then begin
-       if Wait then begin
-          b := TBusyFlag.Create(GetOutFileName(Address, Status), IniFile.SimpleBSY);
-          b.Address := Address;
-          b.Status := Status;
-          b.FHandle := 0;
-          b.Thread := t;
-          BusyFlags.Add(b);
-          Result := True;
-       end else begin
-          Result := False;
-       end;
-       Local := b.FHandle <> INVALID_HANDLE_VALUE;
-       Exit;
-    end;
-  end;
+   Result := False;
+   if IniFile = nil then exit;
+   ClearErrorMsg;
+   Local := False;
+   t := GetCurrentThreadID;
+   try
+      BusyFlags.Enter;
+      for c := BusyFlags.Count - 1 downto 0 do begin
+         b := BusyFlags[c];
+         if (CompareAddrs(b.Address, Address) = 0) and
+            (b.Status = Status) then
+         begin
+            if Wait then begin
+               b := TBusyFlag.Create(GetOutFileName(Address, Status), IniFile.SimpleBSY);
+               b.Address := Address;
+               b.Status := Status;
+               b.FHandle := 0;
+               b.Thread := t;
+               BusyFlags.Add(b);
+               Result := True;
+            end else begin
+               Result := False;
+            end;
+            Local := b.FHandle <> INVALID_HANDLE_VALUE;
+            Exit;
+         end;
+      end;
+      if Wait then begin
+         if ExistFile(GetOutFileName(Address, Status)) then begin
+            BusyFlags.Leave;
+            c := 0;
+            while ExistFile(GetOutFileName(Address, Status)) do begin
+               Sleep(100);
+               Application.ProcessMessages;
+               inc(c);
+               if c = 100 then begin
+                  Result := False;
+                  BusyFlags.Enter;
+                  exit;
+               end;
+            end;
+            BusyFlags.Enter;
+         end;
+      end;
 
-  if Wait then begin
-     if ExistFile(GetOutFileName(Address, Status)) then begin
-        BusyFlags.Leave;
-        c := 0;
-        while ExistFile(GetOutFileName(Address, Status)) do begin
-           Sleep(100);
-           Application.ProcessMessages;
-           inc(c);
-           if c = 100 then begin
-              Result := False;
-              BusyFlags.Enter;
-              exit;
-           end;
-        end;
-        BusyFlags.Enter;
-     end;
-  end;
+      if Status = osBusy then IgnoreNextEvent := True;
+      b := TBusyFlag.Create(GetOutFileName(Address, Status), IniFile.SimpleBSY);
+      b.Address := Address;
+      b.Status := Status;
+      b.Thread := t;
+      if b.FHandle = INVALID_HANDLE_VALUE then begin
+         b.Free;
+      end else begin
+      ClearTimer(b.Time);
+      Local := True;
+      Result := True;
+      BusyFlags.Insert(b);
+   end;
 
-  if Status = osBusy then IgnoreNextEvent := True;
-  b := TBusyFlag.Create(GetOutFileName(Address, Status), IniFile.SimpleBSY);
-  b.Address := Address;
-  b.Status := Status;
-  b.Thread := t;
-  if b.FHandle = INVALID_HANDLE_VALUE then begin
-    b.Free;
-  end else begin
-    ClearTimer(b.Time);
-    Local := True;
-    Result := True;
-    BusyFlags.Insert(b);
-  end;
-
-  finally
-    BusyFlags.Leave;
-  end;
+   finally
+      BusyFlags.Leave;
+   end;
 
 end;
 
@@ -1452,87 +1488,88 @@ procedure TOutbound.Unlock(const Address: TFidoAddress; const Status: TOutStatus
 
 procedure DoUnlock;
 var
-  h: Integer;
-  b: TBusyFlag;
-  t: THandle;
+   h: Integer;
+   b: TBusyFlag;
+   t: THandle;
 begin
-  t := GetCurrentThreadID;
-  for h := BusyFlags.Count - 1 downto 0 do begin
-    b := BusyFlags[h];
-    if (CompareAddrs(b.Address, Address) = 0) and
-       (b.Status = Status) and
-       ((b.Thread = t) or (b.FHandle = 0)) then begin
-      if b.FHandle <> 0 then begin
-         if b.Status = osBusy then IgnoreNextEvent := True;
-         b.Finish;
+   t := GetCurrentThreadID;
+   for h := BusyFlags.Count - 1 downto 0 do begin
+      b := BusyFlags[h];
+      if (CompareAddrs(b.Address, Address) = 0) and
+         (b.Status = Status) and
+        ((b.Thread = t) or (b.FHandle = 0)) then
+      begin
+         if b.FHandle <> 0 then begin
+            if b.Status = osBusy then IgnoreNextEvent := True;
+            b.Finish;
+         end;
+         BusyFlags.FFree(b);
+         exit;
       end;
-      BusyFlags.FFree(b);
-      exit;
-    end;
-  end;
-  for h := BusyFlags.Count - 1 downto 0 do begin
-    b := BusyFlags[h];
-    if (CompareAddrs(b.Address, Address) = 0) and
-       (b.Status = Status) then
-    begin
-      if b.FHandle <> 0 then begin
-         if b.Status = osBusy then IgnoreNextEvent := True;
-         b.Finish;
+   end;
+   for h := BusyFlags.Count - 1 downto 0 do begin
+      b := BusyFlags[h];
+      if (CompareAddrs(b.Address, Address) = 0) and
+         (b.Status = Status) then
+      begin
+         if b.FHandle <> 0 then begin
+            if b.Status = osBusy then IgnoreNextEvent := True;
+            b.Finish;
+         end;
+         BusyFlags.FFree(b);
+         exit;
       end;
-      BusyFlags.FFree(b);
-      exit;
-    end;
-  end;
+   end;
 end;
 
 begin
-  BusyFlags.Enter;
-  DoUnlock;
-  BusyFlags.Leave;
+   BusyFlags.Enter;
+   DoUnlock;
+   BusyFlags.Leave;
 end;
 
 procedure InitFidoOut;
 begin
-  FidoOut := TOutbound.Create;
+   FidoOut := TOutbound.Create;
 end;
 
 procedure DoneFidoOut;
 begin
-  FreeObject(FidoOut);
+   FreeObject(FidoOut);
 end;
 
 constructor TLockFile.Create;
 const
-  Flags: array[Boolean] of TCreateFileModeSet = ([cFlag], [cEnsureNew, cShareDenyRead]);
+   Flags: array[Boolean] of TCreateFileModeSet = ([cFlag], [cEnsureNew, cShareDenyRead]);
 begin
-  inherited Create;
-  FName := AFName;
-  FCompatibleDelete := ACompatibleDelete;
-  FHandle := _CreateFileDir(FName, Flags[FCompatibleDelete]);
+   inherited Create;
+   FName := AFName;
+   FCompatibleDelete := ACompatibleDelete;
+   FHandle := _CreateFileDir(FName, Flags[FCompatibleDelete]);
 end;
 
 procedure TLockFile.Finish;
 begin
-  if FHandle = INVALID_HANDLE_VALUE then Exit;
-  ZeroHandle(FHandle);
-  if FCompatibleDelete then DelFile('Finish', FName);
+   if FHandle = INVALID_HANDLE_VALUE then Exit;
+   ZeroHandle(FHandle);
+   if FCompatibleDelete then DelFile('Finish', FName);
 end;
 
 procedure TBusyFlag.Finish;
 begin
-  inherited Finish;
-  DeleteEmptyDirInheritance(ExtractFileDir(FName), dOutbound);
+   inherited Finish;
+   DeleteEmptyDirInheritance(ExtractFileDir(FName), dOutbound);
 end;
 
 destructor TLockFile.Destroy;
 begin
-  Finish;
-  inherited Destroy;
+   Finish;
+   inherited Destroy;
 end;
 
 procedure TFileInfoColl.FreeItem(Item: Pointer);
 begin
-  Dispose(PFileInfo(Item));
+   Dispose(PFileInfo(Item));
 end;
 
 procedure TOutFileColl.PurgeDuplicates;
@@ -1564,161 +1601,159 @@ end;
 procedure TOutFileColl.PurgeDuplicates(var txMail, txFile: dword);
 var
   SC: TStringColl;
-  f: TOutFile;
-  i,
-  j: Integer;
+   f: TOutFile;
+   i,
+   j: Integer;
 begin
-  Enter;
-  SC := TStringColl.Create('SC (PurgeDuplicates)');
-  SC.IgnoreCase := True;
-  for i := 0 to Count - 1 do
-  begin
-    f := At(i);
-    if SC.Search(@f.Name, j) then
-    begin
-      case f.FStatus of
-      osImmedMail,
-      osCrashMail,
-      osDirectMail,
-      osNormalMail,
-      osHoldMail:
-         TxMail := TxMail - f.Nfo.Size;
-      else
-         TxFile := TxFile - f.Nfo.Size;
-      end;
-      FreeObject(f);
-      AtPut(i, nil);
-    end else SC.AtInsert(j, NewStr(f.Name));
-  end;
-  FreeObject(SC);
-  Pack;
-  Leave;
+   Enter;
+   SC := TStringColl.Create('SC (PurgeDuplicates)');
+   SC.IgnoreCase := True;
+   for i := 0 to Count - 1 do begin
+      f := At(i);
+      if SC.Search(@f.Name, j) then begin
+         case f.FStatus of
+         osImmedMail,
+         osCrashMail,
+         osDirectMail,
+         osNormalMail,
+         osHoldMail:
+            TxMail := TxMail - f.Nfo.Size;
+         else
+            TxFile := TxFile - f.Nfo.Size;
+         end;
+         FreeObject(f);
+         AtPut(i, nil);
+      end else SC.AtInsert(j, NewStr(f.Name));
+   end;
+   FreeObject(SC);
+   Pack;
+   Leave;
 end;
 
 destructor TOutFileColl.Destroy;
 begin
-  if self <> nil then self.FreeAll;
-  inherited Destroy;
+   if self <> nil then self.FreeAll;
+   inherited Destroy;
 end;
 
 function TOutFileColl.Copy: Pointer;
 begin
-  Result := TOutFileColl.Create('TOutFileColl');
-  CopyItemsTo(TOutFileColl(Result));
+   Result := TOutFileColl.Create('TOutFileColl');
+   CopyItemsTo(TOutFileColl(Result));
 end;
 
 function TOutFileColl.FoundFName(const FName: string): Boolean;
 var
   us: string;
-  i: Integer;
-  r: TOutFile;
+   i: Integer;
+   r: TOutFile;
 begin
-  us := UpperCase(FName);
-  Result := False;
-  for i := 0 to Count - 1 do begin
-    r := At(i);
-    if us = UpperCase(r.Name) then begin
-      Result := True;
-      Exit;
-    end;
-  end;
+   us := UpperCase(FName);
+   Result := False;
+   for i := 0 to Count - 1 do begin
+      r := At(i);
+      if us = UpperCase(r.Name) then begin
+         Result := True;
+         Exit;
+      end;
+   end;
 end;
 
 function TOutFileColl.GetNamesColl: TStringColl;
 var
-  i: Integer;
+   i: Integer;
 begin
-  if Count = 0 then Result := nil else begin
-    Result := TStringColl.Create;
-    for i := 0 to Count - 1 do Result.Add(StrAsg(TOutFile(At(i)).Name));
-  end;
+   if Count = 0 then Result := nil else begin
+      Result := TStringColl.Create;
+      for i := 0 to Count - 1 do Result.Add(StrAsg(TOutFile(At(i)).Name));
+   end;
 end;
 
 function GetOutStatus(const Xt: string): TOutStatus;
 var
   US: string;
-  S: TOutStatus;
+   S: TOutStatus;
 begin
-  Result := osNone;
-  US := UpperCase(Xt);
-  for S := Succ(Low(TOutStatus)) to High(TOutStatus) do
+   Result := osNone;
+   US := UpperCase(Xt);
+   for S := Succ(Low(TOutStatus)) to High(TOutStatus) do
    if US = SAttachExt[S] then begin
-     Result := S;
-     Exit;
+      Result := S;
+      Exit;
    end;
 end;
 
 destructor TOutNodeColl.Destroy;
 begin
-  if self <> nil then self.FreeAll;
-  inherited Destroy;
+   if self <> nil then self.FreeAll;
+   inherited Destroy;
 end;
 
 constructor TOutNodeColl.Create;
 begin
-  inherited Create;
-  Duplicates := True;
+   inherited Create;
+   Duplicates := True;
 end;
 
 function TOutNodeColl.Copy;
 begin
-  Result := TOutNodeColl.Create;
-  CopyItemsTo(TOutNodeColl(Result));
+   Result := TOutNodeColl.Create;
+   CopyItemsTo(TOutNodeColl(Result));
 end;
 
 procedure AddAddrOutNode(const Addr: TFidoAddress; A: TOutStatus; AOutColl: TOutNodeColl; ASize, ATime: DWORD);
 var
-  I: Integer;
-  T: TOutNode;
+   I: Integer;
+   T: TOutNode;
 begin
-  if AOutColl.Search(@Addr, I) then begin
-    T := AOutColl[I];
-    T.Nfo.Size := ASize + T.Nfo.Size;
-    T.Nfo.Time := MaxD(ATime, T.Nfo.Time);
-    Include(T.FStatus, A);
-    Include(T.FPollType, PollStatus[A]);
-  end else begin
-    T := TOutNode.Create;
-    T.Address := Addr;
-    T.Nfo.Size := ASize;
-    T.Nfo.Time := ATime;
-    GetListedNode(Addr);
-    T.FStatus := [A];
-    T.FPollType := [PollStatus[A]];
-    AOutColl.AtInsert(I, T);
-  end;
+   if AOutColl.Search(@Addr, I) then begin
+      T := AOutColl[I];
+      T.Nfo.Size := ASize + T.Nfo.Size;
+      T.Nfo.Time := MaxD(ATime, T.Nfo.Time);
+      Include(T.FStatus, A);
+      Include(T.FPollType, PollStatus[A]);
+   end else begin
+      T := TOutNode.Create;
+      T.Address := Addr;
+      T.Nfo.Size := ASize;
+      T.Nfo.Time := ATime;
+      GetListedNode(Addr);
+      T.FStatus := [A];
+      T.FPollType := [PollStatus[A]];
+      AOutColl.AtInsert(I, T);
+   end;
 end;
 
 procedure DoAddOutNode(const Path, FName: string; S: TOutStatus; Zone, Net, Node: Integer; Point: Boolean; OutColl: TOutNodeColl; AErase: Boolean; ASize, ATime: DWORD);
 var
-  I: DWORD;
-  D: string;
+   I: DWORD;
+   D: string;
 begin
-  d := '';
-  I := VlH(Copy(FName, 1, 8)); if (I = INVALID_VALUE) then Exit;
-  if AErase then begin
-    if pos('.UDL', FName) > 0 then DelFile('DoAddOutNode UDLAge: ' + IntToStr(IniFile.MaxUDLAge), MakeNormName(Path, FName))
-    else DelFile('DoAddOutNode', MakeNormName(Path, FName));
-  end else begin
-    if Point then begin
-      if I > $FFFF then Exit;
-    end else begin
-      Net := I shr 16;
-      Node := I and $FFFF;
-      I := 0;
-    end;
-    if IniFile.D5Out then begin
-      D := ExtractFileName(Path);
-      if pos('.PNT', UpperCase(Path)) > 0 then begin
-         D := ExtractFilePath(Path);
-         delete(D, Length(D), 1);
-         D := ExtractFileName(D);
+   d := '';
+   I := VlH(Copy(FName, 1, 8)); if (I = INVALID_VALUE) then Exit;
+   if AErase then begin
+      if pos('.UDL', FName) > 0 then DelFile('DoAddOutNode UDLAge: ' + IntToStr(IniFile.MaxUDLAge), MakeNormName(Path, FName))
+      else DelFile('DoAddOutNode', MakeNormName(Path, FName));
+   end else begin
+      if Point then begin
+         if I > $FFFF then Exit;
+      end else begin
+         Net := I shr 16;
+         Node := I and $FFFF;
+         I := 0;
       end;
-      D := ExtractWord(1, D, ['.']);
-      if D = 'pop3' then D := 'POP3';
-    end;
-    AddAddrOutNode(FidoAddress(Zone, Net, Node, I and $FFFF, D), S, OutColl, ASize, ATime);
-  end;
+      if IniFile.D5Out then begin
+         D := ExtractFileName(Path);
+         if pos('.PNT', UpperCase(Path)) > 0 then begin
+            D := ExtractFilePath(Path);
+            delete(D, Length(D), 1);
+            D := ExtractFileName(D);
+         end;
+         D := ExtractWord(1, D, ['.']);
+         if D = 'pop3' then D := 'POP3';
+      end;
+      AddAddrOutNode(FidoAddress(Zone, Net, Node, I and $FFFF, D), S, OutColl, ASize, ATime);
+   end;
 end;
 
 function GetBsoAddr(const n: string; var a: TFidoAddress): boolean;
@@ -1762,11 +1797,11 @@ end;
 
 function TOutbound._GetOutColl: TOutNodeColl;
 var
-  OutColl: TOutNodeColl;
-  CurTime: DWORD;
-  Net, Node: Integer;
-  FileNames: TStringColl;
-  FileInfos: TFileInfoColl;
+   OutColl: TOutNodeColl;
+   CurTime: DWORD;
+   Net, Node: Integer;
+   FileNames: TStringColl;
+   FileInfos: TFileInfoColl;
 
 procedure ScanDir(const Path: string; Zone: Integer; Point: Boolean);
 var
@@ -1775,81 +1810,86 @@ var
   Dr,
   Nm,
   Xt: string;
-  Nfo: PFileInfo;
-  S: TOutStatus;
+ Nfo: PFileInfo;
+   S: TOutStatus;
   II: Integer;
-  I: DWORD;
-  a: TFidoAddress;
-  t: string;
+   I: DWORD;
+   a: TFidoAddress;
+   t: string;
 
-  procedure _Add(MaxAge: DWORD);
-  var
-    k: Boolean;
-  begin
-    k := (MaxAge <> INVALID_FILE_SIZE) and (SR.Info.Time + MaxAge < CurTime);
-    DoAddOutNode(Path, SR.FName, S, Zone, Net, Node, Point, OutColl, k, SR.Info.Size, SR.Info.Time);
-  end;
+   procedure _Add(MaxAge: DWORD);
+   var
+      k: Boolean;
+   begin
+      k := (MaxAge <> INVALID_FILE_SIZE) and (SR.Info.Time + MaxAge < CurTime);
+      DoAddOutNode(Path, SR.FName, S, Zone, Net, Node, Point, OutColl, k, SR.Info.Size, SR.Info.Time);
+   end;
 
 begin
-  if uFindFirst(MakeNormName(Path, '*.*'), SR) then begin
-    repeat
-      Application.ProcessMessages;
-      FSplit(SR.FName, Dr, Nm, Xt);
-      if SR.Info.Attr and FILE_ATTRIBUTE_DIRECTORY = 0 then
-      begin
-        S := GetOutStatus(Xt);
-        case S of
-          osBusy :
-            _Add(6 * 3600);
-          osBusyEx:
-            _Add(6 * 3600);
-          osHReq :
-            _Add(3 * 24 * 3600);
-          osPause:
+   if uFindFirst(MakeNormName(Path, '*.*'), SR) then begin
+      repeat
+         Application.ProcessMessages;
+         FSplit(SR.FName, Dr, Nm, Xt);
+         if SR.Info.Attr and FILE_ATTRIBUTE_DIRECTORY = 0 then begin
+            S := GetOutStatus(Xt);
+            case S of
+            osBusy :
+              _Add(6 * 3600);
+            osBusyEx:
+              _Add(6 * 3600);
+            osHReq :
+              _Add(3 * 24 * 3600);
+            osPause:
 //            _Add(3 * 24 * 3600);
-            _Add(IniFile.MaxUDLAge);
-          osImmed, osCrash, osDirect, osNormal, osHold:
-            _Add(INVALID_FILE_SIZE);
-          osRequest:
-            _Add(INVALID_FILE_SIZE);
-          osCallback:
-            _Add(INVALID_FILE_SIZE);
-          osImmedMail, osCrashMail, osDirectMail, osNormalMail, osHoldMail:
-            _Add(INVALID_FILE_SIZE);
-          osNone:
-            begin
-              ss := MakeNormName(Path, SR.FName);
-              if (Length(xt) = 4) and
-                 (UpperCase(xt[3]) = 'U') and
-                 (xt[4] = '~') and
-                 (GetBSOAddr(ss, a)) then
-              begin
-                 t := ss;
-                 t[Length(t)] := 't';
-                 MergeMail(a, ss, t);
-              end else begin
-                 FileNames.Search(@ss, II);
-                 FileNames.AtInsert(II, NewStr(StrAsg(ss)));
-                 New(Nfo); Nfo^ := SR.Info;
-                 FileInfos.AtInsert(II, Nfo);
-              end;
+              _Add(IniFile.MaxUDLAge);
+            osImmed,
+            osCrash,
+            osDirect,
+            osNormal,
+            osHold:
+              _Add(INVALID_FILE_SIZE);
+            osRequest:
+              _Add(INVALID_FILE_SIZE);
+            osCallback:
+              _Add(INVALID_FILE_SIZE);
+            osImmedMail,
+            osCrashMail,
+            osDirectMail,
+            osNormalMail,
+            osHoldMail:
+              _Add(INVALID_FILE_SIZE);
+            osNone:
+               begin
+                  ss := MakeNormName(Path, SR.FName);
+                  if (Length(xt) = 4) and
+                     (UpperCase(xt[3]) = 'U') and
+                     (xt[4] = '~') and
+                     (GetBSOAddr(ss, a)) then
+                  begin
+                     t := ss;
+                     t[Length(t)] := 't';
+                     MergeMail(a, ss, t);
+                  end else begin
+                     FileNames.Search(@ss, II);
+                     FileNames.AtInsert(II, NewStr(StrAsg(ss)));
+                     New(Nfo); Nfo^ := SR.Info;
+                     FileInfos.AtInsert(II, Nfo);
+                  end;
+               end;
+            else
+               GlobalFail('TOutbound._GetOutColl | ScanDir("%s", %d, ...)', [Path, Zone]);
             end;
-          else
-          GlobalFail('TOutbound._GetOutColl | ScanDir("%s", %d, ...)', [Path, Zone]);
-        end;
-      end else
-      if (not Point) and (UpperCase(Xt) = '.PNT') then
-      begin
-        I := VlH(Copy(SR.FName, 1, 8));
-        if (I = INVALID_VALUE) and (copy(SR.FName, 1, 8) <> 'FFFFFFFF') then Continue;
-        Net := I shr 16;
-        Node := I and $FFFF;
-        ScanDir(MakeNormName(Path, SR.FName), Zone, True);
-      end;
-
-    until not uFindNext(SR);
-    uFindClose(SR);
-  end;
+         end else
+         if (not Point) and (UpperCase(Xt) = '.PNT') then begin
+            I := VlH(Copy(SR.FName, 1, 8));
+            if (I = INVALID_VALUE) and (copy(SR.FName, 1, 8) <> 'FFFFFFFF') then Continue;
+            Net := I shr 16;
+            Node := I and $FFFF;
+            ScanDir(MakeNormName(Path, SR.FName), Zone, True);
+         end;
+      until not uFindNext(SR);
+      uFindClose(SR);
+   end;
 end;
 
 procedure InsertMSGPoll(a: TFidoAddress; m: TNetmailMsg);
@@ -1866,7 +1906,6 @@ var
   an: TAdvNode;
 begin
    an := FindNode(a);
-//   OutColl.Sort(@CompareAddrs);
    if not OutColl.Search(@a, i) then begin
       n := TOutNode.Create;
       n.Address := a;
@@ -1934,7 +1973,7 @@ begin
             f.FStatus := b;
             f.KillAction := k;
             n.Files.Add(f);
-         end;   
+         end;
       end;
    end;
 end;
@@ -2107,56 +2146,52 @@ end;
 
 function TOutNodeColl.Compare(Key1, Key2: Pointer): Integer;
 begin
-  Result := CompareAddrs(TFidoAddress(Key1^), TFidoAddress(Key2^));
+   Result := CompareAddrs(TFidoAddress(Key1^), TFidoAddress(Key2^));
 end;
 
 function TOutNodeColl.KeyOf(Item: Pointer): Pointer;
 begin
-  Result := @TOutNode(Item).Address;
+   Result := @TOutNode(Item).Address;
 end;
 
 destructor TOutNode.Destroy;
 begin
-  if Files <> nil then begin
-     Files.FreeAll;
-  end;
-  FreeObject(Files);
-  inherited Destroy;
+   FreeObject(Files);
+   inherited Destroy;
 end;
 
 function TOutNode.Copy;
 var
-  n: TOutNode;
+   n: TOutNode;
 begin
-  n := TOutNode.Create;
-  n.Address := Address;
-  n.fMSG := fMsg;
-  n.fATT := fAtt;
-  n.Nfo.Size := Nfo.Size;
-  n.Nfo.Time := Nfo.Time;
-  n.FStatus := FStatus;
-  n.FPollType := FPollType;
-  n.Netm := StrAsg(Netm);
-  n.Name := StrAsg(Name);
-  if Files <> nil then begin
-    n.Files := Files.Copy;
-  end;
-  Result := n;
+   n := TOutNode.Create;
+   n.Address := Address;
+   n.fMSG := fMsg;
+   n.fATT := fAtt;
+   n.Nfo.Size := Nfo.Size;
+   n.Nfo.Time := Nfo.Time;
+   n.FStatus := FStatus;
+   n.FPollType := FPollType;
+   n.Netm := StrAsg(Netm);
+   n.Name := StrAsg(Name);
+   if Files <> nil then begin
+      n.Files := Files.Copy;
+   end;
+   Result := n;
 end;
 
 function TOutbound.GetOutNode(const Addr: TFidoAddress; Scan: boolean): TOutNode;
 var
-  n: TOutNodeColl;
+   n: TOutNodeColl;
 begin
-  Result := nil;
-  n := _GetOutCollP(True, False, Scan, Addr);
-  if n <> nil then
-  begin
-    if n.Count <> 1 then GlobalFail('TOutbound.GetOutNode(%s) n.Count=%d', [Addr2Str(Addr), n.Count]);
-    Result := n[0];
-    n.DeleteAll;
-    FreeObject(n);
-  end;
+   Result := nil;
+   n := _GetOutCollP(True, False, Scan, Addr);
+   if n <> nil then begin
+      if n.Count <> 1 then GlobalFail('TOutbound.GetOutNode(%s) n.Count=%d', [Addr2Str(Addr), n.Count]);
+      Result := n[0];
+      n.DeleteAll;
+      FreeObject(n);
+   end;
 end;
 
 procedure TOutbound.AddOutbound;
@@ -2200,7 +2235,7 @@ end;
 
 function TOutbound.GetOutColl;
 begin
-  Result := _GetOutCollP(False, AFull, Scan, FidoAddress(-1, 0, 0, 0, ''));
+   Result := _GetOutCollP(False, AFull, Scan, FidoAddress(-1, 0, 0, 0, ''));
 end;
 
 function TOutbound._GetOutCollP(const Single, AFull, Scan: Boolean; const Addr: TFidoAddress): TOutNodeColl;

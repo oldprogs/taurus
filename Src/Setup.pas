@@ -312,7 +312,6 @@ type
     cbIncoming: TCheckBox;
     cbBBS: TCheckBox;
     cbTrap: TCheckBox;
-    {$IFDEF EXTREME}
     Bevel27: TBevel;
     lForms: TLabel;
     bFormsFont: TButton;
@@ -323,7 +322,7 @@ type
     bNetmail: TButton;
     lNetmail: TLabel;
     cbScanMSG: TCheckBox;
-    {$ENDIF}
+    cbUnpackPKT: TCheckBox;
     procedure tvPagesChange(Sender: TObject; Node: TTreeNode);
     procedure FormCreate(Sender: TObject);
     procedure btnReloadRASEntriesClick(Sender: TObject);
@@ -428,6 +427,7 @@ begin
   Inifile.DynamicOutbound := cbDynamicOutbound.Checked;
   Inifile.DynamicRouting := cbDynamicRouting.Checked;
   IniFile.ScanMSG := cbScanMSG.Checked;
+  IniFile.UnpackMSG := cbUnpackPKT.Checked;
 //  IniFile.MainReg := seMainRegion.Value;
   IniFile.TimeShift := seSynchShift.Value;
   IniFile.CPS_MinBytes := seCPSMinBytes.Value;
@@ -693,6 +693,7 @@ begin
   cbDynamicOutbound.Checked := IniFile.DynamicOutbound;
   cbDynamicRouting.Checked := IniFile.DynamicRouting;
   cbScanMSG.Checked := IniFile.ScanMSG;
+  cbUnpackPKT.Checked := IniFile.UnpackMSG;
   cbChatEnabled.Checked := IniFile.ChatEnabled;
   cbIgnoreCD.Checked := IniFile.IgnoreCD;
   cbLamps.Checked := IniFile.TrayLamps;
