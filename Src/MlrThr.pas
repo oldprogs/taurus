@@ -2145,8 +2145,7 @@ begin
       else
 {$ENDIF}
          s := WipePhoneNumber(d.Phone);
-      if not DialAllowed(Restriction, d.Flags, s, P.Node.Addr, m) then
-      begin
+      if not DialAllowed(Restriction, d.Flags, s, P.Node.Addr, m) then begin
          if SC <> nil then LogThis('*', FormatLng(rsMMpiRA, [m]));
          Continue;
       end;
@@ -2156,8 +2155,7 @@ begin
          (P.Typ <> ptpBack) then
       begin
          t := NodeFSC62TimeEx(d.Flags, P.Node.Addr, False);
-         if not (TQ in t) then
-         begin
+         if not (TQ in t) then begin
             if SC <> nil then LogThis('!', Format('%s (%s UTC / %s Local)', [LngStr(rsMMpiNWT), FSC62TimeToStr(t), FSC62TimeToStr(NodeFSC62TimeEx(d.Flags, P.Node.Addr, True))]));
             Continue;
          end;
@@ -2510,48 +2508,41 @@ const
 begin
    EnterFidoPolls;
    AP := nil;
-   for I := 0 to FidoPolls.Count - 1 do
-   begin
+   for I := 0 to FidoPolls.Count - 1 do begin
       P := FidoPolls[i];
-      if CompareAddrs(ANode.Addr, p.Node.Addr) = 0 then
-      begin
+      if CompareAddrs(ANode.Addr, p.Node.Addr) = 0 then begin
          AP := P;
          AP.Flav := Status;
          Break;
       end;
    end;
 
-   if AP <> nil then
-   begin
+   if AP <> nil then begin
       OldTyp := AP.Typ;
       NewTyp := TPollType(MaxD(DWORD(OldTyp), DWORD(ATyp)));
-      if OldTyp <> NewTyp then
-      begin
+      if OldTyp <> NewTyp then begin
          FidoPollsLog(Format('*Poll/%s  %s  (%s)', [CTyp[NewTyp], Addr2Str(ANode.Addr), NodeDataStr(ANode, True)]));
          AP.Typ := NewTyp;
          AP.Reset;
       end;
-      if NewTyp = ptpBack then
-      begin
+      if NewTyp = ptpBack then begin
          AP.Keep := True;
          AP.Birth := uGetSystemTime;
       end;
       FreeObject(ANode);
-   end
-   else
-   begin
+   end else begin
       FidoPollsLog(Format('+Poll/%s  %s  (%s)', [CTyp[ATyp], Addr2Str(ANode.Addr), NodeDataStr(ANode, True)]));
       P := TFidoPoll.Create;
       P.Node := ANode;
       P.Typ := ATyp;
       P.Flav := Status;
-      if ATyp = ptpBack then
-      begin
+      if ATyp = ptpBack then begin
          P.Keep := True;
       end;
       FidoPolls.AtInsert(0, P);
-      for I := 0 to MailerThreads.Count - 1 do
+      for I := 0 to MailerThreads.Count - 1 do begin
          InsertOwnPoll(TMailerThread(MailerThreads[I]).OwnPolls, P);
+      end;
 {$IFDEF WS}
       if IPPolls <> nil then InsertOwnPoll(IPPolls.OwnPolls, P);
 {$ENDIF}
@@ -2590,20 +2581,16 @@ var
 begin
    EnterFidoPolls;
    DirAsNormal := IniFile.DirectAsNormal; //pofDirAsNormal in FidoPolls.Options.d.Flags;
-   for i := FidoPolls.Count - 1 downto 0 do
-   begin
+   for i := FidoPolls.Count - 1 downto 0 do begin
       p := FidoPolls[i];
       p.Keep := False;
       CurrentTime := uGetSystemTime;
-      if (p.Owner = nil) or (p.Owner = PollOwnerExtApp) then
-      begin
-         if (p.Typ = ptpBack) and (CurrentTime - p.Birth > 10 * 60) then
-         begin
+      if (p.Owner = nil) or (p.Owner = PollOwnerExtApp) then begin
+         if (p.Typ = ptpBack) and (CurrentTime - p.Birth > 10 * 60) then begin
             FidoPollsLog(Format('*Poll/%s  %s  (%s)', ['Outb', Addr2Str(P.Node.Addr), NodeDataStr(P.Node, True)]));
             p.Typ := ptpOutb;
          end;
-         if c.Search(@p.Node.Addr, j) then
-         begin
+         if c.Search(@p.Node.Addr, j) then begin
             n := c[j];
             p.Flav := n.FStatus;
             if  (p.Typ = ptpOutb) and ((osImmed in n.FStatus) or (osImmedMail in n.FStatus)) then p.Typ := ptpImm;
@@ -2611,26 +2598,19 @@ begin
             if ((p.Typ = ptpOutb) or
                 (p.Typ = ptpImm)) and (not OutDial(n.FStatus, DirAsNormal)) then FreePoll_I_P;
             c.AtFree(j);
-         end
-         else
-         begin
+         end else begin
             if (p.Typ = ptpOutb) or (p.Typ = ptpImm) then FreePoll_I_P;
          end;
       end;
    end;
    LeaveFidoPolls;
-   for i := 0 to c.Count - 1 do
-   begin
+   for i := 0 to c.Count - 1 do begin
       n := c[i];
-      if OutDial(n.FStatus, DirAsNormal) then
-      begin
+      if OutDial(n.FStatus, DirAsNormal) then begin
          an := FindNode(n.Address);
-         if (an = nil) or ((an.DialupData = nil) and (an.IPData = nil)) then
-         begin
+         if (an = nil) or ((an.DialupData = nil) and (an.IPData = nil)) then begin
             FreeObject(an)
-         end
-         else
-         begin
+         end else begin
             if (osImmedMail in n.FStatus) or
                (osImmed in n.FStatus) then
                InsertPoll(an, n.FStatus, ptpImm)
@@ -3258,7 +3238,6 @@ begin
       m.ProtCore := NI.Prot;
       m.ipAddr := NI.Addr;
       m.aType := NI.aTyp;
-      m.CP.DTE := Cfg.IpData.Speed;
       m.CP.PortNumber := NI.IpPort;
       m.CP.PortIndex := NI.IpPort;
    end else
@@ -4210,18 +4189,14 @@ var
    var
      s : string;
    begin
-      if SD.rmtAddrs <> nil then
-      begin
+      if SD.rmtAddrs <> nil then begin
          s := ', ' + FormatDateTime('dd/mm/yy hh:mm:ss', Date + Time);
          if SD.Prot <> nil then s := s + '(' + SD.Prot.Name + ')'
                            else s := s + '(EMSI)';
-         if SD.ActivePoll <> nil then
-         begin
+         if SD.ActivePoll <> nil then begin
             SD.rmtPrimaryAddr := SD.ActivePoll.Node.Addr;
             m := WM_LASTOUT;
-         end
-         else
-         begin
+         end else begin
             SD.rmtPrimaryAddr := SD.rmtAddrs[0];
             m := WM_LASTIN;
          end;
@@ -4760,28 +4735,35 @@ begin
    end;
 end;
 
+procedure AddToBlackList(const ip: string);
+var
+   i: integer;
+begin
+   i := IniFile.ReadInteger('Black_List', ip);
+   IniFile.WriteInteger('Black_List', ip, i + 1);
+end;
+
 function TMailerThread.ChkBinkPAdr(const S: string; P: TBaseProtocol): Boolean;
 begin
    Result := ChkAddrStr(S);
-   if not Result then
-   begin
+   if not Result then begin
       P.CustomInfo := #1; // no any valid addressed
+      if SD.ActivePoll = nil then begin
+         AddToBlackList(P.CP.CallerId);
+      end;
       Exit;
    end;
-   if SD.ActivePoll <> nil then
-   begin
+   if SD.ActivePoll <> nil then begin
       LogEMSIData;
       if not ValidEncryptedAKAs then
          Result := False
-      else
-      begin
+      else begin
          SD.rmtPassword := GetPassword(SD.ActivePoll.Node.Addr, EP);
          Result := CheckPasswords;
          SD.BadPassword := not Result;
          if not Result then P.CustomInfo := #3;
       end;
-      if not LockAKAs then
-      begin
+      if not LockAKAs then begin
          P.CustomInfo := #4;
          Result := False;
       end;
@@ -4867,11 +4849,9 @@ const
       EncNodes := Cfg.EncryptedNodes.Copy;
       CfgLeave;
       EncNodes.Sort(EncNodeSort);
-      for i := 0 to CollMax(SD.rmtAddrs) do
-      begin
+      for i := 0 to CollMax(SD.rmtAddrs) do begin
          a := SD.rmtAddrs[i];
-         if EncNodes.Search(@a, j) then
-         begin
+         if EncNodes.Search(@a, j) then begin
             EncNode := EncNodes[j];
             SD.SessionKey := EncNode.Key;
             SD.SessionKeyAddr := EncNode.Addr;
@@ -8017,13 +7997,10 @@ begin
             SD.Tries := cHSh_S_Tries;
             L := EP.GetAtomList(eiLoginScript);
             State := msHSh_s1c;
-            if L <> nil then
-            begin
-               for i := 0 to L.Count - 1 do
-               begin
+            if L <> nil then begin
+               for i := 0 to L.Count - 1 do begin
                   eg := L[i];
-                  if MatchMaskAddressListSingle(SD.ActivePoll.Node.Addr, eg.s) then
-                  begin
+                  if MatchMaskAddressListSingle(SD.ActivePoll.Node.Addr, eg.s) then begin
                      SD.LoginScript := eg.L.Copy;
                      Break;
                   end;
@@ -8031,12 +8008,9 @@ begin
                FreeObject(L);
             end;
 
-            if (SD.LoginScript = nil) or (TStringColl(SD.LoginScript[0]).Count <= 0) then
-            begin
+            if (SD.LoginScript = nil) or (TStringColl(SD.LoginScript[0]).Count <= 0) then begin
                State := msHSh_s1c;
-            end
-            else
-            begin
+            end else begin
                State := msHSh_Login_1;
             end;
          end;
@@ -8645,10 +8619,8 @@ begin
    SD.SentFiles := TOutFileColl.Create;
    if OutPoll then SetSessionKey(SD.ActivePoll.Node.Addr);
 
-   if not (ProtCore in [ptBinkP, ptFTP, ptHTTP, ptSMTP, ptPOP3, ptGATE, ptNNTP]) then
-   begin
-      if SD.SessionKey = 0 then
-      begin
+   if not (ProtCore in [ptBinkP, ptFTP, ptHTTP, ptSMTP, ptPOP3, ptGATE, ptNNTP]) then begin
+      if SD.SessionKey = 0 then begin
          SD.MayEMSI := True;
          SD.MayYooHoo := True;
          SD.NiagaraAllowed := True;
@@ -8661,12 +8633,9 @@ begin
             Exclude(SD.OurProtocols, ecZMO);
          end;
          if EP.VoidFound(eiDummyZ[OutPoll]) then SD.DummyZFrb := True;
-         if OutPoll then
-         begin
+         if OutPoll then begin
             FilterProtocols(SD.ActivePoll.Flags({$IFDEF WS}DialupLine{$ELSE}True{$ENDIF}));
-         end
-         else
-         begin
+         end else begin
             SD.MayFTS1 := not EP.VoidFound(eiAccNoFTS1);
          end;
          //SD.NiagaraAllowed := SD.NiagaraAllowed and ({$IFDEF WS}(DialupLine) and {$ENDIF} (not EP.VoidFound(eiNiagara[OutPoll])));
@@ -8844,8 +8813,7 @@ procedure TMailerThread.DoWZ;
         prec.LogFName := LogFName;
         Result := CreateTransferProtocol(piRCC, CP, [], IsZModem, '', prec);
       end else
-      if SD.ActivePoll <> nil then
-      begin //any
+      if SD.ActivePoll <> nil then begin
         ChatEnabled := IniFile.ChatEnabled;
         s := EP.StrValue(eiChatEnabled);
         if (s <> '') and (MatchMaskAddressListSingle(SD.ActivePoll.Node.Addr, s)) then ChatEnabled := true;
@@ -8858,19 +8826,16 @@ procedure TMailerThread.DoWZ;
         prec.LogFName := LogFName;
         Result := CreateTransferProtocol(Typ, CP, SD.rmtMailerFlags, IsZModem, SD.ActivePoll.Flags(IsDialUp), prec);
         s := EP.StrValue(eiChatBell);
-        if (s <> '') then
-        begin
+        if (s <> '') then begin
           if (s[1] <> '@') then result.ChatBell := s
           else begin
-            if length(s) > 1 then
-            begin
+            if length(s) > 1 then begin
               delete(s, 1 ,1);
               result.ChatBell := GetSongPath(s, SD.ActivePoll.Node.Addr);
             end;
           end;
         end else result.ChatBell := IniFile.ChatBell;
-      end else
-      begin
+      end else begin
         an := FindNode(SD.rmtPrimaryAddr);
         if an <> nil then flags := NodeFlags(an, IsDialUp);
         ChatEnabled := IniFile.ChatEnabled;
@@ -8884,15 +8849,12 @@ procedure TMailerThread.DoWZ;
         prec.Station := DS.rmtStationName;
         prec.LogFName := LogFName;
         Result := CreateTransferProtocol(Typ, CP, SD.rmtMailerFlags, IsZModem, flags, prec);
-        if SD.rmtPrimaryAddr.Zone <> 0 then
-        begin //Hydra
+        if SD.rmtPrimaryAddr.Zone <> 0 then begin //Hydra
           s := EP.StrValue(eiChatBell);
-          if (s <> '') then
-          begin
+          if (s <> '') then begin
             if (s[1] <> '@') then result.ChatBell := s
             else begin
-              if length(s) > 1 then
-              begin
+              if length(s) > 1 then begin
                 delete(s, 1 ,1);
                 result.ChatBell := GetSongPath(s, SD.rmtPrimaryAddr);
               end;
@@ -9512,10 +9474,8 @@ var
    i: Integer;
 begin
    Result := False;
-   for i := 0 to CollMax(SD.rmtAddrs) do
-   begin
-      if CompareAddrs(SD.rmtAddrs[i], SD.ActivePoll.Node.Addr) = 0 then
-      begin
+   for i := 0 to CollMax(SD.rmtAddrs) do begin
+      if CompareAddrs(SD.rmtAddrs[i], SD.ActivePoll.Node.Addr) = 0 then begin
          Result := True;
          Exit;
       end;
@@ -10212,8 +10172,7 @@ var
             _INDEX := IntToStr(Mlr.CP.PortIndex);
       end;
 
-      if ANode <> nil then
-      begin
+      if ANode <> nil then begin
          //    n := APoll.Node;
          _NODE := Addr2Str(ANode.Addr);
          _STATION := ANode.Station;
@@ -10223,10 +10182,8 @@ var
          _SPEED := IntToStr(ANode.Speed);
          //    t:=Time;
 {$IFDEF WS}
-         if Mlr = nil then
-         begin
-            if (APoll <> nil) and (ANode.IpData <> nil) then
-            begin
+         if Mlr = nil then begin
+            if (APoll <> nil) and (ANode.IpData <> nil) then begin
                ad := ANode.IpData[APoll.DataIdx];
                _PHONE := ad.IPAddr;
                _FLAGS := ad.Flags;
@@ -13625,7 +13582,9 @@ begin
             {$ENDIF}
             SD.ConnectSpeedGot := False;
             ClearTmr1;
-            ShowIt('C: ' + Addr2Str(SD.ActivePoll.Node.Addr), false);
+            if (SD.ActivePoll <> nil) and (SD.ActivePoll.Node <> nil) then begin
+               ShowIt('C: ' + Addr2Str(SD.ActivePoll.Node.Addr), false);
+            end;
             if SD.ActivePoll.Node.Ext = nil then begin
                LogFmt(ltInfo, 'Calling %s (%s)', [Addr2Str(SD.ActivePoll.Node.Addr), SD.ActivePoll.DialupPhone]);
                State := msStartDialPhone;
@@ -14046,7 +14005,7 @@ begin
    D.StatusMsg := rsMMInit;
    if not (ProtCore in [ptBinkP, ptFTP, ptHTTP, ptSMTP, ptPOP3, ptGATE, ptNNTP]) then begin
       Priority := tpLower;
-   end;   
+   end;
    if EP.VoidFound(eiSNDEvent) then begin
       SoundsON := EP.BoolValueD(eiSNDEvent, False);
    end else begin
@@ -14054,15 +14013,14 @@ begin
    end;
 
 {$IFDEF WS}
-   if not DialupLine then
-   begin
+   if not DialupLine then begin
       Inc(IpIdx);
-      while IdxFound(IpIdx) do
+      while IdxFound(IpIdx) do begin
          Inc(IpIdx);
+      end;
       __FName := Format('TCP/IP %d', [IpIdx]);
       CurrentIPFlag := TLockFile.Create(MakeNormName(IniFile.FlagsDir, 'current.ip'), IniFile.SimpleBSY);
-   end
-   else
+   end else
 {$ENDIF}
    begin
       CfgEnter;
@@ -14103,15 +14061,13 @@ begin
    InitializeCriticalSection(DisplayDataCS);
 
 {$IFDEF WS}
-   if DialupLine then
-   begin
+   if DialupLine then begin
       toEMSI_CR := EMSI_CR_d;
       toEMSI_S3 := EMSI_S3_d;
       toEMSI_Block := EMSI_Bl_d;
       toEMSI_Timeout := EMSI_Tm_d;
    end;
-   if not DialupLine then
-   begin
+   if not DialupLine then begin
       toEMSI_CR := EMSI_CR_i;
       toEMSI_S3 := EMSI_S3_i;
       toEMSI_Block := EMSI_Bl_i;
@@ -14130,42 +14086,27 @@ begin
       else
          DS.rmtPhone := SD.ActivePoll.IPAddr;
       SD.ConnectSpeed := CP.DTE;
-      if ProtCore = ptBinkP then
-      begin
+      if ProtCore = ptBinkP then begin
          State := msStartBinkP;
-      end
-      else
-      if ProtCore = ptFTP then
-      begin
+      end else
+      if ProtCore = ptFTP then begin
          State := msStartFTP;
-      end
-      else
-      if ProtCore = ptHTTP then
-      begin
+      end else
+      if ProtCore = ptHTTP then begin
          State := msStartHTTP;
-      end
-      else
-      if ProtCore = ptSMTP then
-      begin
+      end else
+      if ProtCore = ptSMTP then begin
          State := msStartSMTP;
-      end
-      else
-      if ProtCore = ptPOP3 then
-      begin
+      end else
+      if ProtCore = ptPOP3 then begin
          State := msStartPOP3;
-      end
-      else
-      if ProtCore = ptGATE then
-      begin
+      end else
+      if ProtCore = ptGATE then begin
          State := msStartGATE;
-      end
-      else
-      if ProtCore = ptNNTP then
-      begin
+      end else
+      if ProtCore = ptNNTP then begin
          State := msStartNNTP;
-      end
-      else
-      begin
+      end else begin
          State := msCN_HandshakeStart;
          SD.StateDeltaDCD := msCarrierLost;
          SetTmrPublic(300, msHandshakeTimeout);
@@ -14175,8 +14116,7 @@ begin
       if SD.ActivePoll <> nil then s := s + Format(' (%s)', [Addr2Str(SD.ActivePoll.Node.Addr)]);
       LogDaemon(s);
       Log(ltInfo, 'Begin v' + ProductVersion);
-   end
-   else
+   end else
 {$ENDIF}
    begin
       State := msStart;
@@ -14203,29 +14143,22 @@ begin
       CfgLeave;
    end;
 
-   if LogFName = '' then
-   begin
+   if LogFName = '' then begin
       Log(ltInfo, 'No log file specified for current line');
-   end
-   else
-   begin
+   end else begin
       LogFName := MakeFullDir(dLog, LogFName);
 {$IFDEF WS}
       if DialupLine then // Let's shorten a little ip_*.log
 {$ENDIF}
          LogFmt(ltInfo, cUsingLogFile, [LogFName]);
-      if _LogOK(LogFName, LogFHandle) then
-      begin
+      if _LogOK(LogFName, LogFHandle) then begin
          if StartupOptions and stoFastLog = 0 then ZeroHandle(LogFHandle);
-      end else
-      begin
-         if TryCount2 > 10 then
-         begin
+      end else begin
+         if TryCount2 > 10 then begin
             SetErrorMsg(LogFName);
             ChkErrMsg;
             Log(ltWarning, 'File logging disabled');
-         end else
-         begin
+         end else begin
             inc(TryCount2);
          end;
       end;
@@ -14729,22 +14662,21 @@ begin
       SetStatusMsg(rsMMOutChk, '');
       c := FidoOut.GetOutColl(False);
       ChkErrMsg;
-      if c <> nil then
-      begin
+      if c <> nil then begin
          RecreatePolls(c);
          FreeObject(c);
       end;
       p := nil;
       PubInst := TimerInstalled(D.TmrPublic);
-      if GetAvailPoll(OwnPolls, PubInst, Self, p, Logger) then
-      begin
+      if GetAvailPoll(OwnPolls, PubInst, Self, p, Logger) then begin
          if SD.ActivePoll <> nil then begin
             SD.ActivePoll.Release;
          end;
          if EP.VoidFound(eiZMHEvent) then begin
             if not (osImmedMail in p.Flav) and
                not (osCrashMail in p.Flav) and
-               not (osDirectMail in P.Flav) then begin
+               not (osDirectMail in P.Flav) then
+            begin
                ClearTmrPublic;
                ClearTimer(TmrNextDial);
                SetStatusMsg(rsMMIdle, '');
@@ -14756,25 +14688,20 @@ begin
             SD.ActivePoll := p;
             State := msStartDial;
          end;
-      end
-      else
-      begin
+      end else begin
          if (p <> nil) and EP.VoidFound(eiZMHEvent) then begin
             if not (osImmedMail in p.Flav) and
                not (osCrashMail in p.Flav) and
                not (osDirectMail in P.Flav) then PubInst := False;
          end;
-         if PubInst then
-         begin
+         if PubInst then begin
             SetStatusMsg(rsMMWaitDial, Addr2Str(p.Node.Addr));
             ShowIt('W: ' + Addr2Str(p.Node.Addr), false);
             if TimerInstalled(D.TmrPublic) then
                NewTimerSecs(SD.TmrReinit, RemainingTimeSecs(D.TmrPublic) + 5)
             else
                GlobalFail('%s', ['DoPollsRecalc/TimerInstalled']);
-         end
-         else
-         begin
+         end else begin
             ClearTmrPublic;
             ClearTimer(TmrNextDial);
             SetStatusMsg(rsMMIdle, '');
@@ -14782,8 +14709,7 @@ begin
          end;
       end;
    except
-      on E: Exception do
-      begin
+      on E: Exception do begin
          Log(ltGlobalErr, 'DoPollsRecalc v' + ProductVersion + ' ' + GetThrErrorMsg + ' "' + E.Message + '"');
          FlushLog;
          ZeroHandle(LogFHandle);
@@ -16001,23 +15927,16 @@ begin
    if FidoPolls.Count = 0 then Exit;
    FidoPollsLog('Revalidating polls');
    EnterFidoPolls;
-   for i := FidoPolls.Count - 1 downto 0 do
-   begin
+   for i := FidoPolls.Count - 1 downto 0 do begin
       p := FidoPolls[i];
-      if p.Owner <> nil then
-      begin
+      if p.Owner <> nil then begin
          p.Revalidate := True;
-      end
-      else
-      begin
+      end else begin
          an := FindNode(p.Node.Addr);
-         if an = nil then
-         begin
+         if an = nil then begin
             p.Done := pdnNodeDestroyed;
             FidoPolls.AtFree(i);
-         end
-         else
-         begin
+         end else begin
             XChg(Integer(p.Node), Integer(an));
             FreeObject(an);
             p.Reset;

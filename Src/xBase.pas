@@ -6774,7 +6774,7 @@ end;}
 
 procedure DbgStr;
 begin
-  OutputDebugString(PChar(Format(FormatStr,Args)));;
+  OutputDebugString(PChar(Format(FormatStr, Args)));;
 end;
 
 // visual. convert nonprinting chars to hexandecimal representation with leading slash

@@ -5,8 +5,8 @@ object IPcfgForm: TIPcfgForm
   BorderStyle = bsDialog
   BorderWidth = 6
   Caption = 'TCP/IP Daemon  Configuration'
-  ClientHeight = 314
-  ClientWidth = 678
+  ClientHeight = 315
+  ClientWidth = 679
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -23,12 +23,12 @@ object IPcfgForm: TIPcfgForm
   OnDestroy = FormDestroy
   OnKeyDown = FormKeyDown
   DesignSize = (
-    678
-    314)
+    679
+    315)
   PixelsPerInch = 96
   TextHeight = 15
   object bOK: TButton
-    Left = 600
+    Left = 601
     Top = 22
     Width = 75
     Height = 23
@@ -39,7 +39,7 @@ object IPcfgForm: TIPcfgForm
     TabOrder = 1
   end
   object bCancel: TButton
-    Left = 600
+    Left = 601
     Top = 50
     Width = 75
     Height = 23
@@ -50,7 +50,7 @@ object IPcfgForm: TIPcfgForm
     TabOrder = 2
   end
   object bHelp: TButton
-    Left = 600
+    Left = 601
     Top = 78
     Width = 75
     Height = 23
@@ -62,8 +62,8 @@ object IPcfgForm: TIPcfgForm
   object tb: TPageControl
     Left = 0
     Top = 0
-    Width = 593
-    Height = 314
+    Width = 594
+    Height = 315
     ActivePage = lGeneral
     Align = alLeft
     Anchors = [akLeft, akTop, akRight, akBottom]
@@ -73,12 +73,12 @@ object IPcfgForm: TIPcfgForm
       BorderWidth = 6
       Caption = 'General'
       DesignSize = (
-        573
-        272)
+        574
+        273)
       object bvlSOCKS: TBevel
         Left = 0
-        Top = 184
-        Width = 573
+        Top = 185
+        Width = 574
         Height = 88
         Align = alBottom
         Anchors = [akLeft, akTop, akRight]
@@ -92,12 +92,12 @@ object IPcfgForm: TIPcfgForm
         Caption = 'Incoming ports'
       end
       object llPassword: TLabel
-        Left = 379
+        Left = 391
         Top = 226
-        Width = 67
+        Width = 56
         Height = 15
         Alignment = taRightJustify
-        Anchors = [akLeft, akTop, akRight]
+        Anchors = [akLeft, akRight, akBottom]
         Caption = 'Pass&word'
         FocusControl = lPassword
       end
@@ -111,21 +111,22 @@ object IPcfgForm: TIPcfgForm
         FocusControl = lUserName
       end
       object llSocksAddr: TLabel
-        Left = 8
+        Left = 9
         Top = 198
         Width = 46
         Height = 15
         Alignment = taRightJustify
+        Anchors = [akLeft, akRight, akBottom]
         Caption = '&Address'
         FocusControl = lSocksAddr
       end
       object llSocksPort: TLabel
-        Left = 473
+        Left = 485
         Top = 198
-        Width = 33
+        Width = 22
         Height = 15
         Alignment = taRightJustify
-        Anchors = [akLeft, akTop, akRight]
+        Anchors = [akLeft, akRight, akBottom]
         Caption = '&Port'
         FocusControl = lSocksPort
       end
@@ -157,10 +158,10 @@ object IPcfgForm: TIPcfgForm
           266)
       end
       object llLimit: TGroupBox
-        Left = 404
+        Left = 405
         Top = 11
         Width = 169
-        Height = 90
+        Height = 91
         Anchors = [akTop, akRight, akBottom]
         Caption = 'Connections'
         TabOrder = 1
@@ -183,13 +184,13 @@ object IPcfgForm: TIPcfgForm
           FocusControl = spOut
         end
         object llAssumeSpeed: TLabel
-          Left = 41
+          Left = 18
           Top = 68
-          Width = 36
+          Width = 59
           Height = 15
           Alignment = taRightJustify
-          Caption = 'Speed'
-          FocusControl = spSP
+          Caption = 'BL counter'
+          FocusControl = spBL
         end
         object spIn: TxSpinEdit
           Left = 93
@@ -212,24 +213,23 @@ object IPcfgForm: TIPcfgForm
           TabOrder = 1
           Value = 4
         end
-        object spSP: TxSpinEdit
+        object spBL: TxSpinEdit
           Left = 93
           Top = 61
           Width = 66
           Height = 24
-          Increment = 300
-          MaxLength = 9
+          MaxLength = 2
           MaxValue = 99999999
-          MinValue = 30
+          MinValue = 0
           TabOrder = 2
-          Value = 115200
+          Value = 3
         end
       end
       object rgProxyType: TRadioGroup
         Left = 0
         Top = 104
-        Width = 397
-        Height = 70
+        Width = 398
+        Height = 71
         Anchors = [akLeft, akTop, akRight, akBottom]
         Caption = 'Proxy type'
         Columns = 2
@@ -244,10 +244,10 @@ object IPcfgForm: TIPcfgForm
         OnClick = cbSOCKSClick
       end
       object GroupBox1: TGroupBox
-        Left = 404
+        Left = 405
         Top = 104
         Width = 169
-        Height = 71
+        Height = 72
         Anchors = [akTop, akRight, akBottom]
         Caption = 'Traffic shaper'
         TabOrder = 3
@@ -297,25 +297,25 @@ object IPcfgForm: TIPcfgForm
       object lSocksAddr: TEdit
         Left = 60
         Top = 194
-        Width = 415
+        Width = 416
         Height = 23
-        Anchors = [akLeft, akTop, akRight]
+        Anchors = [akLeft, akRight, akBottom]
         TabOrder = 4
       end
       object lSocksPort: TEdit
-        Left = 510
+        Left = 512
         Top = 194
-        Width = 52
+        Width = 51
         Height = 23
-        Anchors = [akTop, akRight]
+        Anchors = [akRight, akBottom]
         TabOrder = 5
       end
       object lPassword: TEdit
         Left = 450
         Top = 221
-        Width = 112
+        Width = 113
         Height = 23
-        Anchors = [akTop, akRight]
+        Anchors = [akRight, akBottom]
         Enabled = False
         PasswordChar = '*'
         TabOrder = 6
@@ -323,17 +323,18 @@ object IPcfgForm: TIPcfgForm
       object lUserName: TEdit
         Left = 153
         Top = 222
-        Width = 230
+        Width = 231
         Height = 23
-        Anchors = [akLeft, akTop, akRight]
+        Anchors = [akLeft, akRight, akBottom]
         Enabled = False
         TabOrder = 7
       end
       object cbAuth: TCheckBox
         Left = 8
         Top = 225
-        Width = 102
+        Width = 103
         Height = 17
+        Anchors = [akLeft, akRight, akBottom]
         Caption = 'Authenticate'
         TabOrder = 8
         OnClick = cbSOCKSClick
@@ -341,17 +342,18 @@ object IPcfgForm: TIPcfgForm
       object cbEncryptPassword: TCheckBox
         Left = 370
         Top = 249
-        Width = 198
+        Width = 199
         Height = 17
-        Anchors = [akTop, akRight]
+        Anchors = [akLeft, akRight, akBottom]
         Caption = 'Encrypt password in config'
         TabOrder = 9
       end
       object cbAllVIaProxy: TCheckBox
         Left = 8
         Top = 249
-        Width = 147
+        Width = 148
         Height = 17
+        Anchors = [akLeft, akRight, akBottom]
         Caption = 'All via proxy'
         TabOrder = 10
       end
@@ -444,8 +446,8 @@ object IPcfgForm: TIPcfgForm
       object p: TPageControl
         Left = 0
         Top = 0
-        Width = 581
-        Height = 280
+        Width = 582
+        Height = 281
         ActivePage = tsRequired
         Align = alClient
         MultiLine = True
@@ -744,8 +746,8 @@ object IPcfgForm: TIPcfgForm
       object gPOP3: TAdvGrid
         Left = 0
         Top = 0
-        Width = 585
-        Height = 284
+        Width = 586
+        Height = 285
         FixedFont.Charset = DEFAULT_CHARSET
         FixedFont.Color = clWindowText
         FixedFont.Height = -12
@@ -777,8 +779,8 @@ object IPcfgForm: TIPcfgForm
       BorderWidth = 10
       Caption = 'NNTP'
       DesignSize = (
-        565
-        264)
+        566
+        265)
       object lNNTPImport: TLabel
         Left = 65
         Top = 17
@@ -788,8 +790,8 @@ object IPcfgForm: TIPcfgForm
       end
       object gNNTP: TAdvGrid
         Left = 0
-        Top = 60
-        Width = 565
+        Top = 61
+        Width = 566
         Height = 204
         FileNameCol = 1
         FixedFont.Charset = DEFAULT_CHARSET
@@ -816,7 +818,7 @@ object IPcfgForm: TIPcfgForm
           472)
       end
       object gbCash: TGroupBox
-        Left = 355
+        Left = 316
         Top = 7
         Width = 209
         Height = 45
@@ -859,7 +861,7 @@ object IPcfgForm: TIPcfgForm
     end
   end
   object bImport: TButton
-    Left = 600
+    Left = 601
     Top = 142
     Width = 75
     Height = 23
@@ -870,7 +872,7 @@ object IPcfgForm: TIPcfgForm
     OnClick = bImportClick
   end
   object bSort: TButton
-    Left = 600
+    Left = 601
     Top = 170
     Width = 75
     Height = 23
@@ -881,8 +883,8 @@ object IPcfgForm: TIPcfgForm
     OnClick = bSortClick
   end
   object bEditNode: TButton
-    Left = 598
-    Top = 114
+    Left = 599
+    Top = 115
     Width = 75
     Height = 23
     Anchors = [akRight, akBottom]
@@ -892,7 +894,7 @@ object IPcfgForm: TIPcfgForm
     OnClick = bEditNodeClick
   end
   object bExplain: TButton
-    Left = 600
+    Left = 601
     Top = 114
     Width = 75
     Height = 23

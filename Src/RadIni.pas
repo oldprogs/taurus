@@ -230,6 +230,7 @@ type
             function ReadBool(Sect, Line: string): boolean;
             function ReadInteger(Sect, Line: string): integer; overload;
             function ReadInteger(Sect, Line: string; Def: integer): integer; overload;
+            procedure WriteInteger(Sect, Line: string; Val: integer);
             function ReadSection(Sect, Line: string): TStringList;
             function GetStrings(n: string): TDualColl;
             procedure LoadGrid(g: TAdvGrid);
@@ -338,6 +339,17 @@ end;
 function TConfig.ReadInteger(Sect, Line: string): integer;
 begin
    Result := ReadInteger(Sect, Line, 0);
+end;
+
+procedure TConfig.WriteInteger;
+begin
+   with TIniFile.Create(IniFName) do begin
+      try
+         WriteInteger(sect, Line, Val);
+      finally
+         Free;
+      end;      
+   end;
 end;
 
 function TConfig.ReadInteger(Sect, Line: string; Def: integer): integer;

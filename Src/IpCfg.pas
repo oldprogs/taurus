@@ -68,7 +68,7 @@ type
     bvlSOCKS: TBevel;
     llSocksAddr: TLabel;
     llSocksPort: TLabel;
-    spSP: TxSpinEdit;
+    spBL: TxSpinEdit;
     llAssumeSpeed: TLabel;
     cbEncryptPassword: TCheckBox;
     cbAllVIaProxy: TCheckBox;
@@ -193,7 +193,10 @@ begin
   spOut.Value := Cfg.IPData.OutC;
   spSPin.Value := IniFile.InBandwidth; // visual
   spSPout.Value := IniFile.OutBandwidth; // visual
-  spSP.Value := Cfg.IPData.Speed;
+  spBL.Value := Cfg.IPData.BList;
+  if spBL.Value > 100 then begin
+     spBL.Value := 3;
+  end;
   SetNodeOvr(Cfg.IPNodeOverrides, gOvr);
   eAuxNode.Text := Trim(Cfg.IPNodeOverrides.AuxFile);
   eBan.SetTextBuf(PChar(Cfg.IPData.Banner));
@@ -266,8 +269,8 @@ begin
   FreeObject(Ovr);
   FreeObject(AvlEvts);
   FreeObject(LnkEvts);
-  if CurEvtIds <> nil then FreeMem(CurEvtIds, CurEvtCnt*SizeOf(Integer));
-  if OrgEvtIds <> nil then FreeMem(OrgEvtIds, OrgEvtCnt*SizeOf(Integer));
+  if CurEvtIds <> nil then FreeMem(CurEvtIds, CurEvtCnt * SizeOf(Integer));
+  if OrgEvtIds <> nil then FreeMem(OrgEvtIds, OrgEvtCnt * SizeOf(Integer));
 end;
 
 function TIPcfgForm.NdOvrVld: Boolean;
@@ -416,7 +419,7 @@ begin
   IniFile.StoreCfg;
   Cfg.IPData.InC := spIn.Value;
   Cfg.IPData.OutC := spOut.Value;
-  Cfg.IPData.Speed := spSP.Value;
+  Cfg.IPData.BList := spBL.Value;
   Cfg.IPData.Banner := ControlString(eBan);
   Ovr.AuxFile := s;
   Xchg(Integer(Cfg.IPNodeOverrides), Integer(Ovr));

@@ -356,9 +356,8 @@ type
     InPorts: TInPortsColl;
     StationData: TStationDataColl;
     Restriction: TRestrictionData;
-    Speed, InC, OutC: DWORD;
+    BList, InC, OutC: DWORD;
     Banner: string;
-//    InBandwidth, OutBandwidth: integer;
     constructor Load(Stream: TxStream); override;
     procedure Store(Stream: TxStream); override;
     constructor Create;
@@ -369,7 +368,7 @@ type
     InPorts: TInPortsColl;
     StationData: TStationDataColl;
     Restriction: TOldIPRestriction;
-    Speed, InC, OutC: Integer;
+    BList, InC, OutC: Integer;
     Options: TIPRecOptionSet;
     Banner: string;
     constructor Load(Stream: TxStream); override;
@@ -1465,7 +1464,7 @@ begin
 
   IPData.InC := 16;
   IPData.OutC := 4;
-  IPData.Speed := 600;
+  IPData.BList := 3;
   IPData.Banner := 'Welcome to Taurus IP Server'#13#10#13#10+
                    'Processing mail only - disconnect please';
 end;
@@ -4210,7 +4209,7 @@ begin
   Restriction := Stream.Get;
   InC := Stream.ReadDword;
   OutC := Stream.ReadDword;
-  Speed := Stream.ReadDword;
+  BList := Stream.ReadDword;
   Banner := Stream.ReadStr;
   Cfg.SetObj(@Cfg.IPData, Self);
 end;
@@ -4222,7 +4221,7 @@ begin
   Stream.Put(Restriction);
   Stream.WriteDword(InC);
   Stream.WriteDword(OutC);
-  Stream.WriteDword(Speed);
+  Stream.WriteDword(BList);
   Stream.WriteStr(Banner);
 end;
 
@@ -4269,7 +4268,7 @@ begin
   XChg(Integer(Result.Restriction), Integer(Restriction)); FreeObject(Restriction);
   Result.InC := InC;
   Result.OutC := OutC;
-  Result.Speed := 600;
+  Result.BList := 3;
   Result.Options := Options;
   Cfg.AddUpgStringLng(rsRecsTCPSB);
 end;
@@ -6384,7 +6383,7 @@ begin
   XChg(Integer(Result.StationData), Integer(StationData)); FreeObject(StationData);
   Result.InC := InC;
   Result.OutC := OutC;
-  Result.Speed := Speed;
+  Result.BList := BList;
   Cfg.AddUpgStringLng(rsRecsTCPGR);
 end;
 
@@ -6410,7 +6409,7 @@ begin
   Restriction.Forbidden := ReadnValidate;
   InC := Stream.ReadDword;
   OutC := Stream.ReadDword;
-  Speed := Stream.ReadDword;
+  BList := Stream.ReadDword;
   Stream.Read(Options, SizeOf(Options));
   Banner := Stream.ReadStr;
   Cfg.SetObj(@Cfg.IpData, Upgrade);

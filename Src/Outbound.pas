@@ -1692,6 +1692,7 @@ begin
          D := ExtractFileName(D);
       end;
       D := ExtractWord(1, D, ['.']);
+      if D = 'pop3' then D := 'POP3';
     end;
     AddAddrOutNode(FidoAddress(Zone, Net, Node, I and $FFFF, D), S, OutColl, ASize, ATime);
   end;
@@ -2013,18 +2014,15 @@ function TOutbound._GetOutCollP(Single, AFull: Boolean; const Addr: TFidoAddress
 
 begin
   CfgEnter;
-  if not Cfg.FileBoxes.Copied then
-  begin
+  if not Cfg.FileBoxes.Copied then begin
     FreeObject(FFileBoxes);
     FFileBoxes := Cfg.FileBoxes.Copy;
   end;
   CfgLeave;
   EnterCS(CacheCS);
-  if (not ForcedRescan) and (TimerInstalled(LastRescan)) and (not TimerExpired(LastRescan)) then
-  begin
+  if (not ForcedRescan) and (TimerInstalled(LastRescan)) and (not TimerExpired(LastRescan)) then begin
     Result := GetIt;
-  end else
-  begin
+  end else begin
     ForcedRescan := False;
     FreeObject(OutCache);
     OutCache := _GetOutColl;

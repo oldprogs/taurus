@@ -836,11 +836,16 @@ begin
       MT := GetFileList(dLog, '*.*');
       if MT <> nil then begin
          while MT.Count > 0 do begin
-            n := TMenuItem.Create(m);
-            n.Caption := MT[0];
-            n.OnClick := mf.LNameClick;
+            if (pos(MT[0], ThreadsLogFName) = 0) and
+               (pos(MT[0], IniFile.StatxFName) = 0) and
+               (MT[0] <> 'Tau_Ver' ) then
+            begin
+               n := TMenuItem.Create(m);
+               n.Caption := MT[0];
+               n.OnClick := mf.LNameClick;
+               m.Add(n);
+            end;
             MT.AtFree(0);
-            m.Add(n);
          end;
       end;
    end;
@@ -3348,23 +3353,23 @@ procedure TMailerForm.UpdateView(fromcc: boolean);
       C := TColl.Create;
       PC := TPollColl.Create;
       EnterFidoPolls;
-      for I := 0 to FidoPolls.Count - 1 do
+      for I := 0 to FidoPolls.Count - 1 do begin
          PC.Insert(FidoPolls[I]);
+      end;
       PC.Sort(SortPollsByDate);
-      for I := 0 to PC.Count - 1 do
-      begin
+      for I := 0 to PC.Count - 1 do begin
          P := PC[I];
          S := TStringColl.Create;
-         S.Add(Addr2Str(P.Node.Addr)); // Node
+         S.Add(Addr2Str(P.Node.Addr));
          S.Add(NodeDataStr(P.Node, False)); // Phones & Flags
          case Integer(P.Owner) of
-            Integer(nil):
-               Z := LngStr(rsMMptNone);
-            Integer(PollOwnerExtApp):
-               Z := LngStr(rsMMptExtApp);
+         Integer(nil):
+            Z := LngStr(rsMMptNone);
+         Integer(PollOwnerExtApp):
+            Z := LngStr(rsMMptExtApp);
 {$IFDEF WS}
-            Integer(PollOwnerDaemon):
-               Z := LngStr(rsMMptDaemon);
+         Integer(PollOwnerDaemon):
+            Z := LngStr(rsMMptDaemon);
 {$ENDIF}
          else
             Z := P.Owner.Name;
@@ -3381,18 +3386,18 @@ procedure TMailerForm.UpdateView(fromcc: boolean);
             N := rsMMpsConnect
          else
 {$ENDIF}
-            case
-               P.Owner.State of
-            msDialing: N := rsMMpsDialing;
-            msRinging: N := rsMMpsRinging;
-            __FirstCN..__LastCN: N := rsMMpsConnect;
-            __FirstHSh..__LastHSh: N := rsMMpsHSh;
-            __FirstEMSI..__LastEMSI: N := rsMMpsEMSI;
-            __FirstWZ..__LastWZ: N := rsMMpsWZ;
-            __FirstExtApp..__LastExtApp: N := rsMMpsExtrnl;
-            else
-               N := rsMMpsUnk;
-            end;
+         case
+            P.Owner.State of
+         msDialing: N := rsMMpsDialing;
+         msRinging: N := rsMMpsRinging;
+         __FirstCN..__LastCN: N := rsMMpsConnect;
+         __FirstHSh..__LastHSh: N := rsMMpsHSh;
+         __FirstEMSI..__LastEMSI: N := rsMMpsEMSI;
+         __FirstWZ..__LastWZ: N := rsMMpsWZ;
+         __FirstExtApp..__LastExtApp: N := rsMMpsExtrnl;
+         else
+            N := rsMMpsUnk;
+         end;
 
          S.Add(LngStr(N)); // State
          S.Add(P.STryBusy);
@@ -3419,26 +3424,23 @@ procedure TMailerForm.UpdateView(fromcc: boolean);
       SetEnabledO(mlClose, wcb_mlClose, B);
       SetEnabledO(mlAbortOperation, wcb_mlAbortOperation, B);
 {$IFDEF WS}
-      if (not B) or (not ActiveLine.DialupLine) then
-      begin
+      if (not B) or (not ActiveLine.DialupLine) then begin
          SetEnabledO(mlSendMdmCmds, wcb_mlSendMdmCmds, False);
          mnuTerminal.Enabled := false;
-      end
-      else
+      end else
 {$ENDIF}
       begin
          SetEnabledO(mlSendMdmCmds, wcb_mlSendMdmCmds, B and (AllowedMdmCmdState(ActiveLine.State) { and (ActiveLine.CP <> nil)}));
          mnuTerminal.Enabled := B and AllowedMdmCmdState(ActiveLine.State) and ((@F_OpenTerm <> nil) or (@F_OpenUniTerm <> nil));
       end;
-      if B then
-      begin
+      if B then begin
          if (ActiveLine = PanelOwnerPolls) or
             (ActiveLine = PanelOwnerOutMgr)
 {$IFDEF WS} or (ActiveLine = PanelOwnerDaemon){$ENDIF} then GlobalFail('%s', ['SetLineCommands']);
          Z := TimerInstalled(ActiveLine.D.TmrPublic)
-      end
-      else
+      end else begin
          Z := False;
+      end;
       SetEnabledO(mlResetTimeout, wcb_mlResetTimeout, Z);
       SetEnabledO(mlIncTimeout, wcb_mlIncTimeout, Z);
       if B then
@@ -3499,17 +3501,13 @@ procedure TMailerForm.UpdateView(fromcc: boolean);
       gOutputGraph.Invalidate;
       gInputGraph.Invalidate;
 {$IFDEF RASDIAL}
-      if inifile.RASEnabled then
-      begin
-         if not (RasLabelPan.Visible and RasBtnPan.Visible) then
-         begin
+      if inifile.RASEnabled then begin
+         if not (RasLabelPan.Visible and RasBtnPan.Visible) then begin
            RasLabelPan.Visible := true;
            RasBtnPan.Visible := true;
          end;
          UpDateRasDial;
-      end
-      else
-      begin
+      end else begin
          RasLabelPan.Visible := False;
          RasBtnPan.Visible := False;
       end;
@@ -3531,14 +3529,12 @@ var
    OutMgrTab: Boolean;
    dsk: byte;
 begin
-   if ApplicationDowned then
-   begin
+   if ApplicationDowned then begin
 {$IFDEF WS}
       mnu_tray_TCP.Checked := DaemonStarted;
 {$ENDIF}
    end;
-   if (Trunc(Now * 100000) mod 50) = 0 then
-   begin
+   if (Trunc(Now * 100000) mod 50) = 0 then begin
       try
          if IniFile.InSecure[2] <> ':' then
             dsk := 0
@@ -3552,8 +3548,7 @@ begin
       UpdateMHist(ActiveLine);
       Inc(MHistO.GridStep);
       Inc(MHistI.GridStep);
-      if (MHistO.GridStep mod 12) = 0 then
-      begin
+      if (MHistO.GridStep mod 12) = 0 then begin
          MHistO.GridStep := 0;
          MHistI.GridStep := 0;
       end;
@@ -3583,8 +3578,7 @@ begin
    end;
    SetEnabledO(mtOutSmartMenu, wcb_OutSmartMenu, OutMgrTab);
    SetLineCommands(B);
-   if ClearMlr then
-   begin
+   if ClearMlr then begin
       SetEnabledO(mlSkip, wcb_mlSkip, False);
       SetEnabledO(mlRefuse, wcb_mlRefuse, False);
       SetEnabledO(mlChat, wcb_mlChat, False);
@@ -3619,41 +3613,34 @@ procedure TMailerForm.MainTabControlChange(Sender: TObject);
       i := MainTabControl.TabIndex;
 {$IFDEF WS}
       ch := 0;
-      for j := 0 to MailerThreads.Count - 1 do
-      begin
+      for j := 0 to MailerThreads.Count - 1 do begin
          m := MailerThreads[j];
          if not m.DialupLine then Continue;
-         if ch = i then
-         begin
+         if ch = i then begin
             ActiveLine := m;
             Exit
          end;
          Inc(ch);
       end;
-      if ch = i then
-      begin
+      if ch = i then begin
          ActiveLine := PanelOwnerPolls;
          Exit
       end;
       Inc(ch);
-      if ch = i then
-      begin
+      if ch = i then begin
          ActiveLine := PanelOwnerOutMgr;
          Exit
       end;
       Inc(ch);
-      if ch = i then
-      begin
+      if ch = i then begin
          ActiveLine := PanelOwnerDaemon;
          Exit
       end;
       Inc(ch);
-      for j := 0 to MailerThreads.Count - 1 do
-      begin
+      for j := 0 to MailerThreads.Count - 1 do begin
          m := MailerThreads[j];
          if m.DialupLine then Continue;
-         if ch = i then
-         begin
+         if ch = i then begin
             ActiveLine := m;
             Exit
          end;
@@ -3680,35 +3667,35 @@ begin
    DoClearTerms := True;
    GetActiveLine;
    case Integer(ActiveLine) of
-      Integer(PanelOwnerOutMgr):
-         begin
-            SetTopPageIndex(4);
-            SetBtmPageIndex(3);
-            s := LngStr(rsMMwcOutMgr);
-            LogBox.Lines := nil;
-            ChatPan.Visible := false;
-            LogBox.Visible := false;
-         end;
-      Integer(PanelOwnerPolls):
-         begin
-            SetTopPageIndex(2);
-            SetBtmPageIndex(1);
-            LogBox.Lines := FidoPolls.Log.Strings;
-            LogBox.Visible := true;
-            ChatPan.Visible := false;
-            s := LngStr(rsMMwcPollMgr);
-         end;
+   Integer(PanelOwnerOutMgr):
+      begin
+         SetTopPageIndex(4);
+         SetBtmPageIndex(3);
+         s := LngStr(rsMMwcOutMgr);
+         LogBox.Lines := nil;
+         ChatPan.Visible := false;
+         LogBox.Visible := false;
+      end;
+   Integer(PanelOwnerPolls):
+      begin
+         SetTopPageIndex(2);
+         SetBtmPageIndex(1);
+         LogBox.Lines := FidoPolls.Log.Strings;
+         LogBox.Visible := true;
+         ChatPan.Visible := false;
+         s := LngStr(rsMMwcPollMgr);
+      end;
 {$IFDEF WS}
-      Integer(PanelOwnerDaemon):
-         begin
-            SetTopPageIndex(3);
-            SetBtmPageIndex(2);
-            if LogBox.Lines <> IPPolls.LogContainer.Strings then
-               LogBox.Lines := IPPolls.LogContainer.Strings;
-            LogBox.Visible := true;
-            ChatPan.Visible := false;
-            s := LngStr(rsMMwcDaemon);
-         end;
+   Integer(PanelOwnerDaemon):
+      begin
+         SetTopPageIndex(3);
+         SetBtmPageIndex(2);
+         if LogBox.Lines <> IPPolls.LogContainer.Strings then
+            LogBox.Lines := IPPolls.LogContainer.Strings;
+         LogBox.Visible := true;
+         ChatPan.Visible := false;
+         s := LngStr(rsMMwcDaemon);
+      end;
 {$ENDIF}
    else
       begin
@@ -3723,20 +3710,19 @@ begin
          DoClearTerms := False;
          s := ActiveLine.Name;
          LogBox.Visible := true;
-         if (ActiveLine.SD <> nil) and (ActiveLine.SD.Prot <> nil) and (ActiveLine.SD.Prot.Chat <> nil) then
-         begin
+         if (ActiveLine.SD <> nil) and (ActiveLine.SD.Prot <> nil) and (ActiveLine.SD.Prot.Chat <> nil) then begin
            ChatPan.Visible := (ActiveLine.SD.Prot.Chat <> nil) and (ActiveLine.SD.Prot.Chat.Visible);
            if ChatPan.Visible then lChatCaption.Caption := ActiveLine.SD.Prot.Chat.Caption;
          end else ChatPan.Visible := false;
       end;
    end;
-   if Application.MainForm = Self then
+   if Application.MainForm = Self then begin
       z := LngStr(rsMMwcMain)
-   else
+   end else begin
       z := FormatLng(rsMMwcMirror, [MailerForms.IndexOf(Self)]);
+   end;
    Caption := FormatLng(rsMMwcArgus, [z, s]);
-   if DoClearTerms then
-   begin
+   if DoClearTerms then begin
       TermTx.Data := nil;
       TermRx.Data := nil;
    end;
@@ -3776,8 +3762,7 @@ begin
    end;
    MailerThreads.Leave;
    i := 0;
-   while (MailerThreads.Count > 0) and (i < 40) do
-   begin
+   while (MailerThreads.Count > 0) and (i < 40) do begin
       Application.ProcessMessages;
       Sleep(500);
       Inc(i);
@@ -3792,8 +3777,7 @@ var
    i: Integer;
    f: TForm;
 begin
-   for i := MailerForms.Count - 1 downto 0 do
-   begin
+   for i := MailerForms.Count - 1 downto 0 do begin
       f := MailerForms[i];
       f.Free;
    end;
@@ -3806,11 +3790,9 @@ var
    p: TFidoPoll;
 begin
    EnterFidoPolls;
-   for i := FidoPolls.Count - 1 downto 0 do
-   begin
+   for i := FidoPolls.Count - 1 downto 0 do begin
       p := FidoPolls[i];
-      if All or (p.Owner = PollOwnerExtApp) or (p.Owner = nil) then
-      begin
+      if All or (p.Owner = PollOwnerExtApp) or (p.Owner = nil) then begin
          p.Done := Action;
          FidoPolls.AtFree(i);
       end;
@@ -3858,32 +3840,30 @@ begin
    if _Closed then Exit;
    _Closed := True;
    Inc(ListUpd);
-   if Application.MainForm = Self then
-   begin
-      if not WMCLOSE then
-         case IniFile.OnClose of
-            1:
+   if Application.MainForm = Self then begin
+   if not WMCLOSE then
+      case IniFile.OnClose of
+         1:
+            begin
+               if MessageBox(handle, PChar(lngstr(rsCloseQuestion)), 'Mailer', mb_YESNO or MB_ICONQUESTION) = idNo then
                begin
-                  if MessageBox(handle, PChar(lngstr(rsCloseQuestion)), 'Mailer', mb_YESNO or MB_ICONQUESTION) = idNo then
-                  begin
-                     Action := caNone;
-                     _Closed := false;
-                     exit;
-                  end;
-               end;
-            2:
-               begin
-                  Application.Minimize;
                   Action := caNone;
                   _Closed := false;
                   exit;
                end;
-         else
-            ;
-         end; {case}
+            end;
+         2:
+            begin
+               Application.Minimize;
+               Action := caNone;
+               _Closed := false;
+               exit;
+            end;
+      else
+         ;
+      end; {case}
       if DaemonStarted then _ShutdownDaemon;
-      if HelpInitialized then
-      begin
+      if HelpInitialized then begin
          HelpInitialized := False;
          HelpDone := True;
          HtmlHelp(0, '', HH_UNINITIALIZE, 0);
@@ -3910,8 +3890,7 @@ begin
       wp.length := sizeof(wp);
 
       if not GetWindowPlacement(handle, @wp) then GlobalFail('WindowPlacement error %d', [GetLastError]);
-      if WindowState = wsMaximized then
-      begin
+      if WindowState = wsMaximized then begin
          x3.Maximized := 1;
          if wp.rcNormalPosition.Left > -(wp.rcNormalPosition.Right - wp.rcNormalPosition.Left) then //DV: 07.08.01
             x3.Bounds[0] := wp.rcNormalPosition.Left
@@ -3924,9 +3903,7 @@ begin
          x3.Bounds[2] := wp.rcNormalPosition.Right - wp.rcNormalPosition.Left;
          x3.Bounds[3] := wp.rcNormalPosition.Bottom - wp.rcNormalPosition.Top;
          IniFile.RadMF := x3;
-      end
-      else
-      begin
+      end else begin
          x3.Maximized := 0;
          if wp.rcNormalPosition.Left > -(wp.rcNormalPosition.Right - wp.rcNormalPosition.Left) then //DV: 07.08.01
             x3.Bounds[0] := wp.rcNormalPosition.Left //DV: 07.08.01
@@ -4005,22 +3982,18 @@ var
    begin
       m := nil;
       j := -1;
-      for i := 0 to MailerThreads.Count - 1 do
-      begin
+      for i := 0 to MailerThreads.Count - 1 do begin
          m := MailerThreads[i];
-         if m.LineId = LineId then
-         begin
+         if m.LineId = LineId then begin
             j := i;
             if Handle <> INVALID_HANDLE_VALUE then DisplayErrorLng(rsMMAlrAct, Handle);
             Break
          end;
       end;
-      if j = -1 then
-      begin
+      if j = -1 then begin
          r := GetPortRec(LineId);
          p := OpenSerialPort(r);
-         if p = nil then
-         begin
+         if p = nil then begin
             {$IFDEF USE_TAPI}
             if R.d.Port >= MaxComPorts then begin
                if Handle <> INVALID_HANDLE_VALUE then DisplayErrorFmtLng(rsMMCantOpenTDev, [R.Name], Handle);
@@ -4054,13 +4027,10 @@ var
  _MT: TStringList;
    s: string;
 begin
-   if not TMenuItem(Sender).Checked then
-   begin
+   if not TMenuItem(Sender).Checked then begin
       mt := OpenMailer(TMenuItem(Sender).Tag, Handle);
       if mt <> nil then ActiveLine := mt;
-   end
-   else
-   begin
+   end else begin
       _MT := TStringList.Create;
       _MT.Sorted := false;
       for j := 0 to MailerThreads.Count - 1 do begin
@@ -4069,8 +4039,7 @@ begin
       s := TMenuItem(Sender).Caption;
       if pos('&', s) > 0 then Delete(s, pos('&', TMenuItem(Sender).Caption), 1);
       idx := _MT.IndexOf(s);
-      if (idx > -1) then
-      begin
+      if (idx > -1) then begin
          mt := TMailerThread(MailerThreads[idx]);
          mt.InsertEvt(TMlrEvtOperatorTerminate.Create);
       end;
@@ -4089,10 +4058,12 @@ end;
 function TMailerForm.PollAnyway(an: TAdvNode): Boolean;
 begin
    case an.PrefixFlag of
-      {nfPvt, } nfHold, nfDown:
-         begin
-            Result := YesNoConfirm(Format('Node %s (%s from %s) has %s status in the nodelist. Create poll anyway?', [Addr2Str(an.Addr), an.Sysop, an.Location, cNodePrefixFlag[an.PrefixFlag]]), Handle)
-         end;
+   {nfPvt, }
+   nfHold,
+   nfDown:
+      begin
+         Result := YesNoConfirm(Format('Node %s (%s from %s) has %s status in the nodelist. Create poll anyway?', [Addr2Str(an.Addr), an.Sysop, an.Location, cNodePrefixFlag[an.PrefixFlag]]), Handle)
+      end;
    else
       Result := True;
    end;
@@ -4104,12 +4075,9 @@ var
    an: TAdvNode;
 begin
    an := FindNode(A);
-   if an = nil then
-   begin
+   if an = nil then begin
       DisplayErrorFmtLng(rsMMUnlistedNode, [Addr2Str(A)], Handle);
-   end
-   else
-   begin
+   end else begin
       if PollAnyway(an) then InsertPoll(an, [], ptpManual);
    end;
 end;
@@ -4119,8 +4087,7 @@ begin
    NewPoll;
 end;
 
-procedure TMailerForm.PollsListViewChange(Sender: TObject; Item: TListItem;
-   Change: TItemChange);
+procedure TMailerForm.PollsListViewChange(Sender: TObject; Item: TListItem; Change: TItemChange);
 begin
    Inc(ListUpd);
    if ListUpd = 1 then MainTabControlChange(nil);
@@ -4203,23 +4170,17 @@ var
 begin
    CantDelete := False;
    li := PollsListView.ItemFocused;
-   if li <> nil then
-   begin
+   if li <> nil then begin
       s := li.Caption;
       if not ParseAddress(s, a) then GlobalFail('TMailerForm.bDeletePollClick, failed to parse "%s"', [s]);
       EnterFidoPolls;
-      for i := 0 to FidoPolls.Count - 1 do
-      begin
+      for i := 0 to FidoPolls.Count - 1 do begin
          p := FidoPolls[i];
-         if CompareAddrs(a, p.Node.Addr) = 0 then
-         begin
-            if (p.Owner = PollOwnerExtApp) or (p.Owner = nil) then
-            begin
+         if CompareAddrs(a, p.Node.Addr) = 0 then begin
+            if (p.Owner = PollOwnerExtApp) or (p.Owner = nil) then begin
                p.Done := pdnDeleted;
                FidoPolls.AtFree(i);
-            end
-            else
-            begin
+            end else begin
                CantDelete := True;
                s := FormatLng(rsMMCDBP, [PollOwnerName(p)]);
             end;
@@ -4241,16 +4202,13 @@ var
    a: TFidoAddress;
 begin
    li := PollsListView.ItemFocused;
-   if li <> nil then
-   begin
+   if li <> nil then begin
       s := li.Caption;
       if not ParseAddress(s, a) then GlobalFail('TMailerForm.bResetPollClick, failed to parse "%s"', [s]);
       EnterFidoPolls;
-      for i := 0 to FidoPolls.Count - 1 do
-      begin
+      for i := 0 to FidoPolls.Count - 1 do begin
          p := FidoPolls[i];
-         if CompareAddrs(a, p.Node.Addr) = 0 then
-         begin
+         if CompareAddrs(a, p.Node.Addr) = 0 then begin
             p.Reset;
             Break;
          end;
@@ -4276,8 +4234,7 @@ begin
    GridFillRowLng(gTitles, rsMMTitlesGrid);
    gTitles.Canvas.Font := gTitles.Font;
    gw := 0;
-   for i := 0 to gTitles.RowCount - 1 do
-   begin
+   for i := 0 to gTitles.RowCount - 1 do begin
       s := gTitles[0, i] + 'M';
       GetTextExtentPoint32(gTitles.Canvas.Handle, @s[1], Length(s), Extent);
       gw := MaxI(gw, Extent.cX);
@@ -4312,8 +4269,7 @@ var
 begin
    if Sender = nil then
       s := 'Application'
-   else
-   begin
+   else begin
       s := 'App/' + Sender.ClassName;
       if Sender is TComponent then s := s + '/' + TComponent(Sender).Name;
    end;
@@ -4352,13 +4308,10 @@ var
    begin
       gTitles.MenuDisabled := true;
       gNfo.MenuDisabled := true;
-      for i := 0 to OutMgrPopup.Items.Count - 1 do
-      begin
+      for i := 0 to OutMgrPopup.Items.Count - 1 do begin
          m := OutMgrPopup.Items[i];
-         if m.Tag > 1 then
-         begin
-            for j := 0 to ompCur.Count - 1 do
-            begin
+         if m.Tag > 1 then begin
+            for j := 0 to ompCur.Count - 1 do begin
                k := ompCur.Items[j];
                n := TMenuItem.Create(m);
                n.Caption := k.Caption;
@@ -4375,8 +4328,7 @@ begin
                       'Last  in: -:---/---@--------, --/--/-- --:--:--')) + #32#13#10 +
    Trim(IniFile.ReadString('Store', 'LastOut',
                       'Last out: -:---/---@--------, --/--/-- --:--:--')) + #32;
-   if (Win32Platform = VER_PLATFORM_WIN32_NT) then
-   begin
+   if (Win32Platform = VER_PLATFORM_WIN32_NT) then begin
       aOutbound := nil;
       try
          aOutbound := TAnimate.Create(Self);
@@ -4443,19 +4395,15 @@ begin
    mwRemoteMirror.Visible := True;
 {$ENDIF}
 
-   if not (Application.MainForm = nil) then
-   begin
+   if not (Application.MainForm = nil) then begin
       //  ???
-   end
-   else
-   begin
+   end else begin
       ClearTimer(flflgtimer);
       ModuleLoaded := DoLoadLibrary;
       if ModuleLoaded then
       begin
         F_OpenUniTerm := __Load('OpenUniTerminal');
-        if @F_OpenUniTerm = nil then
-        begin
+        if @F_OpenUniTerm = nil then begin
           F_OpenTerm := __Load('OpenTerminal'); // for backward compability
         end
       end;
@@ -4487,14 +4435,12 @@ begin
    destroyallmenu;
    createallmenu;
 
-   if HelpLanguageId = 0 then
-   begin
+   if HelpLanguageId = 0 then begin
       mhContents.Enabled := False;
    end;
    InitOutMgrPopup;
 
-   with IniFile do
-   begin
+   with IniFile do begin
       LogBox.Font.Name := LoggerFontName;
       LogBox.Font.Size := LoggerFontSize;
 
@@ -4565,8 +4511,7 @@ begin
       InitOnExit := ModemCmdForm.cbInit.Checked;
       FreeObject(ModemCmdForm);
   until r <> mrOK;
-  if r = 2 then
-  begin
+  if r = 2 then begin
      InsertEvt(TMlrEvtChStatus.Create(msInit));
   end else begin
      InsertEvt(TMlrEvtChStatus.Create(msIdleA_Expired));
@@ -4578,13 +4523,10 @@ var
    p: TPortRec;
    dataidx, baudidx: integer;
 begin
-   if (ActiveLine is TMailerThread){$IFDEF WS} and (ActiveLine.DialupLine){$ENDIF} then
-   begin
-     if @F_OpenUniTerm <> nil then
-     begin
+   if (ActiveLine is TMailerThread){$IFDEF WS} and (ActiveLine.DialupLine){$ENDIF} then begin
+     if @F_OpenUniTerm <> nil then begin
        F_OpenUniTerm(ActiveLine.CP.Handle);
-     end else if @F_OpenTerm <> nil then
-     begin
+     end else if @F_OpenTerm <> nil then begin
        p := GetPortRec(ActiveLine.LineId);
        {  cbSpeed.Text := IntToStr(Port.d.BPS);
        }
@@ -4615,8 +4557,7 @@ begin
           dataidx := 0;
        end; {case}
        F_OpenTerm(p.d.Port + 1, baudidx, p.d.Stop, dataidx, p.d.Parity, p.d.hFlow, p.d.sFlow, PChar(ActiveLine.SD.ModemRec.Cmds.Prefix), Application.Icon.Handle)
-     end else
-     begin
+     end else begin
        //GlobalFail???
      end;
    end;
@@ -4670,13 +4611,11 @@ end;
 
 procedure TMailerForm.WMCHECKFILEFLAGS(var M: TMessage);
 begin
-  if Win32Platform = VER_PLATFORM_WIN32_NT then
-  begin
+  if Win32Platform = VER_PLATFORM_WIN32_NT then begin
     if M.WParam = 0 then exit;
     ChkFlFlg(true, TStringHolder(M.WParam).S);
     FreeObject(TStringHolder(M.WParam));
-  end else
-  begin
+  end else begin
     ChkFlFlg(true, '');
   end;
 end;
@@ -4714,24 +4653,23 @@ begin
       end;
    end else
    if M.WParam = 2 then begin
-   if MailerThreads = nil then exit;
-   if MailerThreads.Count = 0 then exit;
-   if inifile = nil then exit;
-   if not inifile.DynamicOutbound then exit;
-   MailerThreads.Enter;
-   for i := 0 to MailerThreads.Count - 1 do
-   begin
-      t := MailerThreads[i];
-      if t.Terminated then continue;
-      if t.SD = nil then continue;
-      if not t.SD.WeHaveReported then continue;
-      if t.SD.OutFiles = nil then continue;
-      if not t.D.Initialized then continue;
-      if CollCount(t.SD.rmtAddrs) = 0 then continue;
-      if t.SD.Prot = nil then continue;
-      t.NeedRescan := True;
-   end;
-   MailerThreads.Leave;
+      if MailerThreads = nil then exit;
+      if MailerThreads.Count = 0 then exit;
+      if inifile = nil then exit;
+      if not inifile.DynamicOutbound then exit;
+      MailerThreads.Enter;
+      for i := 0 to MailerThreads.Count - 1 do begin
+         t := MailerThreads[i];
+         if t.Terminated then continue;
+         if t.SD = nil then continue;
+         if not t.SD.WeHaveReported then continue;
+         if t.SD.OutFiles = nil then continue;
+         if not t.D.Initialized then continue;
+         if CollCount(t.SD.rmtAddrs) = 0 then continue;
+         if t.SD.Prot = nil then continue;
+         t.NeedRescan := True;
+      end;
+      MailerThreads.Leave;
    end;
 end;
 
@@ -4742,8 +4680,7 @@ var
    m: TMailerThread;
 begin
    n := 0;
-   for i := 0 to MailerThreads.Count - 1 do
-   begin
+   for i := 0 to MailerThreads.Count - 1 do begin
       m := MailerThreads[i];
       {$IFDEF WS}
       if not m.DialupLine then
@@ -4758,20 +4695,16 @@ end;
 procedure SwitchDaemon(Handle: DWORD);
 begin
 {$IFDEF WS}
-   if DaemonStarted then
-   begin
+   if DaemonStarted then begin
       if (Handle = INVALID_HANDLE_VALUE) or
          (CurrentOnline = 0) or
          (OkCancelConfirmLng(rsMMcloseDaemon, Handle)) then
       begin
          IPPolls.Terminated := True;
          _ShutdownDaemon
-      end
-      else
+      end else
          Exit;
-   end
-   else
-   begin
+   end else begin
       _RunDaemon;
    end;
    PostMsg(WM_UPDATETABS);
@@ -4838,7 +4771,8 @@ end;
 
 procedure TMailerForm.bTracePollClick(Sender: TObject);
 var
-   SC, LC: TStringColl;
+   SC,
+   LC: TStringColl;
    p: TFidoPoll;
    li: TListItem;
    i: Integer;
@@ -4856,8 +4790,7 @@ var
 
       if P.Node.Location = '' then
          SC.Add(FormatLng(rsMMStationHdrA, [Addr2Str(p.Node.Addr)]) + s)
-      else
-      begin
+      else begin
          SC.Add(FormatLng(rsMMStationHdrB, [p.Node.Station, Addr2Str(p.Node.Addr)]) + s);
          SC.Add(FormatLng(rsMMSysopHdr, [p.Node.Sysop, p.Node.Location]));
       end;
@@ -4866,8 +4799,7 @@ var
 
    procedure ChkPS(a, b: Pointer);
    begin
-      if AV then
-      begin
+      if AV then begin
          case GetPollState(a, P, False, b, LC, TQ) of
             plsAVL: FidoOut.Unlock(p.Node.Addr, osBusyEx);
             plsFRB: ;
@@ -4940,8 +4872,7 @@ end;
 
 procedure TMailerForm.mcExternalsClick(Sender: TObject);
 begin
-   if ConfigureExternals then
-   begin
+   if ConfigureExternals then begin
       CronThr.Recalc := True;
       destroyallmenu;
       createallmenu;
@@ -4954,24 +4885,20 @@ var
    c, i: Integer;
 begin
    case Key of
-      VK_TAB:
-         if ssCtrl in Shift then
-         begin
-            i := MainTabControl.TabIndex;
-            c := MainTabControl.Tabs.Count;
-            if ssShift in Shift then
-            begin
-               Dec(i);
-               if i < 0 then i := c - 1;
-            end
-            else
-            begin
-               Inc(i);
-               if i = c then i := 0;
-            end;
-            MainTabControl.TabIndex := i;
-            MainTabControlChange(nil);
+   VK_TAB:
+      if ssCtrl in Shift then begin
+         i := MainTabControl.TabIndex;
+         c := MainTabControl.Tabs.Count;
+         if ssShift in Shift then begin
+            Dec(i);
+            if i < 0 then i := c - 1;
+         end else begin
+            Inc(i);
+            if i = c then i := 0;
          end;
+         MainTabControl.TabIndex := i;
+         MainTabControlChange(nil);
+      end;
    end;
 end;
 
@@ -4982,14 +4909,12 @@ var
 begin
    if MailerForms = nil then Exit;
    i := i1;
-   if not SetRegInterfaceLng(i) then
-   begin
+   if not SetRegInterfaceLng(i) then begin
       DisplayErrorLng(rsCantUpdateReg, Handle);
       Exit;
    end;
    SetLanguage(i);
-   for i := 0 to MailerForms.Count - 1 do
-   begin
+   for i := 0 to MailerForms.Count - 1 do begin
       f := MailerForms.At(i);
       FillForm(f, rsMailerForm);
       f.gTitles.RefillLng;
@@ -5023,24 +4948,22 @@ end;
 
 procedure TMailerForm.bSkipClick(Sender: TObject);
 begin
-   if IniFile.PollAddFlags[2] = '1' then
-   begin
+   if IniFile.PollAddFlags[2] = '1' then begin
       if MessageBox(handle, 'Do you really want to skip that file?', 'Mailer', mb_OKCANCEL or MB_ICONQUESTION) = idok then
          InsertEvt(TMlrEvtSkip.Create)
-   end
-   else
+   end else begin
       InsertEvt(TMlrEvtSkip.Create);
+   end;
 end;
 
 procedure TMailerForm.bRefuseClick(Sender: TObject);
 begin
-   if IniFile.PollAddFlags[1] = '1' then
-   begin
+   if IniFile.PollAddFlags[1] = '1' then begin
       if MessageBox(handle, 'Do you really want to reject that file?', 'Mailer', mb_OKCANCEL or MB_ICONQUESTION) = idok then
          InsertEvt(TMlrEvtRefuse.Create)
-   end
-   else
+   end else begin
       InsertEvt(TMlrEvtRefuse.Create)
+   end;
 end;
 
 procedure TMailerForm.bChatClick(Sender: TObject);
@@ -5112,45 +5035,35 @@ begin
    if OutMgrBM.Width < R.Right - R.Left then OutMgrBM.Width := R.Right - R.Left;
    RR := R;
    R := Rect(0, 0, RR.Right - RR.Left, RR.Bottom - R.Top);
-   with OutMgrBM.Canvas do
-   begin
+   with OutMgrBM.Canvas do begin
       SysTime := uGetSystemTime;
       if SysTime >= Time then
          Age := SysTime - F.Nfo.Time
       else
          Age := 0;
-      if Age >= 28 * day then
-      begin
+      if Age >= 28 * day then begin
          Font.Color := IniFile.OldMail28Fore;
          Brush.Color := IniFile.OldMail28Back;
       end
       else
-      if Age >= 21 * day then
-      begin
+      if Age >= 21 * day then begin
          Font.Color := IniFile.OldMail21Fore;
          Brush.Color := IniFile.OldMail21Back;
-      end
-      else
-      if Age >= 14 * day then
-      begin
+      end else
+      if Age >= 14 * day then begin
          Font.Color := IniFile.OldMail14Fore;
          Brush.Color := IniFile.OldMail14Back;
-      end
-      else
-      if Age >= 7 * day then
-      begin
+      end else
+      if Age >= 7 * day then begin
          Font.Color := IniFile.OldMail7Fore;
          Brush.Color := IniFile.OldMail7Back;
-      end
-      else
-      begin
+      end else begin
          Brush.Color := clWindow;
          Font.Color := clWindowText;
       end;
       FillRect(Rect(R.Left, R.Top, R.Left + (Integer(N.Level) + 1) * 16, R.Bottom));
       ClrRct(R);
-      if N.Level = 1 then
-      begin
+      if N.Level = 1 then begin
          if f = FirstOutMgrNode then
             I := 2
          else
@@ -5158,14 +5071,11 @@ begin
             I := 1
          else
             I := 0;
-         if N.HasItems then
-         begin
+         if N.HasItems then begin
             Inc(I, 3);
             if N.Expanded then Inc(I, 3);
          end;
-      end
-      else
-      begin
+      end else begin
          if (f.Nfo.Attr and olfLastItem = 0) then
             I := 0
          else
@@ -5177,8 +5087,7 @@ begin
       ClrRct(R);
       BitBlt(Handle, R.Left, R.Top, 16, 16, OutMgrBmps[ioLines].Canvas.Handle, I * 16, 0, SRCCOPY);
 
-      if F is TOutNode then
-      begin
+      if F is TOutNode then begin
          if (index = 0) then OutBSize := 0;
          //        addsize:=true;
          Font.Style := [fsBold];
@@ -5198,9 +5107,7 @@ begin
             if osBusyEx in F.StatusSet then s := FormatLng(rsMMOutNCusy, [Addr2Str(F.Address)]);
             //          s := Format('%s [%s]',[s,s2]);
             s := Format('%s', [s]);
-         end
-         else
-         begin
+         end else begin
             Node := GetListedNode(F.Address);
             if Node = nil then
                s2 := '-Unknown sysop-'
@@ -5210,16 +5117,12 @@ begin
             //          s := Format('%s [%s]',[Addr2Str(F.Address),s2]);
             s := Format('%s', [Addr2Str(F.Address)]);
          end;
-      end
-      else
-      begin
+      end else begin
          Font.Style := [];
-         if (TOutFile(F).Error <> 0) or (F.Status = osError) then
-         begin
+         if (TOutFile(F).Error <> 0) or (F.Status = osError) then begin
             s := FormatLng(rsMMOutNBrkLnk, [f.Name]);
             I := 9;
-         end
-         else
+         end else
             case F.Status of
                osImmedMail, osCrashMail, osDirectMail, osNormalMail, osHoldMail:
                   begin
@@ -5267,8 +5170,7 @@ begin
                   end;
             end;
       end;
-      if I = 2 then
-      begin
+      if I = 2 then begin
          s := FormatLng(rsMMOutNMailPkt, [ExtractFileName(f.Name)]);
       end;
       Inc(R.Left, 16);
@@ -5291,8 +5193,7 @@ begin
       R.Right := R.Left + OutMgrHeader.Sections[1].Width - 4;
       DrawStr(0, s2);
       Inc(R.Left, OutMgrHeader.Sections[1].Width);
-      if F.Nfo.Size > 0 then
-      begin
+      if F.Nfo.Size > 0 then begin
          R.Right := R.Left + OutMgrHeader.Sections[2].Width - 4;
          DrawStr(DT_RIGHT, Format('%.0n', [F.Nfo.Size + 0.0]));
       end;
@@ -5340,8 +5241,7 @@ var
 begin
    I := OutMgrOutline.GetItem(X, Y);
    OutMgrdLast := Point(X, Y);
-   if I > 0 then
-   begin
+   if I > 0 then begin
       OutMgrOutline.SelectedItem := I;
       N := OutMgrOutline[OutMgrOutline.SelectedItem];
       if (X < Integer(N.Level) * 16) then N.Expanded := not N.Expanded;
@@ -5379,8 +5279,7 @@ end;
 
 procedure TMailerForm.RereadOutbound(full: boolean);
 begin
-   while OutMgrThread.HandUpdate do
-   begin
+   while OutMgrThread.HandUpdate do begin
       Application.ProcessMessages;
       Sleep(100);
    end;
@@ -5390,8 +5289,7 @@ begin
    OutMgrThread.HandUpdate := True;
    SetEvt(OutMgrThread.oEvt);
    SetEnabledO(bReread, wcb_Rescan, False);
-   if (Win32Platform = VER_PLATFORM_WIN32_NT) then
-   begin
+   if (Win32Platform = VER_PLATFORM_WIN32_NT) then begin
       if aOutbound.CommonAVI <> aviFindFolder then aOutbound.CommonAVI := aviFindFolder;
       aOutbound.Visible := True;
       aOutbound.Active := True;
@@ -5400,11 +5298,9 @@ end;
 
 procedure TMailerForm.TrayIconClick(Sender: TObject);
 begin
-  if TrayIcon.Minimized then 
-  begin
+  if TrayIcon.Minimized then begin
     RestoreFromTray;
-    if Inifile.TrayLamps then
-    begin {SetForegroundWindow(Handle);}
+    if Inifile.TrayLamps then begin {SetForegroundWindow(Handle);}
        if MailerForms <> nil then begin
           MailerForms.Enter;
           if MainTabControl.Tabs.Count > TNum then begin
@@ -5465,8 +5361,9 @@ var
 begin
    A := InputFidoAddress(LngStr(rsMMpollNodes), True, nil);
    if A = nil then Exit;
-   for I := 0 to A.Count - 1 do
+   for I := 0 to A.Count - 1 do begin
       InsertPollAddress(A[I]);
+   end;
    _RecalcPolls(True);
    PostMsg(WM_UPDATEVIEW);
    FreeObject(A);
@@ -5499,11 +5396,8 @@ var
 begin
    S := GetOutFileName(AA, Status);
    I := _CreateFileDir(S, [cWrite, cEnsureNew]);
-   if I <> INVALID_HANDLE_VALUE then ZeroHandle(I)
-   else
-   begin
-      if GetErrorNum <> ERROR_FILE_EXISTS then
-      begin
+   if I <> INVALID_HANDLE_VALUE then ZeroHandle(I) else begin
+      if GetErrorNum <> ERROR_FILE_EXISTS then begin
          DisplayWarning(FormatErrorMsg(S, GetErrorNum), Handle);
       end;
    end;
@@ -5622,12 +5516,10 @@ begin
    Result := nil;
    PrevAddr.Zone := -1;
    PrevStat := osNone;
-   for i := 0 to CollMax(AC) do
-   begin
+   for i := 0 to CollMax(AC) do begin
       F := AC[i];
       NewAddr := CompareAddrs(F.Address, PrevAddr) <> 0;
-      if NewAddr or (F.FStatus <> PrevStat) then
-      begin
+      if NewAddr or (F.FStatus <> PrevStat) then begin
          CurColl := TOutFileList.Create;
          CurColl.IgnoreCase := True;
          CurColl.Addr := F.Address;
@@ -5636,8 +5528,7 @@ begin
          PrevStat := F.Status;
          if Result = nil then Result := TColl.Create;
          Result.Insert(CurColl);
-         if NewAddr then
-         begin
+         if NewAddr then begin
             CurColl.Lock := True;
             if PrevColl <> nil then PrevColl.Unlock := True;
             PrevColl := CurColl;
@@ -5749,21 +5640,19 @@ var
    s: string;
 begin
    Ignore := False;
-   for i := 0 to CollMax(FileLists) do
-   begin
+   for i := 0 to CollMax(FileLists) do begin
       C := FileLists[i];
-      if (C.Lock) and ((DestAddr = nil) or (CompareAddrs(DestAddr^, C.Addr) <> 0)) then
-      begin
+      if (C.Lock) and ((DestAddr = nil) or (CompareAddrs(DestAddr^, C.Addr) <> 0)) then begin
          Ignore := False;
          repeat
             if FidoOut.Lock(C.Addr, osBusy, False) then Break;
             case WinDlg(FormatLng(rsMMOutIsBusy, [Addr2Str(C.Addr)]), MB_ICONWARNING or MB_ABORTRETRYIGNORE, Handle) of
-               idAbort: Exit;
-               idIgnore:
-                  begin
-                     Ignore := True;
-                     Break
-                  end;
+            idAbort: Exit;
+            idIgnore:
+               begin
+                  Ignore := True;
+                  Break
+               end;
             end; // assume idRetry elsewhere
          until False;
       end;
@@ -5771,8 +5660,7 @@ begin
       if DestAddr <> nil then C.DestAddr := DestAddr^;
       OK := PerformOutboundOp(C, OpCode, s);
       if ((not OK) or (C.Unlock)) and ((DestAddr = nil) or (CompareAddrs(DestAddr^, C.Addr) <> 0)) then FidoOut.Unlock(C.Addr, osBusy);
-      if (not OK) then
-      begin
+      if (not OK) then begin
          Ignore := True;
          if WinDlg(s, MB_ICONWARNING or MB_OKCANCEL, Handle) = idCancel then Exit;
       end;
@@ -5801,13 +5689,11 @@ begin
    ompBrowseNL.Enabled := Found;
    ompEditFreq.Enabled := Found;
    ompCreateFlag.Enabled := Found;
-   if Found then
-   begin
+   if Found then begin
      h := Addr2Str(o.Address);
      if FidoOut.Paused(o.Address) then ompCfPause.Caption := 'Unpause'
                                   else ompCfPause.Caption := 'Pause'
-   end else
-   begin
+   end else begin
       h := LngStr(rsMMOutCurNode);
    end;
    ompAttach.Caption := FormatLng(rsMMOutAttTo, [h]);
@@ -5816,19 +5702,16 @@ begin
    ompEditFreq.Caption := FormatLng(rsMMOutEdFrq, [h]);
    ompCreateFlag.Caption := FormatLng(rsMMOutCrtFlg, [h]);
 
-   for i := 0 to OutMgrPopup.Items.Count - 1 do
-   begin
+   for i := 0 to OutMgrPopup.Items.Count - 1 do begin
       m := OutMgrPopup.Items[i];
       if m.Tag < 1 then Continue;
-      for j := 0 to ompCur.Count - 1 do
-      begin
+      for j := 0 to ompCur.Count - 1 do begin
          m.Items[j].Caption := ompCur.Items[j].Caption;
       end;
       c := GetOutCollByTag(m.Tag, o, h, Info);
       if (c <> nil) and (m.Tag <> 1) then h := FormatLng(rsMMOutDoNItems, [h, c.Count]);
       m.Caption := h;
-      if f then
-      begin
+      if f then begin
          f := False;
          oe := (c <> nil) and xIsReg(ExtractFileExt(h));
          if oe then
@@ -5857,13 +5740,11 @@ begin
    AInfo.AreBroken := False;
    AInfo.CanUnlink := False;
    R := nil;
-   for i := 0 to CollMax(OutMgrNodes) do
-   begin
+   for i := 0 to CollMax(OutMgrNodes) do begin
       N := OutMgrNodes[i];
       if (OutStatus <> nil) and (not (OutStatus^ in N.FStatus)) then Continue;
       if (NodeAdrr <> nil) and (CompareAddrs(N.Address, NodeAdrr^) <> 0) then Continue;
-      for j := 0 to CollMax(N.Files) do
-      begin
+      for j := 0 to CollMax(N.Files) do begin
          F := N.Files[j];
          if (OutStatus <> nil) and (OutStatus^ <> F.FStatus) then Continue;
          {>Вот тут bug<}
@@ -5871,22 +5752,22 @@ begin
          AInfo.AreBroken := AInfo.AreBroken or (F.Error <> 0);
          Include(AInfo.OutAttTypesFound, F.OutAttType);
          case F.FStatus of
-            osImmed, osImmedMail: Include(AInfo.StatusesFound, osImmed);
-            osCrash, osCrashMail: Include(AInfo.StatusesFound, osCrash);
-            osDirect, osDirectMail: Include(AInfo.StatusesFound, osDirect);
-            osNormal, osNormalMail: Include(AInfo.StatusesFound, osNormal);
-            osHold, osHoldMail: Include(AInfo.StatusesFound, osHold);
-            osHReq: Include(AInfo.StatusesFound, osHReq);
+         osImmed, osImmedMail: Include(AInfo.StatusesFound, osImmed);
+         osCrash, osCrashMail: Include(AInfo.StatusesFound, osCrash);
+         osDirect, osDirectMail: Include(AInfo.StatusesFound, osDirect);
+         osNormal, osNormalMail: Include(AInfo.StatusesFound, osNormal);
+         osHold, osHoldMail: Include(AInfo.StatusesFound, osHold);
+         osHReq: Include(AInfo.StatusesFound, osHReq);
          end;
          if not AInfo.CanUnlink then
-            case F.FStatus of
-               osImmed,
-               osCrash,
-               osDirect,
-               osNormal,
-               osHold,
-               osHReq: AInfo.CanUnLink := True;
-            end;
+         case F.FStatus of
+            osImmed,
+            osCrash,
+            osDirect,
+            osNormal,
+            osHold,
+            osHReq: AInfo.CanUnLink := True;
+         end;
          if R = nil then R := TOutFileColl.Create;
          R.Add(F);
       end;
@@ -5899,26 +5780,21 @@ var
    F: TOutFile absolute Item;
 begin
    Result := nil;
-   if (Item = nil) or (Item is TOutNode) then
-   begin
+   if (Item = nil) or (Item is TOutNode) then begin
       Caption := LngStr(rsMMOutCurOfCur);
-   end
-   else
-      if not (Item is TOutFile) then
-         GlobalFail('%s', ['GetCollCurrentFile'])
-      else
-      begin
-         // visual - fixed bug: flags submenu always was disabled [by Sergey Shumakov]
-         //if F.Name = '' then Caption := FormatLng(rsMMOutNFlag, [F.StatusString])
-         if F.Name = '' then
-         begin
-            Caption := FormatLng(rsMMOutNFlag, [F.StatusString]);
-            F.Name := Caption
-         end
-         else
-            Caption := ExtractFileName(F.Name);
-         Result := AForm.GetOutFileColl(@F.Name, @F.Address, @F.FStatus, AInfo);
-      end;
+   end else
+   if not (Item is TOutFile) then
+      GlobalFail('%s', ['GetCollCurrentFile'])
+   else begin
+      // visual - fixed bug: flags submenu always was disabled [by Sergey Shumakov]
+      //if F.Name = '' then Caption := FormatLng(rsMMOutNFlag, [F.StatusString])
+      if F.Name = '' then begin
+         Caption := FormatLng(rsMMOutNFlag, [F.StatusString]);
+         F.Name := Caption
+      end else
+         Caption := ExtractFileName(F.Name);
+      Result := AForm.GetOutFileColl(@F.Name, @F.Address, @F.FStatus, AInfo);
+   end;
 end;
 
 function GetCollByName(AForm: TMailerForm; Item: TOutItem; var Caption: string; var AInfo: TOutMgrGroupInfo): TOutFileColl;
@@ -5975,17 +5851,17 @@ begin
    Caption := '';
    Result := nil;
    if (Item <> nil) and (Item is TOutFile) then
-      case F.FStatus of
-         osImmed,
-         osCrash,
-         osDirect,
-         osNormal,
-         osHold:
-            begin
-               Caption := FormatLng(rsMMOutNFofN, [F.StatusString, Addr2Str(F.Address)]);
-               Result := AForm.GetOutFileColl(nil, @F.Address, @F.FStatus, AInfo);
-            end;
+   case F.FStatus of
+   osImmed,
+   osCrash,
+   osDirect,
+   osNormal,
+   osHold:
+      begin
+         Caption := FormatLng(rsMMOutNFofN, [F.StatusString, Addr2Str(F.Address)]);
+         Result := AForm.GetOutFileColl(nil, @F.Address, @F.FStatus, AInfo);
       end;
+   end;
    if Caption = '' then Caption := LngStr(rsMMOutSameSt);
 end;
 
@@ -6055,8 +5931,7 @@ var
 
 begin
    B := (C <> nil) and (oatBSO in AInfo.OutAttTypesFound);
-   for i := 0 to AMenu.Count - 1 do
-   begin
+   for i := 0 to AMenu.Count - 1 do begin
       case i of
       idxReaddr: SetEnabledO(B);
       idxFinalize: SetEnabledO(True);
@@ -6123,20 +5998,17 @@ end;
 
 procedure TMailerForm.OutOp(Sender: TObject; OpCode: TOutMgrOpCode);
 begin
-   if TMenuItem(Sender).Parent.Tag = 6 then
-   begin
+   if TMenuItem(Sender).Parent.Tag = 6 then begin
       if not (MessageBox(application.handle, 'This operation will be applied to the entire outbound. Do you want to continue?', 'Mailer', mb_OKCANCEL or MB_ICONQUESTION) = idok) then exit;
-   end
-   else
-   begin
+   end else begin
       case opcode of
-         omoKill:
-            if not (MessageBox(application.handle, 'This operation will delete one or more files. Do you want to continue?', 'Mailer', mb_OKCANCEL or MB_ICONQUESTION) = idok) then exit;
-         omoUnlink:
-            if not (MessageBox(application.handle, 'This operation will unlink one or more files. Do you want to continue?', 'Mailer', mb_OKCANCEL or MB_ICONQUESTION) = idok) then
-               exit
-            else
-               ;
+      omoKill:
+         if not (MessageBox(application.handle, 'This operation will delete one or more files. Do you want to continue?', 'Mailer', mb_OKCANCEL or MB_ICONQUESTION) = idok) then exit;
+      omoUnlink:
+         if not (MessageBox(application.handle, 'This operation will unlink one or more files. Do you want to continue?', 'Mailer', mb_OKCANCEL or MB_ICONQUESTION) = idok) then
+            exit
+      else
+            ;
       end; {case}
    end;
    OutOpTag(OpCode, TMenuItem(Sender).Parent.Tag);
@@ -6176,15 +6048,13 @@ begin
    FreeObject(c);
    if OpCode <> omoReaddr then
       p := nil
-   else
-   begin
+   else begin
       FillChar(a, SizeOf(a), #0);
       if not InputSingleAddress(FormatLng(rsMMOutOpRAdr, [i]), a, nil) then Exit;
       p := @a;
       repeat
          if FidoOut.Lock(p^, osBusy, False) then Break;
-         if WinDlg(FormatLng(rsMMOutIsBusy, [Addr2Str(p^)]), MB_ICONWARNING or MB_RETRYCANCEL, Handle) = idCancel then
-         begin
+         if WinDlg(FormatLng(rsMMOutIsBusy, [Addr2Str(p^)]), MB_ICONWARNING or MB_RETRYCANCEL, Handle) = idCancel then begin
             FreeObject(f);
             Exit;
          end;
@@ -6232,11 +6102,11 @@ begin
    D.FilterIndex := CompleteFilterIndex;
    D.Options := [ofAllowMultiSelect, ofFileMustExist, ofPathMustExist, ofHideReadOnly];
    SC := nil;
-   if (D.Execute) and (D.Files.Count > 0) then
-   begin
+   if (D.Execute) and (D.Files.Count > 0) then begin
       SC := TStringColl.Create;
-      for i := 0 to D.Files.Count - 1 do
+      for i := 0 to D.Files.Count - 1 do begin
          SC.Add(D.Files[i]);
+      end;
    end;
    FreeObject(D);
    if SC = nil then Exit;
@@ -6294,8 +6164,7 @@ begin
    DragAcceptFiles(OutMgrOutline.Handle, True);
    DragAcceptFiles(PollsListView.Handle, True);
    Activated := True;
-   if Application.MainForm = Self then
-   begin
+   if Application.MainForm = Self then begin
       SendMsg(WM_IMPORTDUPOVRL);
 {$IFDEF WS}
       SendMsg(WM_IMPORTIPOVRL);
@@ -6331,8 +6200,7 @@ begin
    o := OutMgrSelectedItem;
    if o = nil then
       p := nil
-   else
-   begin
+   else begin
       OA := o.Address;
       p := @OA
    end;
@@ -6409,8 +6277,7 @@ var
 begin
    o := OutMgrSelectedItem;
    if (o = nil) or (not (o is TOutFile)) then Exit;
-   if o.Status = osRequest then
-   begin
+   if o.Status = osRequest then begin
       EditFileRequestEx(o.Address);
       Exit;
    end;
@@ -6500,13 +6367,11 @@ var
 begin
    L := InputFidoAddress(LngStr(rsMMCrtFF), True, nil);
    if L = nil then Exit;
-   if not GetAttachStatusEx(Status, DoPoll, nil) then
-   begin
+   if not GetAttachStatusEx(Status, DoPoll, nil) then begin
       FreeObject(L);
       Exit;
    end;
-   for i := 0 to CollMax(L) do
-   begin
+   for i := 0 to CollMax(L) do begin
       A := L[i];
       CreateOutFileFlag(A, Status);
       if DoPoll then InsertPollAddress(A);
@@ -6519,16 +6384,13 @@ end;
 procedure TMailerForm.WndProc(var M: TMessage);
 begin
    WindCounter := 0;
-   if csDesigning in ComponentState then
-   begin
+   if csDesigning in ComponentState then begin
       inherited WndProc(M);
       Exit;
    end;
    try
-      if (Application.MainForm <> nil) and (TrayIcon <> nil) then
-      begin
-         if (Application.MainForm = Self) and (M.Msg = uTaskbarRestart) then
-         begin
+      if (Application.MainForm <> nil) and (TrayIcon <> nil) then begin
+         if (Application.MainForm = Self) and (M.Msg = uTaskbarRestart) then begin
             TrayIcon.fNoTrayIcon := True;
             TrayIcon.AddIconToTray;
             Exit;
@@ -6560,8 +6422,7 @@ end;
 
 procedure TMailerForm.mcPollsClick(Sender: TObject);
 begin
-   if ConfigurePolls then
-   begin
+   if ConfigurePolls then begin
       CronThr.Recalc := True;
       UpdatePollOptions;
    end;
@@ -6591,43 +6452,36 @@ procedure DoHelp(Handle: THandle; Command, Data: DWORD);
 var
    R: Integer;
 begin
-   if IsHtmlHelp and (not HtmlHelpLibError) then
-   begin
+   if IsHtmlHelp and (not HtmlHelpLibError) then begin
       R := 0;
-      if not HelpInitialized then
-      begin
+      if not HelpInitialized then begin
          HelpInitialized := True;
          R := HtmlHelp(Handle, '', HH_INITIALIZE, 0);
       end;
       if R = 0 then
-         case Command of
-            HELP_CONTENTS:
-               begin
-                  R := HtmlHelp(Handle, Application.HelpFile, HH_DISPLAY_TOC, 0);
-               end;
-            HELP_CONTEXT:
-               begin
-                  R := HtmlHelp(Handle, Application.HelpFile, HH_HELP_CONTEXT, Data)
-               end;
+      case Command of
+      HELP_CONTENTS:
+         begin
+            R := HtmlHelp(Handle, Application.HelpFile, HH_DISPLAY_TOC, 0);
          end;
-      if (R = -1) and (HtmlHelpLibError) then
-      begin
+      HELP_CONTEXT:
+         begin
+            R := HtmlHelp(Handle, Application.HelpFile, HH_HELP_CONTEXT, Data)
+         end;
+      end;
+      if (R = -1) and (HtmlHelpLibError) then begin
          InitHelp;
          DoHelp(Handle, Command, Data);
       end;
-   end
-   else
-   begin
+   end else begin
       WinHelp(Handle, PChar(Application.HelpFile), Command, Data);
    end;
 end;
 
 function TMailerForm.FormHelp(Command: Word; Data: Integer; var CallHelp: Boolean): Boolean;
 begin
-   if not HelpDone then
-   begin
-     if Screen.ActiveForm is TMailerForm then
-     begin
+   if not HelpDone then begin
+     if Screen.ActiveForm is TMailerForm then begin
        case Integer(ActiveLine) of
 {$IFDEF WS}
          Integer(PanelOwnerDaemon): Data := IDH_INTRODAEMON;
@@ -6654,10 +6508,8 @@ begin
    doit := TrayIcon.Minimized;
    if doit then RestoreFromTray;
    L := InputFidoAddress(LngStr(rsMMCrtFF), True, nil);
-   if L <> nil then
-   begin
-     for i := 0 to CollMax(L) do
-     begin
+   if L <> nil then begin
+     for i := 0 to CollMax(L) do begin
         A := L[i];
         CreateOutFileFlag(A, oscrash);
      end;
@@ -6757,8 +6609,7 @@ begin
    try
       if bwListView.ItemFocused <> nil then
          r := BWZColl[bwListView.ItemFocused.Index]
-      else
-      begin
+      else begin
          BWZColl.Update;
          BWZColl.Leave;
          UpdateBWZListBox;
@@ -6815,18 +6666,16 @@ begin
          LogBox.Text := '';
          LogBox.dopaint(true);
       end;
-   end;   
+   end;
 end;
 
 procedure TMailerForm.pBWZPopup(Sender: TObject);
 begin
-   if BWListView.ItemFocused <> nil then
-   begin
+   if BWListView.ItemFocused <> nil then begin
       mnuDelBWZ.Enabled := true;
       mnuDelBWZ.Caption := LngStr(rsDeleteFromBWZ);
       mnuDelBWZ.Caption := Format(mnuDelBWZ.Caption, [BWListView.Items.Item[BWListView.ItemFocused.Index].Caption]);
-   end
-   else
+   end else
       mnuDelBWZ.Enabled := false;
 end;
 
@@ -6847,7 +6696,7 @@ end;
 
 procedure TMailerForm.mnuRadiusOnWebClick(Sender: TObject);
 begin
-   ShellExecute(Handle, 
+   ShellExecute(Handle,
       nil,
       'http://taurus.rinet.ru/',
       nil,
@@ -6897,8 +6746,7 @@ begin
       exit;
       Key := #0;
    end;
-   if Key = #13 then
-   begin
+   if Key = #13 then begin
      ActiveLine.SD.Prot.Chat.ChatStr :=
      ActiveLine.SD.Prot.Chat.ChatStr + Win2Dos(eType.Text) + #10;
      ActiveLine.SD.Prot.Chat.DispStr := ActiveLine.SD.Prot.Chat.ChatStr;
@@ -6915,8 +6763,7 @@ end;
 
 procedure TMailerForm.ChatMemo2KeyPress(Sender: TObject; var Key: Char);
 begin
-  if Key = #27 then
-  begin
+  if Key = #27 then begin
     ActiveLine.SD.Prot.Chat.Visible := False;
     exit;
     Key := #0;

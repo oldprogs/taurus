@@ -3,7 +3,7 @@ unit xIP;
 {$I DEFINE.INC}
 
 interface uses
-  Windows,
+  Windows, Forms,
 
 {$IFDEF WS}
   Classes, wsock, xMisc,
@@ -923,11 +923,9 @@ begin
               begin
                 Flags := 0;
                 Actually := 0;
-                if WSAGetOverlappedResult(AHandle, OL^, Actually, True, Flags) then
-                begin
+                if WSAGetOverlappedResult(AHandle, OL^, Actually, True, Flags) then begin
                   Result := Actually;
-                end else
-                begin
+                end else begin
                   Error := True;
                 end
               end;
@@ -954,14 +952,12 @@ begin
     Error := False;
     SockHandle := TSocket(CP.Handle);
     Result := _recv(SockHandle, Buf, Size, Error, @CP.ReadOL);
-    if Error then
-    begin
+    if Error then begin
       TSockPort(CP).Err;
       Result := 0
     end;
     if Terminated then Result := 0 else
-    if (Result = 0) and (not CP.TempDown) then
-    begin
+    if (Result = 0) and (not CP.TempDown) then begin
       TSockPort(CP).DropDCD;
       Terminated := True
     end;
@@ -1049,11 +1045,9 @@ begin
             WSA_IO_PENDING:
               begin
                 Actually := 0;
-                if WSAGetOverlappedResult(AHandle, OL^, Actually, True, Flags) then
-                begin
+                if WSAGetOverlappedResult(AHandle, OL^, Actually, True, Flags) then begin
                   Result := Actually;
-                end else
-                begin
+                end else begin
                   Error := True;
                 end;
               end;
@@ -1272,6 +1266,11 @@ begin // procedure TSockListen.InvokeExec;
     Dec(SockMgr.SocksAvail);
     Thr := OpenPort(NewHandle, Typ, IpPort);
     Thr.CallerId := Addr2Inet(RemoteAddr.sin_addr.s_addr);
+    dd := IniFile.ReadInteger('Black_List', Thr.CallerID);
+    if DWORD(dd) > Cfg.IPData.BList then begin
+       Thr.Msg := 'Carrier dropped (address is blacklisted), BL = ' + IntToStr(dd);
+       Thr.DropDCD;
+    end;
     Thr.Incoming := True;
     SockMgr.NewSocks.Insert(Thr);
     SockMgr.NewSocks.Leave;
@@ -1564,13 +1563,10 @@ begin
        WaitEvtInfinite(oBlk);
        ResetEvt(oBlk);
        EnterCS(ResolveThr.CS);
-       for i := 0 to ResolveThr.Resp.Count - 1 do
-       begin
+       for i := 0 to ResolveThr.Resp.Count - 1 do begin
          rsp := ResolveThr.Resp[i];
-         if rsp.HostName = aa then
-         begin
-           if rsp.Error = 0 then ia := rsp.Addr else
-           begin
+         if rsp.HostName = aa then begin
+           if rsp.Error = 0 then ia := rsp.Addr else begin
              ia := INADDR_NONE;
              Error := rsp.Error;
            end;
@@ -1706,8 +1702,7 @@ var
 begin
   result := 0;
   Error := False;
-  if Method <> SOCKS_ACCEPT then
-  begin
+  if Method <> SOCKS_ACCEPT then begin
     // supported 2 authentication methods
     Buf[0] := chr(SOCKS_VERSION_5);
     Buf[1] := #2;
@@ -1726,9 +1721,8 @@ begin
     BufLen := _recv(AHandle, Buf[0], BufLen, Error, ReadOL);
 
     if Buf[0] <> chr(SOCKS_VERSION_5) then begin Result := -1; exit; end;
-    if Buf[1] = chr(SOCKS_USERPASS) then Socks5Login(AHandle, ReadOL, WriteOL) // User/Pass method required
-      else
-        if Buf[1] <> chr(SOCKS_NOAUTH) then begin Result := -1; exit; end;
+    if Buf[1] = chr(SOCKS_USERPASS) then Socks5Login(AHandle, ReadOL, WriteOL) else
+    if Buf[1] <> chr(SOCKS_NOAUTH) then begin Result := -1; exit; end;
 
     Buf[0] := chr(SOCKS_VERSION_5);
     Buf[1] := chr(Method);

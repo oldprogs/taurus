@@ -527,6 +527,9 @@ begin
          l.Pack        := pack;
          l.Size        := i;
          l.Line        := d;
+         if l.MsId = '' then begin
+            l.MsId := Addr2Str(l.From) + '#' + Format('%.8x', [GetTickCount xor xRandom32]) + '#gate';
+         end;
          if not EchoMail then begin
             GetMem(l.Body, l.Size);
             move(p^, l.Body^, l.Size);

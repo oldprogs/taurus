@@ -30,7 +30,7 @@ object PollSetupForm: TPollSetupForm
     Top = 0
     Width = 532
     Height = 237
-    ActivePage = tsOptions
+    ActivePage = tsPeriodical
     Align = alTop
     Anchors = [akLeft, akTop, akRight, akBottom]
     Font.Charset = DEFAULT_CHARSET
@@ -77,7 +77,7 @@ object PollSetupForm: TPollSetupForm
     object tsOptions: TTabSheet
       Caption = 'Options'
       object lRetry: TLabel
-        Left = 379
+        Left = 370
         Top = 149
         Width = 84
         Height = 16
@@ -85,7 +85,7 @@ object PollSetupForm: TPollSetupForm
         FocusControl = sRetry
       end
       object lCallMin: TLabel
-        Left = 379
+        Left = 370
         Top = 177
         Width = 75
         Height = 16
@@ -265,9 +265,9 @@ object PollSetupForm: TPollSetupForm
         TabOrder = 2
       end
       object sRetry: TxSpinEdit
-        Left = 313
+        Left = 301
         Top = 145
-        Width = 56
+        Width = 50
         Height = 26
         MaxLength = 6
         MaxValue = 14400
@@ -276,9 +276,9 @@ object PollSetupForm: TPollSetupForm
         Value = 10
       end
       object sCallMin: TxSpinEdit
-        Left = 313
+        Left = 301
         Top = 175
-        Width = 56
+        Width = 50
         Height = 26
         MaxLength = 5
         MaxValue = 14400

@@ -1068,7 +1068,7 @@ function Addr2Str(const Addr: TFidoAddress): string;
 var
   a: TFidoAddress;
 begin
-  if (Addr.Zone = $FFFF) and (Addr.Domain <> 'POP3') then begin
+  if (Addr.Zone = $FFFF) {and (Addr.Domain <> 'POP3')} then begin
      Result := Inifile.ReadString('Grids', 'gSMTP' + IntToStr(Addr.Point), 'Error');
      Result := ExtractWord(1, Result, ['|']) + '@POP3';
      exit;
@@ -1857,6 +1857,9 @@ end;
 function ParseAddress;
 var
   a: Ta4s;
+  s: TStringList;
+  i: integer;
+  t: string;
   sfin: string;
 begin
   Result := False;
@@ -1866,7 +1869,27 @@ begin
   if pos(':', Address) = 0 then sfin := IntToStr(IniFile.MainAddr.Zone) + ':';
   if pos('/', Address) = 0 then sfin := sfin + IntToStr(IniFile.MainAddr.Net) + '/';
   sfin := sfin + Address;
-  if not SplitAddress(sfin, a, False) then Exit;
+  if not SplitAddress(sfin, a, False) then begin
+     if not Result then begin
+        s := IniFile.ReadSection('Grids', 'gSMTP');
+        if s <> nil then begin
+           for i := 0 to s.Count - 1 do begin
+              t := IniFile.ReadString('Grids', s[i]);
+              if pos(UpperCase(ExtractWord(1, Address, ['@'])) + '|', UpperCase(t)) > 0 then begin
+                 Addr.Zone   := $FFFF;
+                 Addr.Net    := $FFFF;
+                 Addr.Node   := $FFFF;
+                 Addr.Point  := i + 1;
+                 Addr.Domain := 'POP3';
+                 Result := True;
+                 break;
+              end;
+           end;
+           s.Free;
+        end;
+     end;
+     Exit;
+  end;
   Result := A4s2Addr(a, Addr);
 end;
 
