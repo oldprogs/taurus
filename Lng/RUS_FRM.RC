@@ -194,6 +194,7 @@ LANGUAGE LANG_RUSSIAN,0
         "mtAttachFiles|Присоединить файл...\n"\
         "mtCreateFlag|Создать флаг...\n"\
         "mtOutSmartMenu|Меню отправки\n"\
+        "mtViewLogs|Посмотреть лог\n"\
         "mConfig|Конфигурация\n"\
         "mcMasterPassword|Главный пароль\n"\
         "mcMasterPwdCreate|Установить...\n"\
@@ -215,22 +216,15 @@ LANGUAGE LANG_RUSSIAN,0
         "mHelp|&?\n"\
         "mhContents|Справка\n"\
         "mhLanguage|Язык справки\n"\
-        "hlRomainian|Румынский\n"\
         "hlRussian|Русский\n"\
         "hlMitky|Русский (Митьки)\n"\
         "hlEnglish|Английский (Великобритания)\n"\
-        "hlGerman|Немецкий\n"\
-        "hlDutch|Голландский\n"\
-        "hlSpanish|Испанский\n"\
         "mhHelp|Как пользоваться справкой\n"\
         "mnuWebSites|Argus-related Web Sites\n"\
         "mhWebSite|WWW-узел поддержки Argus\n"\
         "mnuRadiusOnWeb|Taurus Web Site\n"\
         "mnuArgusClone|Клоны Аргуса\n"\
-        "mhLicence|Лицензия\n"\
         "mhAbout|О программе\n"\
-        "mhHowReg|Как зарегистрироваться\n"\
-        "mRegistration|Ввод регистрационного кода...\n"\
         "ppCreatePoll|Создать\n"\
         "ppTracePoll|Информация\n"\
         "ppResetPoll|Сбросить\n"\
@@ -517,7 +511,7 @@ LANGUAGE LANG_RUSSIAN,0
         "bHelp|Справка\n"\
         "tb|Свойства|Станция|AKA|Приглаш.|Огранич.|События|DNS|Узлы|POP3|SMTP|NNTP\n"\
         "llInPorts|Входящие порты\n"\
-        "llAssumeSpeed|Скорость\n"\
+        "llAssumeSpeed|BL счетчик\n"\
         "llSocksAddr|Адрес\n"\
         "llSocksPort|Порт\n"\
         "llLimit|Соединения\n"\

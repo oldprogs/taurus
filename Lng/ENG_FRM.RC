@@ -194,6 +194,7 @@ LANGUAGE LANG_ENGLISH,0
         "mtAttachFiles|Attach Files...\n"\
         "mtCreateFlag|Create a Flag...\n"\
         "mtOutSmartMenu|Outbound SmartMenu™\n"\
+        "mtViewLogs|View Logs\n"\
         "mConfig|&Config\n"\
         "mcMasterPassword|&Master Password\n"\
         "mcMasterPwdCreate|Set Up...\n"\
@@ -215,22 +216,15 @@ LANGUAGE LANG_ENGLISH,0
         "mHelp|&Help\n"\
         "mhContents|Help &Topics\n"\
         "mhLanguage|Help &Language\n"\
-        "hlRomainian|Ro&manian\n"\
         "hlRussian|&Russian\n"\
         "hlMitky|Russian (&Mitky)\n"\
         "hlEnglish|&English (UK)\n"\
-        "hlGerman|&German\n"\
-        "hlDutch|&Dutch\n"\
-        "hlSpanish|&Spanish\n"\
         "mhHelp|Help on &Help\n"\
         "mnuWebSites|Argus-related Web Sites\n"\
         "mhWebSite|Argus &Web Site (on-line)\n"\
         "mnuRadiusOnWeb|Taurus Web Site\n"\
         "mnuArgusClone|All Argus clones\n"\
-        "mhLicence|&Licence\n"\
         "mhAbout|&About\n"\
-        "mhHowReg|How to Register\n"\
-        "mRegistration|Enter &Registration code...\n"\
         "ppCreatePoll|&Create\n"\
         "ppTracePoll|&Info\n"\
         "ppResetPoll|&Reset\n"\
@@ -513,7 +507,7 @@ LANGUAGE LANG_ENGLISH,0
         "bHelp|Help\n"\
         "tb|General|Station|AKA|Banner|Restrictions|Events|DNS|Nodes|POP3|SMTP|NNTP\n"\
         "llInPorts|Incoming ports\n"\
-        "llAssumeSpeed|Speed\n"\
+        "llAssumeSpeed|BL counter\n"\
         "llSocksAddr|&Address\n"\
         "llSocksPort|&Port\n"\
         "llLimit|Connections\n"\
