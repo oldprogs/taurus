@@ -100,6 +100,10 @@ type
       function FindMessage(const Id: string): TNetmailMsg;
    end;
 
+   TMemStream = class(TMemoryStream)
+      procedure LoadFromFile(const n: string); reintroduce;
+   end;
+
 procedure FreeNetmailHolder;
 procedure ClearAttach(m, a: string);
 procedure UnpackPKT(p: string);
@@ -125,7 +129,7 @@ end;
 
 procedure ClearAttach;
 var
-   n: TMemoryStream;
+   n: TMemStream;
    h: _fidomsgtype;
    s: string;
    z: string;
@@ -133,7 +137,7 @@ var
    b: boolean;
 begin
    if not ExistFile(m) then exit;
-   n := TMemoryStream.Create;
+   n := TMemStream.Create;
    if n <> nil then begin
       try
          n.LoadFromFile(m);
@@ -185,7 +189,8 @@ var
    t: string;
    x: integer;
 begin
-   x := NetmailHolder.MaxMSG;
+   x := 0;
+   if NetmailHolder <> nil then x := NetmailHolder.MaxMSG;
    FillChar(h, SizeOf(h), #0);
    t := 'Taurus ' + CProductVersionA + '/W32';
    move(t[1], h.from, Length(t));
@@ -242,12 +247,17 @@ var
    t: string;
    o: integer;
 begin
-   x := NetmailHolder.MaxMSG;
+   x := 0;
+   if NetmailHolder <> nil then x := NetmailHolder.MaxMSG;
    n := TNetmail.Create;
    n.ScanPacket(p);
    for i := 0 to CollMax(n.NetColl) do begin
-      FillChar(h, SizeOf(h), #0);
       m := n.NetColl[i];
+      if m.Echo <> '' then begin
+         FreeObject(n);
+         exit;
+      end;
+      FillChar(h, SizeOf(h), #0);
       move(m.Frnm[1], h.from, Length(m.Frnm));
       move(m.Tonm[1], h.towhom, Length(m.Tonm));
       move(m.Subj[1], h.subject, Length(m.Subj));
@@ -863,7 +873,7 @@ end;
 
 procedure TNetmail.ScanMesage;
 var
-   n: TMemoryStream;
+   n: TMemStream;
    h: _fidomsgtype;
    l: TNetmailMsg;
    o: TStringColl;
@@ -873,7 +883,7 @@ var
 begin
    if not ExistFile(pack) then exit;
    NetColl.Enter;
-   n := TMemoryStream.Create;
+   n := TMemStream.Create;
    if n <> nil then begin
       try
          n.LoadFromFile(pack);
@@ -931,7 +941,7 @@ end;
 
 procedure TNetmail.ScanPacket;
 var
-   n: TMemoryStream;
+   n: TMemStream;
    h: PktHeaderRec;
    m: PackedMsgHeaderRec;
    l: TNetmailMsg;
@@ -939,7 +949,7 @@ begin
    if not ExistFile(pack) then exit;
    if EchoMail and (FilColl.IndexOf(pack) > -1) then exit;
    NetColl.Enter;
-   n := TMemoryStream.Create;
+   n := TMemStream.Create;
    if n <> nil then begin
       try
          n.LoadFromFile(pack);
@@ -1068,7 +1078,7 @@ begin
       m := NetColl[i];
       if MatchMaskAddress(m.Addr, r) and not MatchMaskAddressListSingle(m.Addr, e) then begin
          if existfile(m.Pack) then begin
-            if not m.Fido or (Pos('DIR', m.Flgs) = 0) or (CompareAddrs(m.Addr, a) = 0) then begin
+            if (Pos('DIR', m.Flgs) = 0) or (CompareAddrs(m.Addr, a) = 0) then begin
                MoveMail(m, a, p, Active);
                ScanActive := True;
                ScanCounter := 1;
@@ -1102,7 +1112,7 @@ var
    n: integer;
 begin
    NetColl.Enter;
-   if IniFile.DynamicRouting then
+   if IniFile.DynamicRouting or IniFile.ScanMSG then
    if FidoOut.Lock(a, osBusy, True) then begin
       for i := 0 to IniFile.NetmailAddrTo.Count - 1 do begin
          o := IniFile.NetmailAddrTo[i];
@@ -1240,6 +1250,16 @@ begin
       end;
    end;
    NetColl.Leave;
+end;
+
+procedure TMemStream.LoadFromFile;
+var
+   h: THandle;
+begin
+   h := _CreateFile(n, [cRead]);
+   if h = INVALID_HANDLE_VALUE then Exit;
+   ZeroHandle(h);
+   inherited;
 end;
 
 initialization

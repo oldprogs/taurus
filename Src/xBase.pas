@@ -39,9 +39,9 @@ const
   CProductPlatform  = 'Win32';
   CProductVersionA  = '5.000';
   CProductMinorVersion = 00;
-  CProductMajorVersion = 0;
+  CProductMajorVersion = 00;
   CProductName     = 'Taurus';
-  CReleaseSpec     = 'Alpha';
+  CReleaseSpec     = 'Beta';
 
   CProductNameFull = 'Taurus by Taurus (based on Radius (based on Argus))';
 
@@ -309,6 +309,7 @@ const
   WM_LASTIN        = WM__ARGUS + 62;
   WM_LASTOUT       = WM__ARGUS + 63;
   WM_CHECKNETMAIL  = WM__ARGUS + 64;
+  WM_ROUTEEXPORT   = WM__ARGUS + 65;
 
 {$IFDEF WS}
   WM_NEWSOCKPORT   = WM__ARGUS + 100;
@@ -442,7 +443,7 @@ type
   end;
 
   TCollError = class(Exception)
-    constructor Create(ACode, AInfo: Integer; const AClassName: string);
+    constructor Create(ACode, ACnt, AInfo: Integer; const AClassName: string);
   end;
 
   TAdvObject = class;
@@ -667,7 +668,7 @@ type
     procedure AtPut(Index: Integer; Item: Pointer);
     procedure Delete(Item: Pointer);
     procedure DeleteAll;
-    procedure Error(Code, Info: Integer);
+    procedure Error(Code, Cnt, Info: Integer);
     procedure FFree(Item: Pointer);
     procedure FreeAll;
     procedure FreeItem(Item: Pointer); virtual;
@@ -1306,9 +1307,11 @@ begin
      Inc(ScanCounter);
   end;
   if (LiveCounter > 20 * 60 * 2) or (WindCounter > 20 * 60 * 2) then begin
+     {$IFDEF DEBUG_VERSION}
      if (EntrLogFName <> '') then begin
         EnterList.SaveToFile(EntrLogFName);
      end;
+     {$ENDIF}
      GlobalFail('Taurus hanged up: %d %d', [LiveCounter, WindCounter]);
   end;
   if ScanCounter > 20 * 5 then begin
@@ -3812,9 +3815,9 @@ begin
    if not WriteFile(Handle, Buffer, Count, DWORD(Result), nil) then Result := 0;
 end;
 
-constructor TCollError.Create(ACode, AInfo: Integer; const AClassName: string);
+constructor TCollError.Create(ACode, ACnt, AInfo: Integer; const AClassName: string);
 begin
-   inherited Create(Format('Coll Error. Code = %d, Info = %d, Class = %s', [ACode, AInfo, AClassName]));
+   inherited Create(Format('Coll Error. Code = %d, Cnt = %d Info = %d, Class = %s', [ACode, ACnt, AInfo, AClassName]));
 end;
 
 procedure QuickSort(SortList: PItemList; L, R: Integer; SCompare: TListSortCompare);
@@ -4090,12 +4093,12 @@ begin
    except
       Result := nil
    end;
-   if err then Error(coIndexError, Index);
+   if err then Error(coIndexError, FCount, Index);
 end;
 
 procedure TColl.AtDelete(Index: Integer);
 begin
-   if (Index < 0) or (Index >= FCount) then Error(coIndexError, Index);
+   if (Index < 0) or (Index >= FCount) then Error(coIndexError, FCount, Index);
    Dec(FCount);
    if Index < FCount then System.Move(FList^[Index + 1], FList^[Index], (FCount - Index) * SizeOf(Pointer));
 end;
@@ -4111,7 +4114,7 @@ end;
 
 procedure TColl.AtInsert(Index: Integer; Item: Pointer);
 begin
-   if (Index < 0) or (Index > FCount) then Error(coIndexError, Index);
+   if (Index < 0) or (Index > FCount) then Error(coIndexError, FCount, Index);
    if FCount = Integer(FCapacity) then SetCapacity(FCapacity + FDelta);
    if Index < FCount then System.Move(FList^[Index], FList^[Index + 1], (FCount - Index) * SizeOf(Pointer));
    FList^[Index] := Item;
@@ -4120,7 +4123,7 @@ end;
 
 procedure TColl.AtPut(Index: Integer; Item: Pointer);
 begin
-   if (Index < 0) or (Index >= FCount) then Error(coIndexError, Index);
+   if (Index < 0) or (Index >= FCount) then Error(coIndexError, FCount, Index);
    FList^[Index] := Item;
 end;
 
@@ -4136,10 +4139,10 @@ begin
    FCount := 0;
 end;
 
-procedure TColl.Error(Code, Info: Integer);
+procedure TColl.Error(Code, Cnt, Info: Integer);
 begin
    asm nop end;
-   raise TCollError.Create(Code, Info, ClassName);
+   raise TCollError.Create(Code, Cnt, Info, ClassName);
 end;
 
 procedure TColl.FFree(Item: Pointer);
@@ -4188,7 +4191,7 @@ end;
 procedure TColl.SetCapacity;
 begin
    if NewCapacity = 0 then begin FreeMem(FList,FCapacity); FList:=nil; exit; end;
-   if (Integer(NewCapacity) < FCount) or (NewCapacity > MaxCollSize) then Error(coOverflow, NewCapacity);
+   if (Integer(NewCapacity) < FCount) or (NewCapacity > MaxCollSize) then Error(coOverflow, FCount, NewCapacity);
    if NewCapacity <> FCapacity then begin
       ReallocMem(FList, NewCapacity * SizeOf(Pointer));
       FCapacity := NewCapacity;
@@ -4200,7 +4203,7 @@ var
    Item: Pointer;
 begin
    if CurIndex <> NewIndex then begin
-      if (NewIndex < 0) or (NewIndex >= FCount) then Error(coIndexError, 0);
+      if (NewIndex < 0) or (NewIndex >= FCount) then Error(coIndexError, FCount, NewIndex);
       Item := FList^[CurIndex];
       AtDelete(CurIndex);
       AtInsert(NewIndex, Item);

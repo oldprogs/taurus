@@ -154,8 +154,8 @@ object IPcfgForm: TIPcfgForm
         TabOrder = 0
         CheckBoxes = True
         ColWidths = (
-          90
-          266)
+          120
+          248)
       end
       object llLimit: TGroupBox
         Left = 405
@@ -364,7 +364,7 @@ object IPcfgForm: TIPcfgForm
       object gTpl: TAdvGrid
         Left = 0
         Top = 0
-        Width = 567
+        Width = 574
         Height = 124
         FixedFont.Charset = DEFAULT_CHARSET
         FixedFont.Color = clWindowText
@@ -394,8 +394,8 @@ object IPcfgForm: TIPcfgForm
       object gAKA: TAdvGrid
         Left = 0
         Top = 0
-        Width = 568
-        Height = 272
+        Width = 574
+        Height = 273
         FixedFont.Charset = DEFAULT_CHARSET
         FixedFont.Color = clWindowText
         FixedFont.Height = -12
@@ -782,8 +782,8 @@ object IPcfgForm: TIPcfgForm
         566
         265)
       object lNNTPImport: TLabel
-        Left = 65
-        Top = 17
+        Left = 68
+        Top = 20
         Width = 168
         Height = 15
         Caption = 'Files to import NEWS List from'
@@ -815,11 +815,11 @@ object IPcfgForm: TIPcfgForm
         CheckBoxes = False
         ColWidths = (
           64
-          472)
+          490)
       end
       object gbCash: TGroupBox
-        Left = 316
-        Top = 7
+        Left = 355
+        Top = 2
         Width = 209
         Height = 45
         Anchors = [akTop, akRight]
@@ -829,7 +829,7 @@ object IPcfgForm: TIPcfgForm
           209
           45)
         object lCash1: TLabel
-          Left = 29
+          Left = 28
           Top = 18
           Width = 88
           Height = 15
@@ -846,7 +846,7 @@ object IPcfgForm: TIPcfgForm
           Caption = 'Mb'
         end
         object xSpinCash: TxSpinEdit
-          Left = 126
+          Left = 125
           Top = 14
           Width = 51
           Height = 24
@@ -857,6 +857,39 @@ object IPcfgForm: TIPcfgForm
           TabOrder = 0
           Value = 5
         end
+      end
+    end
+    object tsBList: TTabSheet
+      Caption = 'Black List'
+      ImageIndex = 11
+      object gBList: TAdvGrid
+        Left = 0
+        Top = 0
+        Width = 401
+        Height = 285
+        FixedFont.Charset = DEFAULT_CHARSET
+        FixedFont.Color = clWindowText
+        FixedFont.Height = -12
+        FixedFont.Name = 'Arial'
+        FixedFont.Style = []
+        Align = alLeft
+        ColCount = 3
+        DefaultRowHeight = 17
+        RowCount = 2
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -12
+        Font.Name = 'Courier'
+        Font.Style = []
+        Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goColSizing, goEditing, goThumbTracking, goDigitalRows]
+        ParentFont = False
+        ScrollBars = ssVertical
+        TabOrder = 0
+        CheckBoxes = False
+        ColWidths = (
+          31
+          190
+          171)
       end
     end
   end

@@ -1524,8 +1524,15 @@ begin
          b.Domain := a[5];
          fc := GetScope(b);
          if fc = nil then exit;
-         if fc.Search(@Addr, j) then begin
-            break;
+         b := Addr;
+         b.Point := 0;
+         try
+            if fc.Search(@b, j) then begin
+               break;
+            end;
+         finally
+            fc.DeleteAll;
+            FreeObject(fc);
          end;
       end else
       if (i = 3) and (a[4] = '#') then begin
@@ -1536,8 +1543,15 @@ begin
          b.Domain := a[5];
          fc := GetScope(b);
          if fc = nil then exit;
-         if fc.Search(@Addr, j) then begin
-            break;
+         b := Addr;
+         b.Point := 0;
+         try
+            if fc.Search(@b, j) then begin
+               break;
+            end;
+         finally
+            fc.DeleteAll;
+            FreeObject(fc);
          end;
       end;
       if s <> z then Exit;
@@ -2320,77 +2334,70 @@ const
     20*2+0  // Zone 6 mail hour (20:00 - 21:00 UTC)
   );
 var
-  Local, u: Boolean;
-  ZMHZone: Integer; {*}
+   Local, u: Boolean;
+   ZMHZone: Integer; {*}
 
 begin
-  u := False;
-  Result := [];
-  while Flags <> '' do
-  begin
-    GetWrd(Flags, z, ',');
-    u := u or (UpperCase(z) = 'U');
-    if not FReq then
-    begin
-      if ((z[1] = '#') or (z[1] = '!')) then begin {*}
-        { parse extended ZMH shift flags! } {*}
-        while GetShiftedZMH(z, ZMHZone) do {*}
-        begin {*}
-          t1 := zmh[ZMHZone]; {*}
-          t2 := Succ(t1)+1; {*} //buster ??
-          if ALocal then {*}
-          begin {*}
-            GetBias; {*}
-            AdjustFSC62Quant(t1, -TimeZoneBias); {*}
-            AdjustFSC62Quant(t2, -TimeZoneBias); {*}
-          end; {*}
-          FillFSC62Time(Result, t1, t2); {*}
-        end; {*}
-      end; {*}
-      if (UpperCase(z) = 'CM') then
-      begin
-        Result := [Low(TFSC62Quant)..High(TFSC62Quant)];
-        Exit;
+   u := False;
+   Result := [];
+   while Flags <> '' do begin
+      GetWrd(Flags, z, ',');
+      if z = '' then continue;
+      u := u or (UpperCase(z) = 'U');
+      if not FReq then begin
+         if ((z[1] = '#') or (z[1] = '!')) then begin {*}
+            { parse extended ZMH shift flags! } {*}
+            while GetShiftedZMH(z, ZMHZone) do begin {*}
+               t1 := zmh[ZMHZone]; {*}
+               t2 := Succ(t1)+1; {*} //buster ??
+               if ALocal then begin {*}
+                  GetBias; {*}
+                  AdjustFSC62Quant(t1, -TimeZoneBias); {*}
+                  AdjustFSC62Quant(t2, -TimeZoneBias); {*}
+               end; {*}
+               FillFSC62Time(Result, t1, t2); {*}
+            end; {*}
+         end; {*}
+         if (UpperCase(z) = 'CM') then begin
+            Result := [Low(TFSC62Quant)..High(TFSC62Quant)];
+            Exit;
+         end;
       end;
-    end;
-    if u and IsTxyEx(z, Local, FReq) then
-    begin
-      if (GetTime(z[2], t1)) and
-         (GetTime(z[3], t2)) then
-      begin
-        if Local <> ALocal then
-          if Local then
-          begin
-            GetBias;
-            AdjustFSC62Quant(t1, TimeZoneBias);
-            AdjustFSC62Quant(t2, TimeZoneBias);
-          end else
-          if ALocal then
-          begin
-            GetBias;
-            AdjustFSC62Quant(t1, -TimeZoneBias);
-            AdjustFSC62Quant(t2, -TimeZoneBias);
-          end;
-        FillFSC62Time(Result, t1, t2);
-      end;
-    end;
-  end;
-  if {(not ALocal) and} (Addr.Point = 0) and (Result = []) then
-  case Addr.Zone of
-    1..6 : begin
-             t1 := zmh[Addr.Zone];
-             t2 := Succ(t1);
-             if ALocal then
-             begin
+      if u and IsTxyEx(z, Local, FReq) then begin
+         if (GetTime(z[2], t1)) and
+            (GetTime(z[3], t2)) then
+         begin
+            if Local <> ALocal then
+            if Local then begin
+               GetBias;
+               AdjustFSC62Quant(t1, TimeZoneBias);
+               AdjustFSC62Quant(t2, TimeZoneBias);
+            end else
+            if ALocal then begin
                GetBias;
                AdjustFSC62Quant(t1, -TimeZoneBias);
                AdjustFSC62Quant(t2, -TimeZoneBias);
-             end;
-             Include(Result, t1);
-             Include(Result, t2)
-           end;
-  end;
-  if (Result = []) and (FReq) then Result := [Low(TFSC62Quant)..High(TFSC62Quant)];
+            end;
+            FillFSC62Time(Result, t1, t2);
+         end;
+      end;
+   end;
+   if {(not ALocal) and} (Addr.Point = 0) and (Result = []) then
+   case Addr.Zone of
+   1..6 :
+      begin
+         t1 := zmh[Addr.Zone];
+         t2 := Succ(t1);
+         if ALocal then begin
+            GetBias;
+            AdjustFSC62Quant(t1, -TimeZoneBias);
+            AdjustFSC62Quant(t2, -TimeZoneBias);
+         end;
+         Include(Result, t1);
+         Include(Result, t2)
+      end;
+   end;
+   if (Result = []) and (FReq) then Result := [Low(TFSC62Quant)..High(TFSC62Quant)];
 end;
 
 function NodeFSC62TimeEx;

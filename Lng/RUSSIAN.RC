@@ -48,6 +48,7 @@ LANGUAGE LANG_RUSSIAN,0
   LngBaseRussian+rsIpSMTP          "Имя|Адрес|User|Pass" 
   LngBaseRussian+rsIpPOP3          "Адрес|User|Pass|Reply-To:|Send to:"
   LngBaseRussian+rsIpNNTP          "Адресная маска|Файл"
+  LngBaseRussian+rsIpBList         "|IP Адрес|Счетчик"
   LngBaseRussian+rsIPTpl           "Имя станции|Список адресов|Имя оператора|Местоположение|IP-адрес|Флаги"
   LngBaseRussian+rsIPInvC          "Неверное содержимое поля \"%s\".\n\n%s."
   LngBaseRussian+rsIPRestart       "Для того, чтобы изменения странички \"Свойства\" вступили в действие, необходимо перезагрузить TCP/IP Демон."
@@ -534,8 +535,8 @@ LANGUAGE LANG_RUSSIAN,0
 
   LngBaseRussianEvt+eiAccListed       "Прием только известных"
 
-  LngBaseRussianEvt+eiLoginScript     "Скрипт|Список Узлов|Команда|Рег.Выр.|Таймаут|Ком. Т-а"
-  LngBaseRussianEvt+eiModemScript     "Скрипт|Строка модема|Команда|Рег.Выр.|Таймаут|Ком. Т-а"
+  LngBaseRussianEvt+eiLoginScript     "Логин Скрипт|Список Узлов|Команда|Рег.Выр.|Таймаут|Ком. Т-а"
+  LngBaseRussianEvt+eiModemScript     "Модем Скрипт|Строка модема|Команда|Рег.Выр.|Таймаут|Ком. Т-а"
 
   LngBaseRussianEvt+eiAccNoCram       "Допуск CRAM Запретить"
   LngBaseRussianEvt+eiTrsNoCram       "Передача CRAM Запретить|Список Узлов"

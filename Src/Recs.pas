@@ -5272,15 +5272,12 @@ begin
   s1 := TStringColl.Create;
   s2 := TStringColl.Create;
   i := 0;
-  while i < Coll.Count do
-  begin
-    if APwd then
-    begin
+  while i < Coll.Count do begin
+    if APwd then begin
       p := Coll[i];
       ss1 := p.AddrList.GetString;
       ss2 := p.PswStr;
-    end else
-    begin
+    end else begin
       o := Coll[i];
       ss1 := Addr2Str(o.Addr);
       ss2 := o.Ovr;

@@ -238,8 +238,10 @@ type
             procedure WriteInteger(Sect, Line: string; Val: integer);
             function ReadSection(Sect, Line: string): TStringList;
             function GetStrings(n: string): TDualColl;
-            procedure LoadGrid(g: TAdvGrid);
-            procedure SaveGrid(g: TAdvGrid);
+            procedure LoadGrid(g: TAdvGrid); overload;
+            procedure LoadGrid(s: string; g: TAdvGrid); overload;
+            procedure SaveGrid(g: TAdvGrid); overload;
+            procedure SaveGrid(s: string; g: TAdvGrid); overload;
       end;
 
 procedure LoadIni;
@@ -462,7 +464,7 @@ begin
    end;      
 end;
 
-procedure TConfig.LoadGrid;
+procedure TConfig.LoadGrid(g: TAdvGrid);
 var
    s: TStringList;
    i: integer;
@@ -497,11 +499,39 @@ begin
          end;
       end;
    finally
-      Leave;   
+      Leave;
    end;
 end;
 
-procedure TConfig.SaveGrid;
+procedure TConfig.LoadGrid(s: string; g: TAdvGrid);
+var
+   l: TStringList;
+   i: integer;
+begin
+   Enter;
+   try
+      with TMemIniFile.Create(IniFName) do begin
+         try
+            l := TStringList.Create;
+            ReadSection(s, l);
+            for i := 0 to l.Count - 1 do begin
+               if g.RowCount <= i + 1 then begin
+                  g.RowCount := i + 2;
+               end;
+               g.Cells[1, i + 1] := l[i];
+               g.Cells[2, i + 1] := ReadString(s, l[i], '');
+            end;
+            l.Free;
+         finally
+            Free;
+         end;
+      end;
+   finally
+      Leave;
+   end;
+end;
+
+procedure TConfig.SaveGrid(g: TAdvGrid);
 var
    i: integer;
    n: integer;
@@ -541,6 +571,34 @@ begin
          p := StringsList.Objects[i] as TDualColl;
          FreeObject(p);
          StringsList.Delete(i);
+      end;
+   finally
+      Leave;
+   end;
+end;
+
+procedure TConfig.SaveGrid(s: string; g: TAdvGrid);
+var
+   l: TStringList;
+   i: integer;
+begin
+   Enter;
+   try
+      with TMemIniFile.Create(IniFName) do begin
+         try
+            l := TStringList.Create;
+            ReadSection(s, l);
+            for i := 0 to l.Count - 1 do begin
+                DeleteKey(s, l[i]);
+            end;
+            l.Free;
+            for i := 0 to g.RowCount - 2 do begin
+               WriteString(s, g.Cells[1, i + 1], g.Cells[2, i + 1]);
+            end;
+         finally
+            UpdateFile;
+            Free;
+         end;
       end;
    finally
       Leave;

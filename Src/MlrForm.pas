@@ -917,8 +917,9 @@ begin
 end;
 
 procedure UpdateLast(const P: longint; u: boolean);
-var S: pstring absolute P;
-    i: integer;
+var
+   S: pstring absolute P;
+   i: integer;
 begin
    if s = nil then exit;
    if MailerForms <> nil then begin
@@ -926,6 +927,48 @@ begin
          TMailerForm(MailerForms.At(i)).UpdateLast(S^, u);
       end;
    end;
+end;
+
+procedure ExportRoute(const P: longint);
+var
+   S: pstring absolute P;
+   g: TStringList;
+   i: integer;
+   n: integer;
+   m: integer;
+   t: string;
+   r: TPasswordRec;
+   a: TFidoAddress;
+begin
+   g := TStringList.Create;
+   n := 0;
+   for i := 0 to IniFile.NetmailAddrTo.Count - 1 do begin
+      m := Length(IniFile.NetmailAddrTo[i]);
+      if m > n then n := m;
+   end;
+   g.Add('Routing:');
+   g.Add('');
+   for i := 0 to IniFile.NetmailAddrTo.Count - 1 do begin
+      g.Add(Pad(IniFile.NetmailAddrTo[i], n + 2) + '<=  ' + ExtractWord(1, IniFile.NetmailAddrFrom[i], [' ']));
+      t := IniFile.NetmailAddrFrom[i];
+      for m := 2 to WordCount(t, [' ']) do begin
+         g.Add(Pad('', n + 2) + '<=  ' + ExtractWord(m, t, [' ']));
+      end;
+   end;
+   g.Add('');
+   g.Add('Links:');
+   g.Add('');
+   for i := 0 to Cfg.Passwords.Count - 1 do begin
+      r := Cfg.Passwords[i];
+      for m := 0 to r.AddrList.Count - 1 do begin
+         a := r.AddrList[m];
+         if MatchMaskAddress(a, '*:*/*.0@*') then begin
+            g.Add(Pad(Addr2Str(a), n + 1) + ' <=  ' + Addr2Str(a));
+         end;   
+      end;
+   end;
+   g.SaveToFile(S^);
+   g.Free;
 end;
 
 {$I utility.inc}
@@ -1298,6 +1341,7 @@ var
    var
       s,
       e: string;
+      g: TStringList;
       I: integer;
       c: Char;
 
@@ -1389,6 +1433,21 @@ var
          PostMsg(WM_IMPORTIPOVRL);
       end;
 {$ENDIF}
+
+      s := MakeFullDir(IniFile.FlagsDir, 'ROUTE.EXP');
+      if _FileExists(s) then begin
+         g := TStringList.Create;
+         g.LoadFromFile(s);
+         DeleteFile(s);
+         if g.Count > 0 then begin
+            e := g[0];
+            SendMessage(MainWinHandle, WM_ROUTEEXPORT, Integer(@e), 0);
+            FidoPolls.Log.LogSelf(Format('Detected %s - forced routing table export to: %s', [s, e]));
+         end else begin
+            FidoPolls.Log.LogSelf(Format('Detected empty %s - nothing to do', [s]));
+         end;
+         g.Free;
+      end;
 
       for I := 0 to altcfg.FlagsCollA.Count - 1 do begin
          c := (altcfg.FlagsCollA.Strings[I])[1];
@@ -1785,10 +1844,17 @@ begin
             end;
          WM_CHECKNETMAIL:
             begin
+               if (NetmailHolder = nil) and (IniFile.DynamicRouting or IniFile.ScanMSG) then begin
+                  NetmailHolder := TNetmail.Create;
+               end;
                if NetmailHolder <> nil then begin
                   NetmailHolder.ScanMSG;
                   TMailerForm(Application.MainForm).RereadOutbound(True);
                end;
+            end;
+         WM_ROUTEEXPORT:
+            begin
+               ExportRoute(Msg.WParam);
             end;
 {$IFDEF WS}
          WM_RESOLVE..WM_RESOLVE + WM__NUMRESOLVE - 1: HostResolveComplete(Msg.Msg - WM_RESOLVE, Msg.lParam);
@@ -2616,17 +2682,13 @@ begin
    RxCPS := 0; // visual
    TxCPS := 0; // visual
 
-   if T = nil then
-   begin
+   if T = nil then begin
       SetSndSize(False);
       SetSndCPS(False);
       SetSndTime(False); // visual
       bs := bsIdle;
-   end
-   else
-   begin
-      if T.D.Start = 0 then
-      begin
+   end else begin
+      if T.D.Start = 0 then begin
          SetSndSize(False);
          SetSndBar(0, 0);
          SetSndCPS(False);
@@ -2636,9 +2698,7 @@ begin
          else
             bs := bsWait;
          end;
-      end
-      else
-      begin
+      end else begin
          fpos := T.D.FPos;
          if AOutUsed < fpos then Dec(fpos, AOutUsed);
          ela := uGetSystemTime - T.D.Start;
@@ -2657,13 +2717,10 @@ begin
             a := fpos - T.D.FOfs;
          SetLabel(lSndSize, wcsSndSize, Format('%s / %s', [Int2Str(MinD(fpos, T.D.FSize)), Int2Str(T.D.FSize)]));
          SetSndSize(True);
-         if (ela < IniFile.CPS_MinSecs) or (dword(a) < IniFile.CPS_MinBytes) then
-         begin
+         if (ela < IniFile.CPS_MinSecs) or (dword(a) < IniFile.CPS_MinBytes) then begin
             SetSndCPS(False);
             SetSndTime(False);
-         end
-         else
-         begin
+         end else begin
             if ela > 0 then begin
                i := DWORD(a) div ela;
             end else begin
@@ -2672,8 +2729,7 @@ begin
             SetLabel(lSndCPS, wcsSndCPS, Int2Str(i));
             SetSndCPS(True);
             TxCPS := i;
-            if TxCPS > 0 then
-            begin
+            if TxCPS > 0 then begin
                a := T.D.FSize;
                b := fpos;
                Seconds := (DWORD(a) - MinD(DWORD(a), DWORD(b))) div DWORD(TxCPS);
@@ -2690,16 +2746,12 @@ begin
 
    SetLabel(lSndFile, wcsSndFile, s);
 
-   if R = nil then
-   begin
+   if R = nil then begin
       SetRcvSize(False);
       SetRcvCPS(False);
       bs := bsIdle;
-   end
-   else
-   begin
-      if R.D.Start = 0 then
-      begin
+   end else begin
+      if R.D.Start = 0 then begin
          SetRcvSize(False);
          SetRcvBar(0, 0);
 
@@ -2709,9 +2761,7 @@ begin
          else
             bs := bsWait;
          end;
-      end
-      else
-      begin
+      end else begin
          ela := uGetSystemTime - R.D.Start;
          bs := bsActive;
 
@@ -2727,61 +2777,52 @@ begin
 
          SetLabel(lRcvSize, wcsRcvSize, Format('%s / %s', [Int2Str(MinD(R.D.FPos + R.D.Part, R.D.FSize)), Int2Str(R.D.FSize)]));
          SetRcvSize(True);
-         if (ela < IniFile.CPS_MinSecs) or (dword(a) < IniFile.CPS_MinBytes) then
-         begin
+         if (ela < IniFile.CPS_MinSecs) or (dword(a) < IniFile.CPS_MinBytes) then begin
             SetRcvCPS(False);
             SetRcvTime(false);
-         end
-         else
-            if R.D.Start = 0 then
-            begin
-               SetRcvSize(False);
-               SetRcvBar(0, 0);
+         end else
+         if R.D.Start = 0 then begin
+            SetRcvSize(False);
+            SetRcvBar(0, 0);
+            SetRcvCPS(False);
+            SetRcvTime(False); // visual
+            case R.D.State of
+               bsInit, bsEnd: bs := R.D.State;
+            else
+               bs := bsWait;
+            end; {case}
+         end else begin
+            ela := uGetSystemTime - R.D.Start;
+            bs := bsActive;
+            a := R.D.FSize;
+            b := R.D.FPos + R.D.Part;
+            LowerPrec(a, b, 7);
+            SetRcvBar(b, a);
+            rxAdd := R.D.FPos + R.D.Part;
+            a := R.D.FPos + R.D.Part - R.D.FOfs;
+            SetLabel(lRcvSize, wcsRcvSize, Format('%s / %s', [Int2Str(MinD(R.D.FPos + R.D.Part, R.D.FSize)), Int2Str(R.D.FSize)]));
+            SetRcvSize(True);
+            if (ela < IniFile.CPS_MinSecs) or (DWORD(a) < IniFile.CPS_MinBytes) then begin
                SetRcvCPS(False);
                SetRcvTime(False); // visual
-               case R.D.State of
-                  bsInit, bsEnd: bs := R.D.State;
-               else
-                  bs := bsWait;
-               end; {case}
-            end
-            else
-            begin
-               ela := uGetSystemTime - R.D.Start;
-               bs := bsActive;
-               a := R.D.FSize;
-               b := R.D.FPos + R.D.Part;
-               LowerPrec(a, b, 7);
-               SetRcvBar(b, a);
-               rxAdd := R.D.FPos + R.D.Part;
-               a := R.D.FPos + R.D.Part - R.D.FOfs;
-               SetLabel(lRcvSize, wcsRcvSize, Format('%s / %s', [Int2Str(MinD(R.D.FPos + R.D.Part, R.D.FSize)), Int2Str(R.D.FSize)]));
-               SetRcvSize(True);
-               if (ela < IniFile.CPS_MinSecs) or (DWORD(a) < IniFile.CPS_MinBytes) then
-               begin
-                  SetRcvCPS(False);
-                  SetRcvTime(False); // visual
-               end
-               else
-               begin
-                  if ela > 0 then begin
-                     i := DWORD(a) div ela;
-                  end else begin
-                     i := 0;
-                  end;
-                  SetLabel(lRcvCPS, wcsRcvCPS, Int2Str(i));
-                  SetRcvCPS(True);
-                  RxCPS := i;
-                  if RxCPS > 0 then
-                  begin
-                     a := R.D.FSize;
-                     b := R.D.FPos + R.D.Part;
-                     Seconds := (DWORD(a) - MinD(b, DWORD(a))) div DWORD(RxCPS);
-                     SetLabel(lFileRcvTime, wcslFileRcvTime, FormatDateTime('hh:mm:ss', Seconds / 86400));
-                     SetRcvTime(True);
-                  end;
+            end else begin
+               if ela > 0 then begin
+                  i := DWORD(a) div ela;
+               end else begin
+                  i := 0;
+               end;
+               SetLabel(lRcvCPS, wcsRcvCPS, Int2Str(i));
+               SetRcvCPS(True);
+               RxCPS := i;
+               if RxCPS > 0 then begin
+                  a := R.D.FSize;
+                  b := R.D.FPos + R.D.Part;
+                  Seconds := (DWORD(a) - MinD(b, DWORD(a))) div DWORD(RxCPS);
+                  SetLabel(lFileRcvTime, wcslFileRcvTime, FormatDateTime('hh:mm:ss', Seconds / 86400));
+                  SetRcvTime(True);
                end;
             end;
+         end;
       end;
    end;
 
@@ -2795,18 +2836,14 @@ begin
    a := D.TxTot;
    b := D.txBytes + txAdd;
    if (a = b) then SetSndTime(False);
-   if (a = 0) or (a < b) then
-   begin
+   if (a = 0) or (a < b) then begin
       SetSndTotalTime(False); // visual
       SetSndTot(False)
-   end
-   else
-   begin
+   end else begin
       SetSndTot(True);
       SetSndGauge(b, a);
       // visual {
-      if (TxCPS > 0) then
-      begin
+      if (TxCPS > 0) then begin
          SetSndTotalTime(True);
          Seconds := (DWORD(a) - MinD(DWORD(a), b)) div DWORD(TxCPS);
          SetLabel(lTotalSndTime, wcslTotalSndTime, FormatDateTime('hh:mm:ss', Seconds / 86400));
@@ -2815,17 +2852,13 @@ begin
    a := D.rmtForUs;
    b := D.rxBytes + rxAdd;
    if (a = b) then SetRcvTime(False);
-   if (a = 0) or (a < b) then
-   begin
+   if (a = 0) or (a < b) then begin
       SetRcvTotalTime(False); // visual
       SetRcvTot(False);
-   end
-   else
-   begin
+   end else begin
       SetRcvTot(True);
       SetRcvGauge(b, a);
-      if (RxCPS > 0) then
-      begin
+      if (RxCPS > 0) then begin
          SetRcvTotalTime(True);
          Seconds := (DWORD(a) - MinD(DWORD(a), b)) div DWORD(RxCPS);
          SetLabel(lTotalRcvTime, wcslTotalRcvTime, FormatDateTime('hh:mm:ss', Seconds / 86400));
@@ -2851,20 +2884,18 @@ begin
    e := RemainingTimeSecs(D.TmrPublic);
    if e = High(e) then
       SetVisible(TimeoutBox, wcbTimeoutBox, False)
-   else
-   begin
+   else begin
       SetLabel(lTimeout, wcsTimeout, IntToStr(e));
       SetVisible(TimeoutBox, wcbTimeoutBox, True)
    end;
    if DS.StatusParam = '' then
       s := LngStr(D.StatusMsg)
    else
-      if pos(';', DS.StatusParam) = 0 then
-         s := FormatLng(D.StatusMsg, [DS.StatusParam])
-      else
-         s := FormatLng(D.StatusMsg, [wizard.ExtractWord(1, DS.StatusParam, [';']), wizard.ExtractWord(2, DS.StatusParam, [';'])]);
+   if pos(';', DS.StatusParam) = 0 then
+      s := FormatLng(D.StatusMsg, [DS.StatusParam])
+   else
+      s := FormatLng(D.StatusMsg, [wizard.ExtractWord(1, DS.StatusParam, [';']), wizard.ExtractWord(2, DS.StatusParam, [';'])]);
    SetLabel(lStatus, wcsStatus, s);
-
    SetTopPageIndex(0);
 end;
 
@@ -2883,15 +2914,15 @@ begin
    LeaveCS(ActiveLine.LogCS);
    if TL then ActiveLine.LogStrings.FreeAll;
    if S = '' then Exit;
-   while S <> '' do
-   begin
+   while S <> '' do begin
       i := Pos(#13#10, S);
       Z := Copy(S, 1, i - 1);
       Delete(S, 1, i + 1);
       ActiveLine.LogStrings.Add(Z);
    end;
-   while ActiveLine.LogStrings.Count > MaxLogStrings do
+   while ActiveLine.LogStrings.Count > MaxLogStrings do begin
       ActiveLine.LogStrings.AtFree(0);
+   end;
    InvalidateLogBox(ActiveLine);
 end;
 
@@ -2912,7 +2943,8 @@ begin
    if (ActiveLine = PanelOwnerPolls) or
       (ActiveLine = PanelOwnerOutMgr)
 {$IFDEF WS} or (ActiveLine = PanelOwnerDaemon){$ENDIF}
-   or (MailerThreads.IndexOf(ActiveLine) = -1) then begin
+   or (MailerThreads.IndexOf(ActiveLine) = -1) then
+   begin
       if (Application.MainForm <> nil) and ((Application.MainForm as TMailerForm).TrayIcon <> nil) then begin
          (Application.MainForm as TMailerForm).TrayIcon.Icon := Application.Icon;
       end;
@@ -3046,67 +3078,61 @@ var
 
 begin
    case Abs(OutMgrNodeCC) - 1 of
-      0: Cmp0;
-      1:
-         begin
-            Node1 := GetListedNode(N1.Address);
-            Node2 := GetListedNode(N2.Address);
-            if Node1 = nil then
-               s1 := '-Unknown sysop-'
-            else
-               s1 := Node1.Sysop;
-            if Node2 = nil then
-               s2 := '-Unknown sysop-'
-            else
-               s2 := Node2.Sysop;
-            C := CompareText(s1, s2);
-            if c = 0 then Cmp0;
-         end;
-      2:
-         begin
-            if N1.Nfo.Size = N2.Nfo.Size then
-               Cmp0
-            else
-               if N1.Nfo.Size < N2.Nfo.Size then
-                  C := 1
-               else
-                  C := -1;
-         end;
-      3:
-         if N1 is TOutFile then
-         begin
-            C := Integer(N1F.Status) - Integer(N2F.Status);
-            if C = 0 then Cmp0;
-         end
+   0: Cmp0;
+   1:
+      begin
+         Node1 := GetListedNode(N1.Address);
+         Node2 := GetListedNode(N2.Address);
+         if Node1 = nil then
+            s1 := '-Unknown sysop-'
          else
-         begin
-            if N1.Nfo.Attr = N2.Nfo.Attr then
-               Cmp0
-            else
-               if N1.Nfo.Attr < N2.Nfo.Attr then
-                  C := 1
-               else
-                  C := -1;
-         end;
-      4:
-         if N1 is TOutFile then
-         begin
-            C := Integer(N1F.KillAction) - Integer(N2F.KillAction);
-            if C = 0 then
-               Cmp0
-         end
+            s1 := Node1.Sysop;
+         if Node2 = nil then
+            s2 := '-Unknown sysop-'
          else
-            Cmp0;
-      5:
-         begin
-            if N1.Nfo.Time = N2.Nfo.Time then
-               Cmp0
-            else
-               if N1.Nfo.Time < N2.Nfo.Time then
-                  C := 1
-               else
-                  C := -1;
-         end;
+            s2 := Node2.Sysop;
+         C := CompareText(s1, s2);
+         if c = 0 then Cmp0;
+      end;
+   2:
+      begin
+         if N1.Nfo.Size = N2.Nfo.Size then
+            Cmp0
+         else
+         if N1.Nfo.Size < N2.Nfo.Size then
+            C := 1
+         else
+            C := -1;
+      end;
+   3:
+      if N1 is TOutFile then begin
+         C := Integer(N1F.Status) - Integer(N2F.Status);
+         if C = 0 then Cmp0;
+      end else begin
+         if N1.Nfo.Attr = N2.Nfo.Attr then
+            Cmp0
+         else
+         if N1.Nfo.Attr < N2.Nfo.Attr then
+            C := 1
+         else
+            C := -1;
+      end;
+   4:
+      if N1 is TOutFile then begin
+         C := Integer(N1F.KillAction) - Integer(N2F.KillAction);
+         if C = 0 then Cmp0;
+      end else
+         Cmp0;
+   5:
+      begin
+         if N1.Nfo.Time = N2.Nfo.Time then
+            Cmp0
+         else
+         if N1.Nfo.Time < N2.Nfo.Time then
+            C := 1
+         else
+            C := -1;
+      end;
    else
       GlobalFail('DoOutMgrNodeSort ... %d', [Abs(OutMgrNodeCC) - 1]);
    end;
@@ -3130,16 +3156,14 @@ begin
    cc := CollMax(OutMgrNodes);
    OutMgrNodeCC := OutMgrNodeSort;
    if cc >= 0 then OutMgrNodes.Sort(DoOutMgrNodeSort);
-   for I := 0 to cc do
-   begin
+   for I := 0 to cc do begin
       n := OutMgrNodes[I];
       if n.Files <> nil then n.Files.Sort(DoOutMgrNodeSort);
    end;
    sp := GetScrollPos(OutMgrOutline.Handle, SB_VERT);
    OutMgrOutline.BeginUpdate;
    OutMgrOutline.Clear;
-   for i := 0 to cc do
-   begin
+   for i := 0 to cc do begin
       n := OutMgrNodes[i];
       j := OutMgrOutline.AddObject(0, Addr2Str(n.Address), n);
       if i = 0 then
@@ -3147,11 +3171,9 @@ begin
       else
          if i = cc then LastOutMgrNode := n;
       ccc := CollMax(n.Files);
-      for k := 0 to ccc do
-      begin
+      for k := 0 to ccc do begin
          f := n.Files[k];
-         with f.Nfo do
-         begin
+         with f.Nfo do begin
             Attr := 0;
             if i = cc then Attr := Attr or olfLastLevel;
             if k = ccc then Attr := Attr or olfLastItem;
@@ -3161,13 +3183,11 @@ begin
    end;
    if OutMgrSelectedItemInstead = -1 then
       sitem := -1
-   else
-   begin
+   else begin
       sitem := MinI(OutMgrSelectedItemInstead, OutMgrOutline.ItemCount);
       OutMgrSelectedItemInstead := -1;
    end;
-   for i := 1 to OutMgrOutline.ItemCount do
-   begin
+   for i := 1 to OutMgrOutline.ItemCount do begin
       nn := OutMgrOutline[i];
       n := nn.Data;
       if (sitem = -1) and
@@ -3217,20 +3237,15 @@ procedure TMailerForm.UpdateView(fromcc: boolean);
       CPOutUsed := D.CPOutUsed;
       SetVisible(LampsPanel, wcbLampsPanel, not (D.ExtApp or D.NoCP));
       B := False;
-      if (T = nil) and (R = nil) then
-      begin
+      if (T = nil) and (R = nil) then begin
          UpdateDial(D, DS);
          activeline.timeonline := 0;
          activeline.fsttic := 0;
-      end
-      else
-      begin
-         if activeline.fsttic = 0 then
-         begin
+      end else begin
+         if activeline.fsttic = 0 then begin
             activeline.fsttic := GetTickCount;
             activeline.timeonline := 0;
-         end
-         else
+         end else
             activeline.timeonline := GetTickCount - activeline.fsttic;
          UpdateProt(D, DS, T, R, CPOutUsed, B);
       end;
@@ -3239,8 +3254,7 @@ procedure TMailerForm.UpdateView(fromcc: boolean);
       if D.SkipIs then B := False;
       SetEnabledO(mlSkip, wcb_mlSkip, B);
       SetEnabledO(mlRefuse, wcb_mlRefuse, B);
-      if (ActiveLine.SD <> nil) and (ActiveLine.SD.Prot <> nil) then
-      begin
+      if (ActiveLine.SD <> nil) and (ActiveLine.SD.Prot <> nil) then begin
          ActiveLine.Enter;
          if (ActiveLine.SD <> nil) and
             (ActiveLine.SD.Prot <> nil) and
@@ -3263,7 +3277,7 @@ procedure TMailerForm.UpdateView(fromcc: boolean);
                    (ChatMemo2.SelLength = 0) then
                 begin
                    eType.SetFocus;
-                end;   
+                end;
              end;
            except
              ChatPan.Visible := false;
@@ -3274,8 +3288,7 @@ procedure TMailerForm.UpdateView(fromcc: boolean);
          SetEnabledO(bChat, wcb_bChat, ActiveLine.SD.Prot.CanChat and
             not ActiveLine.SD.Prot.ChatOpened);
          ActiveLine.Leave;
-      end else
-      begin
+      end else begin
          SetEnabledO(mlChat, wcb_mlChat, False);
          SetEnabledO(bChat, wcb_bChat, False);
          ChatPan.Visible := false;
@@ -3303,7 +3316,9 @@ procedure TMailerForm.UpdateView(fromcc: boolean);
 {$ENDIF}
 
    function ShowTime: string;
-   var I, N: integer;
+   var
+      I,
+      N: integer;
    begin
       Result := '';
       N := (GetTickCount - StartTime) div 1000;
@@ -3540,11 +3555,11 @@ begin
    OutMgrTab := False;
    case Integer(ActiveLine) of
 {$IFDEF WS}
-      Integer(PanelOwnerDaemon): UpdateDaemon;
+   Integer(PanelOwnerDaemon): UpdateDaemon;
 {$ENDIF}
-      Integer(PanelOwnerOutMgr): begin OutMgrTab := True; end; // OutMgr needs no updating
-      Integer(PanelOwnerPolls):
-         if not fromcc then UpdatePolls;
+   Integer(PanelOwnerOutMgr): begin OutMgrTab := True; end; // OutMgr needs no updating
+   Integer(PanelOwnerPolls):
+      if not fromcc then UpdatePolls;
    else
       begin
          if MailerThreads.IndexOf(ActiveLine) = -1 then begin
@@ -3629,8 +3644,8 @@ procedure TMailerForm.MainTabControlChange(Sender: TObject);
 
 {$ELSE}
       case MainTabControl.Tabs.Count - i of
-         1: ActiveLine := PanelOwnerOutMgr;
-         2: ActiveLine := PanelOwnerPolls;
+      1: ActiveLine := PanelOwnerOutMgr;
+      2: ActiveLine := PanelOwnerPolls;
       else
          ActiveLine := MailerThreads[i]
       end;

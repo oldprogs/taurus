@@ -35,6 +35,9 @@ var
    s: int64;
    m: TNetmailMsg;
 begin
+   if NetmailHolder = nil then begin
+      NetmailHolder := TNetmail.Create;
+   end;
    with NetmailHolder do begin
       ScanMail;
       NetColl.Enter;

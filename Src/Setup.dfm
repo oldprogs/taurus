@@ -134,7 +134,6 @@ object SetupForm: TSetupForm
     Width = 418
     Height = 375
     Anchors = [akLeft, akTop, akRight, akBottom]
-    PageIndex = 9
     TabOrder = 1
     object TPage
       Left = 0
@@ -1874,12 +1873,12 @@ object SetupForm: TSetupForm
       object lOther: TLabel
         Left = 25
         Top = 228
-        Width = 38
-        Height = 15
+        Width = 37
+        Height = 14
         Caption = ' Other '
         Font.Charset = DEFAULT_CHARSET
         Font.Color = clWindowText
-        Font.Height = -12
+        Font.Height = -11
         Font.Name = 'Arial'
         Font.Style = [fsBold]
         ParentFont = False

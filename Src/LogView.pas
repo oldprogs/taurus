@@ -11,6 +11,8 @@ type
     TM: TTimer;
     PM: TPopupMenu;
     ColorsSetup1: TMenuItem;
+    ClearLog1: TMenuItem;
+    N1: TMenuItem;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure mmViewGetLineAttr(Sender: TObject; var Line: String;
@@ -18,6 +20,7 @@ type
     procedure FormKeyPress(Sender: TObject; var Key: Char);
     procedure TMTimer(Sender: TObject);
     procedure ColorsSetup1Click(Sender: TObject);
+    procedure ClearLog1Click(Sender: TObject);
   private
     { Private declarations }
     fLogName: string;
@@ -34,7 +37,7 @@ var
 
 implementation
 
-uses RadIni, Plus, Wizard;
+uses RadIni, Plus, Wizard, OutBound;
 
 {$R *.dfm}
 
@@ -43,6 +46,10 @@ var
    tr: integer;
    st: TStream;
 begin
+   if not ExistFile(s) then begin
+      mmView.Lines.Clear;
+      exit;
+   end;
    mmView.Font.Size := IniFile.LoggerFontSize;
    tr := mmView.Lines.Count;
    St := TFileStream.Create(s, fmOpenRead or fmShareDenyNone);
@@ -147,6 +154,11 @@ end;
 procedure TLogViewer.ColorsSetup1Click(Sender: TObject);
 begin
    DoConfigureLogV;
+end;
+
+procedure TLogViewer.ClearLog1Click(Sender: TObject);
+begin
+   DelFile('ViewLog', fLogName);
 end;
 
 end.

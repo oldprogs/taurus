@@ -505,7 +505,7 @@ LANGUAGE LANG_ENGLISH,0
         "bOK|OK\n"\
         "bCancel|Cancel\n"\
         "bHelp|Help\n"\
-        "tb|General|Station|AKA|Banner|Restrictions|Events|DNS|Nodes|POP3|SMTP|NNTP\n"\
+        "tb|General|Station|AKA|Banner|Restrictions|Events|DNS|Nodes|POP3|SMTP|NNTP|Black List\n"\
         "llInPorts|Incoming ports\n"\
         "llAssumeSpeed|BL counter\n"\
         "llSocksAddr|&Address\n"\

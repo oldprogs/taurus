@@ -9,8 +9,10 @@ program Taurus;
 {$I DEFINE.INC}
 
 uses
+{$IFDEF DEBUG_VERSION}
   JCLHookExcept,
   JCLDebug,
+{$ENDIF}  
   RasThrd in 'RasThrd.pas',
   Setup in 'Setup.pas' {SetupForm},
   ComeOn in 'ComeOn.pas',

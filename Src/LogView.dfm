@@ -61,6 +61,13 @@ object LogViewer: TLogViewer
   object PM: TPopupMenu
     Left = 56
     Top = 24
+    object ClearLog1: TMenuItem
+      Caption = 'Clear Log'
+      OnClick = ClearLog1Click
+    end
+    object N1: TMenuItem
+      Caption = '-'
+    end
     object ColorsSetup1: TMenuItem
       Caption = 'Setup Colors'
       OnClick = ColorsSetup1Click

@@ -438,6 +438,9 @@ begin
             '<table><tr><td>Outgoing traffic for node: </td><td width="30"></td>' +
             '<td><strong>' + fUser + '</strong></td></tr></table><br>' +
             '<table>';
+   if NetmailHolder = nil then begin
+      NetmailHolder := TNetmail.Create;
+   end;
    with NetmailHolder do begin
       ScanMail;
       NetColl.Enter;
@@ -465,7 +468,11 @@ var
    m: TNetmailMsg;
   cp: string;
 begin
+   if NetmailHolder = nil then begin
+      NetmailHolder := TNetmail.Create;
+   end;
    with NetmailHolder do begin
+      ScanMail;
       fCont := cnText;
       s := StringReplace(ExtractWord(2, fHTML, ['?']), '-', '#', [rfReplaceAll]);
       m := FindMessage(s);
@@ -513,7 +520,11 @@ begin
    z := ExtractWord(2, fHTML, ['?']);
    z := StringReplace(z, '-', '#', [rfReplaceAll]);
    fCont := cnDele;
+   if NetmailHolder = nil then begin
+      NetmailHolder := TNetmail.Create;
+   end;
    with NetmailHolder do begin
+      ScanMail;
       m := FindMessage(z);
       if m <> nil then begin
          DeleteMail(m.MsId);
@@ -541,12 +552,15 @@ fsubj: string;
 afrom,
 adest: TFidoAddress;
 begin
+   if NetmailHolder = nil then begin
+      NetmailHolder := TNetmail.Create;
+   end;
    with NetmailHolder do begin
       fCont := cnText;
       cp := ExtractWord(2, fHTML, ['=']);
       m := nil;
       if cp <> 'New' then begin
-         NetmailHolder.ScanMail;
+         ScanMail;
          m := FindMessage(ExtractWord(2, fHTML, ['=']));
       end;
       if m <> nil then begin

@@ -381,6 +381,7 @@ const
   rsMMptTest        = 484;
   rsMMptpiTest      = 485;
   rsMMOutTest       = 486;
+  rsIpBList         = 487;
 
   rsCDCh            = 103;
   rsNBBoNotLtd      = 104;

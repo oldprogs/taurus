@@ -83,6 +83,8 @@ type
     lCash1: TLabel;
     lCash2: TLabel;
     gbCash: TGroupBox;
+    tsBList: TTabSheet;
+    gBList: TAdvGrid;
     procedure FormActivate(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -145,137 +147,140 @@ uses LngTools, xFido, AltRecs, xEvents, OvrExpl, TracePl, Wizard, RadIni;
 
 function SetupIP;
 var
-  IPcfgForm: TIPcfgForm;
+   IPcfgForm: TIPcfgForm;
 begin
-  IPcfgForm := TIPcfgForm.Create(Application);
-  case APageIndex of
-    2: IPcfgForm.tb.ActivePage := IPcfgForm.lAKA;
-    4: IPcfgForm.tb.ActivePage := IPcfgForm.lRestrict;
-  end;
-  IPcfgForm.SetData;
-  Result := IPcfgForm.ShowModal = mrOK;
-  if Result and IPcfgForm.EvtChanged then
-  begin
-    RecalcEvents := True;
-    SetEvt(oRecalcEvents);
-  end;
-  FreeObject(IPcfgForm);
-  if Result then PostMsg(WM_SETUPOK);
+   IPcfgForm := TIPcfgForm.Create(Application);
+   case APageIndex of
+   2: IPcfgForm.tb.ActivePage := IPcfgForm.lAKA;
+   4: IPcfgForm.tb.ActivePage := IPcfgForm.lRestrict;
+   end;
+   IPcfgForm.SetData;
+   IPcfgForm.tb.ActivePageIndex := IniFile.ReadInteger('IPCfg', 'Page', 0);
+   Result := IPcfgForm.ShowModal = mrOK;
+   IniFile.WriteInteger('IPCfg', 'Page', IPcfgForm.tb.ActivePageIndex);
+   if Result and IPcfgForm.EvtChanged then begin
+      RecalcEvents := True;
+      SetEvt(oRecalcEvents);
+   end;
+   FreeObject(IPcfgForm);
+   if Result then PostMsg(WM_SETUPOK);
 end;
 
 function TIPcfgForm.GeneralCRC: DWORD;
 var
-  s: TStringColl;
-  i: DWORD;
+   s: TStringColl;
+   i: DWORD;
 begin
-  s := TStringColl.Create;
-  gIn.GetData(s);
-  i := s.Crc32(CRC32_INIT);
-  FreeObject(s);
-  i := CRC32Int(spIn.Value, i);
-  i := CRC32Int(spOut.Value, i);
-  i := UpdateCRC32(Byte(rgProxyType.ItemIndex), i); // visual
-  i := CRC32Str(lSocksPort.Text, i);
-  i := CRC32Str(lSocksAddr.Text, i);
-  Result := i;
+   s := TStringColl.Create;
+   gIn.GetData(s);
+   i := s.Crc32(CRC32_INIT);
+   FreeObject(s);
+   i := CRC32Int(spIn.Value, i);
+   i := CRC32Int(spOut.Value, i);
+   i := UpdateCRC32(Byte(rgProxyType.ItemIndex), i); // visual
+   i := CRC32Str(lSocksPort.Text, i);
+   i := CRC32Str(lSocksAddr.Text, i);
+   Result := i;
 end;
 
 procedure TIPcfgForm.SetData;
 var
-  i: integer;
+   i: integer;
   s1: string;
 begin
-  gIn.SetData([Cfg.IPData.InPorts]);
-  gTpl.SetData([Cfg.IPData.StationData]);
-  gReqd.SetData(Cfg.IPData.Restriction.Required);
-  gForb.SetData(Cfg.IPData.Restriction.Forbidden);
-  spIn.Value := Cfg.IPData.InC;
-  spOut.Value := Cfg.IPData.OutC;
-  spSPin.Value := IniFile.InBandwidth; // visual
-  spSPout.Value := IniFile.OutBandwidth; // visual
-  spBL.Value := Cfg.IPData.BList;
-  if spBL.Value > 100 then begin
-     spBL.Value := 3;
-  end;
-  SetNodeOvr(Cfg.IPNodeOverrides, gOvr);
-  eAuxNode.Text := Trim(Cfg.IPNodeOverrides.AuxFile);
-  eBan.SetTextBuf(PChar(Cfg.IPData.Banner));
-  gAKA.SetData([Cfg.IpAkaCollA, Cfg.IpAkaCollB]);
-  gDNS.SetData([Cfg.IPDomA, Cfg.IPDomB, AltCfg.ipDomC]);
-  xSpinCash.Value := IniFile.CashSize div (1024 * 1024);
+   gIn.SetData([Cfg.IPData.InPorts]);
+   gTpl.SetData([Cfg.IPData.StationData]);
+   gReqd.SetData(Cfg.IPData.Restriction.Required);
+   gForb.SetData(Cfg.IPData.Restriction.Forbidden);
+   spIn.Value := Cfg.IPData.InC;
+   spOut.Value := Cfg.IPData.OutC;
+   spSPin.Value := IniFile.InBandwidth; // visual
+   spSPout.Value := IniFile.OutBandwidth; // visual
+   spBL.Value := Cfg.IPData.BList;
+   if spBL.Value > 100 then begin
+      spBL.Value := 3;
+   end;
+   SetNodeOvr(Cfg.IPNodeOverrides, gOvr);
+   eAuxNode.Text := Trim(Cfg.IPNodeOverrides.AuxFile);
+   eBan.SetTextBuf(PChar(Cfg.IPData.Banner));
+   gAKA.SetData([Cfg.IpAkaCollA, Cfg.IpAkaCollB]);
+   gDNS.SetData([Cfg.IPDomA, Cfg.IPDomB, AltCfg.ipDomC]);
+   xSpinCash.Value := IniFile.CashSize div (1024 * 1024);
 
-  for i := 0 to gDNS.RowCount - 1 do begin
-     if trim(gDNS.Cells[3, i]) = '' then begin
-        gDNS.Cells[3, i] := ExtractWord(1, gDNS.Cells[2, i], ['.']);
-     end;//      'fidonet'   'fidonet.net'
-     if pos(gDNS.Cells[3, i], gDNS.Cells[2, i]) > 0 then begin
-        s1 := gDNS.Cells[2, i];
-        replace(gDNS.Cells[3, i] + '.', '', s1);
-        gDNS.Cells[2, i] := s1;
-     end else
-     if copy(gDNS.Cells[2, i], 1, 1) = '.' then gDNS.Cells[2, i] := '';
-  end;
+   for i := 0 to gDNS.RowCount - 1 do begin
+      if trim(gDNS.Cells[3, i]) = '' then begin
+         gDNS.Cells[3, i] := ExtractWord(1, gDNS.Cells[2, i], ['.']);
+      end;
+      if pos(gDNS.Cells[3, i], gDNS.Cells[2, i]) > 0 then begin
+         s1 := gDNS.Cells[2, i];
+         replace(gDNS.Cells[3, i] + '.', '', s1);
+         gDNS.Cells[2, i] := s1;
+      end else
+      if copy(gDNS.Cells[2, i], 1, 1) = '.' then gDNS.Cells[2, i] := '';
+   end;
 
-  IniFile.LoadGrid(gSMTP);
-  IniFile.LoadGrid(gPOP3);
-  IniFile.LoadGrid(gNNTP);
+   IniFile.LoadGrid(gSMTP);
+   IniFile.LoadGrid(gPOP3);
+   IniFile.LoadGrid(gNNTP);
+   IniFile.LoadGrid('Black_List', gBList);
 
-  rgProxyType.ItemIndex := Integer(IniFile.ProxyType); // visual
-  lSocksAddr.Text := Cfg.Proxy.Addr;
-  lSocksPort.Text := IntToStr(Cfg.Proxy.Port);
-  cbAuth.Checked := IniFile.EnableProxyAuth;
-  lUserName.Text := IniFile.ProxyUserName;
-  lPassword.Text := IniFile.ProxyPassword;
-  cbAllViaProxy.Checked := IniFile.AllViaProxy;
-  cbEncryptPassword.Checked := IniFile.EncryptProxyPassword;
+   rgProxyType.ItemIndex := Integer(IniFile.ProxyType); // visual
+   lSocksAddr.Text := Cfg.Proxy.Addr;
+   lSocksPort.Text := IntToStr(Cfg.Proxy.Port);
+   cbAuth.Checked := IniFile.EnableProxyAuth;
+   lUserName.Text := IniFile.ProxyUserName;
+   lPassword.Text := IniFile.ProxyPassword;
+   cbAllViaProxy.Checked := IniFile.AllViaProxy;
+   cbEncryptPassword.Checked := IniFile.EncryptProxyPassword;
 
-  GenCRC := GeneralCRC;
-  CurEvtCnt := Cfg.IpEvtIds.EvtCnt;
-  OrgEvtCnt := Cfg.IpEvtIds.EvtCnt;
-  GetMem(CurEvtIds, CurEvtCnt * SizeOf(Integer));
-  GetMem(OrgEvtIds, OrgEvtCnt * SizeOf(Integer));
-  Move(Cfg.IpEvtIds.EvtIds^, CurEvtIds^, CurEvtCnt * SizeOf(Integer));
-  Move(Cfg.IpEvtIds.EvtIds^, OrgEvtIds^, OrgEvtCnt * SizeOf(Integer));
-  EvtRefillLists;
+   GenCRC := GeneralCRC;
+   CurEvtCnt := Cfg.IpEvtIds.EvtCnt;
+   OrgEvtCnt := Cfg.IpEvtIds.EvtCnt;
+   GetMem(CurEvtIds, CurEvtCnt * SizeOf(Integer));
+   GetMem(OrgEvtIds, OrgEvtCnt * SizeOf(Integer));
+   Move(Cfg.IpEvtIds.EvtIds^, CurEvtIds^, CurEvtCnt * SizeOf(Integer));
+   Move(Cfg.IpEvtIds.EvtIds^, OrgEvtIds^, OrgEvtCnt * SizeOf(Integer));
+   EvtRefillLists;
 end;
 
 procedure TIPcfgForm.FormActivate(Sender: TObject);
 begin
-  if Activated then Exit;
-  GridFillRowLng(gIn, rsIPInR);
-  GridFillColLng(gIn, rsIPInC);
-  GridFillColLng(gOvr, rsIPOvr);
-  GridFillRowLng(gTpl, rsIPTpl);
-  GridFillColLng(gAKA, rsIPAKA);
-  GridFillColLng(gDNS, rsIPDNS);
-  GridFillColLng(gSMTP, rsIpSMTP);
-  GridFillColLng(gPOP3, rsIpPOP3);
-  GridFillColLng(gNNTP, rsIPNNTP);
-  lSocksAddr.Width := llSocksPort.Left - lSocksAddr.Left - 6;
-  UpdateSocks;
-  Activated := True;
+   if Activated then Exit;
+   GridFillRowLng(gIn, rsIPInR);
+   GridFillColLng(gIn, rsIPInC);
+   GridFillColLng(gOvr, rsIPOvr);
+   GridFillRowLng(gTpl, rsIPTpl);
+   GridFillColLng(gAKA, rsIPAKA);
+   GridFillColLng(gDNS, rsIPDNS);
+   GridFillColLng(gSMTP, rsIpSMTP);
+   GridFillColLng(gPOP3, rsIpPOP3);
+   GridFillColLng(gNNTP, rsIPNNTP);
+   GridFillColLng(gBList, rsIPBList);
+   lSocksAddr.Width := llSocksPort.Left - lSocksAddr.Left - 6;
+   UpdateSocks;
+   Activated := True;
 end;
 
 procedure TIPcfgForm.FormCreate(Sender: TObject);
 begin
-  FillForm(Self, rsIPcfgForm);
-  AvlEvts := TEventColl.Create;
-  LnkEvts := TEventColl.Create;
-  Ovr := TIPNodeOvrColl.Create;
+   FillForm(Self, rsIPcfgForm);
+   AvlEvts := TEventColl.Create;
+   LnkEvts := TEventColl.Create;
+   Ovr := TIPNodeOvrColl.Create;
 end;
 
 procedure TIPcfgForm.FormDestroy(Sender: TObject);
 begin
-  FreeObject(Ovr);
-  FreeObject(AvlEvts);
-  FreeObject(LnkEvts);
-  if CurEvtIds <> nil then FreeMem(CurEvtIds, CurEvtCnt * SizeOf(Integer));
-  if OrgEvtIds <> nil then FreeMem(OrgEvtIds, OrgEvtCnt * SizeOf(Integer));
+   FreeObject(Ovr);
+   FreeObject(AvlEvts);
+   FreeObject(LnkEvts);
+   if CurEvtIds <> nil then FreeMem(CurEvtIds, CurEvtCnt * SizeOf(Integer));
+   if OrgEvtIds <> nil then FreeMem(OrgEvtIds, OrgEvtCnt * SizeOf(Integer));
 end;
 
 function TIPcfgForm.NdOvrVld: Boolean;
 begin
-  Result := NodeOvrValid(Ovr, gOvr, Handle, False);
+   Result := NodeOvrValid(Ovr, gOvr, Handle, False);
 end;
 
 function ValidDNSGrid(gDNS: TAdvGrid; AHandle: DWORD): Boolean;
@@ -307,16 +312,15 @@ function TIPcfgForm.AllOK: Boolean;
 
 function ChkRestr(SC: TStringColl; const C: string): Boolean;
 var
-  Msgs: TStringColl;
+   Msgs: TStringColl;
 begin
-  Msgs := TStringColl.Create;
-  Result := ValidRestrictionColl(SC, Msgs, rspIP);
-  if not Result then
-  begin
-    tb.ActivePage := lRestrict;
-    DisplayErrorFmtLng(rsIPInvC, [C, Msgs.LongString], Handle);
-  end;
-  FreeObject(Msgs);
+   Msgs := TStringColl.Create;
+   Result := ValidRestrictionColl(SC, Msgs, rspIP);
+   if not Result then begin
+      tb.ActivePage := lRestrict;
+      DisplayErrorFmtLng(rsIPInvC, [C, Msgs.LongString], Handle);
+   end;
+   FreeObject(Msgs);
 end;
 
 function RestrOK: Boolean;
@@ -382,177 +386,173 @@ end;
 
 procedure TIPcfgForm.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
 begin
-  if ModalResult <> mrOK then Exit;
-  CanClose := AllOK;
+   if ModalResult <> mrOK then Exit;
+   CanClose := AllOK;
 end;
 
 procedure TIPcfgForm.FormClose(Sender: TObject; var Action: TCloseAction);
 var
-  s: string;
-  z: string;
-  i: Integer;
+   s: string;
+   z: string;
+   i: Integer;
 begin
-  if ModalResult <> mrOK then Exit;
-  s := Trim(eAuxNode.Text);
-  CfgEnter;
-  gIn.GetData([Cfg.IPData.InPorts]);
-  gTpl.GetData([Cfg.IPData.StationData]);
-  gAka.GetData([Cfg.IpAkaCollA, Cfg.IpAkaCollB]);
-  for i := 0 to gDNS.RowCount - 1 do begin
-     gDNS.Cells[2, i] := gDNS.Cells[3, i] + '.' + gDNS.Cells[2, i];
-  end;
-  gDNS.GetData([Cfg.IpDomA, Cfg.IpDomB, AltCfg.ipDomC]);
-  gReqd.GetData(Cfg.IPData.Restriction.Required);
-  gForb.GetData(Cfg.IPData.Restriction.Forbidden);
-  IniFile.SaveGrid(gSMTP);
-  for i := 1 to gPOP3.Rowcount - 1 do begin
-     z := gPOP3.Cells[0, i];
-     if length(z) > 0 then begin
-        if z[1] in ['a'..'z', 'A'..'Z'] then begin
-           z := '"' + z + '"';
-           gPOP3.Cells[0, i] := z;
-        end;
-     end;
-  end;
-  IniFile.SaveGrid(gPOP3);
-  IniFile.SaveGrid(gNNTP);
-  Cfg.IPData.InC := spIn.Value;
-  Cfg.IPData.OutC := spOut.Value;
-  Cfg.IPData.BList := spBL.Value;
-  Cfg.IPData.Banner := ControlString(eBan);
-  Ovr.AuxFile := s;
-  Xchg(Integer(Cfg.IPNodeOverrides), Integer(Ovr));
-  EvtUpdateEvt;
-  if Cfg.IpEvtIds.EvtCnt > 0 then FreeMem(Cfg.IpEvtIds.EvtIds, Cfg.IpEvtIds.EvtCnt*SizeOf(Integer));
-
-  if not EvtChanged then begin
-    if CurEvtCnt <> OrgEvtCnt then EvtChanged := True else begin
-      for i := 0 to CurEvtCnt - 1 do begin
-        if CurEvtIds^[i] <> OrgEvtIds^[i] then begin
-          EvtChanged := True;
-          Break;
-        end;
+   if ModalResult <> mrOK then Exit;
+   s := Trim(eAuxNode.Text);
+   CfgEnter;
+   gIn.GetData([Cfg.IPData.InPorts]);
+   gTpl.GetData([Cfg.IPData.StationData]);
+   gAka.GetData([Cfg.IpAkaCollA, Cfg.IpAkaCollB]);
+   for i := 0 to gDNS.RowCount - 1 do begin
+      gDNS.Cells[2, i] := gDNS.Cells[3, i] + '.' + gDNS.Cells[2, i];
+   end;
+   gDNS.GetData([Cfg.IpDomA, Cfg.IpDomB, AltCfg.ipDomC]);
+   gReqd.GetData(Cfg.IPData.Restriction.Required);
+   gForb.GetData(Cfg.IPData.Restriction.Forbidden);
+   IniFile.SaveGrid(gSMTP);
+   for i := 1 to gPOP3.Rowcount - 1 do begin
+      z := gPOP3.Cells[0, i];
+      if length(z) > 0 then begin
+         if z[1] in ['a'..'z', 'A'..'Z'] then begin
+            z := '"' + z + '"';
+            gPOP3.Cells[0, i] := z;
+         end;
       end;
-    end;
-  end;
+   end;
+   IniFile.SaveGrid(gPOP3);
+   IniFile.SaveGrid(gNNTP);
+   IniFile.SaveGrid('Black_List', gBList);
+   Cfg.IPData.InC := spIn.Value;
+   Cfg.IPData.OutC := spOut.Value;
+   Cfg.IPData.BList := spBL.Value;
+   Cfg.IPData.Banner := ControlString(eBan);
+   Ovr.AuxFile := s;
+   Xchg(Integer(Cfg.IPNodeOverrides), Integer(Ovr));
+   EvtUpdateEvt;
+   if Cfg.IpEvtIds.EvtCnt > 0 then FreeMem(Cfg.IpEvtIds.EvtIds, Cfg.IpEvtIds.EvtCnt*SizeOf(Integer));
 
-  Cfg.IpEvtIds.EvtCnt := CurEvtCnt; CurEvtCnt := 0;
-  Cfg.IpEvtIds.EvtIds := CurEvtIds; CurEvtIds := nil;
-  Cfg.Proxy.Addr := lSocksAddr.Text;
-  Cfg.Proxy.Port := FSocksPort;
-  Cfg.Proxy.Enabled := rgProxyType.ItemIndex > 0;
+   if not EvtChanged then begin
+      if CurEvtCnt <> OrgEvtCnt then EvtChanged := True else begin
+         for i := 0 to CurEvtCnt - 1 do begin
+            if CurEvtIds^[i] <> OrgEvtIds^[i] then begin
+               EvtChanged := True;
+               Break;
+            end;
+         end;
+      end;
+   end;
 
-  CfgLeave;
-  StoreConfig(Handle);
-  AltStoreConfig(Handle);
+   Cfg.IpEvtIds.EvtCnt := CurEvtCnt; CurEvtCnt := 0;
+   Cfg.IpEvtIds.EvtIds := CurEvtIds; CurEvtIds := nil;
+   Cfg.Proxy.Addr := lSocksAddr.Text;
+   Cfg.Proxy.Port := FSocksPort;
+   Cfg.Proxy.Enabled := rgProxyType.ItemIndex > 0;
 
-  IniFile.ProxyType := TProxyType(rgProxyType.ItemIndex);
-  IniFile.EnableProxyAuth := cbAuth.Checked;
-  IniFile.ProxyUserName := lUserName.Text;
-  IniFile.ProxyPassword := lPassword.Text;
-  IniFile.AllViaProxy := cbAllViaProxy.Checked;
-  IniFile.EncryptProxyPassword := cbEncryptPassword.Checked;
+   CfgLeave;
+   StoreConfig(Handle);
+   AltStoreConfig(Handle);
 
-  IniFile.InBandwidth := spSPin.Value;
-  IniFile.OutBandwidth := spSPout.Value;
-  IniFile.CashSize := xSpinCash.Value * 1024 * 1024;
+   IniFile.ProxyType := TProxyType(rgProxyType.ItemIndex);
+   IniFile.EnableProxyAuth := cbAuth.Checked;
+   IniFile.ProxyUserName := lUserName.Text;
+   IniFile.ProxyPassword := lPassword.Text;
+   IniFile.AllViaProxy := cbAllViaProxy.Checked;
+   IniFile.EncryptProxyPassword := cbEncryptPassword.Checked;
 
-  IniFile.StoreCfg;
+   IniFile.InBandwidth := spSPin.Value;
+   IniFile.OutBandwidth := spSPout.Value;
+   IniFile.CashSize := xSpinCash.Value * 1024 * 1024;
 
-  if DaemonStarted and (GenCRC <> GeneralCRC) then
-    DisplayInfoLng(rsIPRestart, Handle);
-  PostMsg(WM_IMPORTIPOVRL);
+   IniFile.StoreCfg;
+
+   if DaemonStarted and (GenCRC <> GeneralCRC) then
+      DisplayInfoLng(rsIPRestart, Handle);
+   PostMsg(WM_IMPORTIPOVRL);
 end;
 
 procedure TIPcfgForm.bImportClick(Sender: TObject);
 begin
-  if not AllOK then Exit;
-  DoImportOp(Ovr, gOvr, False, False);
+   if not AllOK then Exit;
+   DoImportOp(Ovr, gOvr, False, False);
 end;
 
 procedure TIPcfgForm.bHelpClick(Sender: TObject);
 begin
-  Application.HelpContext(HelpContext);
+   Application.HelpContext(HelpContext);
 end;
 
-procedure TIPcfgForm.FormKeyDown(Sender: TObject; var Key: Word;
-  Shift: TShiftState);
+procedure TIPcfgForm.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
-  if Key = VK_F1 then bHelp.Click;
+   if Key = VK_F1 then bHelp.Click;
 end;
 
 procedure TIPcfgForm.tbChange(Sender: TObject);
 var
-  v: Boolean;
+   v: Boolean;
 begin
-  v := tb.ActivePage.Tag = 8769;
-  bImport.Visible := v;
-  bSort.Visible := v;
-  bEditNode.Visible := v;
-  bExplain.Visible := tb.ActivePage.Tag = 8767;
+   v := tb.ActivePage.Tag = 8769;
+   bImport.Visible := v;
+   bSort.Visible := v;
+   bEditNode.Visible := v;
+   bExplain.Visible := tb.ActivePage.Tag = 8767;
 end;
 
 procedure TIPcfgForm.EvtUpdateLists;
 begin
-  FillListBoxNamed(lAvl, AvlEvts);
-  FillListBoxNamed(lLnk, LnkEvts);
-  EvtUpdateButtons;
+   FillListBoxNamed(lAvl, AvlEvts);
+   FillListBoxNamed(lLnk, LnkEvts);
+   EvtUpdateButtons;
 end;
 
 procedure TIPcfgForm.EvtRefillLists;
 begin
-  AvlEvts.FreeAll;
-  LnkEvts.FreeAll;
-  TossItems(AvlEvts, LnkEvts, Pointer(Cfg.Events.Copy), CurEvtIds, CurEvtCnt);
-  EvtUpdateLists;
+   AvlEvts.FreeAll;
+   LnkEvts.FreeAll;
+   TossItems(AvlEvts, LnkEvts, Pointer(Cfg.Events.Copy), CurEvtIds, CurEvtCnt);
+   EvtUpdateLists;
 end;
 
 procedure TIPcfgForm.EvtUpdateButtons;
 begin
-  bRight.Enabled := AvlEvts.Count > 0;
-  bLeft.Enabled := LnkEvts.Count > 0;
-{  bUP.Enabled := lLnk.ItemIndex > 0;
-  bDN.Enabled := (lLnk.ItemIndex<>-1) and (lLnk.ItemIndex<lLnk.Items.Count-1);}
+   bRight.Enabled := AvlEvts.Count > 0;
+   bLeft.Enabled := LnkEvts.Count > 0;
 end;
 
 procedure TIpCfgForm.EvtUpdateEvt;
 var
-  i: Integer;
+   i: Integer;
 begin
-  CurEvtCnt := LnkEvts.Count;
-  ReallocMem(CurEvtIds, CurEvtCnt * SizeOf(Integer));
-  for i := 0 to CurEvtCnt - 1 do
-  begin
-    CurEvtIds^[i] := TElement(LnkEvts[i]).Id;
-  end;
+   CurEvtCnt := LnkEvts.Count;
+   ReallocMem(CurEvtIds, CurEvtCnt * SizeOf(Integer));
+   for i := 0 to CurEvtCnt - 1 do begin
+      CurEvtIds^[i] := TElement(LnkEvts[i]).Id;
+   end;
 end;
 
 procedure TIPcfgForm.lAvlClick(Sender: TObject);
 begin
-  EvtUpdateButtons;
+   EvtUpdateButtons;
 end;
 
 procedure TIPcfgForm.bRightClick(Sender: TObject);
 begin
-  MoveColl(AvlEvts, LnkEvts, lAvl.ItemIndex);
-  EvtUpdateLists;
+   MoveColl(AvlEvts, LnkEvts, lAvl.ItemIndex);
+   EvtUpdateLists;
 end;
 
 procedure TIPcfgForm.bLeftClick(Sender: TObject);
 begin
-  MoveColl(LnkEvts, AvlEvts, lLnk.ItemIndex);
-  EvtUpdateLists;
+   MoveColl(LnkEvts, AvlEvts, lLnk.ItemIndex);
+   EvtUpdateLists;
 end;
 
-procedure TIPcfgForm.bEditClick(Sender: TObject);    
+procedure TIPcfgForm.bEditClick(Sender: TObject);
 begin
-  EvtUpdateEvt;
-  if SetupEvents then
-  begin
-    EvtRefillLists;
-    EvtChanged := True;
-  end;
-end;                                      
+   EvtUpdateEvt;
+   if SetupEvents then begin
+      EvtRefillLists;
+      EvtChanged := True;
+   end;
+end;
 
 procedure TIPcfgForm.bUPClick(Sender: TObject);
 begin
@@ -566,85 +566,85 @@ end;
 
 procedure TIPcfgForm.bSortClick(Sender: TObject);
 begin
-  if not NdOvrVld then Exit;
-  Ovr.Sort(_OvrSort);
-  SetNodeOvr(Ovr, gOvr);
+   if not NdOvrVld then Exit;
+   Ovr.Sort(_OvrSort);
+   SetNodeOvr(Ovr, gOvr);
 end;
 
 procedure TIPcfgForm.bEditNodeClick(Sender: TObject);
 var
-  C: TColl;
-  Msg, Item: string;
-  Idx: Integer;
+   C: TColl;
+ Msg,
+Item: string;
+ Idx: Integer;
 begin
-  if not NdOvrVld then Exit;
-  Idx := gOvr.Row - 1;
-  if (Idx < 0) or (Idx >= Ovr.Count) then Exit;
-  C := ParseOverride(TNodeOvr(Ovr[Idx]).Ovr, Msg, Item, False);
-  if CollCount(C) > 0 then
-  begin
-    if EditOverrideEx(C, False, TNodeOvr(Ovr[Idx]).Addr) then gOvr[2, Idx + 1] := OvrColl2Str(C);
-  end;
-  FreeObject(C);
+   if not NdOvrVld then Exit;
+   Idx := gOvr.Row - 1;
+   if (Idx < 0) or (Idx >= Ovr.Count) then Exit;
+   C := ParseOverride(TNodeOvr(Ovr[Idx]).Ovr, Msg, Item, False);
+   if CollCount(C) > 0 then begin
+      if EditOverrideEx(C, False, TNodeOvr(Ovr[Idx]).Addr) then gOvr[2, Idx + 1] := OvrColl2Str(C);
+   end;
+   FreeObject(C);
 end;
 
 procedure TIPcfgForm.cbSOCKSClick(Sender: TObject);
 begin
-  UpdateSocks;
+   UpdateSocks;
 end;
 
 procedure TIPcfgForm.UpdateSocks;
 var
-  b: Boolean;
+   b: Boolean;
 begin
-  b := rgProxyType.ItemIndex > 0;
-  llSocksAddr.Enabled := b;
-  lSocksAddr.Enabled := b;
-  llSocksPort.Enabled := b;
-  lSocksPort.Enabled := b;
+   b := rgProxyType.ItemIndex > 0;
+   llSocksAddr.Enabled := b;
+   lSocksAddr.Enabled := b;
+   llSocksPort.Enabled := b;
+   lSocksPort.Enabled := b;
 
-  lUserName.Enabled := cbAuth.Checked;
-  llUserName.Enabled := cbAuth.Checked;
-  lPassword.Enabled := cbAuth.Checked;
-  llPassword.Enabled := cbAuth.Checked;
+   lUserName.Enabled := cbAuth.Checked;
+   llUserName.Enabled := cbAuth.Checked;
+   lPassword.Enabled := cbAuth.Checked;
+   llPassword.Enabled := cbAuth.Checked;
 end;
 
 procedure TIPcfgForm.lAvlKeyPress(Sender: TObject; var Key: Char);
 begin
-  if Key = ' ' then bRight.Click;
+   if Key = ' ' then bRight.Click;
 end;
 
 procedure TIPcfgForm.lLnkKeyPress(Sender: TObject; var Key: Char);
 begin
-  if Key = ' ' then bLeft.Click;
+   if Key = ' ' then bLeft.Click;
 end;
 
 procedure TIPcfgForm.lAvlDblClick(Sender: TObject);
 begin
-  bRight.Click;
+   bRight.Click;
 end;
 
 procedure TIPcfgForm.lLnkDblClick(Sender: TObject);
 begin
-  bLeft.Click;
+   bLeft.Click;
 end;
 
 procedure TIPcfgForm.bExplainClick(Sender: TObject);
 var
-  Strs: TStringColl;
-  d: TRestrictionData;
+Strs: TStringColl;
+   d: TRestrictionData;
 begin
-  if not CloseQuery then Exit;
-  Strs := TStringColl.Create;
-  d := TRestrictionData.Create;
-  d.Required := TStringColl.Create;
-  d.Forbidden := TStringColl.Create;
-  gReqd.GetData(d.Required);
-  gForb.GetData(d.Forbidden);
-  ReportRestrictionData(Strs, d);
-  FreeObject(d);
-  DisplayInfoFormEx(LngStr(rsExplIpRS), Strs);
-  FreeObject(Strs);
+   if not CloseQuery then Exit;
+   Strs := TStringColl.Create;
+   d := TRestrictionData.Create;
+   d.Required := TStringColl.Create;
+   d.Forbidden := TStringColl.Create;
+   gReqd.GetData(d.Required);
+   gForb.GetData(d.Forbidden);
+   ReportRestrictionData(Strs, d);
+   FreeObject(d);
+   DisplayInfoFormEx(LngStr(rsExplIpRS), Strs);
+   FreeObject(Strs);
 end;
 
 end.

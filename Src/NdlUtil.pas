@@ -311,11 +311,9 @@ var
 begin
   EnterNlCs;
   zc := Table[Idx];
-  if zc.MemPos = -1 then
-  begin
+  if zc.MemPos = -1 then begin
     I := Idx;
-    while I > 0 do
-    begin
+    while I > 0 do begin
       Dec(i);
       zca := Table[i];
       if (zc.ZoneData.Zone <> zca.ZoneData.Zone) or
@@ -342,8 +340,7 @@ begin
     Look(+1);
 
     J := zc.MemPos;
-    for I := 0 to zc.NumNodes - 1 do
-    begin
+    for I := 0 to zc.NumNodes - 1 do begin
       sni := nia^[I];
       ni := TNetNodeIdx.Create;
       ni.Ofs := J; Inc(J, sni.Len);
@@ -355,15 +352,12 @@ begin
     ReallocMem(nia, 0);
     { J - prevnode, K - Hub }
     J := -1;
-    for I := 0 to zc.Count - 1 do
-    begin
+    for I := 0 to zc.Count - 1 do begin
       ni := zc[I];
-      if ni.Addr.Point = 0 then
-      begin
+      if ni.Addr.Point = 0 then begin
         J := ni.Addr.Node;
         K := ni.Hub;
-      end else
-      begin
+      end else begin
         if ni.Addr.Node = J then ni.Hub := K;
       end;
     end;
@@ -384,16 +378,14 @@ begin
   zc := SeekNet(ZoneIdx, Addr.Zone, Addr.Net, Addr.Domain);
   a.Node := Addr.Node;
   a.Point := Addr.Point;
-  if zc.Search(@a, I) then
-  begin
+  if zc.Search(@a, I) then begin
     TN := TFidoNode.Create;
     ni := zc[I];
     ZonesBin.Position := ni.Ofs;
     TN.FillStream(Addr.Zone, Addr.Net, ZonesBin);
     TN.Hub := ni.Hub;
     TN.Region := zc.ZoneData.Region;
-    if (TN.Addr.Point = 0) and (zc.Count > I + 1) then
-    begin
+    if (TN.Addr.Point = 0) and (zc.Count > I + 1) then begin
       ni := zc[I + 1];
       TN.HasPoints := ni.Addr.Node = TN.Addr.Node;
     end;
@@ -418,8 +410,7 @@ var
   J: Integer;
 begin
   Result := nil;
-  if Cache.Search(@Addr, J) then
-  begin
+  if Cache.Search(@Addr, J) then begin
     Result := Cache[J];
     Exit;
   end;
@@ -662,8 +653,7 @@ var
     Result := nil;
     I := 0;
     J := 1;
-    while J < SL do
-    begin
+    while J < SL do begin
       C := S[J];
       if C = ',' then Break;
       I := (I * 10) + Ord(C) - Ord('0');
@@ -816,16 +806,13 @@ var
     CurFile := FName;
     F := CreateTextReader(FName);
     if F = nil then Exit;
-    while (not F.EOF) and (not Terminated) do
-      begin
+    while (not F.EOF) and (not Terminated) do begin
          SSR := F.GetStr;
-         if (SSR <> '') and (SSR[1] <> ';') and (Length(SSR) < 250) then
-           begin
+         if (SSR <> '') and (SSR[1] <> ';') and (Length(SSR) < 250) then begin
              S := SSR;
              I := 1;
              C := #0;
-             while I <= SL do
-             begin
+             while I <= SL do begin
                C := S[I];
                if C = ',' then Break;
                S1[I] := UpCase(C);
@@ -835,8 +822,7 @@ var
              S1L := I - 1;
              Move(S[I + 1], S[1], SL - I);
              Dec(SL, I);
-             if (S1 = '') then
-             begin
+             if (S1 = '') then begin
                if Point then AddPoint(Addr.Point) else AddNode(nfNormal)
              end else
              if (S1 = 'POINT') then AddPoint(Addr.Point) else
@@ -851,11 +837,11 @@ var
                    (S1 = 'HOST') or (S1 = 'REGION') or
                    (S1 = 'ZONE') or (S1 = 'PVT') or
                    (S1 = 'HOLD') or (S1 = 'DOWN')) and pointlist then
-                   begin
-                     F.OwesStream := true;
-                     FreeObject(F);
-                     exit;
-                   end;
+               begin
+                  F.OwesStream := true;
+                  FreeObject(F);
+                  exit;
+               end;
                if S1 = 'HUB' then AddHub else
                if S1 = 'BOSS' then SetBoss(Domain) else
                if S1 = 'HOST' then begin
@@ -1722,6 +1708,7 @@ begin
    end;
    if Addr.Node <> 0 then exit;
    for i := 0 to NodeController.Table.Count - 1 do begin
+      if i >= NodeController.Table.Count then break;
       z := NodeController.Table[i];
       if (z.ZoneData.Domain = Addr.Domain) and
          (z.ZoneData.Zone = Addr.Zone) and
@@ -1734,8 +1721,11 @@ begin
          a.Point := 0;
          c := GetScope(a);
          for j := 0 to CollMax(c) do begin
-            Result.Add(c[j]);
+            o := c[j];
+            Result.Add(o);
          end;
+         c.DeleteAll;
+         FreeObject(c);
       end;
    end;
 end;

@@ -2277,6 +2277,7 @@ object MailerForm: TMailerForm
       object mnuTerminal: TMenuItem
         Caption = 'Terminal'
         Enabled = False
+        ShortCut = 49236
         OnClick = mnuTerminalClick
       end
       object N13: TMenuItem

@@ -509,7 +509,7 @@ LANGUAGE LANG_RUSSIAN,0
         "bOK|OK\n"\
         "bCancel|Отмена\n"\
         "bHelp|Справка\n"\
-        "tb|Свойства|Станция|AKA|Приглаш.|Огранич.|События|DNS|Узлы|POP3|SMTP|NNTP\n"\
+        "tb|Свойства|Станция|AKA|Приглаш.|Огранич.|События|DNS|Узлы|POP3|SMTP|NNTP|'Черный' список\n"\
         "llInPorts|Входящие порты\n"\
         "llAssumeSpeed|BL счетчик\n"\
         "llSocksAddr|Адрес\n"\
@@ -560,11 +560,11 @@ LANGUAGE LANG_RUSSIAN,0
         "lSynchClock|Синхронизировать с:\n"\
         "lMainAKA|Основной адрес:\n"\
         "lSessionOptions| Настройки сессии \n"\
-        "lSynchShift|Synch time shift:\n"\
-        "lCPSMinBytes|CPS min bytes:\n"\
-        "lCPSMinSecs|CPS min secs:\n"\
+        "lSynchShift|Смещ.узла синхр.:\n"\
+        "lCPSMinBytes|CPS мин.байт:\n"\
+        "lCPSMinSecs|CPS мин.сек.:\n"\
         "lPeriods| Периоды и таймауты \n"\
-        "lMsgsAutoClose|Msgs autoclose:\n"\
+        "lMsgsAutoClose|Автозакр. сообщ.:\n"\
         "lOutbRescan|Outb. rescan:\n"\
         "lMaxBWZAge|Max BWZ age:\n"\
         "lMaxUDLAge|Max UDL age:\n"\

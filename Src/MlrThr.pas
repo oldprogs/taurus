@@ -1985,6 +1985,9 @@ begin
    if c <> nil then begin
       RecreatePolls(c);
       FreeObject(c);
+      if IPPolls <> nil then begin
+         SetEvt(IPPolls.oSleep);
+      end;
    end;
 end;
 
@@ -5343,7 +5346,7 @@ begin
             end;
          end;
       end;
-      if (IniFile.DynamicRouting) and
+      if (IniFile.DynamicRouting or IniFile.ScanMSG) and
          (SD.PasswordProtected or (SD.ActivePoll <> nil)) and
          (NetmailHolder <> nil) and not (SD.SessionCore in [scNNTP]) then NetmailHolder.Route(SD.rmtAddrs[n], SD.ActivePoll <> nil, Log);
    end;
@@ -6919,7 +6922,7 @@ begin
       ScanOut(True);
       P.DummyNextFile := False;
       if SD.SessionCore in [scNNTP] then begin
-         While (SD.TxFiles > IniFile.CashSize) and (SD.OutFiles.Count > 0) do begin
+         While (Integer(SD.TxFiles) > IniFile.CashSize) and (SD.OutFiles.Count > 0) do begin
             f := SD.OutFiles[0];
             if pos('.PKT', UpperCase(f.Name)) > 0 then begin
                Log(ltInfo, 'Purging NNTP cash .. ' + JustFileName(f.Name) + ' deleted');
@@ -9448,13 +9451,11 @@ begin
             // protocol checks for an abort by local console (Prot.CancelRequested)
             // and carrier (CP.DCD)
             if NeedRescan then DoRescan;
-            if SD.FileRefuse then
-            begin
+            if SD.FileRefuse then begin
                SD.Prot.FileRefuse := True;
                SD.FileRefuse := False
             end;
-            if SD.FileSkip then
-            begin
+            if SD.FileSkip then begin
                SD.Prot.FileSkip := True;
                SD.FileSkip := False
             end;
@@ -9465,12 +9466,10 @@ begin
             if SD.Prot.NextStep then else
                if SD.Prot.ProtocolError = ecOK then State := msWZOK else State := msFinishWZ
             else
-            if SD.Prot.NextStep then
-            begin
+            if SD.Prot.NextStep then begin
                if SD.Prot.ProtocolError <> ecOK then
                   State := msFinishWZ
-               else
-               begin
+               else begin
                   if ProtCore = ptBinkP then
                      State := msWZOK
                   else
@@ -9484,12 +9483,15 @@ begin
                         GlobalFail('%s', ['Batch  765 ???']);
                   msBiDirBatch2: State := msWZOK;
                   end;
-                  if State <> msWZOK then
-                  begin
+                  if State <> msWZOK then begin
                      State := Succ(State);
                      Inc(SD.Prot.BatchNo);
                   end;
                end;
+            end;
+            if SD.Prot.CP.Msg <> '' then begin
+               Log(ltWarning, SD.Prot.CP.Msg);
+               SD.Prot.CP.Msg := '';
             end;
          end;
    else
@@ -11652,31 +11654,26 @@ begin
 
       msRemCtrl_2:
          begin
-            if TimerInstalled(D.TmrPublic) then
-            begin
+            if TimerInstalled(D.TmrPublic) then begin
                sleep(100);
-               if TimerExpired(D.TmrPublic) then
-               begin
+               if TimerExpired(D.TmrPublic) then begin
                   state := msRemCtrlTimeOut;
                   LogFmt(ltInfo, 'Remote Control Timeout', []);
                end
-            end
-            else
+            end else begin
                SetTmrPublic(180, msRemCtrlTimeOut);
+            end;
             _read_in;
             CmdAccepted := False;
             if length(RemCtrlBuf) = 0 then exit;
             for i := Low(MainCmd) to High(MainCmd) do
-               if UpperCase(RemCtrlBuf)[1] = txMainMenu[MainCmd(i)][1] then
-               begin
-                  DoRemoteMainCmd(i);
-                  CmdAccepted := True;
-                  break;
-               end;
-            if (length(trim(RemCtrlBuf)) > 0) then
-            begin
-               if not CmdAccepted then
-               begin
+            if UpperCase(RemCtrlBuf)[1] = txMainMenu[MainCmd(i)][1] then begin
+               DoRemoteMainCmd(i);
+               CmdAccepted := True;
+               break;
+            end;
+            if (length(trim(RemCtrlBuf)) > 0) then begin
+               if not CmdAccepted then begin
 
                   SendStrLn(CRLF +
                      'Incorrect command'
@@ -11686,9 +11683,9 @@ begin
                      );
                   State := msRemCtrl_1;
                end;
-            end
-            else
+            end else begin
                State := msRemCtrl_1;
+            end;
             Delete(SD.InB, 1, length(SD.InB));
          end;
    end; {case}
@@ -11720,14 +11717,6 @@ begin
          end;
       mcVersion:
          begin
-            SendStr(CRLF + CRLF);
-            SendStrLn('       /~~~~~~~~~.       /~~~|     /~~~~~~-   /~~~//~~7   /~~7 _-~~~~-');
-            SendStrLn('      /    ,---.  \    /''    |    /   __   | /   //  /   /  / /  _--__|');
-            SendStrLn('     /    /____)   | /''  /   |   /  /   |  //   //  /   /  / |  (___');
-            SendStrLn('    /            _//   /''|   |  /  /   /  //   //  /   /  /  \___   \');
-            SendStrLn('   /    /~|   |~ /    ~~~~   | /  /__-''  //   //  |__-''  //~~\___)  /');
-            SendStrLn('  /    /  |   |/''  /''~~~~|   |/       _/''/   / |_     _/'' |_     _/''');
-            SendStrLn('  ~~~~~   ~~~~~~~~~      ~~~~~~~~~~~~`  ~~~~~    ~~~~`      ~~~~');
             SendStr(ProductNameFull + ', ' + LngStr({$IFDEF WS}rsAboutTCP{$ELSE}rsAboutDialup{$ENDIF}) + CRLF +
                FormatLng(rsAboutVersion, [ProductVersion]) + ', ' + ProductDate);
             SendStr(CRLF);
@@ -11762,7 +11751,9 @@ end;
 
 procedure TMailerThread.DoRemoteShellCmd(CmdId: ShellCmd);
 var
-   filescount, dirscount, sizesum: longint;
+   filescount,
+   dirscount,
+   sizesum: longint;
    s: string;
    SR: TSearchRec;
    FormatSettings: TFormatSettings;
@@ -11783,17 +11774,14 @@ var
       if (SR.Attr and faVolumeID) <> 0 then
          result := '  ' + center('<VolLabel>', 10) + '      '
       else
-         if (SR.Attr and faDirectory) <> 0 then
-         begin
-            result := '  ' + center('<DIR>', 10) + '      ';
-            Inc(DirsCount);
-         end
-         else
-         begin
-            result := '      ' + LeftPad(myLong2StrFmt(SR.Size, ' '), 12);
-            Inc(FilesCount);
-            SizeSum := sizesum + sr.size;
-         end;
+      if (SR.Attr and faDirectory) <> 0 then begin
+         result := '  ' + center('<DIR>', 10) + '      ';
+         Inc(DirsCount);
+      end else begin
+         result := '      ' + LeftPad(myLong2StrFmt(SR.Size, ' '), 12);
+         Inc(FilesCount);
+         SizeSum := sizesum + sr.size;
+      end;
    end;
 
 begin
@@ -11914,37 +11902,35 @@ procedure TMailerThread.DoRemoteOutbCmd(CmdId: OutboundCmd);
       LeaveCS(OutMgrThread.NodesCS);
       if OutMgrNodes = nil then exit;
       //  E := False;
-      for _i := 0 to CollMax(OutMgrNodes) do
-      begin
+      for _i := 0 to CollMax(OutMgrNodes) do begin
          n := OutMgrNodes[_i];
          if n.Files <> nil then n.Files.PurgeDuplicates;
          n.PrepareNfo;
          filec := n.Files;
          SendStrLn(Addr2Str(n.Address));
          if filec <> nil then
-            if filec.Count > 0 then
-               for _j := 0 to filec.Count - 1 do
-               begin
-                  case TOutFile(filec.At(_j)).KillAction of
-                     kaBsoNothingAfter: SendStr('[NA] ');
-                     kaBsoKillAfter, kaFbKillAfter: SendStr('[KA] ');
-                     kaBsoTruncateAfter: SendStr('[TA] ');
-                     kaFbMoveAfter: SendStr('[MA] ');
-                  else
-                     SendStr('[  ] ');
-                  end; {case}
-                  case TOutFile(filec.At(_j)).FStatus of
-                     osImmed: SendStr('[I] ');
-                     osCrash: SendStr('[C] ');
-                     osDirect: SendStr('[D] ');
-                     osNormal: SendStr('[N] ');
-                     osHold: SendStr('[H] ');
-                  else
-                     SendStr('[ ] ')
-                  end; {case}
-                  SendStrLn(StrAsg(TOutFile(filec.At(_j)).Name));
-               end;
-         //    E := E or (osError in n.FStatus);
+         if filec.Count > 0 then
+         for _j := 0 to filec.Count - 1 do begin
+            case TOutFile(filec.At(_j)).KillAction of
+            kaBsoNothingAfter: SendStr('[NA] ');
+            kaBsoKillAfter, kaFbKillAfter: SendStr('[KA] ');
+            kaBsoTruncateAfter: SendStr('[TA] ');
+            kaFbMoveAfter: SendStr('[MA] ');
+            else
+               SendStr('[  ] ');
+            end; {case}
+            case TOutFile(filec.At(_j)).FStatus of
+            osImmed: SendStr('[I] ');
+            osCrash: SendStr('[C] ');
+            osDirect: SendStr('[D] ');
+            osNormal: SendStr('[N] ');
+            osHold: SendStr('[H] ');
+            else
+               SendStr('[ ] ')
+            end; {case}
+            SendStrLn(StrAsg(TOutFile(filec.At(_j)).Name));
+         end;
+      //    E := E or (osError in n.FStatus);
       end;
       FreeObject(OutMgrNodes);
    end;
@@ -11994,32 +11980,6 @@ begin
    end;
 end;
 
-(*procedure TMailerThread.DoRemoteCommand;
-var
-  i: Cmd;
-  _i: integer;
-begin
-  case CmdId of
-{$IFDEF WS}
-  rcSwitchDaemon:
-          begin
-            SendStr(CRLF);
-            SendStr('TCP/IP Daemon will be switched.'+CRLF);
-            PostMessage(MainWinHandle, WM_SWITCHDAEMON, 0, 0);
-            State := msRemCtrl_1;
-            LogFmt(ltInfo, 'Remote Control command: %s', ['DAEMON STATE']);
-          end;
-{$ENDIF}
-  else
-          begin
-            SendStr(CRLF);
-            SendStr('No handler for this command.'+CRLF);
-            LogFmt(ltInfo, 'Remote Control command: %s', ['<unhandled>']);
-            State := msRemCtrl_1;
-          end;
-  end;
-end;*)
-
 procedure TMailerThread.GetConnectSpeed;
 const
    ASpeedMin: array[Boolean] of Integer = (eiAccSpeedMin, eiTrsSpeedMin);
@@ -12031,18 +11991,15 @@ var
 begin
    if SD.ConnectSpeedGot then begin
       exit;
-//      GlobalFail('%s', ['Duplicate GetConnectSpeed call']);
    end;
    SD.ConnectSpeedGot := True;
 
-   if not SD.ConnectRegExp then
-   begin
+   if not SD.ConnectRegExp then begin
       I := Pos(#13, SD.InB);
       J := Pos(#10, SD.InB);
       if I = J then
          DS.ConnectString := ''
-      else
-      begin
+      else begin
          ClearTmr1;
          if I < J then XChg(I, J);
          if J > 0 then
@@ -12061,8 +12018,7 @@ begin
    SD.ConnectSpeed := GetSpeed(S);
    LinkOK := LinkRestrictionMatches(S, EP.StrValue(eiAccLinkRqd), EP.StrValue(eiAccLinkFrb));
 
-   while (s <> '') and (not SD.HstLink) and (not SD.FaxConnection) do
-   begin
+   while (s <> '') and (not SD.HstLink) and (not SD.FaxConnection) do begin
       GetWrd(s, z, '/');
       if z = 'HST' then SD.HstLink := True;
       if z = 'FAX' then SD.FaxConnection := True;
@@ -12070,24 +12026,17 @@ begin
    //    Delete(SD.InB, 1, J);
    if SD.FaxConnection then
       State := msFaxBegin
-   else
-   begin
-      if LinkOK then
-      begin
+   else begin
+      if LinkOK then begin
          CS := EP.DwordValueD(ASpeedMin[SD.ActivePoll <> nil], 0);
-         if CS > SD.ConnectSpeed then
-         begin
+         if CS > SD.ConnectSpeed then begin
             LogConnect;
             LogFmt(ltWarning, 'Connection BPS rate is too low (%d), should be at least %d - disconnecting', [SD.ConnectSpeed, CS]);
             State := msInit;
-         end
-         else
-         begin
+         end else begin
             State := msCN_HandshakeStart;
          end;
-      end
-      else
-      begin
+      end else begin
          Log(ltWarning, 'Unacceptable link codes - disconnecting');
          State := msInit;
       end;
@@ -12146,13 +12095,13 @@ begin
       msCN_ConnectDCD_w:
          if not ChkFax then
             case ModemResponse of
-               mrpNone: ;
-               mrpConnect:
-                  begin
-                     //            DS.ConnectString := SD.LastResponse;
-                     ClearTmr1;
-                     State := msCN_GetSpeed;
-                  end;
+            mrpNone: ;
+            mrpConnect:
+               begin
+                  //            DS.ConnectString := SD.LastResponse;
+                  ClearTmr1;
+                  State := msCN_GetSpeed;
+               end;
             else
                begin
                   LogFmt(ltWarning, 'Unexpected modem response (%s) - disconnecting', [SD.LastResponse]);
@@ -12167,16 +12116,14 @@ begin
             SD.LogEntireModemInput := False;
             SD.StateDeltaDCD := msCarrierLost;
             if SD.HstLink then Exclude(SD.OurProtocols, ecHYD);
-            if SD.ActivePoll = nil 
-              then SetStatusMsg(rsMMngIn, '') 
+            if SD.ActivePoll = nil then SetStatusMsg(rsMMngIn, '')
             else
-              if SD.ActivePoll.Node <> nil then SetStatusMsg(rsMMngOut, Addr2Str(SD.ActivePoll.Node.Addr))
-              else SetStatusMsg(rsMMngIn, '');//???
+            if SD.ActivePoll.Node <> nil then SetStatusMsg(rsMMngOut, Addr2Str(SD.ActivePoll.Node.Addr))
+            else SetStatusMsg(rsMMngIn, '');
             SD.NoCrLf := True;
             ClearTmr1;
 
-            if DoConnectStart then
-            begin
+            if DoConnectStart then begin
                SetTmrPublic(MaxD(RemainingTimeSecs(D.TmrPublic), toEMSI_Timeout), msHandshakeTimeout);
 {$IFDEF WS}
                if not DialupLine then
@@ -12216,8 +12163,7 @@ end;
 function TMailerThread.ChkFax: Boolean;
 begin
    Result := Pos('+FCO', SD.InB) > 0;
-   if Result then
-   begin
+   if Result then begin
       SD.FaxConnection := True;
       State := msFaxBegin;
    end;
@@ -12225,16 +12171,15 @@ end;
 
 function ReScanColl(const s: string; const ac: array of TColl): Boolean;
 var
-   i, j: Integer;
+   i,
+   j: Integer;
    r: TReStreamScanner;
    c: TColl;
 begin
    Result := False;
-   for j := Low(ac) to High(ac) do
-   begin
+   for j := Low(ac) to High(ac) do begin
       c := ac[j];
-      for i := 0 to CollMax(c) do
-      begin
+      for i := 0 to CollMax(c) do begin
          r := c[i];
          if r.Scan(s) then Result := True;
       end;
@@ -12244,14 +12189,13 @@ end;
 procedure ReScannerDecColl(AValue: Integer; const ac: array of TColl);
 var
    r: TReStreamScanner;
-   i, j: Integer;
+   i,
+   j: Integer;
    c: TColl;
 begin
-   for j := Low(ac) to High(ac) do
-   begin
+   for j := Low(ac) to High(ac) do begin
       c := ac[j];
-      for i := 0 to CollMax(c) do
-      begin
+      for i := 0 to CollMax(c) do begin
          r := c[i];
          r.DecPos(AValue);
       end;
@@ -12260,31 +12204,26 @@ end;
 
 procedure TMailerThread.RespGotMatch(j: Integer; const W: string; i: TModemStdRespIdx);
 var
-   k, jj: Integer;
+   k,
+   jj: Integer;
    zz: string;
    C: TStringColl;
 begin
    SD.LastResponse := Copy(SD.InB, j, Length(W));
-   if i = mrpConnect then
-   begin
+   if i = mrpConnect then begin
       DS.ConnectString := SD.LastResponse;
    end;
    k := j + Length(W) - 1;
-   if SD.LogEntireModemInput then
-   begin
+   if SD.LogEntireModemInput then begin
       zz := Copy(SD.InB, 1, k);
-      if ReScanColl(zz, [SD.RespFmtREs]) then
-      begin
+      if ReScanColl(zz, [SD.RespFmtREs]) then begin
          ReScannerDecColl(MaxInt - 1, [SD.RespFmtREs]);
-      end
-      else
-      begin
+      end else begin
          C := TStringColl.Create;
          C.LoadFromString(zz);
          for jj := CollMax(C) downto 0 do
             if Trim(C[jj]) = '' then C.AtFree(jj);
-         for jj := 0 to CollMax(C) do
-         begin
+         for jj := 0 to CollMax(C) do begin
             if (Pos(C[jj], SD.LastSentString) = 0) and
                ((C[jj] <> W) or (i <> mrpConnect)) then
             begin
@@ -12316,39 +12255,33 @@ begin
    GotLE := False;
    UpdateModem;
    HiC := #0; // to avoid "uninitialized" warning
-   for i := Low(TModemStdRespIdx) to Pred(mrpNone) do
-   begin
+   for i := Low(TModemStdRespIdx) to Pred(mrpNone) do begin
       if not (i in AMask) then Continue;
       Z := SD.ModemRec.StdResp[Integer(I)];
 {$IFDEF USE_TAPI}
       if i = mrpRing then Z := Z + ' TAPI_OFFERING_(OWNER) TAPI_OFFERING_(MONITOR)';
 {$ENDIF}
-      while Z <> '' do
-      begin
+      while Z <> '' do begin
          GetWrd(Z, W, ' ');
          W := StrQuotePartEx(W, '~', #3, #4);
-         if Pos(#3, W) <= 0 then
-         begin
+         if Pos(#3, W) <= 0 then begin
             for j := 1 to Length(W) do
                case W[j] of
                   '_': W[j] := ' ';
                   #4: W[j] := '~';
                end;
-            if not GotUS then
-            begin
+            if not GotUS then begin
                GotUS := True;
                US := UpperCase(SD.InB);
             end;
             if i = mrpConnect then
                j := Pos(W, US)
-            else
-            begin
+            else begin
                j := Pos(W + ccCR, US);
                if j = 0 then j := Pos(W + ccLF, US);
             end;
             if (j > 1) and (US[j - 1] <> #13) and (US[j - 1] <> #10) then j := 0;
-            if j <> 0 then
-            begin
+            if j <> 0 then begin
                RespGotMatch(j, w, i);
                Result := i;
 {$IFDEF USE_TAPI}
@@ -12356,13 +12289,10 @@ begin
                   Result := mrpTapi;
                end;
 {$ENDIF}
-              if IniFile.playsounds then
-              begin
-                if (Result = mrpRing){$IFDEF USE_TAPI} or (Result = mrpTapi){$ENDIF} then
-                begin
+              if IniFile.PlaySounds then begin
+                if (Result = mrpRing) or (Result = mrpTapi) then begin
                   PlaySnd('Ring', SoundsON);
-                end else
-                begin
+                end else begin
                   if (Result = mrpConnect) then begin
                      PlaySnd('Connect', SoundsON);
                      PostMsgP(WM_CONNECT, Self);
@@ -12371,50 +12301,45 @@ begin
               end;
                Exit;
             end;
-         end
-         else
-         begin
+         end else begin
             L := '(?m)';
             j := 0;
-            for k := 1 to Length(W) do
-            begin
+            for k := 1 to Length(W) do begin
                cc := W[k];
                case j of
-                  0:
-                     case cc of
-                        #3: j := 3;
-                        #4: L := L + '~';
-                        '*': L := L + '.*';
-                        '?': L := L + '.';
-                        '0'..'9', 'a'..'z', 'A'..'Z': L := L + cc;
-                     else
-                        L := L + '\x' + Hex2(Byte(cc));
+               0:
+                  case cc of
+                     #3: j := 3;
+                     #4: L := L + '~';
+                     '*': L := L + '.*';
+                     '?': L := L + '.';
+                     '0'..'9', 'a'..'z', 'A'..'Z': L := L + cc;
+                  else
+                     L := L + '\x' + Hex2(Byte(cc));
+                  end;
+               {            1:
+                             begin
+                               HiC := cc;
+                               j := 2;
+                             end;}
+               2:
+                  begin
+                     L := L + Char(VlH(HiC + cc));
+                     j := 3;
+                  end;
+               3:
+                  begin
+                     if cc = #3 then
+                        j := 0
+                     else begin
+                        HiC := cc;
+                        j := 2
                      end;
-                  {            1:
-                                begin
-                                  HiC := cc;
-                                  j := 2;
-                                end;}
-                  2:
-                     begin
-                        L := L + Char(VlH(HiC + cc));
-                        j := 3;
-                     end;
-                  3:
-                     begin
-                        if cc = #3 then
-                           j := 0
-                        else
-                        begin
-                           HiC := cc;
-                           j := 2
-                        end;
-                     end;
+                  end;
                end;
             end;
             RE := GetRegExpr(L);
-            if not GotLE then
-            begin
+            if not GotLE then begin
                GotLE := True;
                LE := SD.InB;
                Replace(CRLF, #10, LE);
@@ -12422,8 +12347,7 @@ begin
                SD.InB := LE;
                US := UpperCase(SD.InB);
             end;
-            if (RE.ErrPtr <> 0) or (RE.Match(LE) <= 0) then
-            begin
+            if (RE.ErrPtr <> 0) or (RE.Match(LE) <= 0) then begin
                RE.Unlock;
                Continue
             end;
@@ -12431,11 +12355,9 @@ begin
             j := RE.MatchPos[0];
             RE.Unlock;
             RespGotMatch(j, w, i);
-            if i = mrpConnect then
-            begin
+            if i = mrpConnect then begin
                SD.ConnectRegExp := True;
-               if StrBegsF(cConnectSP, Length(cConnectSP), DS.ConnectString, Length(DS.ConnectString)) then
-               begin
+               if StrBegsF(cConnectSP, Length(cConnectSP), DS.ConnectString, Length(DS.ConnectString)) then begin
                   Delete(DS.ConnectString, 1, Length(cConnectSP));
                end;
             end;
@@ -12506,8 +12428,7 @@ procedure TMailerThread.DoMisc;
       begin
          Result := False;
          if s = '' then Exit;
-         while s <> '' do
-         begin
+         while s <> '' do begin
             GetWrd(s, w, ',');
             if not FlagsColl.Found(w) then Exit;
          end;
@@ -12517,8 +12438,7 @@ procedure TMailerThread.DoMisc;
       function Send: Boolean;
       begin
          Result := False;
-         if PreInit <> '' then
-         begin
+         if PreInit <> '' then begin
             if not SendModemString(Preinit) then Exit;
          end;
          if not SendModemString(Prefix + NodePhone + Suffix) then Exit;
@@ -12537,21 +12457,17 @@ procedure TMailerThread.DoMisc;
 
    begin
       FlagsColl := TStringColl.Create;
-      while NodeFlags <> '' do
-      begin
+      while NodeFlags <> '' do begin
          GetWrd(NodeFlags, w, ',');
          FlagsColl.Ins(UpperCase(w));
       end;
       Listed := False;
       i := 0;
-      while (not Listed) and (i < SD.ModemRec.FlagsA.Count) do
-      begin
+      while (not Listed) and (i < SD.ModemRec.FlagsA.Count) do begin
          z := UpperCase(SD.ModemRec.FlagsA[i]);
-         while z <> '' do
-         begin
+         while z <> '' do begin
             GetWrd(z, w, ' ');
-            if Found(w) then
-            begin
+            if Found(w) then begin
                w := SD.ModemRec.FlagsB[i];
                Listed := True;
                Break;
@@ -12560,31 +12476,24 @@ procedure TMailerThread.DoMisc;
          Inc(i);
       end;
       FreeObject(FlagsColl);
-      if Listed and (w <> '') then
-      begin
+      if Listed and (w <> '') then begin
          GetWrd(w, Preinit, '/');
          if Preinit = '.' then PreInit := '';
-         if w = '' then
-         begin
+         if w = '' then begin
             Prefix := GetPfx;
             Suffix := GetSfx;
-         end
-         else
-         begin
+         end else begin
             GetWrd(w, Prefix, '/');
             if Prefix = '.' then Prefix := GetPfx;
             if w = '' then
                Suffix := GetSfx
-            else
-            begin
+            else begin
                GetWrd(w, Suffix, '/');
                if Suffix = '.' then
                   Suffix := GetSfx
             end;
          end;
-      end
-      else
-      begin
+      end else begin
          PreInit := '';
          Prefix := GetPfx;
          Suffix := GetSfx;
@@ -12596,13 +12505,10 @@ procedure TMailerThread.DoMisc;
    begin
       if not SD.AnswerRequest then Exit;
       SD.AnswerRequest := False;
-      if CP = nil then
-      begin
+      if CP = nil then begin
          AnswerAfterInit := True;
          State := msInit;
-      end
-      else
-      begin
+      end else begin
          State := msStartAnswer;
          {$IFDEF USE_TAPI}
          if (CP <> nil) and TapiDevice then begin
@@ -12633,24 +12539,22 @@ procedure TMailerThread.DoMisc;
       {$ENDIF}
       cn := ModemResponseCn;
       case cn of
-         mrpNone: CheckAnswerRequest;
-         mrpRing:
-            begin
-               ClearTmr1;
-               Log(ltInfo, SD.LastResponse);
-               if (State = msStartIdle_TAPI) or (State = msIdle_TAPI) then begin
-                  SD.RingsDone := 1;
-               end;
-               State := msRingAfterIdle;
+      mrpNone: CheckAnswerRequest;
+      mrpRing:
+         begin
+            ClearTmr1;
+            Log(ltInfo, SD.LastResponse);
+            if (State = msStartIdle_TAPI) or (State = msIdle_TAPI) then begin
+               SD.RingsDone := 1;
             end;
-{$IFDEF USE_TAPI}
-         mrpTapi:
-            begin
-               Log(ltInfo, SD.LastResponse);
-               State := msStartIdle_TAPI;
-            end;
-{$ENDIF}
-         mrpConnect: State := msCN_ConnectString_A;
+            State := msRingAfterIdle;
+         end;
+      mrpTapi:
+         begin
+            Log(ltInfo, SD.LastResponse);
+            State := msStartIdle_TAPI;
+         end;
+      mrpConnect: State := msCN_ConnectString_A;
       else
          begin
             if cn <> mrpOK then
@@ -12680,7 +12584,7 @@ procedure TMailerThread.DoMisc;
    begin
       if (CP <> nil) and (CP.Handle <> INVALID_HANDLE_VALUE) then begin
          Log(ltInfo, 'Initializing modem');
-      end;   
+      end;
       SD.InitModemLogged := True;
    end;
 
@@ -12718,11 +12622,9 @@ procedure TMailerThread.DoMisc;
       cn: integer;
    begin
       Result := False;
-      for cn := 0 to CollMax(r) do
-      begin
+      for cn := 0 to CollMax(r) do begin
          RE := r[cn];
-         if RE.Match(s) > 0 then
-         begin
+         if RE.Match(s) > 0 then begin
             Result := True;
             n := cn;
             exit;
@@ -12735,8 +12637,7 @@ procedure TMailerThread.DoMisc;
       RE: TPCRE;
       cn: integer;
    begin
-      for cn := 0 to CollMax(r) do
-      begin
+      for cn := 0 to CollMax(r) do begin
          RE := r[cn];
          RE.Unlock;
       end;
@@ -12785,8 +12686,7 @@ procedure TMailerThread.DoMisc;
          m := '';
          repeat
             sc := s[0];
-            if i >= sc.Count then
-            begin
+            if i >= sc.Count then begin
                exit;
             end;
             Log('STEP: ' + sc[i]);
@@ -12929,21 +12829,17 @@ procedure TMailerThread.DoMisc;
             j := 0;
             sc := s[1];
             r.DeleteAll;
-            if UpperCase(sc[i]) = '%CASE' then
-            begin
+            if UpperCase(sc[i]) = '%CASE' then begin
                Log('CASE:');
                ss := s[0];
                n := i;
-               while ss[n + 1] = '' do
-               begin
+               while ss[n + 1] = '' do begin
                   inc(n);
                   inc(j);
                   r.Add(GetRegExpr(sc[n]));
                   Log('  ' + sc[n]);
                end;
-            end
-            else
-            begin
+            end else begin
                r.Add(GetRegExpr(sc[i]));
             end;
             f := False;
@@ -12955,14 +12851,12 @@ procedure TMailerThread.DoMisc;
                   replace(#13, '', t);
                   if t <> '' then l.Add(t);
                until SD.InC = '';
-               if (l.Count > 0) and FindMatch(r, l[0], n) then
-               begin
+               if (l.Count > 0) and FindMatch(r, l[0], n) then begin
                   m := l[0];
                   Log('RECE: ' + m);
                   f := True;
                   l.AtFree(0);
-                  if j <> 0 then
-                  begin
+                  if j <> 0 then begin
                      inc(i);
                      inc(i, n);
                      sc := s[3];
@@ -12970,15 +12864,12 @@ procedure TMailerThread.DoMisc;
                      i := StrToIntDef(sc[i], i + 2) - 2;
                   end;
                   break;
-               end
-               else
-                  if (l.Count > 0) then
-                  begin
-                     Log('SKIP: ' + l[0]);
-                     l.AtFree(0);
-                  end;
-               if State = msCancel then
-               begin
+               end else
+               if (l.Count > 0) then begin
+                  Log('SKIP: ' + l[0]);
+                  l.AtFree(0);
+               end;
+               if State = msCancel then begin
                   Log('Script is canceled');
                   REUnlock(r);
                   exit;
@@ -12987,14 +12878,11 @@ procedure TMailerThread.DoMisc;
                LetsSleep;
             until TimerExpired(D.TmrPublic);
             REUnlock(r);
-            if not F then
-            begin
+            if not F then begin
                sc := s[3];
                i := StrToIntDef(sc[i], i + 2 + j) - 1;
                Log('Timeout. %GOTO ' + IntToStr(i + 1));
-            end
-            else
-            begin
+            end else begin
                inc(i);
                inc(i, j);
             end;
@@ -13775,13 +13663,12 @@ var
    procedure Get;
    var
       S: ShortString;
-      sl: byte absolute S;
+     sl: byte absolute S;
       C: Byte;
    begin
       repeat
          S := '';
-         while CP.GetChar(C) do
-         begin
+         while CP.GetChar(C) do begin
             Inc(sl);
             s[sl] := Char(C);
             if sl = 255 then Break;
@@ -13813,8 +13700,7 @@ begin
    PostTermStr(AddStr, False, not SD.NoCrLf, False);
    ReScanColl(SD.InC, [SD.InputFmtREs, SD.InputWdResetREs, SD.InputWdExtAppREs, SD.LoginWdREs]);
    i := Length(SD.InC);
-   if i > 5000 then
-   begin
+   if i > 5000 then begin
       Dec(i, 4000);
       Delete(SD.InC, 1, i);
       ReScannerDecColl(i, [SD.InputFmtREs, SD.InputWdResetREs, SD.InputWdExtAppREs, SD.LoginWdREs]);
@@ -13825,15 +13711,14 @@ procedure TMailerThread.UpdateModem;
 
    procedure CollFromAtom(var C: TColl; EvtIdx: Integer);
    var
-      dm: TEvParDMemo;
+     dm: TEvParDMemo;
       R: TColl;
       i: Integer;
    begin
       FreeObject(C);
       C := TColl.Create;
       R := EP.GetAtomList(EvtIdx);
-      for i := 0 to CollMax(R) do
-      begin
+      for i := 0 to CollMax(R) do begin
          dm := R[i];
          Replace(#13, '', dm.MemoA);
          Replace(#10, '', dm.MemoA);
@@ -13844,15 +13729,14 @@ procedure TMailerThread.UpdateModem;
 
    procedure CreateInputWdExtAppREs;
    var
-      ds: TEvParDStr;
+     ds: TEvParDStr;
       R: TColl;
       i: Integer;
    begin
       FreeObject(SD.InputWdExtAppREs);
       SD.InputWdExtAppREs := TColl.Create;
       R := EP.GetAtomList(eiInputWdExtApp);
-      for i := 0 to CollMax(R) do
-      begin
+      for i := 0 to CollMax(R) do begin
          ds := R[i];
          SD.InputWdExtAppREs.Add(TReWdExtAppHolder.Create(StrAsg(ds.StrA), StrAsg(ds.StrB), Self));
       end;
@@ -13861,15 +13745,14 @@ procedure TMailerThread.UpdateModem;
 
    procedure CreateInputWdResetREs;
    var
-      ds: TEvParString;
+     ds: TEvParString;
       R: TColl;
       i: Integer;
    begin
       FreeObject(SD.InputWdResetREs);
       SD.InputWdResetREs := TColl.Create;
       R := EP.GetAtomList(eiInputWdReset);
-      for i := 0 to CollMax(R) do
-      begin
+      for i := 0 to CollMax(R) do begin
          ds := R[i];
          Replace(#13, '', ds.s);
          Replace(#10, '', ds.s);
@@ -13879,7 +13762,8 @@ procedure TMailerThread.UpdateModem;
    end;
 
 var
-   Modems, Lines: TElementColl;
+   Modems,
+   Lines: TElementColl;
 begin
    if SD = nil then Exit;
    if (SD.ModemRec <> nil) and TimerInstalled(SD.LastModemUpd) and (not TimerExpired(SD.LastModemUpd)) then Exit;
@@ -13905,7 +13789,7 @@ end;
 
 procedure TMailerThread.Initialize;
 var
-   lr: TLineRec;
+  lr: TLineRec;
    s: string;
 
 begin
@@ -13937,22 +13821,22 @@ begin
       CfgLeave;
    end;
    case ProtCore of
-      ptDialup, ptifcico, ptTelnet:
-         SD.SessionCore := scEmsiWz;
-      ptBinkP:
-         SD.SessionCore := scBinkP;
-      ptFTP:
-         SD.SessionCore := scFTP;
-      ptHTTP:
-         SD.SessionCore := scHTTP;
-      ptSMTP:
-         SD.SessionCore := scSMTP;
-      ptPOP3:
-         SD.SessionCore := scPOP3;
-      ptGATE:
-         SD.SessionCore := scGATE;
-      ptNNTP:
-         SD.SessionCore := scNNTP;
+   ptDialup, ptifcico, ptTelnet:
+      SD.SessionCore := scEmsiWz;
+   ptBinkP:
+      SD.SessionCore := scBinkP;
+   ptFTP:
+      SD.SessionCore := scFTP;
+   ptHTTP:
+      SD.SessionCore := scHTTP;
+   ptSMTP:
+      SD.SessionCore := scSMTP;
+   ptPOP3:
+      SD.SessionCore := scPOP3;
+   ptGATE:
+      SD.SessionCore := scGATE;
+   ptNNTP:
+      SD.SessionCore := scNNTP;
    else
       GlobalFail('%s', ['TMailerThread.Initialize ProtCore ??']);
    end;
@@ -13962,9 +13846,7 @@ begin
 
    EvtQueue := TColl.Create;
    oEvt := CreateEvt(False);
-{$IFDEF USE_TAPI}
    if TapiDevice then (CP as TTAPIPort).WakeEvent := oEvt;
-{$ENDIF}
    EvtNew := False;
    InitializeCriticalSection(EvtCS);
    InitializeCriticalSection(DisplayDataCS);
@@ -15456,7 +15338,7 @@ begin
    if b then begin
       ResetEvt(oSleep);
       WaitEvt(oSleep, i);
-   end;   
+   end;
 end;
 
 procedure _RunDaemon;
@@ -15682,8 +15564,8 @@ var
 begin
    if Terminated then exit;
    if exitnow then begin
-     terminated := true;
-     exit;
+      terminated := true;
+      exit;
    end;
 
 {      ReadDirectoryChangesW(hDir, @FNI, SizeOf(FNI), True, FILE_NOTIFY_CHANGE_SIZE, @i, nil, nil);
@@ -15702,7 +15584,7 @@ begin
    ForcedUpdate := False;
    ChangeFlag := False;
    FidoOut.ForcedRescan := True;
-   if inifile.DynamicRouting then begin
+   if inifile.DynamicRouting or IniFile.ScanMSG then begin
       if NetmailHolder = nil then begin
          NetmailHolder := TNetmail.Create;
       end;

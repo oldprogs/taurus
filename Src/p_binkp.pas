@@ -1616,11 +1616,6 @@ begin
     end;
   until Result;
   if (R <> nil) and (rx <> bdrxWaitFileSync) then R.D.Part := InCur else R.D.Part := 0;
-  if Result and (CP.Msg <> '') then begin
-     CustomInfo := CP.Msg;
-     CP.Msg := '';
-     FLogFile(Self, lfLog);
-  end;
 end;
 
 procedure TBinkP.Start({RX}AAcceptFile: TAcceptFile; AFinishRece: TFinishRece;

@@ -755,10 +755,6 @@ begin
       ProtocolError := ecAbortByLocal;
       State := bdDone;
    end;
-   if CP.Msg <> '' then begin
-      CustomInfo := CP.Msg;
-      FLogFile(Self, lfLog);
-   end;
    Application.ProcessMessages;
 end;
 
