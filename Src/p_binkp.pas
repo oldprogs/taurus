@@ -616,6 +616,9 @@ begin
      if UpperCase(copy(InMsg, 1, 7)) = 'TRS ASK' then begin
         CustomInfo := ExtractWord(3, InMsg, [' ']);
         FLogFile(Self, lfTRSASK);
+        if CustomInfo = 'NAK' then begin
+           SendTRSMsg(ExtractWord(3, InMsg, [' ']), 'NAK');
+        end;
      end else
      if ExtractWord(3, InMsg, [' ']) = 'NAK' then begin
         for i := 0 to CollMax(TRSList) do begin
@@ -1331,6 +1334,10 @@ begin
     bdtxSendSecondEOB:
       begin
          if RemoteCanTRS and (CollMax(TRSList) > -1) then begin
+            if TimerExpired(Timeout) then begin
+               ProtocolError := ecTimeout;
+               exit;
+            end;
             FlushPkt;
             if CP.Carrier <> CP.DCD then begin
                TRSList.FreeAll;

@@ -736,9 +736,9 @@ procedure PurgeActiveFlags;
 procedure VCompileNodelist(AAuto: boolean);
 
 type
-   T_OpenTerm = function(Handle: THandle): Boolean; stdcall;
+   T_OpenTerm = function(const Handle: THandle): Boolean; stdcall;
 
-   T_OpenUniTerm = function(PortHandle: THandle): Boolean; stdcall;
+   T_OpenUniTerm = function(const Handle: THandle): Boolean; stdcall;
 
 
 var
@@ -1663,7 +1663,7 @@ begin
           4: s := Inifile.InCommon;
           5: s := IniFile.InSecure;
           6: s := IniFile.InTemp;
-          7: s := ExtractFilePath(IniFile.Log);
+          7: s := IniFile.Log;
           8: s := ProductName + '/' + ProductVersion;
           9:
              begin
@@ -1715,7 +1715,7 @@ begin
                begin
                   Msg.Result := 1;
                   SetEvt(MlrT.oEvt);
-                  MlrT.State := msHangUp;
+                  MlrT.State := msCancel;
                end;
             4:
                begin
@@ -3947,10 +3947,11 @@ begin
    MailerForms.Enter;
    MailerForms.Delete(Self);
    MailerForms.Leave;
-   if Application.MainForm <> Self then
-      PostMsg(WM_TABCHANGE)
-   else
+   if Application.MainForm <> Self then begin
+      PostMsg(WM_TABCHANGE);
+   end else begin
       FreeAllForms;
+   end;
    Term := true;
 end;
 
@@ -3962,10 +3963,10 @@ procedure TMailerForm.FormClose(Sender: TObject; var Action: TCloseAction);
 var
    x: array[0..4] of integer;
    o: TRadOutMgr;
-   x4: TRadPolls;
-   x2: ^TRadBWZWWW;
-   x3: TRadMFRec;
-   wp: MClasses._TWindowPlacement;
+  x4: TRadPolls;
+  x2: ^TRadBWZWWW;
+  x3: TRadMFRec;
+  wp: MClasses._TWindowPlacement;
    i: smallint;
    s: string;
 begin
@@ -3976,26 +3977,27 @@ begin
    if Application.MainForm = Self then begin
    if not WMCLOSE then
       case IniFile.OnClose of
-         1:
+      1:
+         begin
+            if MessageBox(handle, PChar(lngstr(rsCloseQuestion)), 'Mailer', mb_YESNO or MB_ICONQUESTION) = idNo then
             begin
-               if MessageBox(handle, PChar(lngstr(rsCloseQuestion)), 'Mailer', mb_YESNO or MB_ICONQUESTION) = idNo then
-               begin
-                  Action := caNone;
-                  _Closed := false;
-                  exit;
-               end;
-            end;
-         2:
-            begin
-               Application.Minimize;
                Action := caNone;
                _Closed := false;
                exit;
             end;
+         end;
+      2:
+         begin
+            Application.Minimize;
+            Action := caNone;
+            _Closed := false;
+            exit;
+         end;
       else
          ;
       end; {case}
       Application.Minimize;
+      ExitNow := true;
       if DaemonStarted then _ShutdownDaemon;
       if HelpInitialized then begin
          HelpInitialized := False;
@@ -4011,15 +4013,11 @@ begin
       x[3] := BWListView.Columns[3].Width;
       x[4] := BWListView.Columns[4].Width;
       x2 := @x;
-      with inifile do
-         RadBWZ := x2^;
+      with inifile do RadBWZ := x2^;
       SavFile.WriteInteger('Sizes', 'stListView', stListView.Columns[0].Width);
-      for I := 0 to 5 do
-         o[i] := OutMgrHeader.Sections[i].Width;
-      with inifile do
-         RadOut := o;
-      for I := 0 to 7 do
-         x4[i] := PollsListView.Columns[i].Width;
+      for I := 0 to 5 do o[i] := OutMgrHeader.Sections[i].Width;
+      with inifile do RadOut := o;
+      for I := 0 to 7 do x4[i] := PollsListView.Columns[i].Width;
       inifile.RadPolls := x4;
 
       wp.length := sizeof(wp);
@@ -4060,7 +4058,6 @@ begin
       SavFile.WriteString('Store', 'LastOut', s);
       IniFile.StoreCFG;
       FreeLibrary(ModuleHandle);
-      ExitNow := true;
    end;
 end;
 

@@ -336,7 +336,11 @@ var
    p: string;
 begin
    x := 0;
-   if NetmailHolder <> nil then x := NetmailHolder.MaxMSG;
+   if NetmailHolder <> nil then begin
+      NetmailHolder.NetColl.Enter;
+      x := NetmailHolder.MaxMSG;
+      NetmailHolder.NetColl.Leave;
+   end;
    FillChar(h, SizeOf(h), #0);
    t := 'Taurus ' + CProductVersionA + '/W32';
    move(t[1], h.from, Length(t));
@@ -402,7 +406,11 @@ var
    z: string;
 begin
    x := 0;
-   if NetmailHolder <> nil then x := NetmailHolder.MaxMSG;
+   if NetmailHolder <> nil then begin
+      NetmailHolder.NetColl.Enter;
+      x := NetmailHolder.MaxMSG;
+      NetmailHolder.NetColl.Leave;
+   end;
    n := TNetmail.Create;
    n.ScanPacket(p);
    for i := 0 to CollMax(n.NetColl) do begin
@@ -748,6 +756,7 @@ begin
    DC := IniFile.GetStrings('gNetPath');
    NetColl.Enter;
    NetColl.MarkDel(True);
+   MaxMSG := 0;
    for PN := 0 to CollMax(DC) do begin
    FP := AddBackSlash(TDualRec(DC.Items[PN]^).St1^);
    if uFindFirst(FP + '*.MSG', SR) then begin

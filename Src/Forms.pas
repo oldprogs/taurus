@@ -6872,104 +6872,98 @@ end;
 
 function TApplication.ProcessMessage(var Msg: TMsg): Boolean;
 var
-  Handled: Boolean;
+   Handled: Boolean;
 begin
-  Result := False;
-  if PeekMessage(Msg, 0, 0, 0, PM_REMOVE) then
-  begin
-    Result := True;
-    if Msg.Message <> WM_QUIT then
-    begin
-      Handled := False;
-      if Assigned(FOnMessage) then FOnMessage(Msg, Handled);
-      if not IsHintMsg(Msg) and not Handled and not IsMDIMsg(Msg) and
-        not IsKeyMsg(Msg) and not IsDlgMsg(Msg) then
-      begin
-        TranslateMessage(Msg);
-        DispatchMessage(Msg);
+   Result := False;
+   if PeekMessage(Msg, 0, 0, 0, PM_REMOVE) then begin
+      Result := True;
+      if Msg.Message <> WM_QUIT then begin
+         Handled := False;
+         if Assigned(FOnMessage) then FOnMessage(Msg, Handled);
+         if not IsHintMsg(Msg) and not Handled and not IsMDIMsg(Msg) and
+            not IsKeyMsg(Msg) and not IsDlgMsg(Msg) then
+         begin
+            TranslateMessage(Msg);
+            DispatchMessage(Msg);
+         end;
+      end else begin
+         FTerminate := True;
       end;
-    end
-    else
-      FTerminate := True;
-  end;
+   end;
 end;
 
 procedure TApplication.ProcessMessages;
 var
-  Msg: TMsg;
+   Msg: TMsg;
 begin
-  while ProcessMessage(Msg) do {loop};
+   while ProcessMessage(Msg) do {loop};
 end;
 
 procedure TApplication.HandleMessage;
 var
-  Msg: TMsg;
+   Msg: TMsg;
 begin
-  if not ProcessMessage(Msg) then Idle(Msg);
+   if not ProcessMessage(Msg) then Idle(Msg);
 end;
 
 procedure TApplication.HookMainWindow(Hook: TWindowHook);
 var
-  WindowHook: ^TWindowHook;
+   WindowHook: ^TWindowHook;
 begin
-  if not FHandleCreated then
-  begin
-    if FHandle <> 0 then
-      SendMessage(FHandle, CM_WINDOWHOOK, 0, Longint(@@Hook));
-  end else
-  begin
-    FWindowHooks.Expand;
-    New(WindowHook);
-    WindowHook^ := Hook;
-    FWindowHooks.Add(WindowHook);
-  end;
+   if not FHandleCreated then begin
+      if FHandle <> 0 then begin
+         SendMessage(FHandle, CM_WINDOWHOOK, 0, Longint(@@Hook));
+      end;
+   end else begin
+      FWindowHooks.Expand;
+      New(WindowHook);
+      WindowHook^ := Hook;
+      FWindowHooks.Add(WindowHook);
+   end;
 end;
 
 procedure TApplication.UnhookMainWindow(Hook: TWindowHook);
 var
-  I: Integer;
-  WindowHook: ^TWindowHook;
+   I: Integer;
+   WindowHook: ^TWindowHook;
 begin
-  if not FHandleCreated then
-  begin
-    if FHandle <> 0 then
+   if not FHandleCreated then begin
+   if FHandle <> 0 then
       SendMessage(FHandle, CM_WINDOWHOOK, 1, Longint(@@Hook));
-  end else
-    for I := 0 to FWindowHooks.Count - 1 do
-    begin
+   end else
+   for I := 0 to FWindowHooks.Count - 1 do begin
       WindowHook := FWindowHooks[I];
       if (TMethod(WindowHook^).Code = TMethod(Hook).Code) and
-        (TMethod(WindowHook^).Data = TMethod(Hook).Data) then
+         (TMethod(WindowHook^).Data = TMethod(Hook).Data) then
       begin
-        Dispose(WindowHook);
-        FWindowHooks.Delete(I);
-        Break;
+         Dispose(WindowHook);
+         FWindowHooks.Delete(I);
+         Break;
       end;
-    end;
+   end;
 end;
 
 procedure TApplication.Initialize;
 begin
-  if InitProc <> nil then TProcedure(InitProc);
+   if InitProc <> nil then TProcedure(InitProc);
 end;
 
 procedure TApplication.CreateForm(InstanceClass: TComponentClass; var Reference);
 var
-  Instance: TComponent;
+   Instance: TComponent;
 begin
-  Instance := TComponent(InstanceClass.NewInstance);
-  TComponent(Reference) := Instance;
-  try
-    Instance.Create(Self);
-  except
-    TComponent(Reference) := nil;
-    raise;
-  end;
-  if (FMainForm = nil) and (Instance is TForm) then
-  begin
-    TForm(Instance).HandleNeeded;
-    FMainForm := TForm(Instance);
-  end;
+   Instance := TComponent(InstanceClass.NewInstance);
+   TComponent(Reference) := Instance;
+   try
+      Instance.Create(Self);
+   except
+      TComponent(Reference) := nil;
+      raise;
+   end;
+   if (FMainForm = nil) and (Instance is TForm) then begin
+      TForm(Instance).HandleNeeded;
+      FMainForm := TForm(Instance);
+   end;
 end;
 
 procedure TApplication.Run;
@@ -7002,157 +6996,148 @@ end;
 
 procedure TApplication.Terminate;
 begin
-  if CallTerminateProcs then PostQuitMessage(0);
+   if CallTerminateProcs then PostQuitMessage(0);
 end;
 
 procedure TApplication.HandleException(Sender: TObject);
 begin
-  if GetCapture <> 0 then SendMessage(GetCapture, WM_CANCELMODE, 0, 0);
-  if ExceptObject is Exception then
-  begin
-    if not (ExceptObject is EAbort) then
+   if GetCapture <> 0 then SendMessage(GetCapture, WM_CANCELMODE, 0, 0);
+   if ExceptObject is Exception then begin
+      if not (ExceptObject is EAbort) then
       if Assigned(FOnException) then
-        FOnException(Sender, Exception(ExceptObject))
+         FOnException(Sender, Exception(ExceptObject))
       else
-        ShowException(Exception(ExceptObject));
-  end else
-    SysUtils.ShowException(ExceptObject, ExceptAddr);
+         ShowException(Exception(ExceptObject));
+   end else
+   SysUtils.ShowException(ExceptObject, ExceptAddr);
 end;
 
 function TApplication.MessageBox(const Text, Caption: PChar; Flags: Longint): Integer;
 var
-  ActiveWindow: HWnd;
-  WindowList: Pointer;
-  MBMonitor, AppMonitor: HMonitor;
-  MonInfo: TMonitorInfo;
-  Rect: TRect;
-  FocusState: TFocusState;
+   ActiveWindow: HWnd;
+   WindowList: Pointer;
+   MBMonitor,
+   AppMonitor: HMonitor;
+   MonInfo: TMonitorInfo;
+   Rect: TRect;
+   FocusState: TFocusState;
 begin
-  ActiveWindow := GetActiveWindow;
-  MBMonitor := MonitorFromWindow(ActiveWindow, MONITOR_DEFAULTTONEAREST);
-  AppMonitor := MonitorFromWindow(Handle, MONITOR_DEFAULTTONEAREST);
-  if MBMonitor <> AppMonitor then
-  begin
-    MonInfo.cbSize := Sizeof(TMonitorInfo);
-    GetMonitorInfo(MBMonitor, @MonInfo);
-    GetWindowRect(Handle, Rect);
-    SetWindowPos(Handle, 0,
+   ActiveWindow := GetActiveWindow;
+   MBMonitor := MonitorFromWindow(ActiveWindow, MONITOR_DEFAULTTONEAREST);
+   AppMonitor := MonitorFromWindow(Handle, MONITOR_DEFAULTTONEAREST);
+   if MBMonitor <> AppMonitor then begin
+      MonInfo.cbSize := Sizeof(TMonitorInfo);
+      GetMonitorInfo(MBMonitor, @MonInfo);
+      GetWindowRect(Handle, Rect);
+      SetWindowPos(Handle, 0,
       MonInfo.rcMonitor.Left + ((MonInfo.rcMonitor.Right - MonInfo.rcMonitor.Left) div 2),
       MonInfo.rcMonitor.Top + ((MonInfo.rcMonitor.Bottom - MonInfo.rcMonitor.Top) div 2),
       0, 0, SWP_NOACTIVATE or SWP_NOREDRAW or SWP_NOSIZE or SWP_NOZORDER);
-  end;
-  WindowList := DisableTaskWindows(0);
-  FocusState := SaveFocusState;
-  if UseRightToLeftReading then Flags := Flags or MB_RTLREADING;
-  try
-    Result := Windows.MessageBox(Handle, Text, Caption, Flags);
-  finally
-    if MBMonitor <> AppMonitor then
-      SetWindowPos(Handle, 0,
-        Rect.Left + ((Rect.Right - Rect.Left) div 2),
-        Rect.Top + ((Rect.Bottom - Rect.Top) div 2),
-        0, 0, SWP_NOACTIVATE or SWP_NOREDRAW or SWP_NOSIZE or SWP_NOZORDER);
-    EnableTaskWindows(WindowList);
-    SetActiveWindow(ActiveWindow);
-    RestoreFocusState(FocusState);
-  end;
+   end;
+   WindowList := DisableTaskWindows(0);
+   FocusState := SaveFocusState;
+   if UseRightToLeftReading then Flags := Flags or MB_RTLREADING;
+   try
+      Result := Windows.MessageBox(Handle, Text, Caption, Flags);
+   finally
+      if MBMonitor <> AppMonitor then
+         SetWindowPos(Handle, 0,
+         Rect.Left + ((Rect.Right - Rect.Left) div 2),
+         Rect.Top + ((Rect.Bottom - Rect.Top) div 2),
+         0, 0, SWP_NOACTIVATE or SWP_NOREDRAW or SWP_NOSIZE or SWP_NOZORDER);
+      EnableTaskWindows(WindowList);
+      SetActiveWindow(ActiveWindow);
+      RestoreFocusState(FocusState);
+   end;
 end;
 
 procedure TApplication.ShowException(E: Exception);
 var
-  Msg: string;
+   Msg: string;
 begin
-  Msg := E.Message;
-  if (Msg <> '') and (AnsiLastChar(Msg) > '.') then Msg := Msg + '.';
-  MessageBox(PChar(Msg), PChar(GetTitle), MB_OK + MB_ICONSTOP);
+   Msg := E.Message;
+   if (Msg <> '') and (AnsiLastChar(Msg) > '.') then Msg := Msg + '.';
+   MessageBox(PChar(Msg), PChar(GetTitle), MB_OK + MB_ICONSTOP);
 end;
 function TApplication.InvokeHelp(Command: Word; Data: Longint): Boolean;
 var
-  CallHelp: Boolean;
-  HelpHandle: HWND;
-  ActiveForm: TCustomForm;
+   CallHelp: Boolean;
+   HelpHandle: HWND;
+   ActiveForm: TCustomForm;
 begin
-  Result := False;
-  CallHelp := True;
-  ActiveForm := Screen.ActiveCustomForm;
-  if Assigned(ActiveForm) and Assigned(ActiveForm.FOnHelp) then
-    Result := ActiveForm.FOnHelp(Command, Data, CallHelp)
-  else if Assigned(FOnHelp) then
-    Result := FOnHelp(Command, Data, CallHelp);
-  if CallHelp then
-    if Assigned(ActiveForm) and ActiveForm.HandleAllocated and (ActiveForm.FHelpFile <> '') then
-    begin
+   Result := False;
+   CallHelp := True;
+   ActiveForm := Screen.ActiveCustomForm;
+   if Assigned(ActiveForm) and Assigned(ActiveForm.FOnHelp) then
+      Result := ActiveForm.FOnHelp(Command, Data, CallHelp)
+   else if Assigned(FOnHelp) then
+      Result := FOnHelp(Command, Data, CallHelp);
+   if CallHelp then
+   if Assigned(ActiveForm) and ActiveForm.HandleAllocated and (ActiveForm.FHelpFile <> '') then begin
       HelpHandle := ActiveForm.Handle;
       Result := WinHelp(HelpHandle, PChar(ActiveForm.FHelpFile), Command, Data);
-    end
-    else
-    if FHelpFile <> '' then
-    begin
+   end else
+   if FHelpFile <> '' then begin
       HelpHandle := Handle;
       if FMainForm <> nil then HelpHandle := FMainForm.Handle;
       Result := WinHelp(HelpHandle, PChar(FHelpFile), Command, Data);
-    end else
-      if not FHandleCreated then
-        PostMessage(FHandle, CM_INVOKEHELP, Command, Data);
+   end else
+   if not FHandleCreated then
+      PostMessage(FHandle, CM_INVOKEHELP, Command, Data);
 end;
 
 function TApplication.HelpKeyword(const Keyword: String): Boolean;
 begin
-  result := false;
+   result := false;
 end;
 
 function TApplication.HelpContext(Context: THelpContext): Boolean;
 begin
-  Result := InvokeHelp(HELP_CONTEXT, Context);
+   Result := InvokeHelp(HELP_CONTEXT, Context);
 end;
 
 function TApplication.HelpCommand(Command: Integer; Data: Longint): Boolean;
 begin
-  Result := InvokeHelp(Command, Data);
+   Result := InvokeHelp(Command, Data);
 end;
 
 function TApplication.HelpJump(const JumpID: string): Boolean;
 var
-  Command: array[0..255] of Char;
+   Command: array[0..255] of Char;
 begin
-  Result := True;
-  if InvokeHelp(HELP_CONTENTS, 0) then
-  begin
-    StrLFmt(Command, SizeOf(Command) - 1, 'JumpID("","%s")', [JumpID]);
-    Result := InvokeHelp(HELP_COMMAND, Longint(@Command));
-  end;
+   Result := True;
+   if InvokeHelp(HELP_CONTENTS, 0) then begin
+      StrLFmt(Command, SizeOf(Command) - 1, 'JumpID("","%s")', [JumpID]);
+      Result := InvokeHelp(HELP_COMMAND, Longint(@Command));
+   end;
 end;
 
 function TApplication.GetExeName: string;
 begin
-  Result := ParamStr(0);
+   Result := ParamStr(0);
 end;
 
 procedure TApplication.SetShowHint(Value: Boolean);
 begin
-  if FShowHint <> Value then
-  begin
-    FShowHint := Value;
-    if FShowHint then
-    begin
-      FHintWindow := HintWindowClass.Create(Self);
-      FHintWindow.Color := FHintColor;
-    end else
-    begin
-      FHintWindow.Free;
-      FHintWindow := nil;
-    end;
-  end;
+   if FShowHint <> Value then begin
+      FShowHint := Value;
+      if FShowHint then begin
+         FHintWindow := HintWindowClass.Create(Self);
+         FHintWindow.Color := FHintColor;
+      end else begin
+         FHintWindow.Free;
+         FHintWindow := nil;
+      end;
+   end;
 end;
 
 procedure TApplication.SetHintColor(Value: TColor);
 begin
-  if FHintColor <> Value then
-  begin
-    FHintColor := Value;
-    if FHintWindow <> nil then
-      FHintWindow.Color := FHintColor;
-  end;
+   if FHintColor <> Value then begin
+      FHintColor := Value;
+      if FHintWindow <> nil then
+         FHintWindow.Color := FHintColor;
+   end;
 end;
 
 procedure TApplication.DoActionIdle;

@@ -32,6 +32,7 @@ object NodelistBrowser: TNodelistBrowser
     ChangeDelay = 50
     HideSelection = False
     Indent = 19
+    PopupMenu = PM
     ReadOnly = True
     RightClickSelect = True
     TabOrder = 1
@@ -486,5 +487,13 @@ object NodelistBrowser: TNodelistBrowser
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 2
+  end
+  object PM: TPopupMenu
+    Left = 352
+    Top = 120
+    object Export1: TMenuItem
+      Caption = 'Export'
+      OnClick = Export1Click
+    end
   end
 end

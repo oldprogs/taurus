@@ -1724,7 +1724,7 @@ begin
    CopyItemsTo(TOutNodeColl(Result));
 end;
 
-procedure AddAddrOutNode(const Addr: TFidoAddress; A: TOutStatus; AOutColl: TOutNodeColl; ASize, ATime: DWORD);
+procedure AddAddrOutNode(const Addr: TFidoAddress; A: TOutStatus; AOutColl: TOutNodeColl; ASize, ATime: DWORD; Path, FName: string);
 var
    I: Integer;
    T: TOutNode;
@@ -1738,6 +1738,7 @@ begin
    end else begin
       T := TOutNode.Create;
       T.Address := Addr;
+      T.Name := Path + '\' + FName;
       T.Nfo.Size := ASize;
       T.Nfo.Time := ATime;
       GetListedNode(Addr);
@@ -1775,7 +1776,7 @@ begin
          D := ExtractWord(1, D, ['.']);
          if D = 'pop3' then D := 'POP3';
       end;
-      AddAddrOutNode(FidoAddress(Zone, Net, Node, I and $FFFF, D), S, OutColl, ASize, ATime);
+      AddAddrOutNode(FidoAddress(Zone, Net, Node, I and $FFFF, D), S, OutColl, ASize, ATime, Path, FName);
    end;
 end;
 
@@ -1929,10 +1930,12 @@ var
   an: TAdvNode;
 begin
    Result := False;
+   if UpperCase(ExtractFileExt(m.Pack)) <> '.MSG' then exit;
    an := FindNode(a);
    if not OutColl.Search(@a, i) then begin
       n := TOutNode.Create;
       n.Address := a;
+      n.Name := m.Pack;
       n.Nfo.Time := GetFileTime(m.Pack);
       OutColl.Insert(n);
    end else begin
@@ -1968,6 +1971,7 @@ begin
    if not n.Files.FoundFName(m.Pack) then begin
       if ExistFile(m.Pack) then begin
          f := TOutFile.Create;
+         f.Address := m.Addr;
          f.fMSG := True;
          f.fATT := m.Attr and FileAttached > 0;
          f.Name := m.Pack;
@@ -2081,13 +2085,15 @@ begin
    for ii := 0 to FileNames.Count - 1 do begin
       s := FileNames[ii];
       Nfo := PFileInfo(FileInfos[ii])^;
-      n := TOutNode.Create;
-      n.Address.Zone := -1;
-      n.Nfo.Size := Nfo.Size;
-      n.Nfo.Time := Nfo.Time;
-      n.Name := StrAsg(s);
-      n.FStatus := [osNone];
-      OutColl.AtInsert(0, n);
+      if ExistFile(s) then begin
+         n := TOutNode.Create;
+         n.Address.Zone := -1;
+         n.Nfo.Size := Nfo.Size;
+         n.Nfo.Time := Nfo.Time;
+         n.Name := StrAsg(s);
+         n.FStatus := [osNone];
+         OutColl.AtInsert(0, n);
+      end;
    end;
    FreeObject(FileNames);
    FreeObject(FileInfos);
@@ -2102,7 +2108,7 @@ begin
       if uFindFirst(MakeNormName(fbdr.Path, '*.*'), SR) then begin
          repeat
             if SR.Info.Attr and FAttachDisallowedAttr = 0 then begin
-               AddAddrOutNode(fbdr.Addr, fbdr.Status, OutColl, SR.Info.Size, SR.Info.Time);
+               AddAddrOutNode(fbdr.Addr, fbdr.Status, OutColl, SR.Info.Size, SR.Info.Time, DR, SR.FName);
                fOutboundSize := fOutboundSize + SR.Info.Size;
             end;
          until not uFindNext(SR);
@@ -2277,10 +2283,13 @@ function TOutbound._GetOutCollP(const Single, AFull, Scan: Boolean; const Addr: 
       i: Integer;
       n: TOutNode;
    begin
+      Result := nil;
       if OutCache = nil then Result := nil else begin
          if AFull then begin
             EnterCS(CacheCS);
-            Result := OutCache.Copy;
+            if OutCache <> nil then begin
+               Result := OutCache.Copy;
+            end;   
             LeaveCS(CacheCS);
          end else begin
             Result := TOutNodeColl.Create;
@@ -2288,7 +2297,7 @@ function TOutbound._GetOutCollP(const Single, AFull, Scan: Boolean; const Addr: 
             for i := 0 to OutCache.Count - 1 do begin
                n := OutCache[i];
                if Single and (CompareAddrs(Addr, n.Address) <> 0) then Continue;
-               if n.FStatus <> [osNone] then begin
+               if (n.FStatus <> [osNone]) and ExistFile(n.Name) then begin
                   Result.Insert(n.Copy);
                end;
             end;

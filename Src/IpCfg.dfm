@@ -1,6 +1,6 @@
 object IPcfgForm: TIPcfgForm
-  Left = 221
-  Top = 191
+  Left = 283
+  Top = 244
   HelpContext = 1240
   BorderStyle = bsDialog
   BorderWidth = 6
@@ -818,7 +818,7 @@ object IPcfgForm: TIPcfgForm
           490)
       end
       object gbCache: TGroupBox
-        Left = 255
+        Left = 235
         Top = 2
         Width = 229
         Height = 45

@@ -136,14 +136,17 @@ begin
          FindCloseChangeNotification(hNetmailWatcher[i]);
       end;
       FreeMem(hNetmailWatcher, nSize * SizeOf(THandle));
+      hNetmailWatcher := nil;
    end;
    d := IniFile.GetStrings('gNetPath');
    nSize := d.Count;
-   GetMem(hNetmailWatcher, SizeOf(THandle) * nSize);
-   for i := 0 to nSize - 1 do begin
-      hNetmailWatcher[i] := FindFirstChangeNotification(PChar(TDualRec(d[i]^).St1^),
-                            False, FILE_NOTIFY_CHANGE_LAST_WRITE);
-   end;
+   if nSize > 0 then begin
+      GetMem(hNetmailWatcher, SizeOf(THandle) * nSize);
+      for i := 0 to nSize - 1 do begin
+         hNetmailWatcher[i] := FindFirstChangeNotification(PChar(TDualRec(d[i]^).St1^),
+                               False, FILE_NOTIFY_CHANGE_LAST_WRITE);
+      end;
+   end;   
 end;
 
 destructor TDirectoryWatcher.Destroy;
@@ -253,8 +256,8 @@ begin
 
    Busy := False;
    WaitResult := WaitForMultipleObjects(n + 1 + fSize + nSize, HandlesArray, False, INFINITE) - WAIT_OBJECT_0;
-   Busy := True;
 
+   if ExitNow then exit;
    if Terminated then exit;
 
    if WaitResult = WAIT_FAILED then begin
@@ -265,7 +268,8 @@ begin
    if Terminated then exit;
    if IniFile = nil then exit;
 
-   if Terminated then exit;
+   Busy := True;
+
    case WaitResult of
     0:
        begin
@@ -345,6 +349,7 @@ end;
 procedure StopWatcher;
 begin
   DirectoryWatcher.Terminated := True;
+  DirectoryWatcher.Priority := tpHighest;
   while DirectoryWatcher.Busy do begin
      sleep(100);
      Application.ProcessMessages;

@@ -43,148 +43,142 @@ implementation uses xBase, xFido, LngTools, Recs, AltRecs;
 
 procedure TPwdForm.SetPsw(APsw: Pointer);
 begin
-  FillGridPswOvr(APsw, gPsw, True);
+   FillGridPswOvr(APsw, gPsw, True);
 end;
 
 function SetupPasswords;
 var
-  PwdForm: TPwdForm;
+   PwdForm: TPwdForm;
 begin
-  PwdForm := TPwdForm.Create(Application);
-  PwdForm.SetData;
-  Result := PwdForm.ShowModal = mrOK;
-  FreeObject(PwdForm);
+   PwdForm := TPwdForm.Create(Application);
+   PwdForm.SetData;
+   Result := PwdForm.ShowModal = mrOK;
+   FreeObject(PwdForm);
 end;
 
 function TPwdForm.PswValid: Boolean;
 var
-  I: Integer;
-  A: TFidoAddrColl;
-  S: string;
-  R: TPasswordRec;
+   I: Integer;
+   A: TFidoAddrColl;
+   S: string;
+   R: TPasswordRec;
 begin
-  Result := False;
-  TPasswordColl(Psw).FreeAll;
-  for I := 1 to gPsw.RowCount - 1 do
-  begin
-    S := gPsw[1, I];
-    if S = '' then
-    begin
-      if gPsw.RowCount = 2 then Result := True else DisplayErrorFmtLng(rsPswEmptyAdr, [I], Handle);
-      Exit;
-    end;
-    A := CreateAddrColl(S);
-    if A = nil then
-    begin
-      DisplayErrorFmtLng(rsPswInvAdrLst, [S, I], Handle);
-      Exit;
-    end;
-    S := Trim(gPsw[2, I]);
-    if S = '' then
-    begin
-      DisplayErrorFmtLng(rsPswEmptyPwd, [I], Handle);
-      Exit;
-    end;
-    R := TPasswordRec.Create;
-    XChg(R.AddrList, A); FreeObject(A);
-    R.PswStr := S;
-    TPasswordColl(Psw).Insert(R);
-  end;
-  TPasswordColl(Psw).AuxFile := Trim(eAuxPwds.Text);
-  Result := ReportDuplicateAddrs(Psw, gPsw, rsPswDup);
+   Result := False;
+   TPasswordColl(Psw).FreeAll;
+   for I := 1 to gPsw.RowCount - 1 do begin
+      S := gPsw[1, I];
+      if S = '' then begin
+         if gPsw.RowCount = 2 then Result := True else DisplayErrorFmtLng(rsPswEmptyAdr, [I], Handle);
+         Exit;
+      end;
+      A := CreateAddrColl(S);
+      if A = nil then begin
+         DisplayErrorFmtLng(rsPswInvAdrLst, [S, I], Handle);
+         Exit;
+      end;
+      S := Trim(gPsw[2, I]);
+      if S = '' then begin
+         DisplayErrorFmtLng(rsPswEmptyPwd, [I], Handle);
+         Exit;
+      end;
+      R := TPasswordRec.Create;
+      XChg(R.AddrList, A); FreeObject(A);
+      R.PswStr := S;
+      TPasswordColl(Psw).Insert(R);
+   end;
+   TPasswordColl(Psw).AuxFile := Trim(eAuxPwds.Text);
+   Result := ReportDuplicateAddrs(Psw, gPsw, rsPswDup);
 end;
 
 procedure TPwdForm.SetData;
 begin
-  SetPsw(Cfg.Passwords);
-  GridFillColLng(gPsw, rsPswGrid);
-  TPasswordColl(Psw).AuxFile := Cfg.Passwords.AuxFile;
-  eAuxPwds.Text := Trim(TPasswordColl(Psw).AuxFile);
-  Crc32 := Cfg.Passwords.Crc32(CRC32_INIT);
+   SetPsw(Cfg.Passwords);
+   GridFillColLng(gPsw, rsPswGrid);
+   TPasswordColl(Psw).AuxFile := Cfg.Passwords.AuxFile;
+   eAuxPwds.Text := Trim(TPasswordColl(Psw).AuxFile);
+   Crc32 := Cfg.Passwords.Crc32(CRC32_INIT);
 end;
 
 procedure TPwdForm.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
 begin
-  if ModalResult <> mrOK then CanClose := True else CanClose := PswValid;
+   if ModalResult <> mrOK then CanClose := True else CanClose := PswValid;
 end;
 
 procedure TPwdForm.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
-  if ModalResult <> mrOK then Exit;
-  if TPasswordColl(Psw).Crc32(CRC32_INIT) <> Crc32 then
-  begin
-    CfgEnter;
-    Xchg(Integer(Cfg.Passwords), Integer(Psw));
-    CfgLeave;
-    StoreConfig(Handle);
-    AltStoreConfig(Handle);
-    PostMsg(WM_IMPORTPWDL);
-  end;
-  if changed then
-  begin
-    TPasswordColl(Psw).AuxFile := Trim(eAuxPwds.Text);
-    Cfg.Passwords.AuxFile := TPasswordColl(Psw).AuxFile;
-    StoreConfig(Handle);
-    AltStoreConfig(Handle);
-    PostMsg(WM_IMPORTPWDL);
-  end;
+   if ModalResult <> mrOK then Exit;
+   if TPasswordColl(Psw).Crc32(CRC32_INIT) <> Crc32 then begin
+      CfgEnter;
+      Xchg(Integer(Cfg.Passwords), Integer(Psw));
+      CfgLeave;
+      StoreConfig(Handle);
+      AltStoreConfig(Handle);
+      PostMsg(WM_IMPORTPWDL);
+   end;
+   if changed then begin
+      TPasswordColl(Psw).AuxFile := Trim(eAuxPwds.Text);
+      Cfg.Passwords.AuxFile := TPasswordColl(Psw).AuxFile;
+      StoreConfig(Handle);
+      AltStoreConfig(Handle);
+      PostMsg(WM_IMPORTPWDL);
+   end;
 end;
 
 procedure TPwdForm.FormCreate(Sender: TObject);
 begin
-  FillForm(Self, rsPwdForm);
-  Psw := TPasswordColl.Create;
+   FillForm(Self, rsPwdForm);
+   Psw := TPasswordColl.Create;
 end;
 
 procedure TPwdForm.FormDestroy(Sender: TObject);
 begin
-  FreeObject(Psw);
+   FreeObject(Psw);
 end;
 
 procedure TPwdForm.bHelpClick(Sender: TObject);
 begin
-  Application.HelpContext(HelpContext);
+   Application.HelpContext(HelpContext);
 end;
 
 function PswSort(Item1, Item2: Pointer): Integer;
 
 function ar(i: Integer): string;
 begin
-  Result := AddRightSpaces(IntToStr(i), 5);
+   Result := AddRightSpaces(IntToStr(i), 5);
 end;
 
 function al(i: Integer): string;
 begin
-  Result := AddLeftSpaces(IntToStr(i), 5);
+   Result := AddLeftSpaces(IntToStr(i), 5);
 end;
 
 var
-  n1: TPasswordRec absolute Item1;
-  n2: TPasswordRec absolute Item2;
-  a1,
-  a2: TFidoAddress;
+   n1: TPasswordRec absolute Item1;
+   n2: TPasswordRec absolute Item2;
+   a1,
+   a2: TFidoAddress;
 begin
-  if n1.AuxStr = '' then begin a1 := n1.AddrList[0]; n1.AuxStr := al(a1.Zone)+ar(a1.Net)+al(a1.Node)+al(a1.Point) end;
-  if n2.AuxStr = '' then begin a2 := n2.AddrList[0]; n2.AuxStr := al(a2.Zone)+ar(a2.Net)+al(a2.Node)+al(a2.Point) end;
-  Result := CompareStr(n1.AuxStr, n2.AuxStr);
+   if n1.AuxStr = '' then begin a1 := n1.AddrList[0]; n1.AuxStr := al(a1.Zone)+ar(a1.Net)+al(a1.Node)+al(a1.Point) end;
+   if n2.AuxStr = '' then begin a2 := n2.AddrList[0]; n2.AuxStr := al(a2.Zone)+ar(a2.Net)+al(a2.Node)+al(a2.Point) end;
+   Result := CompareStr(n1.AuxStr, n2.AuxStr);
 end;
 
 procedure TPwdForm.bSortClick(Sender: TObject);
 begin
-  if not PswValid then Exit;
-  TPasswordColl(Psw).Sort(PswSort);
-  SetPsw(Psw);
+   if not PswValid then Exit;
+   TPasswordColl(Psw).Sort(PswSort);
+   SetPsw(Psw);
 end;
 
 procedure TPwdForm.bImportPwdClick(Sender: TObject);
 begin
-  if not PswValid then Exit;
-  DoImportOp(Psw, gPsw, True, True);
+   if not PswValid then Exit;
+   DoImportOp(Psw, gPsw, True, True);
 end;
 
 procedure TPwdForm.eAuxPwdsChange(Sender: TObject);
 begin
-  changed := true;
+   changed := true;
 end;
 
 end.

@@ -7,7 +7,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms,
-  ComCtrls, StdCtrls, ExtCtrls, xFido, MClasses;
+  ComCtrls, StdCtrls, ExtCtrls, xFido, MClasses, Menus;
 
 type
   TNodelistBrowser = class(TForm)
@@ -43,6 +43,8 @@ type
     lFlagsIp: TTransEdit;
     llFlagsIp: TLabel;
     bvlInfo: TBevel;
+    PM: TPopupMenu;
+    Export1: TMenuItem;
     procedure FormActivate(Sender: TObject);
     procedure TreeCollapsed(Sender: TObject; Node: TTreeNode);
     procedure TreeExpanding(Sender: TObject; Node: TTreeNode; var AllowExpansion: Boolean);
@@ -54,6 +56,7 @@ type
     procedure FormDestroy(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure bHelpClick(Sender: TObject);
+    procedure Export1Click(Sender: TObject);
   private
     { Private declarations }
     Activated: Boolean;
@@ -715,6 +718,40 @@ end;
 procedure TNodelistBrowser.bHelpClick(Sender: TObject);
 begin
   Application.HelpContext(HelpContext);
+end;
+
+procedure TNodelistBrowser.Export1Click(Sender: TObject);
+var
+   a: TFidoAddress;
+   n: TFidoNode;
+   c: TFidoNodeColl;
+   f: TextFile;
+   m: TextFile;
+   i: integer;
+   p: string;
+begin
+   if Tree.Selected <> nil then begin
+      n := Tree.Selected.Data;
+      a := n.Addr;
+      c := GetScope(a);
+      if c <> nil then begin
+         AssignFile(f, 'Segment1.txt');
+         Rewrite(f);
+         AssignFile(m, 'Segment2.txt');
+         Rewrite(m);
+         for i := 0 to CollMax(c) do begin
+            n := c[i];
+            p := '    ';
+            if n.PrefixFlag = nfPvt then p := 'Pvt ' else
+            if n.PrefixFlag = nfHold then p := 'Hold' else
+            if n.PrefixFlag = nfDown then p := 'Down';
+            Writeln(f, p, ' ', Addr2Str(n.Addr), ' ', n.Sysop);
+            Writeln(m, n.Sysop, ' ', Addr2Str(n.Addr));
+         end;
+         CloseFile(f);
+         CloseFile(m);
+      end;
+   end;
 end;
 
 end.

@@ -2604,16 +2604,18 @@ begin
    LeaveFidoPolls;
    for i := 0 to CollMax(c) do begin
       n := c[i];
-      if OutDial(n.FStatus, DirAsNormal) then begin
+      if ExistFile(n.Name) and OutDial(n.FStatus, DirAsNormal) then begin
          an := FindNode(n.Address);
          if (an = nil) or ((an.DialupData = nil) and (an.IPData = nil)) then begin
             FreeObject(an);
          end else begin
             if (osImmedMail in n.FStatus) or
                (osImmed in n.FStatus) then
+            begin
                InsertPoll(an, n.FStatus, ptpImm)
-            else
+            end else begin
                InsertPoll(an, n.FStatus, ptpOutb);
+            end;
          end;
       end;
    end;
@@ -4121,7 +4123,7 @@ end;
 
 procedure TMailerThread.SetSessionKey(const A: TFidoAddress);
 var
-   en: TEncryptedNodeData;
+  en: TEncryptedNodeData;
    i: Integer;
 begin
    SD.SessionKeyAddr := A;
@@ -4926,6 +4928,7 @@ const
       a: TFidoAddress;
       n: TAdvNode;
    begin
+      Log(ltInfo, 'Remote requested to test transit to: ' + P.CustomInfo);
       if ParseAddress(P.CustomInfo, a) then begin
          n := FindNode(a);
          if (n <> nil) and (n.IPData <> nil) then begin
@@ -6437,11 +6440,13 @@ begin
 end;
 
 function TMailerThread.ChangeOrder(P: TBaseProtocol): boolean;
-type TMailSet = set of TOutStatus; //workaround of missed code
-var n: TOutFile;
-    i,
-    j: integer;
-    MailSet: TMailSet;
+type
+   TMailSet = set of TOutStatus; //workaround of missed code
+var
+   n: TOutFile;
+   i,
+   j: integer;
+   MailSet: TMailSet;
 begin
    MailSet := [osImmedMail, osCrashMail, osDirectMail, osNormalMail, osHoldMail];
    SD.OutFiles.Enter;
@@ -6665,10 +6670,11 @@ begin
             end;
          aaRefuse:
             begin
-               if r = nil then
+               if r = nil then begin
                   sss := ''
-               else
+               end else begin
                   sss := KAR[r.KillAction];
+               end;   
                LogFmt(ltInfo, 'Remote refused ''%s''%s', [P.T.D.FName, sss]);
             end;
          end;
@@ -6998,7 +7004,6 @@ begin
                end;
                FidoOut.Unlock(f.Address, osBusy);
             end;
-            PTDFName := JustName('a');
             PTDFName := JustName(f.Name);
          end;
       end;
@@ -8524,7 +8529,7 @@ begin
          if d <> nil then begin
             n := d.MatchAddr('gHooks', a);
             if n > -1 then begin
-               s.Add(TDualRec(d.Items[n]^).st2^ + ' ' + Addr2Str(a));
+               s.Add(TDualRec(d.Items[n]^).st2^ + ' ' + Addr2Str(a) + ' ' + Name);
             end;
          end;
       end;
@@ -12260,8 +12265,11 @@ procedure TMailerThread.DoMisc;
    var
       i: Integer;
    begin
-      for i := 0 to CollMax(SD.rmtAddrs) do
+      EnterCS(FidoOut.CacheCS);
+      for i := 0 to CollMax(SD.rmtAddrs) do begin
          FidoOut.FinalizeSession(SD.rmtAddrs[i], SD.KillSentREQ);
+      end;
+      LeaveCS(FidoOut.CacheCS);
    end;
 
    procedure LogModemInit;
@@ -14082,7 +14090,8 @@ begin
          Exit;
       end;
       SetStatusMsg(rsMMOutChk, '');
-      c := FidoOut.GetOutColl(False, False);
+      if ExitNow then exit;
+      c := FidoOut.GetOutColl(False, True);
       ChkErrMsg;
       if c <> nil then begin
          RecreatePolls(c);
@@ -14177,8 +14186,7 @@ function TMailerThread.GetInAKAs: string;
 var
    i: Integer;
 begin
-   for i := 0 to CollMax(SD.rmtAddrs) do
-   begin
+   for i := 0 to CollMax(SD.rmtAddrs) do begin
       Result := GetOutAKAs(SD.rmtAddrs[i]);
       if Result <> SD.Station.Address then begin
          if SD.UsedAKA <> Result then begin
@@ -14438,10 +14446,11 @@ begin
    if Recalc then
       DoRecalc
    else begin
-      if NextMinute then
+      if NextMinute then begin
          DoCheck
-      else
+      end else begin
          PurgeZombies;
+      end;
    end;
 end;
 
@@ -15285,8 +15294,10 @@ begin
    DaemonStarted := False;
    OnlineStarted := False;
    PurgeAdvNodeCache;
-   InvalidatePollAddrs;
-   _RecalcPolls(False);
+   if not ExitNow then begin
+      InvalidatePollAddrs;
+     _RecalcPolls(False);
+   end;
    FreeObject(DaemonActiveFlag);
 end;
 

@@ -29,6 +29,7 @@ type
     procedure BitBtn3Click(Sender: TObject);
   private
     { Private declarations }
+    LogView: TJvEditor;
   public
     { Public declarations }
   end;
@@ -46,7 +47,7 @@ var
             (FC: clNavy; BC: clWhite; Style: [])
            );
 
-procedure DoConfigureLogV;
+procedure DoConfigureLogV(const Host: TJvEditor);
 
 implementation
 
@@ -59,6 +60,7 @@ var
    s: TFileStream;
 begin
    Config_Logv := TConfig_Logv.Create(nil);
+   Config_Logv.LogView := Host;
    sel := 1;
    Config_Logv.UpdateForm(nil);
    if Config_Logv.ShowModal = mrOk then begin
@@ -115,6 +117,7 @@ begin
    kCk.Checked := (fsItalic in AttrArray[sel].Style);
    fC := True;
    Preview.Invalidate;
+   Logview.Repaint;
 end;
 
 procedure TConfig_Logv.FormChange(Sender: TObject);

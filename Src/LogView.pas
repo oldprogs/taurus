@@ -153,7 +153,8 @@ end;
 
 procedure TLogViewer.ColorsSetup1Click(Sender: TObject);
 begin
-   DoConfigureLogV;
+   DoConfigureLogV(mmView);
+   mmView.Repaint;
 end;
 
 procedure TLogViewer.ClearLog1Click(Sender: TObject);
