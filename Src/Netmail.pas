@@ -28,6 +28,9 @@ type
       Numb: dword;
       Body: Pointer;
       Dele: boolean;
+      Fido: boolean;
+      Attr: system.word;
+      Flgs: string;
       function IChr: string;
       function Date: string;
       destructor Destroy; override;
@@ -50,12 +53,13 @@ type
       function  FindName(const n: string): integer;
       function  GetAnItem(i: integer): TNetmailPkt;
       procedure SetItem(i: integer; p: TNetmailPkt);
-      property  Items[i: integer]: TNetmailPkt read GetAnItem write SetItem;
+      property  Items[i: integer]: TNetmailPkt read GetAnItem write SetItem; default;
    end;
 
    TNetColl = class(TColl)
    protected
-      Procedure MarkDel;
+      procedure MarkDel(Fido: boolean);
+      procedure Unmark(n: string);
       function  GetNMsg(i: integer): TNetmailMSG;
    public
       property  Items[i: integer]: TNetmailMsg read GetNMsg; default;
@@ -80,9 +84,13 @@ type
       NetColl: TNetColl;
       LstColl: TStringList;
       FilColl: TStringList;
+      NeedScan: boolean;
       constructor Create; virtual;
       destructor Destroy; override;
+      procedure ScanMSG;
       procedure ScanMail;
+      procedure FillMSG(const n: TStream; var l: TNetmailMsg);
+      procedure ScanMesage(const pack: string);
       procedure ScanPacket(const pack: string);
       procedure Route(const a: TFidoAddress; Log: TLogProcedure);
       procedure DeleteMail(const Id: string);
@@ -99,7 +107,7 @@ implementation
 
 uses
    RadIni, RRegExp, SysUtils, Wizard, Outbound, DateUtils,
-   IniFiles, Forms;
+   IniFiles, Forms, Watcher;
 
 procedure FreeNetmailHolder;
 begin
@@ -214,7 +222,7 @@ var
 begin
    Result := -1;
    for i := 0 to count - 1 do begin
-      if UpperCase(n) = Items[i].Pack then begin
+      if UpperCase(n) = UpperCase(Items[i].Pack) then begin
          Result := i;
          exit;
       end;
@@ -223,12 +231,12 @@ end;
 
 function TPktColl.GetAnItem;
 begin
-   Result := self[i];
+   Result := inherited Items[i];
 end;
 
 procedure TPktColl.SetItem;
 begin
-   self[i] := p;
+   inherited Items[i] := p;
 end;
 
 procedure TNetColl.MarkDel;
@@ -236,7 +244,20 @@ var
    i: integer;
 begin
    for i := 0 to Count - 1 do begin
-      Items[i].Dele := True;
+      if Items[i].Fido = Fido then begin
+         Items[i].Dele := True;
+      end;
+   end;
+end;
+
+procedure TNetColl.Unmark;
+var
+   i: integer;
+begin
+   for i := 0 to Count - 1 do begin
+      if Items[i].Pack = n then begin
+         Items[i].Dele := False;
+      end;
    end;
 end;
 
@@ -293,6 +314,45 @@ begin
    FreeObject(p);
 end;
 
+procedure TNetMail.ScanMSG;
+var
+   SR: tuFindData;
+   FP: string;
+   CC: integer;
+   PK: TNetmailPKT;
+begin
+   FP := AddBackSlash(IniFile.ReadString('MSG', 'Netmail', ''));
+   if uFindFirst(FP + '*.MSG', SR) then begin
+      EnterCS(NetWait);
+      NetColl.Enter;
+      NetColl.MarkDel(True);
+      PktColl.Enter;
+      repeat
+         if Vl(ExtractFileName(SR.FName)) > 0 then begin
+            CC := PktColl.FindName(FP + SR.FName);
+            if (CC = -1) or (PktColl.Items[CC].Mark <> SR.Info.Time) then begin
+               if CC = -1 then begin
+                  PK := TNetmailPKT.Create;
+                  PktColl.Add(PK);
+               end else begin
+                  PK := PktColl[CC];
+               end;
+               ScanMesage(FP + SR.FName);
+               PK.Pack := FP + SR.FName;
+               PK.Mark := SR.Info.Time;
+            end else
+            if CC > -1 then begin
+               NetColl.Unmark(FP + SR.FName);
+            end;
+         end;
+      until not uFindNext(SR);
+      uFindClose(SR);
+      PktColl.Leave;
+      NetColl.Leave;
+      LeaveCS(NetWait);
+   end;
+end;
+
 procedure TNetMail.ScanMail;
 var
    i: integer;
@@ -300,9 +360,10 @@ var
    e: string;
   SR: tuFindData;
 begin
+   ScanMSG;
    EnterCS(NetWait);
    NetColl.Enter;
-   NetColl.MarkDel;
+   NetColl.MarkDel(False);
    p := ExtractFilePath(ExtractDir(inifile.Outbound));
    if uFindFirst(p + '*.*', SR) then begin
       repeat
@@ -336,6 +397,7 @@ var
    BN: string;
    BF: TBusyFlag;
    CC: integer;
+   PK: TNetmailPKT;
 begin
    if uFindFirst(path + '\*.*', SR) then begin
       RE := GetRegExpr('^[0-9a-f]{8}\.[icdnoh]{1}ut$');
@@ -352,9 +414,15 @@ begin
             if RE.Match(SR.FName) > 0 then begin
                PktColl.Enter;
                CC := PktColl.FindName(path + '\' + SR.FName);
-               if (CC = -1) or (
-                  (CC > -1) and (PktColl.Items[CC].Mark <> SR.Info.Time)) then begin
-                  if CC > - 1 then FreePack(PktColl.Items[CC]);
+               if (CC = -1) or (PktColl.Items[CC].Mark <> SR.Info.Time) then begin
+                  if CC = - 1 then begin
+                     PK := TNetmailPKT.Create;
+                     PK.Pack := path + '\' + SR.FName;
+                     PktColl.Add(PK);
+                  end else begin
+                     PK := PktColl[CC];
+                     FreePack(PK);
+                  end;
                   BN := ChangeFileExt(path + '\' + SR.FName, '.bsy');
                   CC := 0;
                   while ExistFile(BN) do begin
@@ -364,11 +432,17 @@ begin
                      if CC = 50 then break;
                   end;
                   if not ExistFile(BN) then begin
+                     IgnoreNextEvent := True;
                      BF := TBusyFlag.Create(BN, False);
                      ScanPacket(path + '\' + SR.FName);
+                     PK.Mark := SR.Info.Time;
+                     IgnoreNextEvent := True;
                      BF.Finish;
                      BF.Free;
                   end;
+               end else
+               if CC > -1 then begin
+                  NetColl.Unmark(path + '\' + SR.FName);
                end;
                PktColl.Leave;
             end;
@@ -379,13 +453,16 @@ begin
    end;
 end;
 
-procedure TNetmail.ScanPacket;
+procedure SetValue(var a: integer; const b: integer);
+begin
+   if a = 0 then begin
+      a := b;
+   end;
+end;
+
+procedure TNetmail.FillMSG;
 var
-   n: TMemoryStream;
-   h: PktHeaderRec;
-   m: PackedMsgHeaderRec;
    b: byte;
-   l: TNetmailMsg;
    c: integer;
    i: integer;
    j: integer;
@@ -395,18 +472,220 @@ var
    z: string;
    a,
    e: integer;
-   s: int64;
    g: TNetmailMSG;
    d: integer;
    r: PGroup;
+   s: integer;
 
-   procedure SetValue(var a: integer; const b: integer);
+   procedure putstr(const s: string);
+   var
+      t: string;
+      l: integer;
    begin
-      if a = 0 then begin
-         a := b;
-      end;
+      t := s + #0;
+      l := Length(t);
+      move(t[1], p[i], l);
+      inc(i, l);
    end;
 
+begin
+   GetMem(p, n.Size + 80);
+   i := 0;
+   if l.Fido then begin
+      c := 3;
+      putstr(l.Tonm);
+      putstr(l.Frnm);
+      putstr(l.Subj);
+      s := SizeOf(_fidomsgtype) - i;
+   end else begin
+      c := 0;
+      s := 0;
+   end;
+   a := 0;
+   e := 0;
+   d := 0;
+   u := #1'Via ' + Addr2Str(inifile.MainAddr) + ' Taurus ' + CProductVersionA + '/W32 ' + RFCDateStr + #13#0;
+   repeat
+      t := '';
+      repeat
+         b := 0;
+         n.Read(b, 1);
+         p[i] := b;
+         inc(i);
+         if b = 01 then t := '';
+         t := t + chr(b);
+         if (b = 13) or (b = 0) then begin
+            if copy(t, 2, 5) = 'TOPT ' then begin
+               a := StrToInt(ExtractWord(1, ExtractWord(2, t, [' ']), [#13]));
+            end else
+            if copy(t, 2, 5) = 'FMPT ' then begin
+               e := StrToInt(ExtractWord(1, ExtractWord(2, t, [' ']), [#13]));
+            end else
+            if copy(t, 2, 5) = 'INTL ' then begin
+               ParseAddress(ExtractWord(1, ExtractWord(2, t, [' ']), [#13]), l.Addr);
+               ParseAddress(ExtractWord(1, ExtractWord(3, t, [' ']), [#13]), l.From);
+            end else
+            if copy(t, 3, 5) = 'SGID:' then begin
+               GetWrd(t, z, ' ');
+               GetWrd(t, z, #13);
+               for j := 1 to Length(z) do begin
+                  if z[j] = ' ' then z[j] := '#';
+               end;
+               l.MsId := z;
+            end else
+            if copy(t, 2, 5) = 'CHRS:' then begin
+               GetWrd(t, z, ' ');
+               GetWrd(t, z, #13);
+               l.Chrs := z;
+            end else
+            if copy(t, 1, 5) = 'AREA:' then begin
+               GetWrd(t, z, ':');
+               GetWrd(t, z, #13);
+               l.Echo := z;
+               j := LstColl.Add(z);
+               r := Pointer(LstColl.Objects[j]);
+               if r = nil then begin
+                  GetMem(r, SizeOf(TGroup));
+                  r.base := 0;
+                  r.numb := 0;
+               end;
+               inc(r.numb);
+               l.Numb := r.base + r.numb;
+               LstColl.Objects[j] := Pointer(r);
+            end else
+            if copy(t, 2, 5) = 'FLAGS' then begin
+               GetWrd(t, z, ' ');
+               l.Flgs := copy(t, 1, Length(t) - 1);
+            end else
+            if copy(t, 2, 9) = '* Origin:' then begin
+               z := ExtractWord(1, ExtractWord(WordCount(t, ['(']), t, ['(']), [')']);
+               ParseAddress(z, l.From);
+            end;
+            if b = 13 then begin
+               t := '';
+               inc(d);
+            end;
+         end;
+      until (b = 0) or (i >= n.Size - s);
+      if c = 0 then begin
+         l.Tonm := copy(t, 1, Length(t) - 1);
+      end else
+      if c = 1 then begin
+         l.Frnm := copy(t, 1, Length(t) - 1);
+      end else
+      if c = 2 then begin
+         l.Subj := copy(t, 1, Length(t) - 1);
+         l.bOff := n.Position;
+      end;
+      inc(c);
+   until (c = 4) or (i >= n.Size - s);
+   if b <> 0 then inc(i);
+   if pos('Via ' + Addr2Str(inifile.MainAddr) + ' Taurus ', t) = 0 then begin
+      move(u[1], p[i - 1], length(u));
+      i := i + length(u) - 1;
+      l.Addy := length(u) - 1;
+   end;
+   SetValue(l.From.Point, e);
+   SetValue(l.Addr.Point, a);
+   l.Size        := i;
+   l.Line        := d;
+   if l.MsId = '' then begin
+      l.MsId := Addr2Str(l.From) + '#' + Format('%.8x', [GetTickCount xor xRandom32]) + '#gate';
+   end;
+   if not EchoMail then begin
+      GetMem(l.Body, l.Size);
+      move(p^, l.Body^, l.Size);
+   end;
+   g := FindMessage(l.MsId);
+   if g = nil then begin
+      NetColl.Add(l);
+      fBackup := True;
+   end else begin
+      g.Dele := False;
+      g.bOff := l.bOff;
+      g.Offs := l.Offs;
+      FreeObject(l);
+   end;
+   FreeMem(p, n.Size + 80);
+end;
+
+procedure TNetmail.ScanMesage;
+var
+   n: TMemoryStream;
+   h: _fidomsgtype;
+   l: TNetmailMsg;
+   o: TStringColl;
+   s: string;
+   z: string;
+   k: TKillAction;
+begin
+   if not ExistFile(pack) then exit;
+   NetColl.Enter;
+   n := TMemoryStream.Create;
+   if n <> nil then begin
+      try
+         n.LoadFromFile(pack);
+      except
+         n.Free;
+         NetColl.Leave;
+         exit;
+      end;
+      if n.Size > SizeOf(h) then begin
+         n.Read(h, sizeof(h));
+         if (((h.attr and InTransit) > 0) or ((h.attr and Local) > 0)) and ((h.Attr and Sent_) = 0) then begin
+            l := TNetmailMsg.Create;
+            l.Offs := n.Position;
+            l.Pack := pack;
+            l.Fido := True;
+            l.Head.MsgType := 2;
+            l.Head.OrigNode := h.orig_node;
+            l.Head.DestNode := h.dest_node;
+            l.Head.OrigNet  := h.orig_net;
+            l.Head.DestNet  := h.dest_net;
+            l.Frnm := h.from;
+            l.Tonm := h.towhom;
+            l.Subj := h.subject;
+            move(h.azdate, l.Head.DateTime, 20);
+            l.Attr := h.attr;
+            l.Head.Attribute := h.attr and not (Recd or Sent_ or InTransit or Orphan or KillSent or Local or HoldForPickup or FileRequest or FileUpdateReq);
+            FillMSG(n, l);
+            if (l <> nil) and ((h.attr and FileAttached) > 0) then begin
+               o := TStringColl.Create;
+               s := l.Subj;
+               while s <> '' do begin
+                  GetWrd(s, z, ' ');
+                  o.Add(z);
+               end;
+               k := kaBsoNothingAfter;
+               if pos('KFS', l.Flgs) > 0 then begin
+                  k := kaBsoKillAfter;
+               end else
+               if pos('TFS', l.Flgs) > 0 then begin
+                  k := kaBsoTruncateAfter;
+               end;
+               FidoOut.AttachFiles(l.Addr, o, osNormal, k);
+               FreeObject(o);
+               n.Position := 0;
+               h.attr := h.attr and (not FileAttached);
+               n.Write(h, SizeOf(h));
+               n.SaveToFile(pack);
+            end else
+            if (l <> nil) and ((h.attr and FileRequest) > 0) then begin
+               //
+            end;
+         end;
+      end;
+      n.Free;
+   end;
+   NetColl.Leave;
+end;
+
+procedure TNetmail.ScanPacket;
+var
+   n: TMemoryStream;
+   h: PktHeaderRec;
+   m: PackedMsgHeaderRec;
+   l: TNetmailMsg;
 begin
    if not ExistFile(pack) then exit;
    if EchoMail and (FilColl.IndexOf(pack) > -1) then exit;
@@ -421,132 +700,29 @@ begin
          exit;
       end;
       if n.Size > SizeOf(h) then begin
-      u := #1'Via ' + Addr2Str(inifile.MainAddr) + ' Taurus ' + CProductVersionA + '/W32 ' + RFCDateStr + #13#0;
-      s := n.Size + 80;
-      GetMem(p, s);
       n.Read(h, sizeof(h));
       while n.Position < n.Size - sizeof(m) + 3 do begin
          l := TNetmailMsg.Create;
          l.Offs := n.Position;
+         l.Pack := pack;
          n.Read(m, sizeof(m));
          l.Head := m;
-         c := 0;
-         i := 0;
-         a := 0;
-         e := 0;
-         d := 0;
-         repeat
-            t := '';
-            repeat
-               n.Read(b, 1);
-               p[i] := b;
-               inc(i);
-               if b = 01 then t := '';
-               t := t + chr(b);
-               if (b = 13) or (b = 0) then begin
-                  if copy(t, 2, 5) = 'TOPT ' then begin
-                     a := StrToInt(ExtractWord(1, ExtractWord(2, t, [' ']), [#13]));
-                  end else
-                  if copy(t, 2, 5) = 'FMPT ' then begin
-                     e := StrToInt(ExtractWord(1, ExtractWord(2, t, [' ']), [#13]));
-                  end else
-                  if copy(t, 2, 5) = 'INTL ' then begin
-                     ParseAddress(ExtractWord(1, ExtractWord(2, t, [' ']), [#13]), l.Addr);
-                     ParseAddress(ExtractWord(1, ExtractWord(3, t, [' ']), [#13]), l.From);
-                  end else
-                  if copy(t, 3, 5) = 'SGID:' then begin
-                     GetWrd(t, z, ' ');
-                     GetWrd(t, z, #13);
-                     for j := 1 to Length(z) do begin
-                        if z[j] = ' ' then z[j] := '#';
-                     end;
-                     l.MsId := z;
-                  end else
-                  if copy(t, 2, 5) = 'CHRS:' then begin
-                     GetWrd(t, z, ' ');
-                     GetWrd(t, z, #13);
-                     l.Chrs := z;
-                  end else
-                  if copy(t, 1, 5) = 'AREA:' then begin
-                     GetWrd(t, z, ':');
-                     GetWrd(t, z, #13);
-                     l.Echo := z;
-                     j := LstColl.Add(z);
-                     r := Pointer(LstColl.Objects[j]);
-                     if r = nil then begin
-                        GetMem(r, SizeOf(TGroup));
-                        r.base := 0;
-                        r.numb := 0;
-                     end;
-                     inc(r.numb);
-                     l.Numb := r.base + r.numb;
-                     LstColl.Objects[j] := Pointer(r);
-                  end else
-                  if copy(t, 2, 9) = '* Origin:' then begin
-                     z := ExtractWord(1, ExtractWord(WordCount(t, ['(']), t, ['(']), [')']);
-                     ParseAddress(z, l.From);
-                  end;
-                  if b = 13 then begin
-                     t := '';
-                     inc(d);
-                  end;
-               end;
-            until (b = 0) or (i >= s);
-            if c = 0 then begin
-               l.Tonm := copy(t, 1, Length(t) - 1);
-            end else
-            if c = 1 then begin
-               l.Frnm := copy(t, 1, Length(t) - 1);
-            end else
-            if c = 2 then begin
-               l.Subj := copy(t, 1, Length(t) - 1);
-               l.bOff := n.Position;
-            end;
-            inc(c);
-         until (c = 4) or (i >= s);
-         if pos('Via ' + Addr2Str(inifile.MainAddr) + ' Taurus ', t) = 0 then begin
-            move(u[1], p[i - 1], length(u));
-            i := i + length(u) - 1;
-            l.Addy := length(u) - 1;
-         end;
-         SetValue(l.From.Zone, h.OrigZone);
-         SetValue(l.From.Net, m.OrigNet);
-         SetValue(l.From.Node, m.OrigNode);
-         SetValue(l.From.Point, e);
-         l.From.Domain := FindFTNDOM(l.From);
-         SetValue(l.Addr.Zone, h.DestZone);
-         SetValue(l.Addr.Net, m.DestNet);
-         SetValue(l.Addr.Node, m.DestNode);
-         SetValue(l.Addr.Point, a);
-         l.Addr.Domain := FindFTNDOM(l.Addr);
-         l.Lock.Zone   := h.DestZone;
-         l.Lock.Net    := h.DestNet;
-         l.Lock.Node   := h.DestNode;
-         l.Lock.Point  := h.DestPoint;
-         l.Lock.Domain := FindFTNDOM(l.Lock);
-         l.Pack        := pack;
-         l.Size        := i;
-         l.Line        := d;
-         if l.MsId = '' then begin
-            l.MsId := Addr2Str(l.From) + '#' + Format('%.8x', [GetTickCount xor xRandom32]) + '#gate';
-         end;
-         if not EchoMail then begin
-            GetMem(l.Body, l.Size);
-            move(p^, l.Body^, l.Size);
-         end;
-         g := FindMessage(l.MsId);
-         if g = nil then begin
-            NetColl.Add(l);
-            fBackup := True;
-         end else begin
-            g.Dele := False;
-            g.bOff := l.bOff;
-            g.Offs := l.Offs;
-            FreeObject(l);
+         l.Lock.Zone  := h.DestZone;
+         l.Lock.Net   := h.DestNet;
+         l.Lock.Node  := h.DestNode;
+         l.Lock.Point := h.DestPoint;
+         FillMSG(n, l);
+         if l <> nil then begin
+            SetValue(l.From.Net, m.OrigNet);
+            SetValue(l.From.Node, m.OrigNode);
+            SetValue(l.Addr.Net, m.DestNet);
+            SetValue(l.Addr.Node, m.DestNode);
+            l.From.Domain := FindFTNDOM(l.From);
+            l.Addr.Domain := FindFTNDOM(l.Addr);
+            l.Lock.Domain := FindFTNDOM(l.Lock);
          end;
          Application.ProcessMessages;
       end;
-      FreeMem(p, s);
       end;
       n.Free;
    end;
@@ -618,7 +794,16 @@ begin
    for i := 0 to CollMax(NetColl) do begin
       m := NetColl[i];
       if MatchMaskAddress(m.Addr, r) and not MatchMaskAddressListSingle(m.Addr, e) then begin
-         MoveMail(m, a, p);
+         if existfile(m.Pack) then begin
+            MoveMail(m, a, p);
+            ScanActive := True;
+            ScanCounter := 1;
+         end else begin
+            FreeMem(m.Body, m.Size);
+            m.Body := nil;
+            m.MsId := '';
+            FillChar(m.Addr, SizeOf(m.Addr), #0);
+         end;
       end;
    end;
    for i := CollMax(NetColl) downto 0 do begin
@@ -644,11 +829,9 @@ begin
    EnterCS(NetWait);
    if IniFile.DynamicRouting then
    if FidoOut.Lock(a, osBusy, True) then begin
-      for i := 0 to IniFile.NetmailAddrTo.Count - 1 do
-      begin
+      for i := 0 to IniFile.NetmailAddrTo.Count - 1 do begin
          o := IniFile.NetmailAddrTo[i];
-         if MatchMaskAddress(a, o) then
-         begin
+         if MatchMaskAddress(a, o) then begin
             s := IniFile.NetmailAddrFrom[i];
             e := '';
             repeat
@@ -678,7 +861,7 @@ begin
                   MsgColl.AtFree(0);
                end;
             until s = '';
-            break;
+//            break;
          end;
       end;
       FidoOut.Unlock(a, osBusy);
@@ -708,12 +891,25 @@ var
    p: pointer;
    g: integer;
    e: TNetmailMsg;
+   h: _fidomsgtype;
 begin
    NetColl.Enter;
    FreeMem(n.Body, n.Size);
    n.Body := nil;
    n.MsId := '';
    if ExistFile(n.Pack) then begin
+      if n.Fido then begin
+         if (n.Attr and KillSent) > 0 then begin
+            DeleteFile(n.Pack);
+         end else begin
+            i := TFileStream.Create(n.Pack, fmOpenReadWrite);
+            i.Read(h, SizeOf(h));
+            h.attr := h.attr or Sent_;
+            i.Position := 0;
+            i.Write(h, SizeOf(h));
+            i.Free;
+         end;
+      end else
       try
          FidoOut.Lock(n.Lock, osBusy, True);
          i := TFileStream.Create(n.Pack, fmOpenReadWrite);

@@ -9,7 +9,7 @@ uses
    Classes, Menus, Forms, MClasses, ComCtrls, ExtCtrls, mGrids,
    Controls, StdCtrls, Windows, xFido, MlrThr, Outbound,
    Graphics, xMisc, Messages, xBase, SysUtils, Buttons,
-   Dialogs, ImgList, RemoteUnit, xOutline;
+   Dialogs, ImgList, RemoteUnit, xOutline, Netmail;
 
 type
 
@@ -1821,6 +1821,13 @@ begin
                   SendMsg(WM_TABCHANGE);
                end;
             end;
+         WM_CHECKNETMAIL:
+            begin
+               if NetmailHolder <> nil then begin
+                  NetmailHolder.ScanMSG;
+                  TMailerForm(Application.MainForm).RereadOutbound(True);
+               end;
+            end;
 {$IFDEF WS}
          WM_RESOLVE..WM_RESOLVE + WM__NUMRESOLVE - 1: HostResolveComplete(Msg.Msg - WM_RESOLVE, Msg.lParam);
          WM_ADDDAEMONLOG: AddSpcLogStr(Msg.lParam, PanelOwnerDaemon);
@@ -3339,7 +3346,7 @@ procedure TMailerForm.UpdateView(fromcc: boolean);
 
    procedure UpdatePolls;
    const
-      PT: array[TPollType] of Integer = (-1, rsMMptAuto, rsMMptCron, rsMMptManual, rsMMptImm, rsMMptBack, rsMMptRCC);
+      PT: array[TPollType] of Integer = (-1, rsMMptAuto, rsMMptCron, rsMMptManual, rsMMptImm, rsMMptBack, rsMMptRCC, rsMMptNetm);
    var
       C: TColl;
       S: TStringColl;
@@ -4810,7 +4817,7 @@ var
    end;
 
 const
-   PtpTyp: array[TPollType] of Integer = (0, rsMMptpiOutb, rsMMptpiCron, rsMMptpiManual, rsMMptpiImm, rsMMptpiBack, rsMMptpiRCC);
+   PtpTyp: array[TPollType] of Integer = (0, rsMMptpiOutb, rsMMptpiCron, rsMMptpiManual, rsMMptpiImm, rsMMptpiBack, rsMMptpiRCC, rsMMptpiNetm);
 
 var
    s: string;

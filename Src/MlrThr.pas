@@ -227,7 +227,7 @@ const
 var
   RASInvoked: boolean = False;
   RASProcess: boolean = False;
-  RASHangup : boolean = False; 
+  RASHangup : boolean = False;
 
 type
 
@@ -667,7 +667,7 @@ type
   end;
 
   TPollDone = (pdnUnknown, pdnShutDown, pdnOK, pdnDeleted, pdnDeleteAll, pdnAttachLost, pdnNodeDestroyed);
-  TPollType = (ptpUnknown, ptpOutb, ptpCron, ptpManual, ptpImm, ptpBack, ptpRCC);
+  TPollType = (ptpUnknown, ptpOutb, ptpCron, ptpManual, ptpImm, ptpBack, ptpRCC, ptpNetm);
 
   TFidoPoll = class
     FileSendDelayedBusy: Boolean;
@@ -2503,7 +2503,7 @@ var
    P, AP: TFidoPoll;
    I: Integer;
 const
-   CTyp: array[TPollType] of string = ('???', 'Outb', 'Cron', 'Manual', 'Outb/Imm', 'Callback', 'Mirror');
+   CTyp: array[TPollType] of string = ('???', 'Outb', 'Cron', 'Manual', 'Outb/Imm', 'Callback', 'Mirror', 'MSG');
 begin
    EnterFidoPolls;
    AP := nil;
@@ -2591,14 +2591,14 @@ begin
          end;
          if c.Search(@p.Node.Addr, j) then begin
             n := c[j];
-            p.Flav := n.FStatus;
+            p.Flav := p.Flav + n.FStatus;
             if  (p.Typ = ptpOutb) and ((osImmed in n.FStatus) or (osImmedMail in n.FStatus)) then p.Typ := ptpImm;
             if  (p.Typ = ptpImm ) and not (osImmed in n.FStatus) and not (osImmedMail in n.FStatus) then p.Typ := ptpOutb;
             if ((p.Typ = ptpOutb) or
                 (p.Typ = ptpImm)) and (not OutDial(n.FStatus, DirAsNormal)) then FreePoll_I_P;
             c.AtFree(j);
          end else begin
-            if (p.Typ = ptpOutb) or (p.Typ = ptpImm) then FreePoll_I_P;
+            if (p.Typ = ptpOutb) or (p.Typ = ptpImm) or (p.Typ = ptpNetm) then FreePoll_I_P;
          end;
       end;
    end;
@@ -5225,6 +5225,17 @@ begin
          (NetmailHolder <> nil) and not (SD.SessionCore in [scNNTP]) then NetmailHolder.Route(SD.rmtAddrs[n], Log);
    end;
    CfgLeave;
+   if ScanActive then begin
+      if ScanCounter <> 0 then begin
+         ScanCounter := 1000;
+      end;
+      N := 0;
+      while ScanActive do begin
+         Sleep(100);
+         Application.ProcessMessages;
+         if N = 100 then break;
+      end;
+   end;
    N := 0;
    TransmitHold := SD.ActivePoll = nil;
    if not TransmitHold then begin
@@ -5507,7 +5518,6 @@ begin
    SD.SentFiles.Leave;
    LeaveCS(DisplayDataCS);
    IgnoreNextEvent := False;
-   IgnoreNextAlert := True;
 end;
 
 function TMailerThread.AcceptFile(P: TBaseProtocol): TTransferFileAction;
@@ -15741,6 +15751,12 @@ begin
    ForcedUpdate := False;
    ChangeFlag := False;
    FidoOut.ForcedRescan := True;
+   if inifile.DynamicRouting then begin
+      if NetmailHolder = nil then begin
+         NetmailHolder := TNetmail.Create;
+      end;
+      NetmailHolder.ScanMail;
+   end;
    NewNodes := FidoOut.GetOutColl(True);
    FileNames := TStringColl.Create;
    FileNames.IgnoreCase := True;
@@ -15765,10 +15781,6 @@ begin
    end;
    FreeObject(FileNames);
    FreeObject(FileInfos);
-   if NetmailHolder = nil then begin
-      NetmailHolder := TNetmail.Create;
-   end;
-   if inifile.DynamicRouting then NetmailHolder.ScanMail;
    if Update then begin
       if NewNodes = nil then
          FreeObject(StackNodes)
@@ -15797,12 +15809,10 @@ begin
       end;
    end;
 
-   IgnoreNextEvent := False;
    ResetEvt(oEvt);
-   IgnoreNextAlert := True;
-
+   ScanActive := False;
    WaitEvt(oEvt, INFINITE);
-
+   ScanActive := True;
    OldC := NewC;
 
 end;

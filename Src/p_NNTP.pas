@@ -119,7 +119,7 @@ begin
       for i := 0 to CollMax(NetColl) do begin
          Result := NetColl[i];
          if Result.Echo = e then begin
-            if Result.Numb = n then begin
+            if Result.Numb = Cardinal(n) then begin
                exit;
             end;
          end;
@@ -353,7 +353,6 @@ procedure TNNTP.DoStep;
 var
    I: integer;
    N: integer;
-   C: integer;
    S,
    Z: string;
    A: string;
@@ -539,7 +538,7 @@ begin
                         for n := 0 to CollMax(fEcho.NetColl) do begin
                            m := fEcho.NetColl[n];
                            if m.Echo = Group then begin
-                              if m.Numb = i then begin
+                              if m.Numb = Cardinal(i) then begin
                                  PutString(IntToStr(i) + #9 + Dos2Win(m.Subj) + #9 + m.Frnm + #9 + m.Date + #9 + m.MsId + #9 + m.Frnm + #9 + IntToStr(m.Size) + #9 + IntToStr(m.Line));
                                  break;
                               end;

@@ -83,7 +83,6 @@ type
             FlagsCheckPeriod:byte;
             FlagsDir:string;
             GaugeFore:integer;
-            WaitSecRescan:integer;
             GaugeBack:integer;
             LoggerFore:integer;
             LoggerBack:integer;
@@ -121,6 +120,8 @@ type
             Log:      string;
             Outbound: string;
             InCommon: string;
+
+            NetmailDir: string;
             lang: integer;
             helplang: string;
             Synch: TFidoAddress;
@@ -671,6 +672,7 @@ begin
       HomeDir := MakeFullDir('', ReadString(paths, 'HomeDir', ExtractFilePath(ParamStr(0))));
       CfgDir := MakeFulldir('', ReadString(paths, 'config', ExtractFilePath(ParamStr(0))));
       FlagsDir := MakeFullDir('', ReadString(paths, 'flags', ExtractFilePath(ParamStr(0)) + 'FLAGS'));
+      NetmailDir := MakeFullDir('', ReadString('MSG', 'Netmail', ''));
 
       accessFName := ReadString(LogNames, 'access_log', GetRegStringDef('access_log', 'access_log'));
       agentFName := ReadString(LogNames, 'agent_log', GetRegStringDef('agent_log', 'agent_log'));
@@ -688,7 +690,6 @@ begin
       CPS_MinBytes := ReadInteger(main, 'CPS_MinBytes', $100);
       CPS_MinSecs := ReadInteger(main, 'CPS_MinSecs', 10);
       FlagsCheckPeriod := ReadInteger(main, 'FlagsCheckPeriod', 31);
-      WaitSecRescan := ReadInteger(main, 'WaitSecsRescan', 2000);
       SessionOKFlag := ReadBool(main, 'SessionOKFlag', false);
       SessionAbortedFlag := ReadBool(main, 'SessionAbortedFlag', false);
       D5Out := ReadBool(main, 'D5Out', false);
@@ -913,7 +914,6 @@ begin
       WriteInteger(main, 'CPS_MinBytes', CPS_MinBytes);
       WriteInteger(main, 'CPS_MinSecs', CPS_MinSecs);
       WriteInteger(main, 'FlagsCheckPeriod', FlagsCheckPeriod);
-      WriteInteger(main, 'WaitSecsRescan', WaitSecRescan);
       WriteInteger(main, 'OnClose', OnClose);
       WriteBool(main, 'FixedRetryTimeout', FixedRetryTimeout);
       WriteBool(main, 'SessionAbortedFlag', SessionAbortedFlag);

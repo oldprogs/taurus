@@ -429,6 +429,7 @@ procedure THTTP.ReadMail;
 var
    i: integer;
    m: TNetmailMsg;
+   d: string;
 begin
    fCont := cnRead;
    fRepl := '200 OK';
@@ -443,11 +444,12 @@ begin
       for i := 0 to CollMax(NetColl) do begin
          m := NetColl[i];
          if MatchMaskAddress(m.Addr, Addr2Str(FiAddr)) then begin
+            d := StringReplace(m.MsId, '#', '-', [rfReplaceAll]);
             fBody := fBody +
-                  '<tr><td><a href=pkt?' + m.MsId + '><strong>' + m.MsId + '</strong></td><td width="30"></td>' +
+                  '<tr><td><a href=pkt?' + d + '><strong>' + m.MsId + '</strong></td><td width="30"></td>' +
                   '<td align=right>' + Size2KB(m.Size) + '</td><td width="30"></td>' +
                   '<td>' + m.Date + '</td><td width="30"></td>' +
-                  '<td><a href=remove?' + m.MsId + '>delete</td>';
+                  '<td><a href=remove?' + d + '>delete</td>';
             fBody := fBody + '</tr>';
          end;
       end;
@@ -459,12 +461,14 @@ end;
 procedure THTTP.ReadPKT;
 var
    i: integer;
+   s: string;
    m: TNetmailMsg;
   cp: string;
 begin
    with NetmailHolder do begin
       fCont := cnText;
-      m := FindMessage(ExtractWord(2, fHTML, ['?']));
+      s := StringReplace(ExtractWord(2, fHTML, ['?']), '-', '#', [rfReplaceAll]);
+      m := FindMessage(s);
       if m <> nil then begin
          fRepl := '200';
          SendFTPFile := True;
@@ -507,6 +511,7 @@ var
    z: string;
 begin
    z := ExtractWord(2, fHTML, ['?']);
+   z := StringReplace(z, '-', '#', [rfReplaceAll]);
    fCont := cnDele;
    with NetmailHolder do begin
       m := FindMessage(z);

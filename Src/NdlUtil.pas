@@ -101,7 +101,7 @@ var
 
 implementation
 
-uses Recs, AltRecs, LngTools, RadIni, Wizard, IniFiles;
+uses Recs, AltRecs, LngTools, RadIni, Wizard, IniFiles, Plus;
 
 {$R *.DFM}
 
@@ -814,7 +814,7 @@ var
        if I = -1 then begin
           I := NodeController.Lists.Add(FName);
        end;
-       NodeController.Lists.Objects[i] := Pointer(DT);
+       NodeController.Lists.Objects[i] := Pointer(Plus.GetFileTime(FName));
     end;
     FindClose(SR);
     if FName = '' then Exit;

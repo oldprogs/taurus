@@ -48,6 +48,7 @@ object LogViewer: TLogViewer
     Font.Style = []
     ParentColor = False
     ParentFont = False
+    PopupMenu = PM
     TabStop = True
     UseDockManager = False
   end
@@ -56,5 +57,13 @@ object LogViewer: TLogViewer
     OnTimer = TMTimer
     Left = 16
     Top = 24
+  end
+  object PM: TPopupMenu
+    Left = 56
+    Top = 24
+    object ColorsSetup1: TMenuItem
+      Caption = 'Setup Colors'
+      OnClick = ColorsSetup1Click
+    end
   end
 end

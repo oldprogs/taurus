@@ -2,19 +2,22 @@ unit LogView;
 interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, xBase, JvEditor, ExtCtrls;
+  Dialogs, StdCtrls, xBase, JvEditor, ExtCtrls, Menus, Logv_Conf;
 
 type
 
   TLogViewer = class(TForm)
     mmView: TJvEditor;
     TM: TTimer;
+    PM: TPopupMenu;
+    ColorsSetup1: TMenuItem;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure mmViewGetLineAttr(Sender: TObject; var Line: String;
       index: Integer; var Attrs: TLineAttrs);
     procedure FormKeyPress(Sender: TObject; var Key: Char);
     procedure TMTimer(Sender: TObject);
+    procedure ColorsSetup1Click(Sender: TObject);
   private
     { Private declarations }
     fLogName: string;
@@ -28,13 +31,6 @@ type
 
 var
   LogViewer: TLogViewer;
-  AttrArray: Array[1..5] of TLineAttr =
-           ((FC:clBlack;BC:clWhite;Style:[]),
-            (FC:clRed;BC:clWhite;Style:[]),
-            (FC:clOlive;BC:clWhite;Style:[]),
-            (FC:clPurple;BC:clWhite;Style:[]),
-            (FC:clBlue;BC:clWhite;Style:[{fsBold}])
-           );
 
 implementation
 
@@ -55,7 +51,6 @@ begin
    finally
      St.Free;
    end;
-//   mmView.Lines.LoadFromFile(s);
    tr := mmView.Lines.Count - tr;
    if (mmView.TopRow + tr > mmView.Lines.Count - mmView.VisibleRowCount - 2) or (fLogName <> s) then begin
       mmView.SetLeftTop(0, mmView.Lines.Count - mmView.VisibleRowCount + 2);
@@ -92,44 +87,45 @@ var
 begin
 r := AttrArray[1];
 
-if (Pos ('error',Line)<>0) or
-   (Pos ('invalid',Line)<>0) or
-   (Pos ('bad',Line)<>0) or
-   (Pos ('SYS0',Line)<>0) or
-   (Pos ('aborted',Line)<>0) then r := AttrArray[2];
+if (Pos ('error', Line) <> 0) or
+   (Pos ('invalid', Line) <> 0) or
+   (Pos ('bad', Line) <> 0) or
+   (Pos ('SYS0', Line) <> 0) or
+   (Pos ('aborted', Line) <> 0) then r := AttrArray[2];
 
-if (Pos ('Calling',Line)<>0) or
-   (Pos ('Initializing modem',Line)<>0) or
-   (Pos ('Connect',Line)<>0) or
-   (Pos ('Sending',Line)<>0) or
-   (Pos ('Receiving',Line)<>0) or
-   (Pos ('Sent',Line)<>0) or
-   (Pos ('Received',Line)<>0) or
-   (Pos ('End of batch',Line)<>0) or
-   (Pos ('EMSI data receive',Line)<>0) or
-   (Pos ('-Poll',Line)<>0) then r := AttrArray[3];
+if (Pos ('Calling', Line) <> 0) or
+   (Pos ('Initializing modem', Line) <> 0) or
+   (Pos ('Connect', Line) <> 0) or
+   (Pos ('Sending', Line) <> 0) or
+   (Pos ('Receiving', Line) <> 0) or
+   (Pos ('Sent', Line) <> 0) or
+   (Pos ('Received', Line) <> 0) or
+   (Pos ('End of batch', Line) <> 0) or
+   (Pos ('EMSI data receive', Line) <> 0) or
+   (Pos ('-Poll', Line) <> 0) then r := AttrArray[3];
 
-if (Pos ('NO DIALTONE',Line)<>0) or
-   (Pos ('BUSY',Line)<>0) or
-   (Pos ('ERROR',Line)<>0) or
-   (Pos ('RING',Line)<>0) or
-   (Pos ('OK',Line)<>0) or
-   (Pos ('TAPI',Line)<>0) or
-   (Pos ('"GET',Line)<>0) then r := AttrArray[4];
+if (Pos ('NO DIALTONE', Line) <> 0) or
+   (Pos ('BUSY', Line) <> 0) or
+   (Pos ('ERROR', Line) <> 0) or
+   (Pos ('RING', Line) <> 0) or
+   (Pos ('OK', Line) <> 0) or
+   (Pos ('TAPI', Line) <> 0) or
+   (Pos ('"GET', Line) <> 0) or
+   (Pos ('Routing', Line) <> 0) then r := AttrArray[4];
 
-if (Pos ('[WZ]',Line)<>0) or
-   (Pos ('Password-protected session',Line)<>0) or
-   (Pos ('Non-password session',Line)<>0) or
-   (Pos ('Station : ',Line)<>0) or
-   (Pos ('SysOp : ',Line)<>0) or
-   (Pos ('Address : ',Line)<>0) or
-   (Pos ('Number : ',Line)<>0) or
-   (Pos ('Flags : ',Line)<>0) or
-   (Pos ('Mailer : ',Line)<>0) or
-   (Pos ('EMSI Addon : ',Line)<>0) or
-   (Pos ('Time : ',Line)<>0) or
-   (Pos ('"PUT',Line)<>0) or
-   (Pos ('+Poll',Line)<>0) then r := AttrArray[5];
+if (Pos ('[WZ]', Line) <> 0) or
+   (Pos ('Password-protected session', Line) <> 0) or
+   (Pos ('Non-password session', Line) <> 0) or
+   (Pos ('Station : ', Line) <> 0) or
+   (Pos ('SysOp : ', Line) <> 0) or
+   (Pos ('Address : ', Line) <> 0) or
+   (Pos ('Number : ', Line) <> 0) or
+   (Pos ('Flags : ', Line) <> 0) or
+   (Pos ('Mailer : ', Line) <> 0) or
+   (Pos ('EMSI Addon : ', Line) <> 0) or
+   (Pos ('Time : ', Line) <> 0) or
+   (Pos ('"PUT', Line) <> 0) or
+   (Pos ('+Poll', Line) <> 0) then r := AttrArray[5];
 
    for i := Low(Attrs) to High(Attrs) do Attrs[i] := r;
 end;
@@ -146,6 +142,11 @@ begin
       oTime := fTime;
       LogViewer.LogName := LogViewer.LogName;
    end;
+end;
+
+procedure TLogViewer.ColorsSetup1Click(Sender: TObject);
+begin
+   DoConfigureLogV;
 end;
 
 end.

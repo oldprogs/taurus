@@ -958,33 +958,33 @@ begin
                   Done  := false;
                   while (Count < RxBufPtr) and (not Done) do
                   begin
-                    if (d[ofsRx+Count] = byte('\')) then
+                    if (d[ofsRx + Count] = byte('\')) then
                     begin
                       Inc(Count);
-                      If (d[ofsRx+Count] <> byte('\')) then
+                      If (d[ofsRx + Count] <> byte('\')) then
                       begin
-                        I := d[ofsRx+Count];
-                        N := d[ofsRx+Count + 1];
+                        I := d[ofsRx + Count];
+                        N := d[ofsRx + Count + 1];
                         Inc(Count);
-                        Dec(I,48);
-                        If (I > 9) then Dec(I,39);
-                        Dec(N,48);
-                        If (N > 9) then Dec(N,39);
+                        Dec(I, 48);
+                        If (I > 9) then Dec(I, 39);
+                        Dec(N, 48);
+                        If (N > 9) then Dec(N, 39);
                         If (I and $FFF0 <> 0) or (N and $FFF0 <> 0) then
                           begin
                             C := H_NOPKT;
                             Done := true;
                           end;
-                        d[ofsRx+Index] := (I shl 4) or N;
+                        d[ofsRx + Index] := (I shl 4) or N;
                         Inc(Index);
                       end else
                       begin
-                        d[ofsRx+Index] := d[ofsRx+Count];
+                        d[ofsRx + Index] := d[ofsRx + Count];
                         Inc(Index);
                       end;
                     end else
                     begin
-                      d[ofsRx+Index] := d[ofsRx+Count];
+                      d[ofsRx + Index] := d[ofsRx + Count];
                       Inc(Index);
                     end;
                     Inc(Count);
@@ -1000,14 +1000,14 @@ begin
                   Index := 0;
                   while Count < RxBufPtr do
                   begin
-                    I := I or ((d[ofsRx+Count] and $7f) shl N);
-                    Inc(N,7);
+                    I := I or ((d[ofsRx + Count] and $7f) shl N);
+                    Inc(N, 7);
                     If N >= 8 then
                     begin
-                      d[ofsRx+Index] := byte(I) and $FF;
+                      d[ofsRx + Index] := byte(I) and $FF;
                       Inc(Index);
                       I := I shr 8;
-                      Dec(N,8);
+                      Dec(N, 8);
                     end;
                     Inc(Count);
                   end {while};
@@ -1021,34 +1021,34 @@ begin
                   Done  := false;
                   while (N >= 4) and (not Done) do
                   begin
-                    If ((d[ofsRx+Count]     <= byte(' ')) or (d[ofsRx+Count]     >= byte('a'))  or
-                        (d[ofsRx+Count + 1] <= byte(' ')) or (d[ofsRx+Count + 1] >= byte('a'))  or
-                        (d[ofsRx+Count + 2] <= byte(' ')) or (d[ofsRx+Count + 2] >= byte('a'))  or
-                        (d[ofsRx+Count + 3] <= byte(' ')) or (d[ofsRx+Count + 3] >= byte('a'))) then
+                    If ((d[ofsRx + Count]     <= byte(' ')) or (d[ofsRx + Count + 0] >= byte('a'))  or
+                        (d[ofsRx + Count + 1] <= byte(' ')) or (d[ofsRx + Count + 1] >= byte('a'))  or
+                        (d[ofsRx + Count + 2] <= byte(' ')) or (d[ofsRx + Count + 2] >= byte('a'))  or
+                        (d[ofsRx + Count + 3] <= byte(' ')) or (d[ofsRx + Count + 3] >= byte('a'))) then
                     begin
                       C := H_NOPKT;
                       Done := true;
                     end else
                     begin
-                      d[ofsRx+Index]     := (h_uudec(d[ofsRx+Count]) shl 2) or (h_uudec(d[ofsRx+Count + 1]) shr 4);
-                      d[ofsRx+Index + 1] := (h_uudec(d[ofsRx+Count + 1]) shl 4) or (h_uudec(d[ofsRx+Count + 2]) shr 2);
-                      d[ofsRx+Index + 2] := (h_uudec(d[ofsRx+Count + 2]) shl 6) or h_uudec(d[ofsRx+Count + 3]);
+                      d[ofsRx + Index]     := (h_uudec(d[ofsRx + Count + 0]) shl 2) or (h_uudec(d[ofsRx + Count + 1]) shr 4);
+                      d[ofsRx + Index + 1] := (h_uudec(d[ofsRx + Count + 1]) shl 4) or (h_uudec(d[ofsRx + Count + 2]) shr 2);
+                      d[ofsRx + Index + 2] := (h_uudec(d[ofsRx + Count + 2]) shl 6) or (h_uudec(d[ofsRx + Count + 3]));
 
-                      Inc(Count,4);
-                      Inc(Index,3);
-                      Dec(N,4);
+                      Inc(Count, 4);
+                      Inc(Index, 3);
+                      Dec(N, 4);
                     end;
                   end {while};
 
                   if (n >= 2) and (not Done) then
                   begin
-                    if (d[ofsRx+Count]     <= byte(' ')) or (d[ofsRx+Count]     >= byte('a')) or
-                       (d[ofsRx+Count + 1] <= byte(' ')) or (d[ofsRx+Count + 1] >= byte('a')) then
+                    if (d[ofsRx + Count]     <= byte(' ')) or (d[ofsRx + Count]     >= byte('a')) or
+                       (d[ofsRx + Count + 1] <= byte(' ')) or (d[ofsRx + Count + 1] >= byte('a')) then
                     begin
                       C := H_NOPKT
                     end else
                     begin
-                      d[ofsRx+Index] := (h_uudec(d[ofsRx+Count]) shl 2) or (h_uudec(d[ofsRx+Count + 1]) shr 4);
+                      d[ofsRx+Index] := (h_uudec(d[ofsRx + Count]) shl 2) or (h_uudec(d[ofsRx+Count + 1]) shr 4);
                       Inc(Index);
                       if (N = 3) then
                       begin
@@ -1091,7 +1091,7 @@ begin
                 C := H_NOPKT;
                 Continue;
               end;
-              if h_Crc32Test(Crc32Block(d[ofsRx],RxPktLen, CRC32_INIT)) then OK := True;
+              if h_Crc32Test(Crc32Block(d[ofsRx], RxPktLen, CRC32_INIT)) then OK := True;
               Dec(RxPktLen, SizeOf(Integer)); (*Remove CRC-32*)
             end else
             begin
@@ -1112,7 +1112,7 @@ begin
 
             if OK then
             begin
-              Result := integer(d[ofsRx+RxPktLen]);
+              Result := integer(d[ofsRx + RxPktLen]);
               Exit;
             end; (*Good Pkt*)
             {$IFDEF HYDRA_DEBUG}

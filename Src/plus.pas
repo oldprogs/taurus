@@ -51,13 +51,14 @@ end;
 
 function GetFileTime;
 var
-  SR: TSearchRec;
+//  SR: TSearchRec;
+  SR: tuFindData;
 begin
-  SR.Time := 0;
-  if FindFirst(FileName, faAnyFile, SR) = 0 then begin
-     FindClose(SR);
+  SR.Info.Time := 0;
+  if uFindFirst(FileName, SR) then begin
+     Result := SR.Info.Time;
+     uFindClose(SR);
   end;
-  Result := SR.Time;
 end;
 
 function GetDirSize;
