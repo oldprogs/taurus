@@ -1045,7 +1045,6 @@ type
     InitModemLogged,
     HandshakeTimeLogged,
     FReqProcessed,
-    DelayEOB,
     rmtPrimaryAddrSet,
     rmtPwdAddrSet,
     ExtPoll,
@@ -1243,7 +1242,6 @@ type
     function FindPassword(const A: TFidoAddress; P: TBaseProtocol): boolean;
     function ChkBinkPAdr(const S: string; P: TBaseProtocol): Boolean;
     function GetBinkPPwd(const A: TFidoAddress): string;
-    function  SetBinkPCanEOB: Char;
     {$IFDEF WS}
     procedure CopyIpStation;
     {$ENDIF}
@@ -4804,13 +4802,10 @@ begin
       if B = 'TIME' then
          SD.rmtTime := A
       else
-     //  if B = 'FREQ' then SD.DelayEOB := True else
       if B = 'TRF' then
          DoTRF
       else
-     //  if B = 'ARGUS/REG' then LogFmt(ltInfo, '%s : %s', [AddLeftSpaces(B, 10), A]) else
          LogFmt(ltInfo, '%s : %s', [AddLeftSpaces('M_NUL', 10), S]);
-     //  if (SD.SessionCore=scBinkP) then SD.DelayEOB := True;
 end;
 
 function TMailerThread.ChkNonEmsiPwd(P: TBaseProtocol): Boolean;
@@ -4946,25 +4941,6 @@ begin
    if Result = '' then Result := '-';
    Result := Chr(Ord(' ') + Ord(Files <> nil)) + Result;
    FreeObject(Files);
-end;
-
-function TMailerThread.SetBinkPCanEOB: Char;
-begin
-   {  if SD.FreqProcessed then
-     begin}
-   if not SD.DelayEOB then
-      Result := 'b'
-   else
-   begin
-      if not SD.FreqProcessed then
-         Result := 'a'
-      else
-      begin
-         SD.DelayEOB := False;
-         Result := 'c'
-      end;
-   end;
-   //  end else Result := 'a';
 end;
 
 procedure TMailerThread.LogFile(P: TBaseProtocol; AStatus: TLogFileStatus);
@@ -5222,7 +5198,6 @@ begin
       lfBinkPAddr:
          if ChkBinkPAdr(Trim(P.CustomInfo), P) then P.CustomInfo := '';
       lfNodePassw: FindPassword(P.FiAddr, P);
-      lfBinkPCanEOB: P.CustomInfo := SetBinkPCanEOB;
       lfChat: Log(ltInfo, 'Remote supports interactive chat');
       lfGZIP: Log(ltInfo, 'Switching to compression mode');
       lfPZIP: Log(ltInfo, 'Switching to packet compression mode');
@@ -5872,7 +5847,6 @@ function TMailerThread.AcceptFile(P: TBaseProtocol): TTransferFileAction;
 
       if ufe = '.REQ' then
       begin
-         //      if (SD.SessionCore=scBinkP) then SD.DelayEOB := True;
          SD.FreqProcessed := False;
          if SD.AcceptReq then
          begin
@@ -6338,8 +6312,6 @@ begin
    s := ASC.LongString;
    FreeObject(ASC);
 
-   //  if (Cores[SD.SessionCore]='BinkP') then SD.DelayEOB := True;
-
    h := CreateTempFile(ATmpDir, 'req', RequestList);
    WriteS;
    ZeroHandle(h);
@@ -6644,7 +6616,6 @@ begin
       if (ProtCore = ptBinkP) and (P.TxClosed) then
       begin
          P.OutFlow := false;
-         SD.DelayEOB := false;
          //      ScanOut;
       end;
    end;
@@ -15966,7 +15937,8 @@ procedure TOutMgrThread.InvokeExec;
 var
    FileNames: TStringColl;
    FileInfos: TFileInfoColl;
-   NewNodes, StackNodes: TOutNodeColl;
+   NewNodes,
+   StackNodes: TOutNodeColl;
    i: Integer;
    n: TOutNode;
    nfo: PFileInfo;
@@ -16002,7 +15974,7 @@ begin
    Update := ForcedUpdate;
    ForcedUpdate := False;
    ChangeFlag := False;
-   FidoOut.ForcedRescan := True;
+//   FidoOut.ForcedRescan := True;
    NewNodes := FidoOut.GetOutColl(True);
    FileNames := TStringColl.Create;
    FileNames.IgnoreCase := True;
@@ -16064,6 +16036,7 @@ begin
    IgnoreNextEvent := False;
    ResetEvt(oEvt);
    IgnoreNextAlert := True;
+
    WaitEvt(oEvt, INFINITE);
 
    OldC := NewC;

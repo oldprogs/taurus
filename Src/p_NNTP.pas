@@ -119,6 +119,7 @@ end;
 
 destructor TNNTP.Destroy;
 begin
+   FreeObject(fEcho);
    inherited Destroy;
 end;
 
@@ -156,7 +157,6 @@ end;
 
 procedure TNNTP.FinisSend;
 begin
-//   fEcho.DeleteMail(rMsId);
    State := bdIdle;
 end;
 
@@ -362,7 +362,6 @@ begin
                         SendFTPFile := True;
                         CustomInfo := m.Pack;
                         fName := m.Pack;
-                        rMsId := m.MsId;
                         FGetNextFile(Self);
                         if (t.d.FName <> '') and (T.Stream <> nil) then begin
                            PutString('220 ' + s + ' <' + m.MsId + '>');
@@ -418,11 +417,14 @@ begin
             if z = 'FROM:' then begin
                nFrom := ExtractWord(1, ExtractWord(1, s, ['<']), ['"']);
                nDest := 'All';
+               rMsId := '';
             end else
             if z = 'REFERENCES:' then begin
                m := fEcho.FindMessage(s);
                if m <> nil then begin
                   nDest := m.Frnm;
+                  aDest := m.From;
+                  rMsId := m.MsId;
                end;
             end else
             if z = 'NEWSGROUPS:' then begin
@@ -486,6 +488,10 @@ begin
                R.Stream.Write(z[1], Length(z));
                z := #1'MSGID: ' + Addr2Str(FiAddr) + ' ' + JustName(R.d.FName) + #13;
                R.Stream.Write(z[1], Length(z));
+               if rMsId <> '' then begin
+                  z := #1'REPLY: ' + Addr2Str(aDest) + ' ' + rMsId + #13;
+                  R.Stream.Write(z[1], Length(z));
+               end;
                if fChrs = '' then fChrs := 'IBMPC';
                z := #1'CHRS: ' + fChrs + ' 2'#13;
                R.Stream.Write(z[1], Length(z));

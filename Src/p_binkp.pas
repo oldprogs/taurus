@@ -53,7 +53,6 @@ type
     bdtxWait_M_GOT,
     bdtxSendEOB,
     bdtxSendSecondEOB,
-    bdtxCheckSendEOB,
     bdtxInitX,
     bdtxDone
   );
@@ -256,7 +255,6 @@ const
     'Wait_M_GOT',
     'SendEOB',
     'SendSecondEOB',
-    'CheckSendEOB',
     'bdtxInitX',
     'Done'
   );
@@ -1109,7 +1107,6 @@ begin
         if count > 2 then
         begin
           tx := bdtxInit;
-          custominfo[1] := 'b';
         end;
         inc(count);
       end;
@@ -1122,7 +1119,7 @@ begin
         T.ClearFileInfo;
         FGetNextFile(Self);
         if T.D.FName = '' then begin
-           tx := bdtxCheckSendEOB;
+           tx := bdtxSendEOB;
            if RemoteUseList then begin
               SendMsg(M_NUL, 'LST CLR');
            end;
@@ -1255,16 +1252,6 @@ begin
       if not GotM_GET then
       if M_GOT_Coll.Count > 0 then Got__(M_GOT_Coll, aaOK) else
       if M_SKIP_Coll.Count > 0 then Got__(M_SKIP_Coll, aaAcceptLater);
-    bdtxCheckSendEOB :
-      begin
-        FLogFile(Self, lfBinkPCanEOB);
-        case CustomInfo[1] of
-          'a' : OutFlow := False;
-          'b' : tx := bdtxSendEOB;
-          'c' : tx := bdtxGetNextFile;
-        end;
-        { CustomInfo := 'EOB/'+CustomInfo[1]; FLogFile(Self, lfDebug);}
-      end;
     bdtxSendEOB :
       begin
         if freqprocessed or Originator then

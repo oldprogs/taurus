@@ -1922,9 +1922,9 @@ begin
   ClearErrorMsg;
   OutColl := TOutNodeColl.Create;
 
-  FileNames := TStringColl.Create('FileNames');
+  FileNames := TStringColl.Create;
   FileNames.IgnoreCase := True;
-  FileInfos := TFileInfoColl.Create('FileInfos');
+  FileInfos := TFileInfoColl.Create;
   fOutboundSize := 0;
   S := ExtractDir(dOutbound);
   FSplit(S, Dr, Nm, Xt);

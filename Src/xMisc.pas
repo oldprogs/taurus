@@ -146,7 +146,6 @@ type
     lfBinkPBadKey,
     lfBinkPgInKey,
     lfBinkPgOutKey,
-    lfBinkPCanEOB,
     lfBinkPgAddr,
     lfBinkPgPwd,
     lfBinkPNul,

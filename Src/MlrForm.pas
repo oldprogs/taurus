@@ -4143,7 +4143,8 @@ begin
    mbp.hwndOwner := Application.Handle;
    mbp.cbSize := sizeof(mbp);
    mbp.lpszText := PChar(
-      ProductNameFull + #10#10 +
+      ProductNameFull + #10 +
+      'Version: ' + ProductVersion + #10#10 +
       '© 2003-2004 by Taurus. All rights reserved'#10 +
       'FidoNet: 2:461/700, 701, 702, e-mail: taurus@rinet.ru'#10#10 +
       '© 2003-2004 by RadSoft. All rights reserved'#10#10 +

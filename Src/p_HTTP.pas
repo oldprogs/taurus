@@ -686,6 +686,8 @@ begin
             z := #1'TOPT ' + IntToStr(aFrom.Point) + #13;
             R.Stream.Write(z[1], Length(z));
          end;
+         z := #1'CHRS: CP866 2'#13;
+         R.Stream.Write(z[1], Length(z));
          State := bdBody;
       end;
    aaRefuse :
