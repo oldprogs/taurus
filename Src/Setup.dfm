@@ -4,7 +4,7 @@ object SetupForm: TSetupForm
   HelpContext = 11000
   BorderStyle = bsDialog
   Caption = 'Taurus Setup'
-  ClientHeight = 397
+  ClientHeight = 396
   ClientWidth = 509
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -128,7 +128,7 @@ object SetupForm: TSetupForm
     Top = 27
     Width = 356
     Height = 319
-    PageIndex = 9
+    PageIndex = 12
     TabOrder = 1
     object TPage
       Left = 0
@@ -229,7 +229,7 @@ object SetupForm: TSetupForm
         object cbSessionOK: TCheckBox
           Left = 16
           Top = 82
-          Width = 169
+          Width = 170
           Height = 17
           Caption = 'Create SESSION.OK'
           TabOrder = 0
@@ -237,7 +237,7 @@ object SetupForm: TSetupForm
         object cbCreateSessionFail: TCheckBox
           Left = 16
           Top = 99
-          Width = 169
+          Width = 170
           Height = 17
           Caption = 'Create SESSION.FAIL'
           TabOrder = 1
@@ -261,7 +261,7 @@ object SetupForm: TSetupForm
         object cbDynamicOutbound: TCheckBox
           Left = 16
           Top = 28
-          Width = 169
+          Width = 170
           Height = 17
           Caption = 'Use Dynamic Outbound'
           TabOrder = 4
@@ -292,7 +292,7 @@ object SetupForm: TSetupForm
         object cbD5Out: TCheckBox
           Left = 189
           Top = 28
-          Width = 150
+          Width = 160
           Height = 17
           Caption = '5D Outbound'
           TabOrder = 8
@@ -300,7 +300,7 @@ object SetupForm: TSetupForm
         object cbUseNodelistData: TCheckBox
           Left = 16
           Top = 116
-          Width = 162
+          Width = 170
           Height = 17
           Caption = 'Use Nodelist Data'
           TabOrder = 7
@@ -308,7 +308,7 @@ object SetupForm: TSetupForm
         object cbPlaySounds: TCheckBox
           Left = 189
           Top = 116
-          Width = 162
+          Width = 160
           Height = 17
           Caption = 'Play Sounds'
           TabOrder = 9
@@ -316,7 +316,7 @@ object SetupForm: TSetupForm
         object cbCompileNodelist: TCheckBox
           Left = 16
           Top = 133
-          Width = 161
+          Width = 170
           Height = 17
           Caption = 'Auto compile nodelist'
           TabOrder = 10
@@ -795,15 +795,15 @@ object SetupForm: TSetupForm
         Transparent = False
       end
       object lHelpLanguage: TLabel
-        Left = 190
+        Left = 181
         Top = 25
-        Width = 26
+        Width = 36
         Height = 15
         Caption = 'Help'
         FocusControl = cbHelpLanguage
       end
       object lInterfaceLanguage: TLabel
-        Left = 30
+        Left = 19
         Top = 25
         Width = 50
         Height = 15
@@ -846,7 +846,7 @@ object SetupForm: TSetupForm
         Transparent = False
       end
       object lLoggerFont: TLabel
-        Left = 32
+        Left = 27
         Top = 216
         Width = 48
         Height = 15
@@ -881,7 +881,7 @@ object SetupForm: TSetupForm
         Shape = bsTopLine
       end
       object lFormsFont: TLabel
-        Left = 32
+        Left = 27
         Top = 167
         Width = 24
         Height = 15
@@ -902,9 +902,9 @@ object SetupForm: TSetupForm
         Transparent = False
       end
       object cbHelpLanguage: TComboBox
-        Left = 190
+        Left = 181
         Top = 40
-        Width = 145
+        Width = 155
         Height = 23
         Style = csDropDownList
         ItemHeight = 15
@@ -914,7 +914,7 @@ object SetupForm: TSetupForm
           'Russian')
       end
       object cbInterfaceLanguage: TComboBox
-        Left = 30
+        Left = 19
         Top = 40
         Width = 145
         Height = 23
@@ -926,25 +926,25 @@ object SetupForm: TSetupForm
           'Russian')
       end
       object cbGridBWZ: TCheckBox
-        Left = 32
+        Left = 20
         Top = 99
-        Width = 240
+        Width = 269
         Height = 16
         Caption = 'Grid lines in BadWaZoo'
         TabOrder = 2
       end
       object cbGridPV: TCheckBox
-        Left = 32
+        Left = 20
         Top = 123
-        Width = 240
+        Width = 269
         Height = 16
         Caption = 'Grid lines in Polls View'
         TabOrder = 3
       end
       object cbUseHTMLHelp: TCheckBox
-        Left = 190
+        Left = 181
         Top = 67
-        Width = 145
+        Width = 155
         Height = 17
         Caption = 'Use HTML help'
         TabOrder = 4
@@ -959,9 +959,9 @@ object SetupForm: TSetupForm
         OnClick = bLoggerFontClick
       end
       object cbShowIcons: TCheckBox
-        Left = 32
+        Left = 20
         Top = 266
-        Width = 297
+        Width = 325
         Height = 17
         Caption = 'Show icons in MainMenu (needs restart)'
         TabOrder = 6
@@ -1746,7 +1746,7 @@ object SetupForm: TSetupForm
         Width = 145
         Height = 23
         Style = csDropDownList
-        ItemHeight = 15
+        ItemHeight = 0
         TabOrder = 0
       end
       object btnReloadRASEntries: TButton
@@ -1901,7 +1901,7 @@ object SetupForm: TSetupForm
       object cbShortName: TCheckBox
         Left = 16
         Top = 58
-        Width = 150
+        Width = 169
         Height = 17
         Caption = 'Short and long name'
         TabOrder = 2
@@ -1917,7 +1917,7 @@ object SetupForm: TSetupForm
       object cbDebug: TCheckBox
         Left = 16
         Top = 78
-        Width = 150
+        Width = 169
         Height = 17
         Caption = 'Debug'
         TabOrder = 4
@@ -1925,7 +1925,7 @@ object SetupForm: TSetupForm
       object cbRequestCrypt: TCheckBox
         Left = 16
         Top = 127
-        Width = 147
+        Width = 169
         Height = 17
         Caption = 'Request Crypt'
         TabOrder = 5
@@ -1933,7 +1933,7 @@ object SetupForm: TSetupForm
       object cbIBNRequestList: TCheckBox
         Left = 200
         Top = 127
-        Width = 135
+        Width = 145
         Height = 17
         Caption = 'Request File List'
         TabOrder = 6
@@ -1949,7 +1949,7 @@ object SetupForm: TSetupForm
       object cbChatEnabled: TCheckBox
         Left = 16
         Top = 176
-        Width = 145
+        Width = 185
         Height = 17
         Caption = 'Chat Enabled'
         TabOrder = 7
@@ -1974,7 +1974,7 @@ object SetupForm: TSetupForm
       object cbIgnoreCD: TCheckBox
         Left = 200
         Top = 247
-        Width = 113
+        Width = 145
         Height = 17
         Caption = 'Ignore CD'
         TabOrder = 11
@@ -1982,7 +1982,7 @@ object SetupForm: TSetupForm
       object cbLamps: TCheckBox
         Left = 16
         Top = 247
-        Width = 161
+        Width = 177
         Height = 17
         Caption = 'Lamps in tray'
         TabOrder = 12
@@ -1993,11 +1993,18 @@ object SetupForm: TSetupForm
       Top = 0
       HelpContext = 11096
       Caption = 'Netmail'
+      object lNetmail: TLabel
+        Left = 8
+        Top = 36
+        Width = 60
+        Height = 15
+        Caption = 'MSG folder'
+      end
       object gNetmail: TAdvGrid
         Left = 8
-        Top = 40
+        Top = 88
         Width = 338
-        Height = 270
+        Height = 222
         FixedFont.Charset = DEFAULT_CHARSET
         FixedFont.Color = clWindowText
         FixedFont.Height = -12
@@ -2019,10 +2026,26 @@ object SetupForm: TSetupForm
       object cbDynamicRouting: TCheckBox
         Left = 8
         Top = 11
-        Width = 169
+        Width = 336
         Height = 17
         Caption = 'Use Dynamic Routing'
         TabOrder = 1
+      end
+      object eNetmail: TEdit
+        Left = 8
+        Top = 53
+        Width = 308
+        Height = 23
+        TabOrder = 2
+      end
+      object bNetmail: TButton
+        Left = 319
+        Top = 52
+        Width = 27
+        Height = 25
+        Caption = '...'
+        TabOrder = 3
+        OnClick = bNetmailClick
       end
     end
     object TPage

@@ -173,12 +173,11 @@ type
 
             FormsFontName: string;
             FormsFontAttr: string;
-            FormsFontSize: integer; // оставь в покое этот сайз ;)
+            FormsFontSize: integer;
 
             LoggerFontName: string;
             LoggerFontAttr: string;
             LoggerFontSize: integer;
-            //        ^^^^ !
 
             ExtApp: TRadArrRec;
             RadBWZ: TRadBWZWWW;
@@ -212,7 +211,6 @@ type
 
             logDelete: boolean;
             logWaitEvt: boolean;
-            UseAntiHang: boolean;
 
             StringsList: TStringList;
 
@@ -672,7 +670,7 @@ begin
       HomeDir := MakeFullDir('', ReadString(paths, 'HomeDir', ExtractFilePath(ParamStr(0))));
       CfgDir := MakeFulldir('', ReadString(paths, 'config', ExtractFilePath(ParamStr(0))));
       FlagsDir := MakeFullDir('', ReadString(paths, 'flags', ExtractFilePath(ParamStr(0)) + 'FLAGS'));
-      NetmailDir := MakeFullDir('', ReadString('MSG', 'Netmail', ''));
+      NetmailDir := MakeFullDir('', ReadString('MSG', 'Netmail', 'NETMAIL'));
 
       accessFName := ReadString(LogNames, 'access_log', GetRegStringDef('access_log', 'access_log'));
       agentFName := ReadString(LogNames, 'agent_log', GetRegStringDef('agent_log', 'agent_log'));
@@ -753,11 +751,6 @@ begin
       SimpleBSY := ReadBool(_system, 'SimpleBSY', GetRegBooleanDef('SimpleBSY', False));
       IgnoreBWZSize := ReadBool(_system, 'IgnoreBWZSize', False);
       AutoNodelist := ReadBool(_system, 'AutoNodelist', True);
-     {$IFDEF EXTREME}
-      UseAntiHang := ReadBool(_system, 'UseAntiHang', True);
-     {$ELSE}
-      UseAntiHang := ReadBool(_system, 'UseAntiHang', false);
-     {$ENDIF} 
 
       TransmitHold := ReadBool(polls, 'TransmitHold', true);
       DirectAsNormal := ReadBool(polls, 'DirectAsNormal', true);

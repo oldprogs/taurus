@@ -73,8 +73,8 @@ type
       MsgColl: TstringColl;
       procedure FreePack(p: TNetmailPkt);
       procedure Scan(const path: string);
-      procedure MoveMail(n: TNetmailMsg; const t: TFidoAddress; const a: string);
-      procedure PackMail(const a: TFidoAddress; const r, e, p: string);
+      procedure MoveMail(n: TNetmailMsg; const t: TFidoAddress; const a: string; Active: boolean);
+      procedure PackMail(const a: TFidoAddress; const r, e, p: string; Active: boolean);
       procedure DelMail(n: TNetmailMsg);
    protected
       fBackup: Boolean;
@@ -92,7 +92,7 @@ type
       procedure FillMSG(const n: TStream; var l: TNetmailMsg);
       procedure ScanMesage(const pack: string);
       procedure ScanPacket(const pack: string);
-      procedure Route(const a: TFidoAddress; Log: TLogProcedure);
+      procedure Route(const a: TFidoAddress; Active: boolean; Log: TLogProcedure);
       procedure DeleteMail(const Id: string);
       function FindMessage(const Id: string): TNetmailMsg;
    end;
@@ -729,7 +729,7 @@ begin
    NetColl.Leave;
 end;
 
-procedure TNetmail.MoveMail(n: TNetmailMsg; const t: TFidoAddress; const a: string);
+procedure TNetmail.MoveMail(n: TNetmailMsg; const t: TFidoAddress; const a: string; Active: boolean);
 var
    s: string;
    w: string;
@@ -740,7 +740,15 @@ begin
    s := GetOutFileName(t, osNone);
    if pos(UpperCase(s), UpperCase(n.Pack)) > 0 then exit;
    MsgColl.Add('Routing ' + Addr2Str(n.From) + ' -> ' + Addr2Str(n.Addr) + ' via ' + Addr2Str(t));
-   s := s + '.out';
+   if Active then begin
+      if n.Fido and (pos('IMM', n.Flgs) > 0) then begin
+         s := s + '.iut';
+      end else begin
+         s := s + '.cut';
+      end;
+   end else begin
+      s := s + '.out';
+   end;
    b := 0;
    if not ExistFile(s) then begin
       fillchar(h, sizeof(h), 0);
@@ -795,7 +803,7 @@ begin
       m := NetColl[i];
       if MatchMaskAddress(m.Addr, r) and not MatchMaskAddressListSingle(m.Addr, e) then begin
          if existfile(m.Pack) then begin
-            MoveMail(m, a, p);
+            MoveMail(m, a, p, Active);
             ScanActive := True;
             ScanCounter := 1;
          end else begin
@@ -852,9 +860,9 @@ begin
             repeat
                GetWrd(s, t, ' ');
                if (o = t) then begin
-                  PackMail(a, Addr2Str(a), '', p);
+                  PackMail(a, Addr2Str(a), '', p, Active);
                end else begin
-                  PackMail(a, t, e, p);
+                  PackMail(a, t, e, p, Active);
                end;
                while MsgColl.Count > 0 do begin
                   Log(ltInfo, MsgColl[0]);

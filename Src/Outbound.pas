@@ -1838,15 +1838,26 @@ procedure InsertMSGPoll(an: TAdvNode; m: TNetmailMsg);
 var
    i: integer;
    n: TOutNode;
+   s: TOutStatusSet;
+   p: TPollType;
 begin
+   s := [osCrashMail];
    if not OutColl.Search(@an.Addr, i) then begin
       n := TOutNode.Create;
+      OutColl.Insert(n);
       n.Address := an.Addr;
       n.Nfo.Time := GetFileTime(m.Pack);
       n.FStatus := [osCrashMail];
-      OutColl.Insert(n);
+   end else begin
+      n := OutColl[i];
    end;
-   InsertPoll(an, [osCrashMail], ptpNetm);
+   p := ptpNetm;
+   if pos('IMM', m.Flgs) > 0 then begin
+      n.FStatus := n.FStatus + [osImmedMail];
+      p := ptpNmIm;
+   end;
+   s := n.StatusSet;
+   InsertPoll(an, s, p);
 end;
 
 var
@@ -2085,7 +2096,8 @@ function TOutbound._GetOutCollP(Single, AFull: Boolean; const Addr: TFidoAddress
           n := OutCache[i];
           if Single and (CompareAddrs(Addr, n.Address) <> 0) then Continue;
           if n.FStatus <> [osNone] then
-          Result.AtInsert(Result.Count, n.Copy);
+//          Result.AtInsert(Result.Count, n.Copy);
+          Result.Insert(n.Copy);
         end;
       end;
     end;

@@ -1709,7 +1709,7 @@ begin
   Flsh;
   EnterWriteCS;
   Result := MaxD(0, MinD(Size, PortOutBufSize - SzWrite));
-  if Result <> Size then GlobalFail('Port Output Buffer Overflow (PortOutBufSize=%d, SzWrite=%d)', [PortOutBufSize, SzWrite]);
+//  if Result <> Size then GlobalFail('Port Output Buffer Overflow (PortOutBufSize=%d, SzWrite=%d)', [PortOutBufSize, SzWrite]);
   if Result <> 0 then begin
     if SzWrite = 0 then begin
       SetNewData := True;

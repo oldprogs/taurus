@@ -319,6 +319,9 @@ type
     fdForms: TFontDialog;
     lFormsFont: TLabel;
     tmCRC: TTimer;
+    eNetmail: TEdit;
+    bNetmail: TButton;
+    lNetmail: TLabel;
     {$ENDIF}
     procedure tvPagesChange(Sender: TObject; Node: TTreeNode);
     procedure FormCreate(Sender: TObject);
@@ -344,6 +347,7 @@ type
     procedure cbPriorityChange(Sender: TObject);
     procedure bFormsFontClick(Sender: TObject);
     procedure tmCRCTimer(Sender: TObject);
+    procedure bNetmailClick(Sender: TObject);
   private
     { Private declarations }
     Edits: array[0..12] of TSoundRec;
@@ -590,6 +594,7 @@ begin
       gNetmail.GetData([NetmailAddrTo, NetmailAddrFrom, NetmailPwd]);
     end;
   end;
+  IniFile.NetmailDir := eNetmail.Text;
 //Netmail end
 
 //Tariff tab
@@ -868,6 +873,8 @@ begin
 
   GridFillColLng(gNetmail, rsNetmailGrid);
   FillNetmailGrid;
+
+  eNetmail.Text := IniFile.NetmailDir;
 end;
 
 procedure TSetupForm.tvPagesChange(Sender: TObject; Node: TTreeNode);
@@ -1285,6 +1292,16 @@ begin
    if SetupForm <> nil then begin
       SetupForm.btnApply.Enabled := CRC <> SetupForm.wdCRC;
    end;
+end;
+
+procedure TSetupForm.bNetmailClick(Sender: TObject);
+var
+   s: string;
+begin
+   s := Browse(Handle, eNetmail.Text);
+   if s <> '' then begin
+      eNetmail.Text := s;
+   end;   
 end;
 
 end.
