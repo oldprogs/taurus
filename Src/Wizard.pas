@@ -766,21 +766,20 @@ function Str2Longint(const S: String; var A: Longint): Boolean;
 
 function Size2KB(const Size: Longint): String;
  {$IFDEF DOS}
- var
-  Result: String;
+var
+   Result: String;
  {$ENDIF}
- begin
-  Str((Size / 1024):1:1, Result);
+begin
+   Str((Size / 1024):1:1, Result);
 
-  if Copy(Result, Length(Result) - 1, 2) = '.0' then
-   SetLength(Result, Length(Result) - 2);
+   if Copy(Result, Length(Result) - 1, 2) = '.0' then SetLength(Result, Length(Result) - 2);
 
-  Result := Concat(Result, 'kb');
+   Result := Concat(Result, 'kb');
 
-  {$IFDEF DOS}
-  Size2KB := Result;
-  {$ENDIF}
- end;
+ {$IFDEF DOS}
+   Size2KB := Result;
+ {$ENDIF}
+end;
 
 { files }
 

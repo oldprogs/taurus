@@ -530,6 +530,7 @@ type
     procedure WMSetFocus(var M: TMessage); message WM_SetFocus;
     procedure WMKillFocus(var M: TMessage); message WM_KillFocus;
     procedure WMVScroll(var M: TWMVScroll); message WM_VSCROLL;
+    procedure WMSize(var M: TWMSize); message WM_SIZE;
     procedure SetLines(V: TStringColl);
     procedure SetColor(c: TColor);
     procedure WMGetDlgCode(var Msg: TWMGetDlgCode); message WM_GETDLGCODE;
@@ -2154,6 +2155,12 @@ begin
    inherited;
    S := FLines.Count - GetScrollPos(Handle, SB_VERT);
    fScrol := S <> fDelta;
+end;
+
+procedure TLogger.WMSize(var M: TWMSize);
+begin
+   inherited;
+   fDelta := 0;
 end;
 
 procedure TLogger.SetColor(c: TColor);
