@@ -940,33 +940,33 @@ end;
 
 function TSockInThread.SubRead(var Buf; Size: Integer): Integer;
 var
-  Error: Boolean;
-  SockHandle: TSocket;
-  IpSessionCount: integer;
+   Error: Boolean;
+   SockHandle: TSocket;
+   IpSessionCount: integer;
 begin
-  Result := 0;
-  if Cfg = nil then exit;
-  if Cfg.IPData = nil then exit;
-  if Terminated then Result := 0 else begin
-    Error := False;
-    SockHandle := TSocket(CP.Handle);
-    Result := _recv(SockHandle, Buf, Size, Error, @CP.ReadOL);
-    if Error then begin
-      TSockPort(CP).Err;
-      Result := 0
-    end;
-    if Terminated then Result := 0 else
-    if (Result = 0) and (not CP.TempDown) then begin
-      TSockPort(CP).DropDCD;
-      Terminated := True
-    end;
-    Inc(TIPMonThread(IPMon).TCPIP_In, Result);
+   Result := 0;
+   if Cfg = nil then exit;
+   if Cfg.IPData = nil then exit;
+   if Terminated then Result := 0 else begin
+      IpSessionCount := (Cfg.IpData.OutC - OutConnsAvail) + (Cfg.IpData.InC - SockMgr.SocksAvail);
+      Error := False;
+      SockHandle := TSocket(CP.Handle);
+      Result := _recv(SockHandle, Buf, Size, Error, @CP.ReadOL);
+      if Error then begin
+         TSockPort(CP).Err;
+         Result := 0
+      end;
+      if Terminated then Result := 0 else
+      if (Result = 0) and (not CP.TempDown) then begin
+         TSockPort(CP).DropDCD;
+         Terminated := True
+      end;
+      Inc(TIPMonThread(IPMon).TCPIP_In, Result);
 
-    IpSessionCount := (Cfg.IpData.OutC - OutConnsAvail) + (Cfg.IpData.InC - SockMgr.SocksAvail);
-    if (CP.MaxBPSIn > 0) then
-    if (TIPMonThread(IPMon).TCPIP_In >= CP.MaxBPSIn) then
-        sleep(trunc(1000 * IpSessionCount / (CP.MaxBPSIn / TIPMonThread(IPMon).TCPIP_In)));
-  end;
+      if (CP.MaxBPSIn > 0) then
+      if (TIPMonThread(IPMon).TCPIP_In >= CP.MaxBPSIn) then
+         sleep(trunc(1000 * IpSessionCount / (CP.MaxBPSIn / TIPMonThread(IPMon).TCPIP_In)));
+   end;
 end;
 
 function TSockInThread.Read(var Buf; Size: DWORD): DWORD;

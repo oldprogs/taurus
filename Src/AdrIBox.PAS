@@ -65,7 +65,11 @@ begin
    if addr.Zone <> 0 then begin
       A := InputFidoAddress(Caption, False, @Addr);
    end else begin
-      A := InputFidoAddress(Caption, False, nil);
+      if (aDefault <> nil) and (aDefault.Zone <> 0) then begin
+         A := InputFidoAddress(Caption, False, aDefault);
+      end else begin
+         A := InputFidoAddress(Caption, False, nil);
+      end;
    end;
    case CollCount(A) of
       0: ;

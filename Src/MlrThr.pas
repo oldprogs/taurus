@@ -3979,7 +3979,8 @@ begin
       for i := CollMax(FidoOut.OutCache) downto 0 do begin
          n := FidoOut.OutCache[i];
          if CompareAddrs(n.Address, Node.Addr) = 0 then begin
-            FidoOut.OutCache.AtFree(i);
+            FidoOut.OutCache.AtDelete(i);
+            FreeObject(n);
          end;
       end;
       LeaveCS(FidoOut.CacheCS);
@@ -5080,6 +5081,7 @@ begin
             end;
          end;
       end;
+      Application.ProcessMessages;
    end;
    LeaveCS(OutMgrThread.NodesCS);
 end;
@@ -6742,6 +6744,13 @@ begin
    end;
 end;
 
+function NNTPSort(p1, p2: Pointer): integer;
+begin
+   if TOutFile(p1).Nfo.Time > TOutFile(p2).Nfo.Time then Result :=  1 else
+   if TOutFile(p1).Nfo.Time < TOutFile(p2).Nfo.Time then Result := -1 else
+                                                         Result :=  0;
+end;
+
 procedure TMailerThread.GetNextFile(P: TBaseProtocol);
 var
    s: TxStream;
@@ -6805,6 +6814,7 @@ begin
       P.OutList := SD.OutFiles;
       SD.OutFiles.Leave;
       if SD.SessionCore in [scNNTP] then begin
+         SD.OutFiles.Sort(NNTPSort);
          While (Integer(SD.TxFiles) > IniFile.CashSize) and (SD.OutFiles.Count > 0) do begin
             f := SD.OutFiles[0];
             if pos('.PKT', UpperCase(f.Name)) > 0 then begin
@@ -9496,26 +9506,24 @@ begin
       msEMSI_c2:
          begin
             Inc(SD.Tries);
-            if SD.Tries > 6 then
-               State := msEMSI_FailTries
-            else
-            begin
+            if SD.Tries > 6 then begin
+               State := msEMSI_FailTries;
+            end else begin
                if SD.Tries > 1 then LogFmt(ltWarning, 'EMSI data send - retry %d', [SD.Tries - 1]);
                State := msEMSI_c2a;
             end;
          end;
       msEMSI_c2a:
          begin
-            ScanOut(True);
-            if SD.BadPassword then
-            begin
+            if not SD.WeHaveReported then begin
+               ScanOut(True);
+            end;
+            if SD.BadPassword then begin
                if SD.rmtPassword = '' then
                   SendEMSIData(cNoPwd, ecOurOptions + [SD.DesiredProtocol])
                else
                   SendEMSIData(cBadPwd, ecOurOptions + [SD.DesiredProtocol]);
-            end
-            else
-            begin
+            end else begin
                if SD.ActivePoll <> nil then
                   SendEMSIData(GetPassword(SD.ActivePoll.Node.Addr, EP), ecOurOptions + SD.OurProtocols)
                else
@@ -9570,12 +9578,11 @@ begin
                es_NAK:
                   begin
                      Log(ltWarning, 'Got EMSI_NAK');
-{                     SD.NiagaraAllowed := False;
-                     State := msEMSI_c5;
+                     SD.NiagaraAllowed := False;
+{                     State := msEMSI_c5;
                      SD.AckReceived := True}
                      // we ignore additional EMSI_NAKs came in a same second
-                     if (not TimerInstalled(SD.HshrLast)) or TimerExpired(SD.HshrLast) then
-                     begin
+                     if (not TimerInstalled(SD.HshrLast)) or TimerExpired(SD.HshrLast) then begin
                         NewTimerSecs(SD.HshrLast, 1);
                         State := msEMSI_c4nak;
                      end;
@@ -9583,8 +9590,7 @@ begin
                es_DAT, es_DATerror:
                   begin
                      // visual. we receive DAT while ACK not received yet (mgetty echo)
-                     if not SD.AckReceived then
-                     begin
+                     if not SD.AckReceived then begin
                         State := msEMSI_c4;
                         SetEvent(CP.oDataAvail);
                         exit;
@@ -9607,10 +9613,9 @@ begin
             end;
          end;
       msEMSI_c5:
-         if SD.ActivePoll <> nil then
-            StartEMSI_Receiver(msEMSI_h2)
-         else
-         begin
+         if SD.ActivePoll <> nil then begin
+            StartEMSI_Receiver(msEMSI_h2);
+         end else begin
             if SD.BadPassword then
                State := msEMSI_PswVio
             else

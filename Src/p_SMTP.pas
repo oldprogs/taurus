@@ -629,6 +629,12 @@ begin
                PutString('250 OK');
                State := bdData;
             end else begin
+               for i := 1 to Length(a) do
+               if a[i] = #0 then begin
+                  a[i] := '^';
+                  CustomInfo := 'Error in input stream (#0): ' + IntToStr(i) + ', ' + a;
+                  FLogFile(Self, lfLog);
+               end;
                fLine := a + #13;
                RecStep;
             end;
@@ -751,7 +757,7 @@ end;
 function TSMTP.NextStep: boolean;
 begin
    DoStep;
-   Result := (State <> bdDone) and (CP.Carrier = CP.DCD);
+   Result := (State <> bdDone) and (CP <> nil) and (CP.Carrier = CP.DCD);
 end;
 
 procedure TSMTP.Start;

@@ -28,7 +28,7 @@ object MailerForm: TMailerForm
     Left = 0
     Top = 0
     Width = 734
-    Height = 525
+    Height = 522
     Align = alClient
     HotTrack = True
     TabOrder = 0
@@ -39,7 +39,7 @@ object MailerForm: TMailerForm
     OnChange = MainTabControlChange
     DesignSize = (
       734
-      525)
+      522)
     object lTime0: TLabel
       Left = 508
       Top = 5
@@ -70,7 +70,7 @@ object MailerForm: TMailerForm
       Left = 4
       Top = 27
       Width = 726
-      Height = 494
+      Height = 491
       Align = alClient
       BevelOuter = bvNone
       BorderStyle = bsSingle
@@ -81,7 +81,7 @@ object MailerForm: TMailerForm
         Left = 0
         Top = 329
         Width = 722
-        Height = 121
+        Height = 118
         Cursor = crHandPoint
         Align = alClient
         Color = clBtnFace
@@ -100,7 +100,7 @@ object MailerForm: TMailerForm
         Left = 0
         Top = 329
         Width = 722
-        Height = 121
+        Height = 118
         Align = alClient
         BevelOuter = bvNone
         FullRepaint = False
@@ -115,7 +115,7 @@ object MailerForm: TMailerForm
         OnResize = ChatPanResize
         object Panel13: TTransPan
           Left = 0
-          Top = 90
+          Top = 87
           Width = 722
           Height = 31
           Align = alBottom
@@ -240,7 +240,7 @@ object MailerForm: TMailerForm
           Left = 0
           Top = 23
           Width = 722
-          Height = 67
+          Height = 64
           Align = alClient
           BevelOuter = bvNone
           ParentColor = True
@@ -275,7 +275,7 @@ object MailerForm: TMailerForm
       end
       object BottomPanel: TTransPan
         Left = 0
-        Top = 450
+        Top = 447
         Width = 722
         Height = 40
         Align = alBottom
@@ -2267,6 +2267,7 @@ object MailerForm: TMailerForm
               Width = 100
             end
             item
+              Alignment = taCenter
               ImageIndex = -1
               Text = 'Type'
               Width = 60
@@ -2277,6 +2278,7 @@ object MailerForm: TMailerForm
               Width = 60
             end
             item
+              Alignment = taCenter
               ImageIndex = -1
               Text = 'Age'
               Width = 80
@@ -2431,7 +2433,7 @@ object MailerForm: TMailerForm
               BevelOuter = bvNone
               BorderWidth = 3
               TabOrder = 0
-              object stListView: TListView
+              object stListView: TAdvListView
                 Left = 3
                 Top = 3
                 Width = 689
@@ -2456,10 +2458,9 @@ object MailerForm: TMailerForm
                 GridLines = True
                 ReadOnly = True
                 RowSelect = True
-                ParentShowHint = False
-                ShowHint = True
                 TabOrder = 0
                 ViewStyle = vsReport
+                OnApiDropFiles = stListViewApiDropFiles
               end
             end
           end

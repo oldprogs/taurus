@@ -467,7 +467,7 @@ type
     Clock: TJvAnalogClock;
     TransPan3: TTransPan;
     GroupBox1: TGroupBox;
-    stListView: TListView;
+    stListView: TAdvListView;
     evListView: TListView;
     mnuClock: TMenuItem;
     N29: TMenuItem;
@@ -609,6 +609,7 @@ type
     procedure evListViewCompare(Sender: TObject; Item1, Item2: TListItem;
       Data: Integer; var Compare: Integer);
     procedure New1Click(Sender: TObject);
+    procedure stListViewApiDropFiles(Sender: TObject);
   private
     OutBSize: int64;
     aOutbound: TAnimate;
@@ -3919,10 +3920,12 @@ begin
       p := FidoPolls[i];
       if All or (p.Owner = PollOwnerExtApp) or (p.Owner = nil) then begin
          if (p.Owner is TMailerThread) then begin
+            p.Owner.Enter;
             if (p.Owner.SD <> nil) and (p.Owner.SD.ActivePoll <> nil) then begin
                p.Owner.InsertEvt(TMlrEvtChStatus.Create(msCancel));
                p.Owner.SD.ActivePoll := nil;
             end;
+            p.Owner.Leave;
          end;
          p.Done := Action;
          FidoPolls.AtFree(i);
@@ -4602,27 +4605,21 @@ var
    ModemCmdForm: TModemCmdForm;
    r: TModalResult;
    P: TPoint;
-   InitOnExit: boolean;
 begin
-  InitOnExit := true;
-  repeat
+   repeat
       ModemCmdForm := TModemCmdForm.Create(Self);
-      ModemCmdForm.cbInit.Checked := InitOnExit;
       P.X := StatusBox.Left;
       P.Y := StatusBox.Top + StatusBox.Height;
       P := StatusBox.ClientToScreen(P);
-      ModemCmdForm.Left := P.X - 32;
-      ModemCmdForm.Top := P.Y + 8;
       ModemCmdForm.P := Self;
       r := ModemCmdForm.ShowModal;
-      InitOnExit := ModemCmdForm.cbInit.Checked;
       FreeObject(ModemCmdForm);
-  until r <> mrOK;
-  if r = 2 then begin
-     InsertEvt(TMlrEvtChStatus.Create(msInit));
-  end else begin
-     InsertEvt(TMlrEvtChStatus.Create(msIdleA_Expired));
-  end;
+   until r <> mrOK;
+   if r = 2 then begin
+      InsertEvt(TMlrEvtChStatus.Create(msInit));
+   end else begin
+      InsertEvt(TMlrEvtChStatus.Create(msIdleA_Expired));
+   end;
 end;
 
 procedure TMailerForm.WMStartTerm(var M: TMessage);
@@ -5198,52 +5195,45 @@ begin
             s := FormatLng(rsMMOutNBrkLnk, [f.Name]);
             I := 9;
          end else
-            case F.Status of
-               osImmedMail, osCrashMail, osDirectMail, osNormalMail, osHoldMail:
-                  begin
-                     I := 2;
-                  end;
-               osImmed, osCrash, osDirect, osNormal, osHold:
-                  begin
-                     zzz := ExtractFileExt(f.Name);
-                     if f.Name = '' then
-                     begin
-                        s := FormatLng(rsMMOutNFlag, [f.StatusString]);
-                        I := 10;
-                     end
-                     else
-                     if IsArcMailExt(zzz) then
-                     begin
-                        I := 4;
-                        s := ExtractFileName(f.Name);
-                     end
-                     else
-                     if (UpperCase(zzz) = '.PKT') or (UpperCase(zzz) = '.P2K') then
-                     begin
-                        I := 2;
-                     end
-                     else
-                     begin
-                        I := 3;
-                        s := f.Name;
-                     end;
-                  end;
-               osHReq:
-                  begin
-                     s := f.Name;
-                     I := 6;
-                  end;
-               osRequest:
-                  begin
-                     I := 5;
-                     s := FormatLng(rsMMOutNFreq, [ExtractFileName(f.Name)]);
-                  end;
-               osCallback:
-                  begin
-                     I := 7;
-                     s := FormatLng(rsMMOutCBack, [ExtractFileName(f.Name)]);
-                  end;
+         case F.Status of
+         osImmedMail, osCrashMail, osDirectMail, osNormalMail, osHoldMail:
+            begin
+               I := 2;
             end;
+         osImmed, osCrash, osDirect, osNormal, osHold:
+            begin
+               zzz := ExtractFileExt(f.Name);
+               if f.Name = '' then begin
+                  s := FormatLng(rsMMOutNFlag, [f.StatusString]);
+                  I := 10;
+               end else
+               if IsArcMailExt(zzz) then begin
+                  I := 4;
+                  s := ExtractFileName(f.Name);
+               end else
+               if (UpperCase(zzz) = '.PKT') or (UpperCase(zzz) = '.P2K') then begin
+                  I := 2;
+               end else begin
+                  I := 3;
+                  s := f.Name;
+               end;
+            end;
+         osHReq:
+            begin
+               s := f.Name;
+               I := 6;
+            end;
+         osRequest:
+            begin
+               I := 5;
+               s := FormatLng(rsMMOutNFreq, [ExtractFileName(f.Name)]);
+            end;
+         osCallback:
+            begin
+               I := 7;
+               s := FormatLng(rsMMOutCBack, [ExtractFileName(f.Name)]);
+            end;
+         end;
       end;
       if I = 2 then begin
          s := FormatLng(rsMMOutNMailPkt, [ExtractFileName(f.Name)]);
@@ -5274,13 +5264,13 @@ begin
       end;
       Inc(R.Left, OutMgrHeader.Sections[2].Width);
       R.Right := R.Left + OutMgrHeader.Sections[3].Width - 4;
-      DrawStr(0, F.StatusString);
+      DrawStr(DT_CENTER, F.StatusString);
       Inc(R.Left, OutMgrHeader.Sections[3].Width);
       R.Right := R.Left + OutMgrHeader.Sections[4].Width - 4;
       DrawStr(0, F.ActionString);
       Inc(R.Left, OutMgrHeader.Sections[4].Width);
       R.Right := R.Left + OutMgrHeader.Sections[5].Width - 4;
-      DrawStr(0, F.AgeString);
+      DrawStr(DT_CENTER, F.AgeString);
       if odFocused in State then DrawFocusRect(R1);
    end;
    R := Rect(0, 0, RR.Right - RR.Left, RR.Bottom - RR.Top);
@@ -6244,6 +6234,7 @@ begin
    if Activated then Exit;
    DragAcceptFiles(OutMgrOutline.Handle, True);
    DragAcceptFiles(PollsListView.Handle, True);
+   DragAcceptFiles(stListView.Handle, True);
    Activated := True;
    if Application.MainForm = Self then begin
       SendMsg(WM_IMPORTDUPOVRL);
@@ -6996,6 +6987,27 @@ begin
       EventsThr.DoRecalc;
    end;
    FreeObject(Ev);
+end;
+
+procedure TMailerForm.stListViewApiDropFiles(Sender: TObject);
+var
+   A,
+  OA: TFidoAddress;
+   o: TListItem;
+   p: PFidoAddress;
+begin
+   SetForegroundWindow(Handle);
+   if stListView.DroppedFiles = nil then Exit;
+   o := stListView.GetItemAt(stListView.DropPoint.X, stListView.DropPoint.Y);
+   if o <> nil  then begin
+      if ParseAddress(ExtractWord(4, o.Caption, [' ']), OA) then begin
+         p := @OA;
+         FillChar(A, SizeOf(A), #0);
+         if not InputSingleAddress(FormatLng(rsMMAttachIA, [stListView.DroppedFiles.Count]), A, p) then Exit;
+         AttachFiles(stListView.DroppedFiles, A);
+      end;   
+   end;
+   FreeObject(stListView.DroppedFiles);
 end;
 
 end.

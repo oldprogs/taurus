@@ -1880,7 +1880,7 @@ begin
         if s <> nil then begin
            for i := 0 to s.Count - 1 do begin
               t := IniFile.ReadString('Grids', s[i]);
-              if pos(UpperCase(ExtractWord(1, Address, ['@'])) + '|', UpperCase(t)) > 0 then begin
+              if (pos(UpperCase(ExtractWord(1, Address, ['@'])) + '|', UpperCase(t)) > 0) and (Address <> '') then begin
                  Addr.Zone   := $FFFF;
                  Addr.Net    := $FFFF;
                  Addr.Node   := $FFFF;

@@ -19,12 +19,15 @@ type
     procedure FormCreate(Sender: TObject);
     procedure bHelpClick(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
+    procedure FormDestroy(Sender: TObject);
   private
   public
     P: Pointer;
   end;
 
-implementation uses MlrThr, MlrForm, LngTools;
+implementation
+
+uses MlrThr, MlrForm, LngTools, RadSav, Wizard;
 
 {$R *.DFM}
 
@@ -48,8 +51,16 @@ begin
 end;
 
 procedure TModemCmdForm.FormCreate(Sender: TObject);
+var
+   s: string;
 begin
-  FillForm(Self, rsModemCmdForm);
+   FillForm(Self, rsModemCmdForm);
+   s := SavFile.ReadString('Sizes', 'MdmCmd', '');
+   Left := StrToIntDef(ExtractWord(1, s, [',']), Left);
+   Top := StrToIntDef(ExtractWord(2, s, [',']), Top);
+   Width := StrToIntDef(ExtractWord(3, s, [',']), Width);
+   Height := StrToIntDef(ExtractWord(4, s, [',']), Height);
+   cbInit.Checked := SavFile.ReadBool('Sizes', 'IniMdm', True);
 end;
 
 procedure TModemCmdForm.bHelpClick(Sender: TObject);
@@ -59,10 +70,10 @@ end;
 
 {$I define.inc}
 
-procedure TModemCmdForm.FormClose(Sender: TObject;
-  var Action: TCloseAction);
+procedure TModemCmdForm.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
    if ModalResult  = 1 then begin
+      Action := caNone;
 {$IFDEF AUTO_NODELIST}
       ModalResult := 0;
 {$ENDIF}  // ;)
@@ -70,6 +81,16 @@ begin
    if not cbInit.Checked then begin
       ModalResult := 3;
    end;
+end;
+
+procedure TModemCmdForm.FormDestroy(Sender: TObject);
+begin
+   SavFile.WriteString('Sizes', 'MdmCmd',
+      IntToStr(Left) + ',' +
+      IntToStr(Top) + ',' +
+      IntToStr(Width) + ',' +
+      IntToStr(Height));
+   SavFile.WriteBool('Sizes', 'IniMdm', cbInit.Checked);
 end;
 
 end.

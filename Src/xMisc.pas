@@ -1308,6 +1308,7 @@ var
   ToSleep: DWORD;
 begin
   ToSleep := High(ToSleep);
+  if PortsColl = nil then exit;
   PortsColl.Enter;
   if PortsColl.Count > 0 then begin
     for i := 0 to PortsColl.Count - 1 do begin

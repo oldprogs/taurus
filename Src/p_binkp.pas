@@ -607,9 +607,11 @@ begin
         Chat.RemoteVisible := False;
         Chat.Visible := False;
      end else begin
-        CustomInfo := InMsg;
-        StartChat(LogFName, false, ChatBell);
-        Chat.AddMsg(s);
+        if UpperCase(s) <> 'BYE' then begin
+           CustomInfo := InMsg;
+           StartChat(LogFName, false, ChatBell);
+           Chat.AddMsg(s);
+        end;   
      end;
   end else
   if UpperCase(copy(InMsg, 1, 3)) = 'TRS' then begin

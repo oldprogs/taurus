@@ -650,10 +650,12 @@ procedure TPktColl.DeleName;
 var
    i: integer;
 begin
+   Enter;
    i := FindName(n);
    if i > -1 then begin
       AtFree(i);
    end;
+   Leave;
 end;
 
 function TPktColl.GetAnItem;
@@ -663,7 +665,9 @@ end;
 
 procedure TPktColl.SetItem;
 begin
+   Enter;
    inherited Items[i] := p;
+   Leave;
 end;
 
 procedure TNetColl.MarkDel;
@@ -731,15 +735,14 @@ var
    m: TNetmailMsg;
 begin
    NetColl.Enter;
-   for i := NetColl.Count - 1 downto 0 do begin
+   for i := CollMax(NetColl) downto 0 do begin
       m := NetColl[i];
       if m.Pack = p.Pack then begin
-        NetColl.AtFree(i);
+         NetColl.AtDelete(i);
+         FreeObject(m);
       end;
    end;
    NetColl.Leave;
-   PktColl.Delete(p);
-   FreeObject(p);
 end;
 
 procedure TNetMail.ScanMSG;
@@ -932,7 +935,11 @@ var
    end;
 
 begin
-   GetMem(p, n.Size + 80);
+   try
+      GetMem(p, n.Size + 80);
+   except
+      exit;
+   end;
    i := 0;
    if l.Fido then begin
       c := 3;

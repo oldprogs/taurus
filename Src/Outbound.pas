@@ -1037,7 +1037,7 @@ begin
 
    k := Copy(s, 1, IdxFirst);
 
-   FbuC := TColl.Create('FbuC');
+   FbuC := TColl.Create;
 
    if CollCount(MPColl) = 0 then begin
       FBuR := TFileBoxUnparsedRecord.Create;
@@ -1256,7 +1256,7 @@ begin
    FreeObject(MPColl);
    Mask := CopyLeft(s, IdxLast);
    Result := True;
-   for i := 0 to FBuC.Count - 1 do begin
+   for i := 0 to CollMax(FBuC) do begin
       FBuR := FBuC[i];
       if not GetFileBoxDirColl(A4sToAddrStr(FBuR.a), k + FBuR.Name + Mask, FBuR.Status, AColl, PErrorMsg, AMoveTo, AKillAction) then begin
          Result := False;
@@ -2284,6 +2284,7 @@ function TOutbound._GetOutCollP(const Single, AFull, Scan: Boolean; const Addr: 
       n: TOutNode;
    begin
       Result := nil;
+      if Self = nil then exit;
       if OutCache = nil then Result := nil else begin
          if AFull then begin
             EnterCS(CacheCS);
