@@ -57,6 +57,7 @@ type
             PerMinute: boolean;
             IPDaemon_log: string;
             ras_log: string;
+            net_log: string;
             ODBCLogging: boolean;
             CloseBWZFile: boolean;
             ForceAddFaxPage: boolean;
@@ -411,6 +412,7 @@ begin
       Cronapps_log := ReadString(LogNames, 'cronapps.log', 'cronapps.log');
       IPDaemon_log := ReadString(LogNames, 'ipdaemon.log', 'ipdaemon.log');
       ras_log := ReadString(LogNames, 'ras.log', 'ras.log');
+      net_log := ReadString(LogNames, 'netmail.log', 'netmail.log');
 
       CPS_MinBytes := ReadInteger(main, 'CPS_MinBytes', $100);
       CPS_MinSecs := ReadInteger(main, 'CPS_MinSecs', 10);
@@ -726,6 +728,7 @@ begin
      WriteString(LogNames, 'tariff.log', tariff_log);
      WriteString(LogNames, 'ipdaemon.log', IPDaemon_log);
      WriteString(LogNames, 'ras.log', ras_log);
+     WriteString(LogNames, 'netmail.log', net_log);
      WriteBool(_RasDial, 'RASEnabled', RASEnabled);
      WriteString(_RasDial, 'EntryName', iEntryName);
 
