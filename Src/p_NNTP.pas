@@ -481,10 +481,10 @@ begin
          end;
       bdIdle:
          begin
-            if z = 'LIST' then begin
+            if (z = 'LIST') or (z = 'NEWGROUPS') then begin
                CustomInfo := z + ' ' + s;
                FLogFile(Self, lfLog);
-               if s = '' then begin
+               if (s = '') or (z = 'NEWGROUPS') then begin
                   PutString('215 List of newsgroups');
                   SendList;
                   PutString('.');

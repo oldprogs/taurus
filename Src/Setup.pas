@@ -5,9 +5,9 @@ unit Setup;
 interface
 
 uses
-  Windows, Messages, SysUtils, Classes, Graphics,
-  Controls, Forms, Dialogs, StdCtrls, ComCtrls, Buttons,
-  mGrids, MClasses, ExtCtrls, xBase;
+  Windows, Messages, SysUtils, Classes, Graphics, Controls,
+  Forms, Dialogs, StdCtrls, ComCtrls, Buttons,   mGrids,
+  MClasses, ExtCtrls, xBase;
 
 type
   TSoundRec = record
@@ -367,7 +367,7 @@ var
 
 implementation
 
-uses LngTools, RadIni, xFido, PathNmEx, IniFiles
+uses LngTools, RadIni, xFido, PathNmEx, CfgFiles
      {$IFDEF RASDIAL}, RasThrd, {$ENDIF} AdrIBox, Recs, ShellApi
      {$IFDEF EXTREME}, RCCUnit {$ENDIF}, MlrThr, MlrForm;
 

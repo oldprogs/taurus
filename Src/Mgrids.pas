@@ -698,7 +698,7 @@ procedure Register;
 
 implementation
 
-uses Dialogs, Consts, LngTools, IniFiles, RadIni;
+uses Dialogs, Consts, LngTools, RadIni;
 
 procedure Register;
 begin
@@ -1273,23 +1273,16 @@ var
   n: TWinControl;
 begin
   inherited;
-  if not (csDesigning in ComponentState) then
-  begin
+  if not (csDesigning in ComponentState) then begin
     n := Parent;
-    while (n <> nil) do
-    begin
+    while (n <> nil) do begin
       FParentName := N.Name;
       if N is TCustomForm then break;
       N := N.Parent;
     end;
-    with TIniFile.Create(MakeNormName(IniFile.HomeDir, 'AdvGrids.ini')) do begin
-      IniFile.Enter;
-      s := ReadString('ColWidths', FParentName + '_' + Name, '');
-      for i := 0 to WordCount(s, [',']) - 1 do begin
-         ColWidths[i] := strtoint(extractword(i + 1, s, [',']));
-      end;
-      Free;
-      IniFile.Leave;
+    s := IniFile.ReadString('ColWidths', FParentName + '_' + Name, '');
+    for i := 0 to WordCount(s, [',']) - 1 do begin
+       ColWidths[i] := strtoint(extractword(i + 1, s, [',']));
     end;
     if FixedRows = 0 then begin
        w := 0;
@@ -1309,16 +1302,11 @@ var s: string;
     i: integer;
 begin
   if not (csDesigning in ComponentState) then begin
-     with TIniFile.Create(MakeNormName(IniFile.HomeDir, 'AdvGrids.ini')) do begin
-        IniFile.Enter;
-        s := '';
-        for i := 0 to ColCount - 1 do begin
-           s := s + inttostr(ColWidths[i]) + ',';
-        end;
-        WriteString('ColWidths', FParentName + '_' + Name, s);
-        Free;
-        IniFile.Leave;
+     s := '';
+     for i := 0 to ColCount - 1 do begin
+        s := s + inttostr(ColWidths[i]) + ',';
      end;
+     IniFile.WriteString('ColWidths', FParentName + '_' + Name, s);
   end;
   ReallocMem(FColWidths, 0);
   ReallocMem(FTabStops, 0);
@@ -5279,15 +5267,15 @@ end;
 
 procedure TAdvGrid.Initialize;
 var
-  quantum: TSPAQuantum;
+   quantum: TSPAQuantum;
 begin
-  if FCols = nil then begin
-    if ColCount > 512 then quantum := SPALarge else quantum := SPASmall;
-    FCols := TSparseList.Create(quantum);
-  end;
-  if RowCount > 256 then quantum := SPALarge else quantum := SPASmall;
-  if FRows = nil then FRows := TSparseList.Create(quantum);
-  if FData = nil then FData := TSparseList.Create(quantum);
+   if FCols = nil then begin
+      if ColCount > 512 then quantum := SPALarge else quantum := SPASmall;
+      FCols := TSparseList.Create(quantum);
+   end;
+   if RowCount > 256 then quantum := SPALarge else quantum := SPASmall;
+   if FRows = nil then FRows := TSparseList.Create(quantum);
+   if FData = nil then FData := TSparseList.Create(quantum);
 end;
 
 procedure TAdvGrid.SetUpdateState(Updating: Boolean);

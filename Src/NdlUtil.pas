@@ -101,7 +101,7 @@ var
 
 implementation
 
-uses Recs, AltRecs, LngTools, RadIni, Wizard, IniFiles, Plus;
+uses Recs, AltRecs, LngTools, RadIni, Wizard, CfgFiles, Plus;
 
 {$R *.DFM}
 

@@ -27,11 +27,12 @@ uses
   ModemCfg, SelDir, PathName, NodelCfg, FidoPwd, DialRest,
   Attach, DupCfg, StupCfg, Extrnls, xEvents,
   EvtEdit, TracePl, EncLinks, FidoStat, FileBox, IpCfg,
-  FreqEdit, PwdInput, NodeWiz, OvrExpl, PollCfg, SinglPwd, Setup, {Pref,} CheckLst,
+  FreqEdit, PwdInput, NodeWiz, OvrExpl, PollCfg, SinglPwd,
+  Setup, CheckLst,
 
 {$ENDIF}
 
-  OutBound, Windows, OdbcLog, CmdLn, Wizard, IniFiles, Plus;
+  OutBound, Windows, OdbcLog, CmdLn, Wizard, CfgFiles, Plus;
 
 var
   inipath: string;

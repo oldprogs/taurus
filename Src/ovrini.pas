@@ -1,8 +1,8 @@
-unit ovrini;
+unit OvrIni;
 
 interface
 
-uses IniFiles, Classes, SysUtils, Windows;
+uses Classes, SysUtils, Windows;
 
 Type
   TOvrNodeIni = record

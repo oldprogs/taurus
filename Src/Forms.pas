@@ -1277,8 +1277,7 @@ implementation
 
 uses
   ActiveX, Math, Printers, Consts, RTLConsts, CommCtrl, FlatSB,
-  StdActns(*{$IFDEF MSWINDOWS}, WinHelpViewer{$ENDIF}*), Themes,
-  IniFiles;
+  StdActns, Themes, RadIni;
 
 var
   FocusMessages: Boolean = True;
@@ -2680,9 +2679,7 @@ end;
 procedure TCustomForm.Loaded;
 var
   Control: TWinControl;
-  {$IFDEF EXTREME}
   FormsFontAttr: string[4];
-  {$ENDIF}
 begin
    inherited Loaded;
    if ActiveControl <> nil then begin
@@ -2690,18 +2687,13 @@ begin
       FActiveControl := nil;
       if Control.CanFocus then SetActiveControl(Control);
    end;
-  {$IFDEF EXTREME}
-   with TIniFile.Create(IniName) do begin
-      Font.Name := ReadString('interface', 'FormsFontName', 'Arial');
-      Font.Size := ReadInteger('interface', 'FormsFontSize', 9);
-      FormsFontAttr := ReadString('interface', 'FormsFontAttr', '0000');
-      if FormsFontAttr[1] = '1' then Font.Style := Font.Style + [fsBold];
-      if FormsFontAttr[2] = '1' then Font.Style := Font.Style + [fsItalic];
-      if FormsFontAttr[3] = '1' then Font.Style := Font.Style + [fsUnderline];
-      if FormsFontAttr[4] = '1' then Font.Style := Font.Style + [fsStrikeOut];
-      free;
-   end;
-   {$ENDIF}
+   Font.Name := IniFile.ReadString('interface', 'FormsFontName', 'Arial');
+   Font.Size := IniFile.ReadInteger('interface', 'FormsFontSize', 9);
+   FormsFontAttr := IniFile.ReadString('interface', 'FormsFontAttr', '0000');
+   if FormsFontAttr[1] = '1' then Font.Style := Font.Style + [fsBold];
+   if FormsFontAttr[2] = '1' then Font.Style := Font.Style + [fsItalic];
+   if FormsFontAttr[3] = '1' then Font.Style := Font.Style + [fsUnderline];
+   if FormsFontAttr[4] = '1' then Font.Style := Font.Style + [fsStrikeOut];
 end;
 
 procedure TCustomForm.Notification(AComponent: TComponent;

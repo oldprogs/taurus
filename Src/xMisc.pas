@@ -502,8 +502,7 @@ type
      function NextStep: Boolean; virtual; abstract;
      procedure StartChat(const LogFName: string; local: boolean; const ChatBell: string); virtual;
      function CanChat: Boolean; virtual;
-     procedure SendTRSNAK(const a: string);
-     procedure SendTRSACK(const a: string);
+     procedure SendTRSMSG(const a, c: string);
      function Compress(dest: pointer; var res: longint; src: pointer; len: longint): integer;
      function Uncompress(dest: pointer; var res: longint; src: pointer; len: longint): integer;
   end;
@@ -2828,14 +2827,9 @@ begin
    Result := False;
 end;
 
-procedure TBaseProtocol.SendTRSNAK;
+procedure TBaseProtocol.SendTRSMSG;
 begin
-   ListBuf.Add('TRS ' + a + ' NAK');
-end;
-
-procedure TBaseProtocol.SendTRSACK;
-begin
-   ListBuf.Add('TRS ' + a + ' ACK');
+   ListBuf.Add('TRS ' + a + ' ' + c);
 end;
 
 function TBaseProtocol.Compress;
@@ -3322,6 +3316,7 @@ begin
       i := MinD(90, T.D.FSize - T.D.FPos);
       SetLength(s, i);
       i := T.Stream.Read(s[1], i);
+      SetLength(s, i);
       j := 1;
       while j <= Length(s) do begin
          if s[j]  = #1 then begin
@@ -3333,16 +3328,15 @@ begin
          fBuff := fBuff + s[j];
          if s[j] = #10 then begin
             if copy(fBuff, 1, 5) = 'AREA:' then fBuff := '' else
-            if fBuff[1] = '@' then fBuff := '' else
+            if (fBuff[1] = '@') and (copy(fBuff, 2, 3) <> 'Via') and (copy(fBuff, 2, 4) <> 'PATH') then fBuff := '' else
             if copy(fBuff, 1, 8) = 'SEEN-BY:' then fBuff := '';
             CP.SendString(fBuff);
             fBuff := '';
          end;
          inc(j);
       end;
-//      CP.SendString(fBuff);
       Inc(T.d.FPos, i);
-      if T.d.FPos = T.d.FSize then begin
+      if (T.d.FPos = T.d.FSize) or (i = 0) then begin
          CP.SendString(fBuff);
          fBuff := '';
          PutString;

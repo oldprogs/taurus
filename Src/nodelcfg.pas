@@ -43,33 +43,31 @@ uses xBase, Recs, LngTools, xFido, AltRecs, Wizard;
 
 procedure TNodeListCfgForm.FormActivate(Sender: TObject);
 begin
-  if not Activated then
-  begin
-    GridFillColLng(gNL, rsNdlCNL);
-    GridFillColLng(gPhn, rsNdlCPhn);
-  end;
+   if not Activated then begin
+      GridFillColLng(gNL, rsNdlCNL);
+      GridFillColLng(gPhn, rsNdlCPhn);
+   end;
 end;
 
 procedure SetupNodelist;
 var
-  NodeListCfgForm: TNodeListCfgForm;
+   NodeListCfgForm: TNodeListCfgForm;
 begin
-  NodeListCfgForm := TNodeListCfgForm.Create(Application);
-  NodeListCfgForm.SetData;
-  NodeListCfgForm.ShowModal;
-  FreeObject(NodeListCfgForm);
+   NodeListCfgForm := TNodeListCfgForm.Create(Application);
+   NodeListCfgForm.SetData;
+   NodeListCfgForm.ShowModal;
+   FreeObject(NodeListCfgForm);
 end;
 
 procedure TNodeListCfgForm.SetData;
 begin
-  with Cfg.Nodelist do
-  begin
-    gNL.SetData([Files, AltCfg.NodelistDataDomain]);
-    gPhn.SetData([SrcPfx, DstPfx]);
-    Crc32 := Files.Crc32(AltCfg.NodelistDataDomain.Crc32(SrcPfx.Crc32(DstPfx.Crc32(CRC32_INIT))));
-    gNL.RenumberRows;
-    gPhn.RenumberRows;
-  end
+   with Cfg.Nodelist do begin
+      gNL.SetData([Files, AltCfg.NodelistDataDomain]);
+      gPhn.SetData([SrcPfx, DstPfx]);
+      Crc32 := Files.Crc32(AltCfg.NodelistDataDomain.Crc32(SrcPfx.Crc32(DstPfx.Crc32(CRC32_INIT))));
+      gNL.RenumberRows;
+      gPhn.RenumberRows;
+   end;
 end;
 
 procedure TNodeListCfgForm.FormClose(Sender: TObject; var Action: TCloseAction);

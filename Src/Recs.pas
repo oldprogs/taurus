@@ -1016,8 +1016,8 @@ procedure InitHelp;
 implementation
 
 uses Forms, SysUtils, MClasses, mGrids, LngTools, NdlUtil, xIP, Import,
-     Controls, SinglPwd, StartWiz, RadIni, FileCtrl, tarif, IniFiles,
-     Wizard {$IFDEF USE_TAPI} , xTAPI {$ENDIF};
+     Controls, SinglPwd, StartWiz, RadIni, FileCtrl, tarif, Wizard
+     {$IFDEF USE_TAPI} , xTAPI {$ENDIF};
 
 function DefaultZone: Integer;
 begin

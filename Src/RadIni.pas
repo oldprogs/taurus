@@ -241,8 +241,6 @@ type
 
 procedure LoadIni;
 procedure FreeIni;
-procedure IniEnter;
-procedure IniLeave;
 
 var
   IniFile: TConfig;
@@ -278,37 +276,26 @@ const
 
 procedure LoadIni;
 begin
-  IniFile := TConfig.Create;
-  IniFile.ReadConfig;
+   IniFile := TConfig.Create;
+   IniFile.ReadConfig;
 end;
 
 procedure FreeIni;
 begin
-  IniFile.Free;
-  IniFile := nil;
-end;
-
-procedure IniEnter;
-begin
-  IniFile.Enter;
-  Inc(IniFileCCC);
-end;
-
-procedure IniLeave;
-begin
-  Dec(IniFileCCC);
-  IniFile.Leave;
-  if IniFileCCC < 0 then GlobalFail('%s', ['Unexpected IniLeave!']);
+   IniFile.Free;
+   IniFile := nil;
 end;
 
 procedure TConfig.Enter;
 begin
-  EnterCS(CS);
+   EnterCS(CS);
+   Inc(IniFileCCC);
 end;
 
 procedure TConfig.Leave;
 begin
-  LeaveCS(CS);
+   Dec(IniFileCCC);
+   LeaveCS(CS);
 end;
 
 function TConfig.ReadString(Sect, Line: string): string;
@@ -318,27 +305,27 @@ end;
 
 function TConfig.ReadString(Sect, Line, Def: string): string;
 begin
-   with TIniFile.Create(IniFName) do begin
-      try
-         Enter;
+   Enter;
+   try
+      with TIniFile.Create(IniFName) do begin
          Result := ReadString(Sect, Line, Def);
-      finally
          Free;
-         Leave;
       end;
+   finally
+      Leave;
    end;
 end;
 
 function TConfig.ReadBool(Sect, Line: string): boolean;
 begin
-   with TIniFile.Create(IniFName) do begin
-      try
-         Enter;
+   Enter;
+   try
+      with TIniFile.Create(IniFName) do begin
          Result := ReadBool(Sect, Line, True);
-      finally
          Free;
-         Leave;
       end;
+   finally
+      Leave;
    end;
 end;
 
@@ -349,40 +336,40 @@ end;
 
 procedure TConfig.WriteInteger;
 begin
-   with TIniFile.Create(IniFName) do begin
-      try
-         Enter;
+   Enter;
+   try
+      with TIniFile.Create(IniFName) do begin
          WriteInteger(sect, Line, Val);
-      finally
          Free;
-         Leave;
       end;
+   finally
+      Leave;
    end;
 end;
 
 function TConfig.ReadInteger(Sect, Line: string; Def: integer): integer;
 begin
-   with TIniFile.Create(IniFName) do begin
-      try
-         Enter;
+   Enter;
+   try
+      with TIniFile.Create(IniFName) do begin
          Result := ReadInteger(Sect, Line, Def);
-      finally
          Free;
-         Leave;
       end;
+   finally
+      Leave;
    end;
 end;
 
 procedure TConfig.WriteString;
 begin
-   with TIniFile.Create(IniFName) do begin
-      try
-         Enter;
+   Enter;
+   try
+      with TIniFile.Create(IniFName) do begin
          WriteString(Sect, Line, Val);
-      finally
          Free;
-         Leave;
       end;
+   finally
+      Leave;
    end;
 end;
 
@@ -391,169 +378,185 @@ var
    i: integer;
 begin
    Enter;
-   with TIniFile.Create(IniFName) do begin
-      try
-         Result := TStringList.Create;
-         ReadSection('Grids', Result);
-      finally
-         Free;
+   try
+      with TIniFile.Create(IniFName) do begin
+         try
+            Result := TStringList.Create;
+            ReadSection('Grids', Result);
+         finally
+            Free;
+         end;
       end;
-   end;
-   for i := Result.Count - 1 downto 0 do begin
-      if Pos(UpperCase(Line), UpperCase(Result[i])) = 0 then begin
-         Result.Delete(i);
+      for i := Result.Count - 1 downto 0 do begin
+         if Pos(UpperCase(Line), UpperCase(Result[i])) = 0 then begin
+            Result.Delete(i);
+         end;
       end;
+      if Result.Count = 0 then begin
+         Result.Free;
+         Result := nil;
+      end;
+   finally
+      Leave;
    end;
-   if Result.Count = 0 then begin
-      Result.Free;
-      Result := nil;
-   end;
-   Leave;
 end;
 
 function TConfig.GetStrings;
-var i: integer;
-    s: TStringList;
-    t: string;
-    m: integer;
+var
+   i: integer;
+   s: TStringList;
+   t: string;
+   m: integer;
 begin
    i := StringsList.IndexOf(n);
    if i > -1 then begin
       Result := StringsList.Objects[i] as TDualColl;
       exit;
    end;
-   with TIniFile.Create(IniFName) do begin
-      try
-         Enter;
-         s := TStringList.Create;
-         ReadSection('Grids', s);
-         Result := TDualColl.Create;
-         m := StringsList.Add(n);
-         StringsList.Objects[m] := Result;
-         for i := 1 to s.Count do begin
-            t := ReadString('Grids', s[i - 1], '');
-            Result.Add(s[i - 1],
-                       ExtractWord(1, t, ['|']),
-                       ExtractWord(2, t, ['|']));
+   Enter;
+   try
+      with TIniFile.Create(IniFName) do begin
+         try
+            s := TStringList.Create;
+            ReadSection('Grids', s);
+            Result := TDualColl.Create;
+            m := StringsList.Add(n);
+            StringsList.Objects[m] := Result;
+            for i := 1 to s.Count do begin
+               t := ReadString('Grids', s[i - 1], '');
+               Result.Add(s[i - 1],
+                          ExtractWord(1, t, ['|']),
+                          ExtractWord(2, t, ['|']));
+            end;
+            s.Free;
+         finally
+            Free;
          end;
-         s.Free;
-      finally
-         Free;
-         Leave;
       end;
-   end;
+   finally
+      Leave;
+   end;      
 end;
 
 procedure TConfig.LoadGrid;
-var s: TStringList;
-    i: integer;
-    n: integer;
-    r: integer;
-    t: string;
-    c: string;
+var
+   s: TStringList;
+   i: integer;
+   n: integer;
+   r: integer;
+   t: string;
+   c: string;
 begin
-   with TIniFile.Create(IniFName) do begin
-      try
-         Enter;
-         s := TStringList.Create;
-         ReadSection('Grids', s);
-         r := 1;
-         for i := 1 to s.Count do begin
-            if pos(g.Name, s[i - 1]) > 0 then begin
-               g.AddLine;
-               t := ReadString('Grids', s[i - 1], '');
-               for n := 1 to WordCount(t, ['|']) do begin
-                  c := ExtractWord(n, t, ['|']);
-                  if c = '-' then c := '';
-                  g.Cells[g.FixedCols - 1 + n, r] := c;
+   Enter;
+   try
+      with TIniFile.Create(IniFName) do begin
+         try
+            s := TStringList.Create;
+            ReadSection('Grids', s);
+            r := 1;
+            for i := 1 to s.Count do begin
+               if pos(g.Name, s[i - 1]) > 0 then begin
+                  g.AddLine;
+                  t := ReadString('Grids', s[i - 1], '');
+                  for n := 1 to WordCount(t, ['|']) do begin
+                     c := ExtractWord(n, t, ['|']);
+                     if c = '-' then c := '';
+                     g.Cells[g.FixedCols - 1 + n, r] := c;
+                  end;
+                  inc(r);
                end;
-               inc(r);
             end;
+            g.DelLine;
+            s.Free;
+         finally
+            Free;
          end;
-         g.DelLine;
-         s.Free;
-      finally
-         Free;
-         Leave;
       end;
+   finally
+      Leave;   
    end;
 end;
 
 procedure TConfig.SaveGrid;
-var i: integer;
-    n: integer;
-    s: string;
-    c: string;
-    p: TDualColl;
-    l: TStringList;
+var
+   i: integer;
+   n: integer;
+   s: string;
+   c: string;
+   p: TDualColl;
+   l: TStringList;
 begin
    Enter;
-   with TIniFile.Create(IniFName) do begin
-      try
-         l := TStringList.Create;
-         ReadSection('Grids', l);
-         for i := l.Count - 1 downto 0 do begin
-            if pos(g.Name, l[i]) > 0 then begin
-               DeleteKey('Grids', l[i]);
+   try
+      with TIniFile.Create(IniFName) do begin
+         try
+            l := TStringList.Create;
+            ReadSection('Grids', l);
+            for i := l.Count - 1 downto 0 do begin
+               if pos(g.Name, l[i]) > 0 then begin
+                  DeleteKey('Grids', l[i]);
+               end;
             end;
+            l.Free;
+         finally
+            Free;
          end;
-         l.Free;
-      finally
-         Free;
       end;
-   end;
-   for i := 1 to g.RowCount - 1 do begin
-      s := '';
-      for n := g.FixedCols to g.ColCount - 1 do begin
-         c := g.Cells[n, i];
-         if c = '' then c := '-';
-         s := s + c + '|';
+      for i := 1 to g.RowCount - 1 do begin
+         s := '';
+         for n := g.FixedCols to g.ColCount - 1 do begin
+            c := g.Cells[n, i];
+            if c = '' then c := '-';
+            s := s + c + '|';
+         end;
+         WriteString('Grids', g.Name + IntToStr(i), s);
       end;
-      WriteString('Grids', g.Name + IntToStr(i), s);
-   end;
-   Leave;
-   i := StringsList.IndexOf(g.Name);
-   if i > - 1 then begin
-      p := StringsList.Objects[i] as TDualColl;
-      FreeObject(p);
-      StringsList.Delete(i);
-   end;
+      i := StringsList.IndexOf(g.Name);
+      if i > - 1 then begin
+         p := StringsList.Objects[i] as TDualColl;
+         FreeObject(p);
+         StringsList.Delete(i);
+      end;
+   finally
+      Leave;
+   end;      
 end;
 
 constructor TConfig.Create;
 begin
-  InitializeCriticalSection(CS);
-  NetmailAddrTo := TStringColl.Create;
-  NetmailAddrFrom := TStringColl.Create;
-  NetmailPwd := TStringColl.Create;
-  StringsList := TStringList.Create;
+   InitializeCriticalSection(CS);
+   NetmailAddrTo := TStringColl.Create;
+   NetmailAddrFrom := TStringColl.Create;
+   NetmailPwd := TStringColl.Create;
+   StringsList := TStringList.Create;
 end;
 
 destructor TConfig.Destroy;
-var d: TDualColl;
-    i: integer;
+var
+   d: TDualColl;
+   i: integer;
 begin
-  PurgeCS(CS);
-  FreeObject(NetmailAddrTo);
-  FreeObject(NetmailAddrFrom);
-  FreeObject(NetmailPwd);
-  if StringsList <> nil then begin
-     for i := 0 to StringsList.Count - 1 do begin
-        d := StringsList.Objects[i] as TDualColl;
-        FreeObject(d);
-     end;
-     StringsList.Free;
-  end;
-  inherited Destroy;
+   PurgeCS(CS);
+   FreeObject(NetmailAddrTo);
+   FreeObject(NetmailAddrFrom);
+   FreeObject(NetmailPwd);
+   if StringsList <> nil then begin
+      for i := 0 to StringsList.Count - 1 do begin
+         d := StringsList.Objects[i] as TDualColl;
+         FreeObject(d);
+      end;
+      StringsList.Free;
+   end;
+   inherited Destroy;
 end;
 
 function Hex2Dec(const S: string): Longint;
 var
-  HexStr: string;
+   HexStr: string;
 begin
-  if Pos('$', S) = 0 then HexStr := '$' + S
-  else HexStr := S;
-  Result := StrToIntDef(HexStr, 0);
+   if Pos('$', S) = 0 then HexStr := '$' + S
+                      else HexStr := S;
+   Result := StrToIntDef(HexStr, 0);
 end;
 
 procedure TConfig.ReadConfig;
@@ -661,11 +664,11 @@ begin
 end;
 
 begin
-  Enter;
-  ini := TMemIniFile.Create(IniFName);
-  Leave;
-  with ini do
-    try
+   Enter;
+   ini := TMemIniFile.Create(IniFName);
+   Leave;
+   with ini do
+   try
       InTemp := MakeFullDir('', ReadString(paths, 'TempInbound', ExtractFilePath(ParamStr(0)) + 'INTMP'));
       InSecure := MakeFullDir('', ReadString(paths, 'SecureInbound', ExtractFilePath(ParamStr(0)) + 'INSEC'));
       Log := MakeFullDir('', ReadString(paths, 'Logs', ExtractFilePath(ParamStr(0)) + 'LOG'));
@@ -865,33 +868,33 @@ begin
       logWaitEvt := ReadBool(main, 'LogWaitEvt', False);
       SaveWaits := ReadBool(main, 'SaveWaits', False);
 
-    finally
+   finally
       free;
-    end;
-    PostMsg(WM_TrayIcon);
+   end;
+   PostMsg(WM_TrayIcon);
 
-    if Application.MainForm <> nil then PostMessage(Application.MainForm.Handle, WM_GRIDUPD,Ord(GridInBWZ), 0);//0 - BWZ; 1 - PV
-    if Application.MainForm <> nil then PostMessage(Application.MainForm.Handle, WM_GRIDUPD,Ord(GridInPV), 1);//0 - BWZ; 1 - PV
-    if Application.MainForm <> nil then PostMessage(Application.MainForm.Handle, WM_USESPACE,Ord(UseSpace), 0);
-    if Application.MainForm <> nil then PostMessage(Application.MainForm.Handle, WM_SETCOLORS, 0, 0);
-    if uppercase(HelpLang) = 'en' then begin
-       Application.HelpFile := GetHelpFile(HomeDir, LangNames[lnEnglish]);
-       HelpLanguageId := HelpLanguageEnglish;
-       SetRegHelpLng(LangNames[lnEnglish]);
-    end else
-    if uppercase(HelpLang) = 'ru' then begin
-       Application.HelpFile := GetHelpFile(HomeDir, LangNames[lnRussian]);
-       HelpLanguageId := HelpLanguageRussian;
-       SetRegHelpLng(LangNames[lnRussian]);
-    end;
+   if Application.MainForm <> nil then PostMessage(Application.MainForm.Handle, WM_GRIDUPD,Ord(GridInBWZ), 0);//0 - BWZ; 1 - PV
+   if Application.MainForm <> nil then PostMessage(Application.MainForm.Handle, WM_GRIDUPD,Ord(GridInPV), 1);//0 - BWZ; 1 - PV
+   if Application.MainForm <> nil then PostMessage(Application.MainForm.Handle, WM_USESPACE,Ord(UseSpace), 0);
+   if Application.MainForm <> nil then PostMessage(Application.MainForm.Handle, WM_SETCOLORS, 0, 0);
+   if uppercase(HelpLang) = 'en' then begin
+      Application.HelpFile := GetHelpFile(HomeDir, LangNames[lnEnglish]);
+      HelpLanguageId := HelpLanguageEnglish;
+      SetRegHelpLng(LangNames[lnEnglish]);
+   end else
+   if uppercase(HelpLang) = 'ru' then begin
+      Application.HelpFile := GetHelpFile(HomeDir, LangNames[lnRussian]);
+      HelpLanguageId := HelpLanguageRussian;
+      SetRegHelpLng(LangNames[lnRussian]);
+   end;
 
-    if IsHtmlHelp <> not NoHTML then IsHtmlHelp := not NoHTML;
-    Application.HelpFile := GetHelpFile(HomeDir, HelpLang);
+   if IsHtmlHelp <> not NoHTML then IsHtmlHelp := not NoHTML;
+   Application.HelpFile := GetHelpFile(HomeDir, HelpLang);
 
-    if _lang <> lang then begin
-       lang := _lang;
-       if Application.MainForm <> nil then PostMessage(Application.MainForm.Handle, WM_SetLang, lang, 1);
-    end;
+   if _lang <> lang then begin
+      lang := _lang;
+      if Application.MainForm <> nil then PostMessage(Application.MainForm.Handle, WM_SetLang, lang, 1);
+   end;
 end;
 
 procedure TConfig.WriteConfig;
@@ -904,12 +907,8 @@ begin
    except
       exit;
    end;
-   try
    Enter;
-   with TIniFile.Create(IniFName) do begin
-      UpdateFile;
-      Free;
-   end;
+   try
    with TMemIniFile.Create(IniFName) do begin
      WriteInteger(main, 'CPS_MinBytes', CPS_MinBytes);
      WriteInteger(main, 'CPS_MinSecs', CPS_MinSecs);
@@ -1119,7 +1118,6 @@ begin
            end else begin
               s := Trim(NetmailAddrFrom[i]) + ' (' + NetmailPwd[i] + ')';
            end;
-           if i = NetmailAddrTo.Count - 1 then s := s + #13#10;
            WriteString(netmail, NetmailAddrTo[i] , s)
         end;
      end;

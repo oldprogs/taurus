@@ -7,7 +7,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms,
-  ComCtrls, StdCtrls, ExtCtrls, xFido, IniFiles, MClasses;
+  ComCtrls, StdCtrls, ExtCtrls, xFido, MClasses;
 
 type
   TNodelistBrowser = class(TForm)

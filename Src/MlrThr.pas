@@ -1457,7 +1457,7 @@ function GetPortRec(LineId: DWORD): TPortRec;
 function OpenSerialPort(R: TPortRec): TPort;
 procedure InsertPoll(var ANode: TAdvNode; Status: TOutStatusSet; ATyp: TPollType);
 function PollOwnerName(p: TFidoPoll): string;
-procedure SendTRSMSG(p: TFidoPoll; c: string; ss: string);
+procedure SendTRSMSG(p: TFidoPoll; c: string; var ss: string);
 function GetPollState(AOwnPolls: TColl; P: TFidoPoll; PubInst: Boolean; Mlr: TMailerThread; SC: TStringColl; TQ: TFSC62Quant): TPollState;
 procedure RollPoll(var ActivePoll: TFidoPoll);
 procedure EnterFidoPolls;
@@ -1951,7 +1951,9 @@ begin
       end;
       LeaveFidoPolls;
    end;
-   if (IPPolls <> nil) then SetEvt(IPPolls.oSleep);
+   if (IPPolls <> nil) then begin
+      SetEvt(IPPolls.oSleep);
+   end;   
 end;
 
 procedure _RecalcPolls;
@@ -1965,7 +1967,9 @@ begin
       end;
       MailerThreads.Leave;
    end;
-   if Fire and (IPPolls <> nil) then SetEvt(IPPolls.oSleep);
+   if Fire and (IPPolls <> nil) then begin
+      SetEvt(IPPolls.oSleep);
+   end;   
 end;
 
 function CronMatchEx(const t: TSystemTime; const c: TCronRecord; AllowPermanent: Boolean): Boolean;
@@ -2148,7 +2152,7 @@ begin
    end;
 end;
 
-procedure SendTRSMSG(p: TFidoPoll; c: string; ss: string);
+procedure SendTRSMSG(p: TFidoPoll; c: string; var ss: string);
 var
    i: integer;
    j: integer;
@@ -2156,7 +2160,7 @@ var
    s: string;
    a: TFidoAddress;
 begin
-   if ss <> '' then ss := #13#10;
+   if ss <> '' then ss := ss + #13#10;
    ss := ss + FidoPolls.Log.FormatSelf('Test connect to: ' + Addr2Str(p.Node.Addr));
    if c = 'ACK' then begin
       ss := ss + ' succeeded';
@@ -2167,19 +2171,20 @@ begin
    MailerTransit.Enter;
    For i := CollMax(MailerTransit) downto 0 do begin
       m := MailerTransit[i];
-      for j := 0 to CollMax(m.TRSList) do begin
+      for j := CollMax(m.TRSList) downto 0 do begin
          s := m.TRSLIst[j];
          ParseAddress(s, a);
          if CompareAddrs(a, p.Node.Addr) = 0 then begin
             m.TRSLIst.AtFree(j);
-            ss := ss + #13#10 + FidoPolls.Log.FormatSelf(s + ' removed from test queue');
+            ss := ss + #13#10 + FidoPolls.Log.FormatSelf(s + ' removed from test queue (' + m.__FName + ')');
             if m.TRSLIst.Count = 0 then begin
                ss := ss + #13#10 + FidoPolls.Log.FormatSelf('Test queue removed');
-               MailerTransit.Delete(m);
+               MailerTransit.AtDelete(i);
             end;
-            m.SD.Prot.SendTRSNAK(s);
+            m.SD.Prot.SendTRSMSG(s, c);
          end;
       end;
+      SetEvt(m.oEvt);
    end;
    MailerTransit.Leave;
 end;
@@ -2318,7 +2323,7 @@ var
          Exit;
       end;
 
-      if (Mlr = PollOwnerDaemon) and TimerInstalled(p.LastPoll) then begin
+      if (Mlr = PollOwnerDaemon) and (p.Typ <> ptpTest) and TimerInstalled(p.LastPoll) then begin
          if ElapsedTime(p.LastPoll) < 30 * 20 then begin
             Result := plsHLD;
             if SC = nil then begin
@@ -2370,8 +2375,7 @@ begin
    TQ := CurFSC62Quant;
    try
       EnterFidoPolls;
-      for i := 0 to FidoPolls.Count - 1 do
-      begin
+      for i := 0 to FidoPolls.Count - 1 do begin
          p := FidoPolls[i];
          case GetPollState(AOwnPolls, P, PubInst, Mlr, SC, TQ) of
             plsPSD:
@@ -4799,7 +4803,8 @@ begin
    dig := DigestToStr(D);
    if UpperCase(dig) = UpperCase(ExtractWord(2, P.CustomInfo, [' '])) then begin
       P.CustomInfo := '';
-      Log(ltInfo, 'Password-protected session (auth=CRAM-MD5)')
+      Log(ltInfo, 'Password-protected session (auth=CRAM-MD5)');
+      SD.PasswordProtected := True;
    end else begin
       P.CustomInfo := 'BAD_PASSWORD';
       LogFmt(ltGlobalErr, 'Remote presented invalid password (auth=CRAM-MD5) when "%s" is required for %s', [Psw, Addr2Str(SD.rmtPrimaryAddr)]);
@@ -5031,7 +5036,9 @@ const
          n := FindNode(a);
          if n <> nil then begin
             InsertPoll(n, [osCrash], ptpTest);
-            MailerTransit.Add(Self);
+            if MailerTransit.IndexOf(Self) = -1 then begin
+               MailerTransit.Add(Self);
+            end;
             if TRSList = nil then begin
                TRSList := TStringColl.Create;
             end;
@@ -5321,7 +5328,6 @@ begin
             end;
          end;
       end;
-      //Don't use dynamic routing in case of unsecure _incoming_ session!
       if (IniFile.DynamicRouting) and
          (SD.PasswordProtected or (SD.ActivePoll <> nil)) and
          (NetmailHolder <> nil) and not (SD.SessionCore in [scNNTP]) then NetmailHolder.Route(SD.rmtAddrs[n], SD.ActivePoll <> nil, Log);
@@ -5330,7 +5336,7 @@ begin
    N := 0;
    TransmitHold := SD.ActivePoll = nil;
    if not TransmitHold then begin
-      TransmitHold := inifile.TransmitHold; //pofHold in FidoPolls.Options.d.Flags;
+      TransmitHold := inifile.TransmitHold; 
    end;
    Add(osCallback);
    if rmfHFR in SD.rmtMailerFlags then AddFReq;
@@ -5388,7 +5394,6 @@ begin
       for K := 1 to N do begin
          S := A[K];
          J := SD.OutFiles.Count;
-        // SD.OutFiles := FidoOut.GetOutbound(SD.rmtAddrs[I], [S], SD.OutFiles, nil, nil, True, True);
          SD.OutFiles := GetNodeOutbound(SD.rmtAddrs[i], [S], SD.OutFiles);
          ChkErrMsg;
          SD.OutFiles.Enter;
@@ -5656,7 +5661,6 @@ function TMailerThread.AcceptFile(P: TBaseProtocol): TTransferFileAction;
 
       FName := P.R.D.FName;
 
-      //DeQuote only for BinkP protocol 
       if (SD.SessionCore = scBinkP) and (not StrDeQuote(FName)) then BadFName := True
       else P.R.D.FName := FName;
 
@@ -5664,8 +5668,7 @@ function TMailerThread.AcceptFile(P: TBaseProtocol): TTransferFileAction;
       ufe := UpperCase(fe);
 
       if fp <> '' then BadFName := True;
-      if not BadFName then
-      begin
+      if not BadFName then begin
          FillCharSet(P.R.D.FName, cs);
          if (cs * [#0..#31, '/', {'\',} '*', '?', #127, ':']) <> [] then BadFName := True;
       end;
@@ -5676,8 +5679,7 @@ function TMailerThread.AcceptFile(P: TBaseProtocol): TTransferFileAction;
          Exit;
       end;
 
-      if Trim(P.R.D.FName) = '' then
-      begin
+      if Trim(P.R.D.FName) = '' then begin
          LogFmt(ltWarning, 'File with empty name skipped. You can fix this bug at the remote and retry.', [P.R.D.FName, osss, sss]);
          Result := aaAcceptLater;
          Exit;
@@ -5685,17 +5687,13 @@ function TMailerThread.AcceptFile(P: TBaseProtocol): TTransferFileAction;
 
       //    ProcessTIC(ufe);
       //    begin
-      if SkipNextTic or RejectNextTic then
-      begin
-         if ufe = '.TIC' {StrEnds('.TIC', UPPERCASE(P.R.d.FName))} then
-         begin
-            if SkipNextTic then
-            begin
+      if SkipNextTic or RejectNextTic then begin
+         if ufe = '.TIC' {StrEnds('.TIC', UPPERCASE(P.R.d.FName))} then begin
+            if SkipNextTic then begin
                result := aaAcceptLater;
                SkipNextTic := false;
             end;
-            if RejectNextTic then
-            begin
+            if RejectNextTic then begin
                result := aaRefuse;
                RejectNextTic := false;
             end;
@@ -5710,22 +5708,18 @@ function TMailerThread.AcceptFile(P: TBaseProtocol): TTransferFileAction;
          ss := '*.pkt';
          LogOnce(ltInfo, 'ZMH event in progress. Incoming trafic is restricted');
       end;
-      if ss <> '' then
-      begin
+      if ss <> '' then begin
          osss := ss;
          Match := False;
-         while ss <> '' do
-         begin
+         while ss <> '' do begin
             GetWrd(ss, sss, ' ');
-            if MatchMask(P.R.D.FName, sss) then
-            begin
+            if MatchMask(P.R.D.FName, sss) then begin
                LogFmt(ltInfo, '"%s" matches "%s"', [P.R.D.FName, sss]);
                Match := True;
                Break;
             end;
          end;
-         if not Match then
-         begin
+         if not Match then begin
             LogFmt(ltWarning, '"%s" will be accepted later, reason is "%s" required', [P.R.D.FName, osss]);
             Result := aaAcceptLater;
             Exit;
@@ -5737,8 +5731,7 @@ function TMailerThread.AcceptFile(P: TBaseProtocol): TTransferFileAction;
       else
          dsk := ord(Upcase(IniFile.InSecure[1])) - $40;
 
-      if P.R.D.FSize >= DiskFree(dsk) - IniFile.FreeSpaceLmt * 1024 * 1024 then
-      begin
+      if P.R.D.FSize >= DiskFree(dsk) - IniFile.FreeSpaceLmt * 1024 * 1024 then begin
          LogFmt(ltWarning, '"%s" (%d) will be accepted later, reason is filesize exceeds allowed free disk space limit (%d free, %d needed)',
                 [P.R.D.FName, P.R.D.FSize, DiskFree(dsk) - P.R.D.FSize, IniFile.FreeSpaceLmt * 1024 * 1024]);
          Result := aaAcceptLater;
@@ -5746,21 +5739,17 @@ function TMailerThread.AcceptFile(P: TBaseProtocol): TTransferFileAction;
       end;
 
       ss := ExpandSuperMask(EP.StrValue(eiAccFilesFrb));
-      if ss <> '' then
-      begin
+      if ss <> '' then begin
          osss := ss;
          Match := False;
-         while ss <> '' do
-         begin
+         while ss <> '' do begin
             GetWrd(ss, sss, ' ');
-            if MatchMask(P.R.D.FName, sss) then
-            begin
+            if MatchMask(P.R.D.FName, sss) then begin
                Match := True;
                Break;
             end;
          end;
-         if Match then
-         begin
+         if Match then begin
             LogFmt(ltWarning, '"%s" will be accepted later, reason is "%s" forbidden, matched "%s"', [P.R.D.FName, osss, sss]);
             Result := aaAcceptLater;
             Exit;
@@ -5785,77 +5774,61 @@ function TMailerThread.AcceptFile(P: TBaseProtocol): TTransferFileAction;
          end;
       end;
 
-      if (SD.FTS1NeedRmtAddr) then
-      begin
-         if (P.R.D.FSize < 60) or (ufe <> '.PKT') then
-         begin
+      if (SD.FTS1NeedRmtAddr) then begin
+         if (P.R.D.FSize < 60) or (ufe <> '.PKT') then begin
             Log(ltWarning, 'FTS-0001 remote info requred');
             Result := aaAcceptLater;
             Exit;
          end;
-         if ((P.R.D.FSize = 60) or (P.R.D.FSize = 61)) then
-         begin
+         if ((P.R.D.FSize = 60) or (P.R.D.FSize = 61)) then begin
             ReturnMemoryStream(xstInMemPKT);
             Exit;
          end;
       end;
 
-      if ufe = '.REQ' then
-      begin
+      if ufe = '.REQ' then begin
          SD.FreqProcessed := False;
-         if SD.AcceptReq then
-         begin
+         if SD.AcceptReq then begin
             SD.OutFiles.Enter;
-            for k := 0 to CollMax(SD.OutFiles) do
-            begin
+            for k := 0 to CollMax(SD.OutFiles) do begin
                tof := SD.OutFiles[k];
-               if tof.FStatus = osHreq then
-               begin
+               if tof.FStatus = osHreq then begin
                   SD.AcceptReq := False;
                   Break;
                end;
             end;
             SD.OutFiles.Leave;
          end;
-         if (P.R.D.FSize > $10000) then
-         begin
+         if (P.R.D.FSize > $10000) then begin
             LogFmt(ltWarning, 'Size of "%s" is too large (%s) - refusing', [P.R.D.FName, Int2Str(P.R.D.FSize)]);
             Result := aaRefuse;
-         end
-         else
-            if (not SD.AcceptReq) or (SD.ActivePoll <> nil) then
-            begin
-               SD.FreqProcessed := True;
-               Log(ltWarning, 'Requests are not acceptable');
-               SD.SkipInMem := True;
-            end;
+         end else
+         if (not SD.AcceptReq) or (SD.ActivePoll <> nil) then begin
+            SD.FreqProcessed := True;
+            Log(ltWarning, 'Requests are not acceptable');
+            SD.SkipInMem := True;
+         end;
          ReturnMemoryStream(xstInMemREQ);
          if Result <> aaOK then SD.FreqProcessed := True;
          Exit;
-      end
-      else
-         if ProtCore = ptBinkP then TBinkP(SD.Prot).freqprocessed := true;
+      end else
+      if ProtCore = ptBinkP then TBinkP(SD.Prot).freqprocessed := true;
 
-      if ufe = '.CLB' then
-      begin
+      if ufe = '.CLB' then begin
          Result := aaAcceptLater;
          SD.AcceptBack := SD.AcceptBack and (SD.rmtPassword <> '');
-         if SD.AcceptBack then
-         begin
+         if SD.AcceptBack then begin
             ReturnMemoryStream(xstInMemCLB);
             result := aaOK;
             Log(ltInfo, 'Callback request accepted');
-         end
-         else
-         begin
+         end else begin
             Log(ltWarning, 'Callback request rejected');
          end;
          exit;
       end;
 
       ib := GetInboundDir(SD.rmtPrimaryAddr, P.R.D.FName, SD.PasswordProtected, PutKind);
-      if not CreateDirInheritance(ib) then
-      begin
+      if not CreateDirInheritance(ib) then begin
          ChkErrMsg;
          Result := aaAcceptLater;
          Exit;
@@ -5888,27 +5861,27 @@ function TMailerThread.AcceptFile(P: TBaseProtocol): TTransferFileAction;
                   SetErrorMsg(SD.WzRec.GetBWZFName);
                   ChkErrMsg;
                end else
-                  if d = P.R.D.FSize then begin
-                     Result := aaRefuse;
-                     FreeObject(s);
-                     SD.WzRec := nil;
+               if d = P.R.D.FSize then begin
+                  Result := aaRefuse;
+                  FreeObject(s);
+                  SD.WzRec := nil;
+                  Exit;
+               end else begin
+                  if (IniFile.IgnoreBWZSize) or (d = SD.WZRec.TmpSize) then begin
+                     SD.WZRec.Locked := True;
+                     P.R.D.FOfs := d;
+                     P.R.Stream := s;
+                     Result := aaOK;
+                     P.R.D.StreamType := xstInDiskFileAppend;
                      Exit;
                   end else begin
-                     if (IniFile.IgnoreBWZSize) or (d = SD.WZRec.TmpSize) then begin
-                        SD.WZRec.Locked := True;
-                        P.R.D.FOfs := d;
-                        P.R.Stream := s;
-                        Result := aaOK;
-                        P.R.D.StreamType := xstInDiskFileAppend;
-                        Exit;
-                     end else begin
-                        LogFmt(ltInfo, 'Complete File Size/Time: Saved[%s/%d], Got[%s/%d]',
-                           [Int2Str(SD.WZRec.FSize), SD.WZRec.FTime,
-                           Int2Str(P.R.D.FSize), P.R.D.FTime]);
-                        LogFmt(ltInfo, 'BadWaZOO Size Real: %s, Listed: %s',
-                           [Int2Str(d), Int2Str(SD.WZRec.TmpSize)]);
-                     end;
+                     LogFmt(ltInfo, 'Complete File Size/Time: Saved[%s/%d], Got[%s/%d]',
+                        [Int2Str(SD.WZRec.FSize), SD.WZRec.FTime,
+                        Int2Str(P.R.D.FSize), P.R.D.FTime]);
+                     LogFmt(ltInfo, 'BadWaZOO Size Real: %s, Listed: %s',
+                        [Int2Str(d), Int2Str(SD.WZRec.TmpSize)]);
                   end;
+               end;
                FreeObject(s);
                Log(ltInfo, Format('Deleting invalid ''%s''', [SD.WzRec.GetBwzFName]));
                DeleteFile(SD.WzRec.GetBWZFName);
@@ -5966,35 +5939,35 @@ begin
    BWZColl.Enter;
    Result := DoAccept(P);
    case Result of
-      aaOK:
-         begin
-            if P.R.d.FSize = 0 then begin
-               Log(ltInfo, Format('Receiving ''%s'' (?b)', [P.R.d.FName]));
-            end else begin
-               Log(ltInfo, Format('Receiving ''%s'' (%sb)', [P.R.D.FName, Int2Str(P.R.D.FSize)]));
-            end;
-            P.R.D.FPos := P.R.D.FOfs;
-            if P.R.D.FPos <> 0 then begin
-               LogFmt(ltInfo, 'Receiving from offset %s', [Int2Str(P.R.D.FPos)]);
-               P.R.Stream.Seek(P.R.D.FPos, FILE_BEGIN);
-            end;
-            P.R.D.Start := uGetSystemTime;
-            DisplayData;
+   aaOK:
+      begin
+         if P.R.d.FSize = 0 then begin
+            Log(ltInfo, Format('Receiving ''%s'' (?b)', [P.R.d.FName]));
+         end else begin
+            Log(ltInfo, Format('Receiving ''%s'' (%sb)', [P.R.D.FName, Int2Str(P.R.D.FSize)]));
          end;
-      aaRefuse:
-         begin
-            Log(ltInfo, Format('Refusing ''%s''', [P.R.D.FName]));
-            DelFromList(P.R.D.FName);
+         P.R.D.FPos := P.R.D.FOfs;
+         if P.R.D.FPos <> 0 then begin
+            LogFmt(ltInfo, 'Receiving from offset %s', [Int2Str(P.R.D.FPos)]);
+            P.R.Stream.Seek(P.R.D.FPos, FILE_BEGIN);
          end;
-      aaAcceptLater:
-         begin
-            Log(ltInfo, Format('Delaying ''%s''', [P.R.D.FName]));
-            DelFromList(P.R.D.FName);
-            if rmfNoFileDelay in SD.rmtMailerFlags then begin
-               Log(ltWarning, 'Remote mailer doesn''t support Delay File Capability - disconnecting');
-               Result := aaAbort;
-            end;
+         P.R.D.Start := uGetSystemTime;
+         DisplayData;
+      end;
+   aaRefuse:
+      begin
+         Log(ltInfo, Format('Refusing ''%s''', [P.R.D.FName]));
+         DelFromList(P.R.D.FName);
+      end;
+   aaAcceptLater:
+      begin
+         Log(ltInfo, Format('Delaying ''%s''', [P.R.D.FName]));
+         DelFromList(P.R.D.FName);
+         if rmfNoFileDelay in SD.rmtMailerFlags then begin
+            Log(ltWarning, 'Remote mailer doesn''t support Delay File Capability - disconnecting');
+            Result := aaAbort;
          end;
+      end;
    end;
    BWZColl.Leave;
 end;
@@ -6043,85 +6016,85 @@ begin
 
    s := TStringColl.Create;
    if SD.ReqLines <> nil then
-      for i := 0 to SD.ReqLines.Count - 1 do begin
-         r := SD.ReqLines[i];
-         if r.Typ < rtOK then begin
-            LogFmt(ltWarning, 'Unrecognized request line "%s"', [Copy(r.s, 1, MAX_PATH)]);
-            Continue;
-         end;
-         if r.Files = nil then begin
-            if r.SRPs <> nil then
-               ProcessSRPs(r.SRPs)
-            else begin
-               if r.Psw = '' then
-                  ss := ''
-               else
-                  ss := Format('password-equipped ("%s") ', [r.Psw]);
-               case r.Typ of
-                  rtNormal:
-                     LogFmt(ltInfo, 'Can''t fulfill %sfile request "%s"', [ss, r.s]);
-                  rtNewer:
-                     LogFmt(ltInfo, 'Can''t fulfill %supdate request "%s", newer than %s', [ss, r.s, Int2Str(r.Upd)]);
-                  rtUpTo:
-                     LogFmt(ltInfo, 'Can''t fulfill %supdate request "%s", up to date %s', [ss, r.s, Int2Str(r.Upd)]);
-               else
-                  GlobalFail('%s', ['TMailerThread.ReportReq t.Typ(A) ??'])
-               end;
+   for i := 0 to SD.ReqLines.Count - 1 do begin
+      r := SD.ReqLines[i];
+      if r.Typ < rtOK then begin
+         LogFmt(ltWarning, 'Unrecognized request line "%s"', [Copy(r.s, 1, MAX_PATH)]);
+         Continue;
+      end;
+      if r.Files = nil then begin
+         if r.SRPs <> nil then
+            ProcessSRPs(r.SRPs)
+         else begin
+            if r.Psw = '' then
+               ss := ''
+            else
+               ss := Format('password-equipped ("%s") ', [r.Psw]);
+            case r.Typ of
+               rtNormal:
+                  LogFmt(ltInfo, 'Can''t fulfill %sfile request "%s"', [ss, r.s]);
+               rtNewer:
+                  LogFmt(ltInfo, 'Can''t fulfill %supdate request "%s", newer than %s', [ss, r.s, Int2Str(r.Upd)]);
+               rtUpTo:
+                  LogFmt(ltInfo, 'Can''t fulfill %supdate request "%s", up to date %s', [ss, r.s, Int2Str(r.Upd)]);
+            else
+               GlobalFail('%s', ['TMailerThread.ReportReq t.Typ(A) ??'])
             end;
-            Continue;
          end;
+         Continue;
+      end;
 
-         case r.Typ of
-            rtNormal:
-               LogFmt(ltInfo, 'File request "%s" processed', [r.s]);
-            rtNewer:
-               LogFmt(ltInfo, 'File update request "%s" processed, newer than %s', [r.s, Int2Str(r.Upd)]);
-            rtUpTo:
-               LogFmt(ltInfo, 'File update request "%s" processed, up to date %s', [r.s, Int2Str(r.Upd)]);
-         else
-            GlobalFail('%s', ['TMailerThread.ReportReq t.Typ(B) ??'])
-         end;
+      case r.Typ of
+         rtNormal:
+            LogFmt(ltInfo, 'File request "%s" processed', [r.s]);
+         rtNewer:
+            LogFmt(ltInfo, 'File update request "%s" processed, newer than %s', [r.s, Int2Str(r.Upd)]);
+         rtUpTo:
+            LogFmt(ltInfo, 'File update request "%s" processed, up to date %s', [r.s, Int2Str(r.Upd)]);
+      else
+         GlobalFail('%s', ['TMailerThread.ReportReq t.Typ(B) ??'])
+      end;
 
-         for j := 0 to r.Files.Count - 1 do begin
-            if j mod 100 = 99 then FlushLog;
-            f := r.Files[j];
-            if SD.OutFiles.FoundFName(f.FName) or
-               SD.SentFiles.FoundFName(f.FName) or
-               s.FoundUC(f.FName) then
-            begin
-               lg(' already attached %s (%sb, %s) - skipping');
-            end else begin
-               if TotCount >= MaxCount then begin
-                  lg(' %s (%sb, %s) exceeds by count');
-                  if not ecr then begin
-                     ecr := True;
-                     LogFmt(ltInfo, 'Maximum of %d files is allowed', [MaxCount]);
-                  end;
-                  Continue;
+      for j := 0 to r.Files.Count - 1 do begin
+         if j mod 100 = 99 then FlushLog;
+         f := r.Files[j];
+         if SD.OutFiles.FoundFName(f.FName) or
+            SD.SentFiles.FoundFName(f.FName) or
+            s.FoundUC(f.FName) then
+         begin
+            lg(' already attached %s (%sb, %s) - skipping');
+         end else begin
+            if TotCount >= MaxCount then begin
+               lg(' %s (%sb, %s) exceeds by count');
+               if not ecr then begin
+                  ecr := True;
+                  LogFmt(ltInfo, 'Maximum of %d files is allowed', [MaxCount]);
                end;
-               if TotSize + f.Info.Size > MaxSizeA then begin
-                  lg(' %s (%sb, %s) exceeds by duration');
-                  if not etr then begin
-                     etr := True;
-                     LogFmt(ltInfo, 'Maximum of %d minutes (%s KB on %d BPS) is allowed', [MaxMinutes, Int2Str(MaxSizeA div 1024), SD.ConnectSpeed]);
-                  end;
-                  Continue;
-               end;
-               if TotSize + f.Info.Size > MaxSizeB then begin
-                  lg(' %s (%sb, %s) exceeds by size');
-                  if not esr then begin
-                     esr := True;
-                     LogFmt(ltInfo, 'Maximum of %s KB is allowed', [Int2Str(MaxSizeB div 1024)]);
-                  end;
-                  Continue;
-               end;
-               lg(' %s (%sb, %s) attached');
-               s.Add(f.FName);
-               if MaxCount < High(MaxCount) then Inc(TotCount);
-               if (MaxSizeA < High(MaxSizeA)) or (MaxSizeB < High(MaxSizeB)) then Inc(TotSize, f.Info.Size);
+               Continue;
             end;
+            if TotSize + f.Info.Size > MaxSizeA then begin
+               lg(' %s (%sb, %s) exceeds by duration');
+               if not etr then begin
+                  etr := True;
+                  LogFmt(ltInfo, 'Maximum of %d minutes (%s KB on %d BPS) is allowed', [MaxMinutes, Int2Str(MaxSizeA div 1024), SD.ConnectSpeed]);
+               end;
+               Continue;
+            end;
+            if TotSize + f.Info.Size > MaxSizeB then begin
+               lg(' %s (%sb, %s) exceeds by size');
+               if not esr then begin
+                  esr := True;
+                  LogFmt(ltInfo, 'Maximum of %s KB is allowed', [Int2Str(MaxSizeB div 1024)]);
+               end;
+               Continue;
+            end;
+            lg(' %s (%sb, %s) attached');
+            s.Add(f.FName);
+            if MaxCount < High(MaxCount) then Inc(TotCount);
+            if (MaxSizeA < High(MaxSizeA)) or (MaxSizeB < High(MaxSizeB)) then Inc(TotSize, f.Info.Size);
          end;
       end;
+   end;
    FidoOut.AttachFiles(SD.rmtPrimaryAddr, S, osHReq, kaBsoNothingAfter);
    ChkErrMsg;
    if S.Count > 0 then LogFmt(ltInfo, 'Total %d requested file(s) attached', [S.Count]);
@@ -6146,8 +6119,7 @@ var
    ela: DWORD;
 begin
    Result := -1;
-   if AStart <> 0 then
-   begin
+   if AStart <> 0 then begin
       ela := uGetSystemTime - AStart;
       if ela = 0 then ela := 1;
       if (ela >= IniFile.CPS_MinSecs) and (ASize >= IniFile.CPS_MinBytes) then Result := ASize div ela;
@@ -6183,26 +6155,29 @@ var
 begin
    ss := AStr;
    Result := CheckExecPrefixes(ss, Priority, Detached, ShowMode, SetFlag);
-   if not Result then
-   begin
+   if not Result then begin
       ALogger.LogFmt(ltGlobalErr, 'DoCreateSRIFProcess(%s) failed', [AStr]);
       Exit;
    end;
-   if SetFlag then
-   begin
+   if SetFlag then begin
       ALogger.Log(ltGlobalErr, 'File-flags are not allower for SRIF');
-   end
-   else
-   begin
+   end else begin
       Result := ExecProcess(ss, PI, nil, nil, False, IDet[Detached] or Priority or CREATE_SUSPENDED, ShowMode);
    end;
 end;
 
 procedure TMailerThread.ProcessSRIF;
 var
-   s, z, k, RequestList, ResponseList, SRIF: string;
+   s,
+   z,
+   k,
+   RequestList,
+   ResponseList,
+   SRIF: string;
    h: DWORD;
-   SC1, SC2, SC3: TStringColl;
+   SC1,
+   SC2,
+   SC3: TStringColl;
    PI: TProcessInformation;
    T: TTextReader;
    fa: TFidoAddress;
@@ -6246,8 +6221,7 @@ const
    Cores: array[TSessionCore] of string = ('???', 'FTS-0001', 'EMSI', 'BinkP', 'FTP', 'HTTP', 'SMTP', 'POP3', 'GATE', 'NNTP');
 
 begin
-   for i := 0 to ASC.Count - 1 do
-   begin
+   for i := 0 to ASC.Count - 1 do begin
       LogFmt(ltInfo, 'Requested "%s"', [ASC[i]]);
    end;
    DisplayData;
@@ -6261,8 +6235,7 @@ begin
    ResponseList := TempFileName(ATmpDir, 'rsp');
 
    s := AkaStr(SD.rmtPrimaryAddr);
-   for i := 0 to CollMax(SD.rmtAddrs) do
-   begin
+   for i := 0 to CollMax(SD.rmtAddrs) do begin
       fa := SD.rmtAddrs[i];
       if CompareAddrs(SD.rmtPrimaryAddr, fa) = 0 then Continue;
       s := s + AkaStr(fa);
@@ -6308,8 +6281,7 @@ begin
    s := Format('Sysop %s' + CRLF, [DS.rmtSysOpName]) + s + k;
 
    k := SD.OutAddrs;
-   while k <> '' do
-   begin
+   while k <> '' do begin
       GetWrd(k, z, ' ');
       s := s + Format('OurAKA %s' + CRLF, [z]);
    end;
@@ -6321,8 +6293,7 @@ begin
    ZeroHandle(h);
    s := AExeFName;
    Replace('%SRIF%', SRIF, s);
-   if not DoCreateSRIFProcess(s, Logger, PI) then
-   begin
+   if not DoCreateSRIFProcess(s, Logger, PI) then begin
       ChkErrMsg;
       DeleteTmps;
       Exit;
@@ -6344,27 +6315,23 @@ begin
 
    T := CreateTextReader(ResponseList);
    if T <> nil then
-      while not T.EOF do
-      begin
-         s := DelRight(T.GetStr);
-         if s = '' then Continue;
-         case s[1] of
-            '=': //  erase file if sent successfully
-               Add(SC1);
-            '+': //   do not erase the file after sent
-               Add(SC2);
-            '-': //   erase the file in any case after session
-               Add(SC3);
-         else
-            LogFmt(ltWarning, 'Unrecognized SRIF response "%s"', [s]);
-         end;
+   while not T.EOF do begin
+      s := DelRight(T.GetStr);
+      if s = '' then Continue;
+      case s[1] of
+      '=': //  erase file if sent successfully
+         Add(SC1);
+      '+': //   do not erase the file after sent
+         Add(SC2);
+      '-': //   erase the file in any case after session
+         Add(SC3);
+      else
+         LogFmt(ltWarning, 'Unrecognized SRIF response "%s"', [s]);
       end;
+   end;
    FreeObject(T);
-
    DeleteTmps;
-
    AttachERPFiles(SC1, SC2, SC3);
-
    FreeObject(SC1);
    FreeObject(SC2);
    FreeObject(SC3);
@@ -6372,8 +6339,10 @@ end;
 
 procedure TMailerThread.FinishRece(P: TBaseProtocol; Action: TTransferFileAction);
 var
-   fp, fn,
-   fe, ufe: string;
+   fp,
+   fn,
+   fe,
+   ufe: string;
    ss: DWORD;
    ii: longint;
    an: TAdvNode;
@@ -6381,7 +6350,8 @@ var
    InStream: Boolean;
    PutKind: TInboundPutKind;
    IsSRIF: Boolean;
-   TmpDir, ExtSRIF: string;
+   TmpDir,
+   ExtSRIF: string;
    FreqSC: TStringColl;
 
    function CompleteFile: Boolean;
@@ -6420,8 +6390,7 @@ var
       SD.FileRefuse := False;
       SD.FileSkip := False;
       D.SkipIs := False;
-      if Action = aaSysError then
-      begin
+      if Action = aaSysError then begin
          SetErrorMsg(P.R.D.FName);
          ChkErrMsg;
       end;
@@ -6432,9 +6401,9 @@ var
       ufe := UpperCase(fe);
 
       case P.R.D.StreamType of
-         xstInMemREQ,
-         xstInMemPKT,
-         xstInMemCLB: InStream := True;
+      xstInMemREQ,
+      xstInMemPKT,
+      xstInMemCLB: InStream := True;
       else
          InStream := False;
       end;
@@ -6464,60 +6433,60 @@ var
             end;
          end else begin
             case P.R.D.StreamType of
-               xstInMemREQ:
-                  begin
-                     if not SD.SkipInMem then begin
-                        CfgEnter;
-                        IsSRIF := foSRIF in Cfg.FreqData.Options;
-                        ExtSRIF := Cfg.FreqData.Misc[0];
-                        TmpDir := FullPath(IniFile.InTemp);
-                        CfgLeave;
-                        P.R.Stream.Position := 0;
-                        FreqSC := TStringColl.Create;
-                        FreqSC.LoadFromStream(P.R.Stream);
-                        FreeObject(P.R.Stream);
-                     end;
+            xstInMemREQ:
+               begin
+                  if not SD.SkipInMem then begin
+                     CfgEnter;
+                     IsSRIF := foSRIF in Cfg.FreqData.Options;
+                     ExtSRIF := Cfg.FreqData.Misc[0];
+                     TmpDir := FullPath(IniFile.InTemp);
+                     CfgLeave;
+                     P.R.Stream.Position := 0;
+                     FreqSC := TStringColl.Create;
+                     FreqSC.LoadFromStream(P.R.Stream);
                      FreeObject(P.R.Stream);
                   end;
-               xstInMemPkt: FreeObject(P.R.Stream); // it was FTS-0001 session info packet
-               xstInMemCLB:
-                  begin
-                     an := FindNode(SD.rmtPwdAddr);
-                     if an <> nil then begin
-                        InsertPoll(an, [], ptpBack);
-                     end;
-                     FreeObject(P.R.Stream);
-                     CP.Carrier := False;
+                  FreeObject(P.R.Stream);
+               end;
+            xstInMemPkt: FreeObject(P.R.Stream); // it was FTS-0001 session info packet
+            xstInMemCLB:
+               begin
+                  an := FindNode(SD.rmtPwdAddr);
+                  if an <> nil then begin
+                     InsertPoll(an, [], ptpBack);
                   end;
-               xstInDiskFileAppend,
-               xstInDiskFileNew:
-                  begin
-                     // file received completely - try to store it to inbound
-                     Inc(SD.FilesReceived);
-                     SD.WzRec.TmpSize := ss;
-                     CommonLog.Add(SD.rmtPrimaryAddr, MakeNormName(GetInboundDir(SD.rmtPrimaryAddr, P.R.D.FName, SD.PasswordProtected, PutKind), SD.WzRec.FName), False, ss, DS.rmtSoft);
-                     FreeObject(P.R.Stream);
-                     if TossSingleBWZ(SD.WzRec, fn) then begin
-                        sss := Format('%sReceived ''%s''', [CPS, fn]);
-                        FreeBWZ(SD.WzRec);
-                     end else begin
-                        ChkErrMsg;
-                        if CompleteFile then SD.WzRec.FSize := P.R.d.FSize;
-                        sss := Format('%sReceived/queued ''%s''', [CPS, SD.WzRec.GetBWZFname]);
-                        if SD.SessionCore = scFTP then begin
-                           SD.WzRec.FSize := SD.WzRec.TmpSize;
-                        end;
-                        SD.WzRec.Locked := False;
-                        SD.WzRec := nil;
+                  FreeObject(P.R.Stream);
+                  CP.Carrier := False;
+               end;
+            xstInDiskFileAppend,
+            xstInDiskFileNew:
+               begin
+                  // file received completely - try to store it to inbound
+                  Inc(SD.FilesReceived);
+                  SD.WzRec.TmpSize := ss;
+                  CommonLog.Add(SD.rmtPrimaryAddr, MakeNormName(GetInboundDir(SD.rmtPrimaryAddr, P.R.D.FName, SD.PasswordProtected, PutKind), SD.WzRec.FName), False, ss, DS.rmtSoft);
+                  FreeObject(P.R.Stream);
+                  if TossSingleBWZ(SD.WzRec, fn) then begin
+                     sss := Format('%sReceived ''%s''', [CPS, fn]);
+                     FreeBWZ(SD.WzRec);
+                  end else begin
+                     ChkErrMsg;
+                     if CompleteFile then SD.WzRec.FSize := P.R.d.FSize;
+                     sss := Format('%sReceived/queued ''%s''', [CPS, SD.WzRec.GetBWZFname]);
+                     if SD.SessionCore = scFTP then begin
+                        SD.WzRec.FSize := SD.WzRec.TmpSize;
                      end;
-                     if (P.ActuallyRece > 0) and (P.VisuallyRece > 0) then begin
-                        ii := P.VisuallyRece - P.ActuallyRece;
-                        if ii > 0 then begin
-                           sss := sss + ', ' + Format('ZLIB: %d%s (%sb)', [100 * ii div longint(P.VisuallyRece), '%', Int2Str(P.ActuallyRece)]);
-                        end;
-                     end;
-                     Log(ltInfo, sss);
+                     SD.WzRec.Locked := False;
+                     SD.WzRec := nil;
                   end;
+                  if (P.ActuallyRece > 0) and (P.VisuallyRece > 0) then begin
+                     ii := P.VisuallyRece - P.ActuallyRece;
+                     if ii > 0 then begin
+                        sss := sss + ', ' + Format('ZLIB: %d%s (%sb)', [100 * ii div longint(P.VisuallyRece), '%', Int2Str(P.ActuallyRece)]);
+                     end;
+                  end;
+                  Log(ltInfo, sss);
+               end;
             else
                GlobalFail('%s', ['TMailerThread.FinishRece P.R.D.StreamType']);
             end;
@@ -6671,143 +6640,143 @@ begin
    end;
 
    case Action of
-      aaOK, aaRefuse:
-         begin
-            if not P.SendFTPFile then begin
-               Inc(SD.FilesSent);
-               if r = nil then
-                  FreeObject(P.T.Stream)
-               else
-               case r.KillAction of
-                  kaBsoNothingAfter:
-                  begin
-                     FreeObject(P.T.Stream);
+   aaOK, aaRefuse:
+      begin
+         if not P.SendFTPFile then begin
+            Inc(SD.FilesSent);
+            if r = nil then
+               FreeObject(P.T.Stream)
+            else
+            case r.KillAction of
+               kaBsoNothingAfter:
+               begin
+                  FreeObject(P.T.Stream);
+               end;
+            kaBsoKillAfter:
+               begin
+                  FreeObject(P.T.Stream);
+                  if SD.HReqDelete <> nil then begin
+                     if SD.HReqDelete.Search(@r.Name, I) then SD.HReqDelete.AtFree(I);
                   end;
-               kaBsoKillAfter:
-                  begin
-                     FreeObject(P.T.Stream);
-                     if SD.HReqDelete <> nil then begin
-                        if SD.HReqDelete.Search(@r.Name, I) then SD.HReqDelete.AtFree(I);
-                     end;
-                     FidoOut.Lock(r.Address, osBusy, True);
-                     DeleteOutFile(r.Name);
+                  FidoOut.Lock(r.Address, osBusy, True);
+                  DeleteOutFile(r.Name);
+                  OA := True;
+               end;
+            kaBsoTruncateAfter:
+               begin
+                  P.T.Stream.Seek(0, FILE_BEGIN);
+                  SetEndOfFile(TDosStream(P.T.Stream).Handle);
+                  FreeObject(P.T.Stream);
+                  OA := True;
+               end;
+            kaFbKillAfter:
+               begin
+                  FreeObject(P.T.Stream);
+                  if not DelFile('FinishSend', PChar(r.Name)) then begin
+                     LogFmt(ltWarning, 'Cannot delete %s (%s)', [r.Name, SysErrorMessage(GetLastError)]);
+                  end else begin
                      OA := True;
                   end;
-               kaBsoTruncateAfter:
-                  begin
-                     P.T.Stream.Seek(0, FILE_BEGIN);
-                     SetEndOfFile(TDosStream(P.T.Stream).Handle);
-                     FreeObject(P.T.Stream);
-                     OA := True;
-                  end;
-               kaFbKillAfter:
-                  begin
-                     FreeObject(P.T.Stream);
-                     if not DelFile('FinishSend', PChar(r.Name)) then begin
-                        LogFmt(ltWarning, 'Cannot delete %s (%s)', [r.Name, SysErrorMessage(GetLastError)]);
-                     end else begin
+               end;
+            kaFbMoveAfter:
+               begin
+                  FreeObject(P.T.Stream);
+                  st := r.Status;
+                  MoveTo := ReplaceDirMacro(r.MoveTo, @r.Address, @st, [rmkTime, rmkAddr, rmkStatus], nil);
+                  if not CreateDirInheritance(MoveTo) then begin
+                     ChkErrMsg;
+                  end else begin
+                     sss := MakeNormName(MoveTo, ExtractFileName(r.Name));
+                     ok := MoveFileSmart(r.Name, sss, True, Overwritten);
+                     if Overwritten then LogOverwritten(sss);
+                     if not ok then
+                        ChkErrMsg
+                     else begin
+                        if not Overwritten then LogMoved(sss);
                         OA := True;
-                     end;
+                     end
                   end;
-               kaFbMoveAfter:
-                  begin
-                     FreeObject(P.T.Stream);
-                     st := r.Status;
-                     MoveTo := ReplaceDirMacro(r.MoveTo, @r.Address, @st, [rmkTime, rmkAddr, rmkStatus], nil);
-                     if not CreateDirInheritance(MoveTo) then begin
-                        ChkErrMsg;
-                     end else begin
-                        sss := MakeNormName(MoveTo, ExtractFileName(r.Name));
-                        ok := MoveFileSmart(r.Name, sss, True, Overwritten);
-                        if Overwritten then LogOverwritten(sss);
-                        if not ok then
-                           ChkErrMsg
-                        else begin
-                           if not Overwritten then LogMoved(sss);
-                           OA := True;
-                        end
-                     end;
+               end;
+            else
+               begin
+                  GlobalFail('%s', ['FinishSend - Unhandled aAction']);
+               end;
+            end;
+         end;
+         if r <> nil then begin
+            if not P.SendFTPFile then begin
+               if inifile.DynamicOutbound then begin
+                  FidoOut.Lock(r.Address, osBusy, True);
+               end;
+               FidoOut.DeleteFile(r.Address, r.Name, r.FStatus);
+               if inifile.DynamicOutbound then begin
+                  sss := GetOutFileName(r.Address, osNone);
+                  if pos(sss + '.TMP\', r.Name) > 0 then begin
+                     RemoveDir(sss + '.TMP');
                   end;
+                  FidoOut.Unlock(r.Address, osBusy);
+               end;
+               if r.KillAction = kaBsoKillAfter then FidoOut.Unlock(r.Address, osBusy);
+            end;
+         end;
+         case Action of
+         aaOK:
+            begin
+               if (r = nil) or P.SendFTPFile then
+                  sss := ''
                else
-                  begin
-                     GlobalFail('%s', ['FinishSend - Unhandled aAction']);
+                  sss := KAS[r.KillAction];
+               sss := Format('%sSent%s ''%s''', [CPS, sss, P.T.D.FName]);
+               if (P.ActuallySent > 0) and (P.VisuallySent > 0) then begin
+                  ii := P.VisuallySent - P.ActuallySent;
+                  if ii > 0 then begin
+                     sss :=  sss + ', ' + Format('ZLIB: %d%s (%sb)', [100 * ii div longint(P.VisuallySent), '%', Int2Str(P.ActuallySent)]);
                   end;
                end;
-            end;
-            if r <> nil then begin
-               if not P.SendFTPFile then begin
-                  if inifile.DynamicOutbound then begin
-                     FidoOut.Lock(r.Address, osBusy, True);
-                  end;
-                  FidoOut.DeleteFile(r.Address, r.Name, r.FStatus);
-                  if inifile.DynamicOutbound then begin
-                     sss := GetOutFileName(r.Address, osNone);
-                     if pos(sss + '.TMP\', r.Name) > 0 then begin
-                        RemoveDir(sss + '.TMP');
-                     end;
-                     FidoOut.Unlock(r.Address, osBusy);
-                  end;
-                  if r.KillAction = kaBsoKillAfter then FidoOut.Unlock(r.Address, osBusy);
+               Log(ltInfo, sss);
+               if r = nil then begin
+                  sss := P.T.D.FName
+               end else begin
+                  sss := r.Name;
+                  if r.Orig <> '' then sss := r.Orig;
                end;
+               if r = nil then
+                  i := P.T.D.FSize
+               else
+                  i := r.Nfo.Size;
+               CommonLog.Add(SD.rmtPrimaryAddr, sss, True, i, DS.rmtSoft);
             end;
-            case Action of
-               aaOK:
-                  begin
-                     if (r = nil) or P.SendFTPFile then
-                        sss := ''
-                     else
-                        sss := KAS[r.KillAction];
-                     sss := Format('%sSent%s ''%s''', [CPS, sss, P.T.D.FName]);
-                     if (P.ActuallySent > 0) and (P.VisuallySent > 0) then begin
-                        ii := P.VisuallySent - P.ActuallySent;
-                        if ii > 0 then begin
-                           sss :=  sss + ', ' + Format('ZLIB: %d%s (%sb)', [100 * ii div longint(P.VisuallySent), '%', Int2Str(P.ActuallySent)]);
-                        end;
-                     end;
-                     Log(ltInfo, sss);
-                     if r = nil then begin
-                        sss := P.T.D.FName
-                     end else begin
-                        sss := r.Name;
-                        if r.Orig <> '' then sss := r.Orig;
-                     end;
-                     if r = nil then
-                        i := P.T.D.FSize
-                     else
-                        i := r.Nfo.Size;
-                     CommonLog.Add(SD.rmtPrimaryAddr, sss, True, i, DS.rmtSoft);
-                  end;
-               aaRefuse:
-                  begin
-                     if r = nil then
-                        sss := ''
-                     else
-                        sss := KAR[r.KillAction];
-                     LogFmt(ltInfo, 'Remote refused ''%s''%s', [P.T.D.FName, sss]);
-                  end;
+         aaRefuse:
+            begin
+               if r = nil then
+                  sss := ''
+               else
+                  sss := KAR[r.KillAction];
+               LogFmt(ltInfo, 'Remote refused ''%s''%s', [P.T.D.FName, sss]);
             end;
-         end
+         end;
+      end
    else
       begin
          case Action of
-            aaAcceptLater:
-               begin
-                  if SD.ActivePoll <> nil then SD.ActivePoll.FileSendDelayedFail := True;
-                  LogFmt(ltWarning, 'Remote will accept ''%s'' later', [P.T.D.FName]);
-                  if (r <> nil) and (r.Orig <> '') and (r.Link = '') then begin
-                     FreeObject(P.T.Stream);
-                     MergeMail(r.Address, r.Name, r.Orig);
-                  end;
+         aaAcceptLater:
+            begin
+               if SD.ActivePoll <> nil then SD.ActivePoll.FileSendDelayedFail := True;
+               LogFmt(ltWarning, 'Remote will accept ''%s'' later', [P.T.D.FName]);
+               if (r <> nil) and (r.Orig <> '') and (r.Link = '') then begin
+                  FreeObject(P.T.Stream);
+                  MergeMail(r.Address, r.Name, r.Orig);
                end;
-            aaSysError: ;
-            aaAbort:
-               begin
-                  LogFmt(ltWarning, 'Protocol aborted while sending ''%s''', [P.T.D.FName]);
-                  if (r <> nil) and (r.Orig <> '') and (r.Link = '') then begin
-                     FreeObject(P.T.Stream);
-                     MergeMail(r.Address, r.Name, r.Orig);
-                  end;
+            end;
+         aaSysError: ;
+         aaAbort:
+            begin
+               LogFmt(ltWarning, 'Protocol aborted while sending ''%s''', [P.T.D.FName]);
+               if (r <> nil) and (r.Orig <> '') and (r.Link = '') then begin
+                  FreeObject(P.T.Stream);
+                  MergeMail(r.Address, r.Name, r.Orig);
                end;
+            end;
          end;
          FreeObject(P.T.Stream);
       end;
@@ -11638,13 +11607,13 @@ begin
             SendStr(AnsiCls);
             ClearTmrPublic;
             SendStrLn(CRLF + CRLF + ProductNameFull + ' remote control' + CRLF);
-            SendStrLn('       /~~~~~~~~~.       /~~~|     /~~~~~~-   /~~~//~~7   /~~7 _-~~~~-');
-            SendStrLn('      /    ,---.  \    /''    |    /   __   | /   //  /   /  / /  _--__|');
-            SendStrLn('     /    /____)   | /''  /   |   /  /   |  //   //  /   /  / |  (___');
-            SendStrLn('    /            _//   /''|   |  /  /   /  //   //  /   /  /  \___   \');
-            SendStrLn('   /    /~|   |~ /    ~~~~   | /  /__-''  //   //  |__-''  //~~\___)  /');
-            SendStrLn('  /    /  |   |/''  /''~~~~|   |/       _/''/   / |_     _/'' |_     _/''');
-            SendStrLn('  ~~~~~   ~~~~~~~~~      ~~~~~~~~~~~~`  ~~~~~    ~~~~`      ~~~~');
+//            SendStrLn('       /~~~~~~~~~.       /~~~|     /~~~~~~-   /~~~//~~7   /~~7 _-~~~~-');
+//            SendStrLn('      /    ,---.  \    /''    |    /   __   | /   //  /   /  / /  _--__|');
+//            SendStrLn('     /    /____)   | /''  /   |   /  /   |  //   //  /   /  / |  (___');
+//            SendStrLn('    /            _//   /''|   |  /  /   /  //   //  /   /  /  \___   \');
+//            SendStrLn('   /    /~|   |~ /    ~~~~   | /  /__-''  //   //  |__-''  //~~\___)  /');
+//            SendStrLn('  /    /  |   |/''  /''~~~~|   |/       _/''/   / |_     _/'' |_     _/''');
+//            SendStrLn('  ~~~~~   ~~~~~~~~~      ~~~~~~~~~~~~`  ~~~~~    ~~~~`      ~~~~');
             State := msRemCtrl_1;
          end;
 
@@ -14552,6 +14521,10 @@ end;
 destructor TMailerThread.Destroy;
 begin
 
+   if MailerTransit.IndexOf(Self) > -1 then begin
+      MailerTransit.Delete(Self);
+   end;
+
    FreeHReqDelete(False);
    FreeSD;
    FreeObject(EP);
@@ -15418,6 +15391,7 @@ PubInst: Boolean;
    m: TMailerThread;
   RR: TRestrictionData;
    s: string;
+   b: boolean;
 begin
    if not Again then begin
       Again := True;
@@ -15487,7 +15461,24 @@ begin
    PurgeConnThrs;
    i := GetHalfAvg(60 * 1000);
    i := MinD(i, CheckEvents);
-   WaitEvt(oSleep, i);
+
+   b := True;
+   EnterfidoPolls;
+   for pc := 0 to CollMax(FidoPolls) do begin
+      p := FidoPolls[pc];
+      if (p.Typ = ptpTest) then begin
+         if (p.Owner = nil) then begin
+            Sleep(100);
+            b := False;
+         end;
+      end;
+   end;
+   LeaveFidoPolls;
+
+   if b then begin
+      ResetEvt(oSleep);
+      WaitEvt(oSleep, i);
+   end;   
 end;
 
 procedure _RunDaemon;

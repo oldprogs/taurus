@@ -174,8 +174,8 @@ function DelFile(p, f: string): boolean;
 implementation
 
 uses
-  Recs, NdlUtil, LngTools, RRegExp, RadIni, Forms, Watcher, Netmail,
-  MlrThr, Wizard, Plus;
+   Recs, NdlUtil, LngTools, RRegExp, RadIni, Forms, Watcher, Netmail,
+   MlrThr, Wizard, Plus;
 
 const
   FAttachDisallowedAttr =
@@ -186,18 +186,19 @@ const
 
 procedure WriteLog(const s: string);
 var
-  t: DWORD;
+   t: DWORD;
 begin
-  if _LogOK(JustPathName(TrapLogFName) + '\Delete.log', t) then begin
-     _LogWriteStr('! ' + uFormat(uGetLocalTime) + ' ' + s, t);
-     ZeroHandle(t);
-  end;
+   if _LogOK(JustPathName(TrapLogFName) + '\Delete.log', t) then begin
+      _LogWriteStr('! ' + uFormat(uGetLocalTime) + ' ' + s, t);
+      ZeroHandle(t);
+   end;
 end;
 
 function DelFile(p, f: string): boolean;
 begin
    Result := False;
    if SysUtils.DeleteFile(f) then begin
+      ScanCounter := 1;
       Result := True;
       if RadIni.inifile.logDelete then begin
          WriteLog('(' + p + '): ' + f);
@@ -207,9 +208,9 @@ end;
 
 function FtnToStr(Zone, Net, Node, Point: Integer; Domain: string): String;
 begin
-  if (Zone = 0) then Result := Format('%d/%d.%d', [Net, Node, Point])
-                else Result := Format('%d:%d/%d.%d', [Zone, Net, Node, Point]);
-  if (Domain <> '') and IniFile.D5Out then Result := Format('%s@%s',[Result, Domain]);
+   if (Zone = 0) then Result := Format('%d/%d.%d', [Net, Node, Point])
+                 else Result := Format('%d:%d/%d.%d', [Zone, Net, Node, Point]);
+   if (Domain <> '') and IniFile.D5Out then Result := Format('%s@%s',[Result, Domain]);
 end;
 
 function A4sToAddrStr(const a: Ta4s): string;
@@ -219,64 +220,66 @@ end;
 
 function NormalizeAddress(const Address, Template: String): String;
 var
-  Addr: TFidoAddress;
+   Addr: TFidoAddress;
 begin
-  FillChar(Addr, SizeOf(Addr), 0);
-  ParseAddress(Template, Addr);
-  ParseAddress(Address, Addr);
-  Result := Addr2Str(Addr);
+   FillChar(Addr, SizeOf(Addr), 0);
+   ParseAddress(Template, Addr);
+   ParseAddress(Address, Addr);
+   Result := Addr2Str(Addr);
 end;
 
 function GetBinkFileName(var S: String): TKillAction;
 begin
-  S := Trim(S); if Length(S)<2 then begin Result := kaBsoNothingAfter; S := ''; Exit end;
-  Result := TKillAction(Pos(S[1], SKillActionB));
-  if Result <> kaBsoNothingAfter then DelFC(S);
-  case S[1] of ';', '~': begin S := ''; Exit end end;
+   S := Trim(S); if Length(S)<2 then begin Result := kaBsoNothingAfter; S := ''; Exit end;
+   Result := TKillAction(Pos(S[1], SKillActionB));
+   if Result <> kaBsoNothingAfter then DelFC(S);
+   case S[1] of ';', '~': begin S := ''; Exit end end;
 end;
 
 function GetOutFileName;
 var
-  S,D,N,X: String;
+   S,
+   D,
+   N,
+   X: String;
 begin
-  Result := '';
-  S := dOutbound;
-  if S = '' then exit;
-  if (Addr.Zone = 0) or
-    ((Addr.Zone = DefaultZone) and not inifile.D5Out) then
-    begin
+   Result := '';
+   S := dOutbound;
+   if S = '' then exit;
+   if (Addr.Zone = 0) or
+     ((Addr.Zone = DefaultZone) and not inifile.D5Out) then
+   begin
       if S[Length(S)] <> '\' then AddStr(S, '\');
-    end else
-      begin
-        if S[Length(S)] = '\' then SetLength(S, Length(S) - 1);
-        FSplit(S, D, N, X);
-        if IniFile.D5out and (Addr.Domain <> '') then begin
-           N := Addr.Domain;
-        end;
-        if Addr.Zone <> DefaultZone then S := Format('%s%s.%3.3x\', [D, N, Addr.Zone])
-                                    else S := Format('%s%s\',    [D, N]);
+   end else begin
+      if S[Length(S)] = '\' then SetLength(S, Length(S) - 1);
+      FSplit(S, D, N, X);
+      if IniFile.D5out and (Addr.Domain <> '') then begin
+         N := Addr.Domain;
       end;
-  S := Format('%s%4.4x%4.4x', [S, Addr.Net, Addr.Node]);
-  if Addr.Point <> 0 then S := S + '.PNT\' + Hex8(Addr.Point);
-  Result := S + SAttachExt[Status];
+      if Addr.Zone <> DefaultZone then S := Format('%s%s.%3.3x\', [D, N, Addr.Zone])
+                                  else S := Format('%s%s\',    [D, N]);
+   end;
+   S := Format('%s%4.4x%4.4x', [S, Addr.Net, Addr.Node]);
+   if Addr.Point <> 0 then S := S + '.PNT\' + Hex8(Addr.Point);
+   Result := S + SAttachExt[Status];
 end;
 
 { TOutBound }
 
 constructor TOutBound.Create;
 begin
-  inherited Create;
-  BusyFlags := TColl.Create('BusyFlags');
-  InitializeCriticalSection(CacheCS);
+   inherited Create;
+   BusyFlags := TColl.Create('BusyFlags');
+   InitializeCriticalSection(CacheCS);
 end;
 
 destructor TOutBound.Destroy;
 begin
-  FreeObject(FFileBoxes);
-  FreeObject(OutCache);
-  FreeObject(BusyFlags);
-  PurgeCS(CacheCS);
-  inherited Destroy;
+   FreeObject(FFileBoxes);
+   FreeObject(OutCache);
+   FreeObject(BusyFlags);
+   PurgeCS(CacheCS);
+   inherited Destroy;
 end;
 
 function TOutbound.GetOutboundSize;
@@ -289,57 +292,55 @@ procedure TOutBound.FinalizeSession;
   function KillEmpty(const FName: string): Boolean;
   var
     fs: DWORD;
-    T: TTextReader;
-    s: string;
-  begin
-    Result := False;
-    fs := _GetFileSize(FName);
-    if fs = INVALID_FILE_SIZE then Exit;
-    if fs = 0 then
-    begin
-      Result := True;
-      Exit
-    end;
-    T := CreateTextReader(FName);
-    if T = nil then Exit;
-    Result := True;
-    while not T.EOF do
-    begin
-      s := T.GetStr;
-      GetBinkFileName(s);
-      if s <> '' then
-      begin
-        Result := False;
-        Break
+     T: TTextReader;
+     s: string;
+   begin
+      Result := False;
+      fs := _GetFileSize(FName);
+      if fs = INVALID_FILE_SIZE then Exit;
+      if fs = 0 then begin
+         Result := True;
+         Exit
       end;
-    end;
-    FreeObject(T);
-  end;
+      T := CreateTextReader(FName);
+      if T = nil then Exit;
+      Result := True;
+      while not T.EOF do begin
+         s := T.GetStr;
+         GetBinkFileName(s);
+         if s <> '' then begin
+            Result := False;
+            Break
+         end;
+      end;
+      FreeObject(T);
+   end;
 
-  procedure KillZero(const FName: string);
-  begin
-    if KillEmpty(FName) then DelFile('KillZero', FName)
-  end;
+   procedure KillZero(const FName: string);
+   begin
+     if KillEmpty(FName) then DelFile('KillZero', FName)
+   end;
 
-var S: string;
+var
+   S: string;
 
-  procedure Kill(Status: TOutStatus);
-  begin
-    KillZero(S + SAttachExt[Status])
-  end;
+   procedure Kill(Status: TOutStatus);
+   begin
+     KillZero(S + SAttachExt[Status])
+   end;
 
 begin
-  S := GetOutFileName(Address, osNone);
-  Kill(osImmed);
-  Kill(osCrash);
-  Kill(osDirect);
-  Kill(osNormal);
-  Kill(osHold);
-  Kill(osHReq);
-  if KillREQ then DelFile('FinalizeSession', S + SAttachExt[osRequest]);
+   S := GetOutFileName(Address, osNone);
+   Kill(osImmed);
+   Kill(osCrash);
+   Kill(osDirect);
+   Kill(osNormal);
+   Kill(osHold);
+   Kill(osHReq);
+   if KillREQ then DelFile('FinalizeSession', S + SAttachExt[osRequest]);
 {  SysUtils.DeleteFile(S + SAttachExt[osCallback]);}
-  DeleteEmptyDirInheritance(ExtractFileDir(S), dOutbound);
-  ForcedRescan := True;
+   DeleteEmptyDirInheritance(ExtractFileDir(S), dOutbound);
+   ForcedRescan := True;
 end;
 
 function TOutBound.DeleteFile;

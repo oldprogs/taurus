@@ -875,66 +875,66 @@ type
 
 function Char2OutStatus(c: Char): TOutStatus;
 var
-  o: TOutStatus;
+   o: TOutStatus;
 begin
-  case UpCase(C) of
-    'I': o := osImmed;
-    'C': o := osCrash;
-    'D': o := osDirect;
-    'H': o := osHold;
-    'N': o := osNormal;
-    '*': o := osNone;
-    else o := osError;
-  end;
-  Result := o;
+   case UpCase(C) of
+   'I': o := osImmed;
+   'C': o := osCrash;
+   'D': o := osDirect;
+   'H': o := osHold;
+   'N': o := osNormal;
+   '*': o := osNone;
+   else o := osError;
+   end;
+   Result := o;
 end;
 
 function OutStatus2Char(s: TOutStatus): Char;
 var
-  c: Char;
+   c: Char;
 begin
-  case s of
-    osImmed:  c := 'I';
-    osCrash:  c := 'C';
-    osDirect: c := 'D';
-    osHold:   c := 'H';
-    osNone:   c := '*';
-    else      c := 'N';
-  end;
-  Result := c;
+   case s of
+   osImmed:  c := 'I';
+   osCrash:  c := 'C';
+   osDirect: c := 'D';
+   osHold:   c := 'H';
+   osNone:   c := '*';
+   else      c := 'N';
+   end;
+   Result := c;
 end;
 
 function OutStatus2StrTmail(s: TOutStatus): string;
 var
-  c: Char;
+   c: Char;
 begin
-  c := OutStatus2Char(s);
-  if c = 'N' then Result := '' else Result := c;
+   c := OutStatus2Char(s);
+   if c = 'N' then Result := '' else Result := c;
 end;
 
 function GetOutAttTypeByKillAction(KA: TKillAction): TOutAttType;
 begin
-  case KA of
-    kaBsoNothingAfter,
-    kaBsoKillAfter,
-    kaBsoTruncateAfter:
+   case KA of
+   kaBsoNothingAfter,
+   kaBsoKillAfter,
+   kaBsoTruncateAfter:
       Result := oatBSO;
-    kaFbKillAfter,
-    kaFbMoveAfter:
+   kaFbKillAfter,
+   kaFbMoveAfter:
       Result := oatFileBox;
-    else
+   else
       Result := oatUnk;
-  end;
+   end;
 end;
 
 function ValidateAddrs(const s: string; Handle: DWORD): Boolean;
 var
-  a: TFidoAddrColl;
-  Msg: string;
+   a: TFidoAddrColl;
+   Msg: string;
 begin
-  a := CreateAddrCollMsg(s, Msg);
-  Result := a <> nil;
-  if Result then FreeObject(a) else DisplayError(Msg, Handle);
+   a := CreateAddrCollMsg(s, Msg);
+   Result := a <> nil;
+   if Result then FreeObject(a) else DisplayError(Msg, Handle);
 end;
 
 function ValidateAddrsMask;
@@ -976,24 +976,20 @@ begin
   if J = 0 then J := High(DWORD);
   if K = 0 then K := High(DWORD);
   if N = 0 then N := High(DWORD);
-  if (I > J) or (I > K) or (I > N) then
-  begin
-    if (J < K) and (J < N) and (J <> High(DWORD)) then
-    begin
+  if (I > J) or (I > K) or (I > N) then begin
+    if (J < K) and (J < N) and (J <> High(DWORD)) then begin
       Result := es_TZP;
       L := Length(EMSI_TZP);
       Delete(AStr, 1, J + L - 1);
     end else
-    if (K < N) and (K <> High(DWORD)) then
-    begin
+    if (K < N) and (K <> High(DWORD)) then begin
       Result := es_PZT;
       L := Length(EMSI_PZT);
       Delete(AStr, 1, K + L - 1);
     end
    {$IFDEF EXTREME}
     else
-    if (N <> High(DWORD)) then
-    begin
+    if (N <> High(DWORD)) then begin
       Result := es_RCC;
       L := Length(EMSI_RCC);
       Delete(AStr, 1, N + L - 1);
@@ -1005,29 +1001,23 @@ begin
   if I = High(DWORD) then Exit;
   if I > 0 then Delete(AStr, 1, I - 1);
   S3 := UpperCase(Copy(AStr, 8, 3));
-  for Seq := Low(Seq) to High(Seq) do with EMSI_Seq[Seq] do
-  begin
+  for Seq := Low(Seq) to High(Seq) do with EMSI_Seq[Seq] do begin
     if error in O then Continue;
     if S3 <> S then Continue;
     if Length(AStr) < 14 then Exit;
-    if varlen in O then
-    begin
+    if varlen in O then begin
       DataLen := VlH(Copy(AStr, 11, 4));
-      if DataLen = INVALID_VALUE then
-      begin
+      if DataLen = INVALID_VALUE then begin
         Delete(AStr, 1, 14);
         Exit;
       end;
       L := Length(AStr);
-      if L < 14 + DataLen + 4 then Exit else
-      begin
+      if L < 14 + DataLen + 4 then Exit else begin
         crc := VlH(Copy(AStr, 15 + DataLen, 4));
-        if (crc = INVALID_VALUE) or (crc <> Crc16UsdBlock(AStr[3], 12 + DataLen)) then
-        begin
+        if (crc = INVALID_VALUE) or (crc <> Crc16UsdBlock(AStr[3], 12 + DataLen)) then begin
           Delete(AStr, 1, 14 + DataLen + 4);
           if Seq = es_DAT then Result := es_DATError;
-        end else
-        begin
+        end else begin
           if crc = iCRC then begin
              Delete(AStr, 1, 14 + DataLen + 4);
              Result := es_None;
@@ -1037,8 +1027,7 @@ begin
           end;
         end;
       end;
-    end else
-    begin
+    end else begin
       crc := VlH(Copy(AStr, 11, 4));
       if (crc <> INVALID_VALUE) and (crc = Crc16UsdBlock(AStr[3], 8)) then Result := Seq;
       Delete(AStr, 1, 14);

@@ -164,6 +164,9 @@ begin
                T.d.FPos  := 0;
                T.d.FOfs  := 0;
                T.d.FSize := m.Size - m.bOff + m.Offs - m.Addy + SizeOf(m.Head);
+               if m.Fido then begin
+                  T.d.FSize := T.d.FSize + SizeOf(m.Head);
+               end;
                State := bdSend;
                exit;
             end;

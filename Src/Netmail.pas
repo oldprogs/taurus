@@ -632,6 +632,7 @@ begin
          if (((h.attr and InTransit) > 0) or ((h.attr and Local) > 0)) and ((h.Attr and Sent_) = 0) then begin
             l := TNetmailMsg.Create;
             l.Offs := n.Position;
+            l.bOff := n.Position;
             l.Pack := pack;
             l.Fido := True;
             l.Head.MsgType := 2;
