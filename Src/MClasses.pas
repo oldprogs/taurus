@@ -511,29 +511,27 @@ type
   private
     JustChanged,
     AutoScroll: Boolean;
-//    ScrollData: TScrollData;
     FLines: TStringColl;
-    FCharWidth, FCharHeight,
+    fScrol: boolean;
+    fDelta: integer;
+    FCharWidth,
+    FCharHeight,
     FCols, FRows,
-    FX, FY: Integer;
+    FX,
+    FY: Integer;
     FC: Boolean;
     b: TBitmap;
     FColor: TColor;
-    fMouseDown:TUpDownEvent;
-    fMouseUp:TUpDownEvent;
+    fMouseDown: TUpDownEvent;
+    fMouseUp: TUpDownEvent;
     fEraseBkGnd: boolean;
     fOnEraseBkGnd: TNotifyEvent;
     procedure WMEraseBkGnd(var Message: TWMEraseBkGnd); message WM_ERASEBKGND;
-//    procedure ModifyScrollBar(AScrollBar, AScrollCode, APos: Cardinal);
-//    procedure WMHScroll(var M: TWMScroll); message WM_HSCROLL;
-//    procedure WMVScroll(var M: TWMScroll);  message WM_VSCROLL;
     procedure WMSetFocus(var M: TMessage); message WM_SetFocus;
     procedure WMKillFocus(var M: TMessage); message WM_KillFocus;
-//    procedure WMMouseWheel(var M: TMessage); message WM_MouseWheel;
+    procedure WMVScroll(var M: TWMVScroll); message WM_VSCROLL;
     procedure SetLines(V: TStringColl);
     procedure SetColor(c: TColor);
-//    function UpdateScrollers: Boolean;
-//    procedure MouseWheel(fwKeys, zDelta, xPos, yPos: SmallInt);
     procedure WMGetDlgCode(var Msg: TWMGetDlgCode); message WM_GETDLGCODE;
   published
     property Align;
@@ -2135,34 +2133,6 @@ begin
   end;
 end;
 
-{function TLogger.UpdateScrollers: Boolean;
-var
-  LC,MW,I: Integer;
-begin
-  if FLines = nil then begin LC := 0; MW := 0 end else
-  begin
-    LC := FLines.Count;
-    MW := 0;
-    for I := 0 to FLines.Count-1 do MW := MaxI(MW, Length(FLines[I]));
-  end;
-  with ScrollData do
-  begin
-    if AutoScroll then
-    begin
-      h.rPos := 0;
-      v.rPos := MaxI(0, LC - FRows+1);
-    end;
-    h.rMin  := 0;
-    h.rMax  := MW;
-    h.rPage := MinI(FCols, h.rMax+1);
-
-    v.rMin  := 0;
-    v.rMax  := LC;
-    v.rPage := MinI(FRows, v.rMax+1);
-  end;
-  Result := UpdateScrollBars(ScrollData, Handle);
-end;}
-
 procedure TLogger.WMSetFocus(var M: TMessage);
 begin
   inherited;
@@ -2177,26 +2147,14 @@ begin
   Invalidate;
 end;
 
-{procedure TLogger.ModifyScrollBar(AScrollBar, AScrollCode, APos: Cardinal);
+procedure TLogger.WMVScroll(var M: TWMScroll);
 var
-  D: PScrollRec;
+   S: integer;
 begin
-  AutoScroll := False;
-  if AScrollBar = SB_HORZ then D := @ScrollData.H else D := @ScrollData.V;
-  with D^ do MakeScroll(AScrollCode, APos, AScrollBar, Handle, rMin, rMax, rPage, Integer(rPos));
-  UpdateScrollers;
-  Invalidate;
-end;}
-
-{procedure TLogger.WMHScroll;
-begin
-//  ModifyScrollBar(SB_HORZ, M.ScrollCode, M.Pos);
-end;}
-
-{procedure TLogger.WMVScroll;
-begin
-//  ModifyScrollBar(SB_VERT, M.ScrollCode, M.Pos);
-end;}
+   inherited;
+   S := FLines.Count - GetScrollPos(Handle, SB_VERT);
+   fScrol := S <> fDelta;
+end;
 
 procedure TLogger.SetColor(c: TColor);
 begin
@@ -2205,145 +2163,23 @@ begin
 end;
 
 procedure TLogger.DoPaint(sil: boolean);
-{
-  procedure GetFont(dc: DWORD);
-  var
-    Extent: TSize;
-    C: Char;
-  begin
-    C := ' ';
-    if not GetTextExtentPoint32(dc, @C, 1, Extent) then
-    begin
-      GlobalFail('TLogger GetTextExtentPoint32 Error %d', [GetLastError]);
-    end;
-    FCharWidth := Extent.cX;
-    FCharHeight := Extent.cY;
-  end;
-
 var
-  bh: DWORD;
-
-  procedure DoIt;
-  var
-    i, j: Integer;
-    s: string;
-  type
-    PPolyTextArray = ^TPolyTextArray;
-    TPolyTextArray = array[0..(MaxInt-1) div (SizeOf(TPolyText)+1)] of TPolyText;
-  var
-    PT: TPolyText;
-    PTA: PPolyTextArray;
-  begin
-    if Win32Platform = VER_PLATFORM_WIN32_NT then
-    begin
-      GetMem(pta, FRows*SizeOf(TPolyText));
-    end else
-    begin
-      PTA := nil; // to avoid uninitialized warning
-    end;
-    for i := 0 to FRows-1 do
-    begin
-      j := i + ScrollData.v.rPos;
-      if j >= FLines.Count then s := '' else s := Copy(FLines[j], 1+ScrollData.h.rPos, FCols);
-      s := AddRightSpaces(s, FCols);
-      if Win32Platform <> VER_PLATFORM_WIN32_NT then
-      begin
-        Windows.TextOut(bh, 0, i*FCharHeight, PChar(s), Length(s));
-      end else
-      begin
-        PT.x := 0;
-        PT.y := i*FCharHeight;
-        PT.PAnsiChar := StrNew(PChar(s));
-        PT.n := Length(s);
-        FillChar(PT.rcl, SizeOf(PT.rcl), 0);
-        PT.uiFlags := 0;
-        PT.pdx := nil;
-        PTA^[i] := PT;
-      end;
-    end;
-    if Win32Platform = VER_PLATFORM_WIN32_NT then
-    begin
-      if not NTdyn_PolyTextOut(bh, PTA^, FRows) then
-      begin
-        GlobalFail('PolyTextOut Error %d', [GetLastError]);
-      end;
-      for i := 0 to FRows-1 do
-      begin
-        StrDispose(PTA^[i].PAnsiChar);
-      end;
-      FreeMem(pta, FRows*SizeOf(TPolyText));
-    end;
-  end;
-}
+   S: integer;
 begin
-  if FLines <> nil then
-  begin
-    Text := FLines.LongString;
-    Perform(em_linescroll, 0, FLines.Count);
-//  SelStart := Length(text);
-//    SetScrollPos(handle,SB_VERT,FLines.Count,true);
-//    ScrollWindow(handle,0,FLines.Count,nil,nil);
-//    SendMessage(handle,SBM_SETPOS,FLines.Count,1);
-  end;
-//  if FLines = nil then Exit;
-{
-  FX := ClientWidth;
-  FY := ClientHeight;
-
-  if (b.Width <> FX) or (B.Height <> FY) or (FC) or (Sil) then
-  begin
-    b.Width := FX;
-    b.Height := FY;
-    b.Canvas.Font := Font;
-    b.Canvas.Brush.Color := FColor;
-    FC:=false;
-  end;
-  bh := b.Canvas.Handle;
-  if FCharWidth = 0 then GetFont(bh);
-
-  if CalcBounds then
-  begin
-    bh := b.Canvas.Handle;
-  end;
-  DoIt;
-  if Focused then
-  begin
-    if not Windows.DrawFocusRect(bh, Rect(0,0,FX,FY)) then
-    begin
-      GlobalFail('TLogger DrawFocusRect Error %d', [GetLastError]);
-    end;
-  end;
-
-  if not BitBlt(Canvas.Handle, 0, 0, FX, FY, bh, 0, 0, SRCCOPY) then
-  begin
-    GlobalFail('TLogger BitBlt Error %d', [GetLastError]);
-  end;
-
-  if JustChanged then
-  begin
-    JustChanged := False;
-    AutoScroll := not Focused;
-  end;                // wm_paint}
+   if FLines <> nil then begin
+      S := GetScrollPos(Handle, SB_VERT);
+      Text := FLines.LongString;
+      if not fScrol or (fDelta = 0) then begin
+         Perform(em_linescroll, 0, FLines.Count);
+      end else begin
+         Perform(em_linescroll, 0, S);
+      end;
+      S := GetScrollPos(Handle, SB_VERT);
+      if (fDelta = 0) and (S > 0) and (FLines.Count > ClientHeight div Font.Height) then begin
+         fDelta := FLines.Count - S;
+      end;
+   end;
 end;
-{
-procedure TLogger.Paint;
-begin
-  DoPaint(false);
-end;
-}
-
-{procedure TLogger.MouseWheel(fwKeys, zDelta, xPos, yPos: SmallInt);
-var
-  ScrollCode, i, Count: Integer;
-begin
-  GetWheelCommands(zDelta, ScrollCode, Count);
-  for i := 1 to Count do ModifyScrollBar(SB_VERT, ScrollCode, 0);
-end;}
-
-{procedure TLogger.WMMouseWheel(var M: TMessage);
-begin
-  MouseWheel(SmallInt(M.wParam and $FFFF), SmallInt((M.wParam shr 16) and $FFFF), SmallInt(M.lParam and $FFFF), SmallInt((M.lParam shr 16) and $FFFF))
-end;}
 
 function TLogger.CalcBounds: Boolean;
 begin
@@ -2351,7 +2187,6 @@ begin
   if FCharWidth = 0 then Exit;
   FCols := (FX + FCharWidth - 1) div FCharWidth;
   FRows := (FY + FCharHeight - 1) div FCharHeight;
-//  Result := UpdateScrollers;
 end;
 
 procedure TLogger.SetLines(V: TStringColl);

@@ -346,7 +346,7 @@ begin
     osImmed, osCrash, osDirect, osNormal, osHold, osHReq: ;
     else Exit;
   end;
-  sc := TStringColl.Create('');
+  sc := TStringColl.Create;
   sc.Add(AFName);
   Result := MoveFiles(sc, @Address, nil, @Status, nil, False, False, False);
   FreeObject(sc);
@@ -541,7 +541,7 @@ begin
 //*    FixBoxes;
     Exit;
   end;
-  L := TStringColl.Create('');
+  L := TStringColl.Create;
   if not L.LoadFromStream(DS) then
   begin
     FreeObject(DS);

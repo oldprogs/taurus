@@ -47,6 +47,7 @@ LANGUAGE LANG_RUSSIAN,0
   LngBaseRussian+rsIPOvr           "|Узел|Переопределения"
   LngBaseRussian+rsIpSMTP          "Имя|Адрес|User|Pass" 
   LngBaseRussian+rsIpPOP3          "Адрес|User|Pass|Reply-To:|Send to:"
+  LngBaseRussian+rsIpNNTP          "Адресная маска|Файл"
   LngBaseRussian+rsIPTpl           "Имя станции|Список адресов|Имя оператора|Местоположение|IP-адрес|Флаги"
   LngBaseRussian+rsIPInvC          "Неверное содержимое поля \"%s\".\n\n%s."
   LngBaseRussian+rsIPRestart       "Для того, чтобы изменения странички \"Свойства\" вступили в действие, необходимо перезагрузить TCP/IP Демон."

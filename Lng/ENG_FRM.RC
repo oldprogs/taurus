@@ -225,7 +225,7 @@ LANGUAGE LANG_ENGLISH,0
         "mhHelp|Help on &Help\n"\
         "mnuWebSites|Argus-related Web Sites\n"\
         "mhWebSite|Argus &Web Site (on-line)\n"\
-        "mnuRadiusOnWeb|Radius Web Site\n"\
+        "mnuRadiusOnWeb|Taurus Web Site\n"\
         "mnuArgusClone|All Argus clones\n"\
         "mhLicence|&Licence\n"\
         "mhAbout|&About\n"\

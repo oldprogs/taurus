@@ -114,6 +114,9 @@ begin
    if Chrs = 'CP866 2' then begin
       Result := 'ibm866';
    end else
+   if Chrs = 'ALT 2' then begin
+      Result := 'ibm866';
+   end else
    if Chrs = 'CP1125 2' then begin
       Result := 'ibm866';
    end else
@@ -476,7 +479,7 @@ begin
                         r.numb := 0;
                      end;
                      inc(r.numb);
-                     l.Numb := r.numb;
+                     l.Numb := r.base + r.numb;
                      LstColl.Objects[j] := Pointer(r);
                   end else
                   if copy(t, 2, 9) = '* Origin:' then begin

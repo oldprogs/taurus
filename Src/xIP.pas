@@ -2015,13 +2015,10 @@ end;
 constructor TWSAConnectThread.Create;
 begin
   inherited Create;
-
-  FProxyFlag := ProxyFlag(p); // visual
-
+  FProxyFlag := ProxyFlag(p);
   if WinSock2 then
   begin
-    if ProxyEnabled and FProxyFlag then // visual
-    begin
+    if ProxyEnabled and FProxyFlag then begin
       ReadOL.hEvent := CreateEvt(False);
       WriteOL.hEvent := CreateEvt(False);
     end;
@@ -2042,10 +2039,8 @@ end;
 
 destructor TWSAConnectThread.Destroy;
 begin
-  if WinSock2 then
-  begin
-    if ProxyEnabled and FProxyFlag then //visual
-    begin
+  if WinSock2 then begin
+    if ProxyEnabled and FProxyFlag then begin
       ZeroHandle(ReadOL.hEvent);
       ZeroHandle(WriteOL.hEvent);
     end;
@@ -2086,39 +2081,33 @@ end;
 
 procedure TIPMonThread.InvokeExec;
 var
-  _in, _out, i: Integer;
+   _in,
+  _out,
+   i: Integer;
 begin
-  if not Again then begin
-    Again := True;
-    for i := 0 to TCPIP_GrDataSz - 1 do begin
-      TCPIP_OutGr[i] := -1;
-      TCPIP_InGr[i] := -1;
-    end;
-  end;
-
-  Move(MemOut[0], MemOut[1], (DaemonMemSize - 1) * SizeOf(Integer));
-  MemOut[0] := 0; XChg(TCPIP_Out, MemOut[0]);
-
-  Move(MemIn[0], MemIn[1], (DaemonMemSize - 1) * SizeOf(Integer));
-  MemIn[0] := 0; XChg(TCPIP_In, MemIn[0]);
-
-  Inc(TCPIP_GrStep);
-
-  EnterCS(TCPIP_GrCS);
-  _in := 0; for i := 0 to DaemonMemSize - 1 do Inc(_in, MemIn[i]);
-  _out := 0; for i := 0 to DaemonMemSize - 1 do Inc(_out, MemOut[i]);
-
-  Move(TCPIP_OutGr[1], TCPIP_OutGr[0], (TCPIP_GrDataSz - 1) * SizeOf(Integer));
-  TCPIP_OutGr[TCPIP_GrDataSz - 1] := _out;
-  TCPIP_OutR := _out;
-
-  Move(TCPIP_InGr[1], TCPIP_InGr[0], (TCPIP_GrDataSz - 1) * SizeOf(Integer));
-  TCPIP_InGr[TCPIP_GrDataSz - 1] := _in;
-  TCPIP_InR := _in;
-
-  LeaveCS(TCPIP_GrCS);
-
-  Sleep(1000);
+   if not Again then begin
+      Again := True;
+      for i := 0 to TCPIP_GrDataSz - 1 do begin
+         TCPIP_OutGr[i] := -1;
+         TCPIP_InGr[i] := -1;
+      end;
+   end;
+   Move(MemOut[0], MemOut[1], (DaemonMemSize - 1) * SizeOf(Integer));
+   MemOut[0] := 0; XChg(TCPIP_Out, MemOut[0]);
+   Move(MemIn[0], MemIn[1], (DaemonMemSize - 1) * SizeOf(Integer));
+   MemIn[0] := 0; XChg(TCPIP_In, MemIn[0]);
+   Inc(TCPIP_GrStep);
+   EnterCS(TCPIP_GrCS);
+   _in := 0; for i := 0 to DaemonMemSize - 1 do Inc(_in, MemIn[i]);
+   _out := 0; for i := 0 to DaemonMemSize - 1 do Inc(_out, MemOut[i]);
+   Move(TCPIP_OutGr[1], TCPIP_OutGr[0], (TCPIP_GrDataSz - 1) * SizeOf(Integer));
+   TCPIP_OutGr[TCPIP_GrDataSz - 1] := _out;
+   TCPIP_OutR := _out;
+   Move(TCPIP_InGr[1], TCPIP_InGr[0], (TCPIP_GrDataSz - 1) * SizeOf(Integer));
+   TCPIP_InGr[TCPIP_GrDataSz - 1] := _in;
+   TCPIP_InR := _in;
+   LeaveCS(TCPIP_GrCS);
+   Sleep(1000);
 end;
 
 procedure TSockPort.SleepDown;

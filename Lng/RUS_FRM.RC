@@ -225,7 +225,7 @@ LANGUAGE LANG_RUSSIAN,0
         "mhHelp|Как пользоваться справкой\n"\
         "mnuWebSites|Argus-related Web Sites\n"\
         "mhWebSite|WWW-узел поддержки Argus\n"\
-        "mnuRadiusOnWeb|Radius Web Site\n"\
+        "mnuRadiusOnWeb|Taurus Web Site\n"\
         "mnuArgusClone|Клоны Аргуса\n"\
         "mhLicence|Лицензия\n"\
         "mhAbout|О программе\n"\

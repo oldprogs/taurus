@@ -6851,11 +6851,11 @@ end;
 
 procedure TMailerForm.mnuRadiusOnWebClick(Sender: TObject);
 begin
-   ShellExecute(Handle, { handle to parent window }
-      nil, { pointer to string that specifies operation to perform }
-      'http://radius.net.ru/',
-      nil, { pointer to string that specifies executable-file parameters }
-      nil, { pointer to string that specifies default directory }
+   ShellExecute(Handle, 
+      nil,
+      'http://taurus.rinet.ru/',
+      nil,
+      nil,
       SW_SHOWNORMAL);
 end;
 

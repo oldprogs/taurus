@@ -47,6 +47,7 @@ LANGUAGE LANG_ENGLISH,0
   LngBaseEnglish+rsIPOvr           "|Node|Overrides"
   LngBaseEnglish+rsIpSMTP          "Name|Address|User|Pass" 
   LngBaseEnglish+rsIpPOP3          "Address|User|Pass|Reply-To:|Send to:"
+  LngBaseEnglish+rsIpNNTP          "Address mask|Filename"
   LngBaseEnglish+rsIPTpl           "Station name|Address list|Sysop name|Location|IP address|Flags"
   LngBaseEnglish+rsIPInvC          "Invalid contents of \"%s\" field.\n\n%s."
   LngBaseEnglish+rsIPRestart       "You need to restart TCP/IP daemon to apply changes made in General tab."

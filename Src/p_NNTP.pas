@@ -30,6 +30,7 @@ type
       constructor Create; virtual;
       function findArt(const n: integer; const e: string): TNetmailMsg;
       procedure SaveIdx;
+      function GetGroup(const g: string): PGroup;
    protected
       procedure SetAddress(a: TFidoAddress);
    public
@@ -63,6 +64,7 @@ type
       Group: string;
       fBase: integer;
       fNumb: integer;
+      fCurr: integer;
       fArea: string;
       fChrs: string;
       fEdit: string;
@@ -111,19 +113,21 @@ end;
 function TEchoMail.findArt;
 var
    i: integer;
-   c: integer;
 begin
-   c := 0;
-   for i := 0 to CollMax(NetColl) do begin
-      Result := NetColl[i];
-      if Result.Echo = e then begin
-         inc(c);
-         if c = n then begin
-            exit;
+   try
+      NetColl.Enter;
+      for i := 0 to CollMax(NetColl) do begin
+         Result := NetColl[i];
+         if Result.Echo = e then begin
+            if Result.Numb = n then begin
+               exit;
+            end;
          end;
       end;
+      Result := nil;
+   finally
+      NetColl.Leave;
    end;
-   Result := nil;
 end;
 
 procedure TEchomail.SetAddress;
@@ -174,16 +178,27 @@ begin
          while i.Position < i.Size do begin
             m := TNetmailMSG.Create;
             m.Get(i);
-            NetColl.Add(m);
-            FilColl.Add(m.Pack);
             j := LstColl.Add(m.Echo);
             r := Pointer(LstColl.Objects[j]);
             if r = nil then begin
                GetMem(r, SizeOf(TGroup));
                r.base := m.Numb - 1;
                r.numb := 0;
+            end else begin
+               if m.Numb <> r.base + r.numb + 1 then begin
+                  m.Numb := r.base + r.numb + 1;
+                  fBackup := True;
+               end;
             end;
-            inc(r.numb);
+            if ExistFile(m.Pack) then begin
+               NetColl.Add(m);
+               FilColl.Add(m.Pack);
+               inc(r.numb);
+            end else begin
+               fBackup := True;
+               r.base := m.Numb;
+               FreeObject(m);
+            end;
             LstColl.Objects[j] := Pointer(r);
          end;
          i.Free;
@@ -227,6 +242,17 @@ begin
       i.Free;
       fBackup := False;
       NetColl.Enter;
+   end;
+end;
+
+function TEchomail.GetGroup;
+var
+   i: integer;
+begin
+   Result := nil;
+   i := LstColl.IndexOf(g);
+   if i > -1 then begin
+      Result := Pointer(LstColl.Objects[i]);
    end;
 end;
 
@@ -506,13 +532,12 @@ begin
                      b := StrToIntDef(ExtractWord(1, s, ['-']), 1);
                      e := StrToIntDef(ExtractWord(2, s, ['-']), fNumb);
                      if e = 0 then e := b;
+                     fCurr := 0;
                      for i := b to e do begin
-                        c := 0;
                         for n := 0 to CollMax(fEcho.NetColl) do begin
                            m := fEcho.NetColl[n];
                            if m.Echo = Group then begin
-                              inc(c);
-                              if c = i then begin
+                              if m.Numb = i then begin
                                  PutString(IntToStr(i) + #9 + Dos2Win(m.Subj) + #9 + m.Frnm + #9 + m.Date + #9 + m.MsId + #9 + m.Frnm + #9 + IntToStr(m.Size) + #9 + IntToStr(m.Line));
                                  break;
                               end;

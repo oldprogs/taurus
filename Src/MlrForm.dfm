@@ -2622,7 +2622,7 @@ object MailerForm: TMailerForm
           OnClick = mhWebSiteClick
         end
         object mnuRadiusOnWeb: TMenuItem
-          Caption = 'Radius Web Site'
+          Caption = 'Taurus Web Site'
           OnClick = mnuRadiusOnWebClick
         end
         object mnuArgusClone: TMenuItem
