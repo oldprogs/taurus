@@ -2009,18 +2009,16 @@ var
       if OutMgrThread.Nodes <> nil then OutMgrNodes := OutMgrThread.Nodes.Copy;
       LeaveCS(OutMgrThread.NodesCS);
       if OutMgrNodes = nil then exit;
-      for _i := 0 to CollMax(OutMgrNodes) do
-      begin
+      for _i := 0 to CollMax(OutMgrNodes) do begin
          n := OutMgrNodes[_i];
          if n.Files <> nil then n.Files.PurgeDuplicates;
          n.PrepareNfo;
          filec := n.Files;
          if filec <> nil then
-            if filec.Count > 0 then
-               for _j := 0 to filec.Count - 1 do
-               begin
-                  os := os + plus.GetFileSize(TOutFile(filec.At(_j)).Name)
-               end;
+         if filec.Count > 0 then
+         for _j := 0 to filec.Count - 1 do begin
+            os := os + plus.GetFileSize(TOutFile(filec.At(_j)).Name)
+         end;
       end;
       //    lOutboundSize.Caption := FloatToStr(Round(os / {1048576}1024)) + ' Kb';
       lOutboundSize.Caption := FloatToStr(Round(FidoOut.OutboundSize / {1048576} 1024)) + ' Kb';

@@ -169,8 +169,7 @@ begin
      if e <> 0 then Exit;
      Inc(i);
    end;
-   for e := 0 to i - 2 do
-   begin
+   for e := 0 to i - 2 do begin
      if (r[e] < 0) or (r[e] > $FF) then Exit;
    end;
    case i - 1 of
@@ -227,7 +226,8 @@ begin
   end;
   if not BothKVC(z) then Exit;
   if i <> INADDR_NONE then Port := i;
-  DelFC(z); DelLC(z);
+  DelFC(z);
+  DelLC(z);
   Result := z;
 end;
 
@@ -241,8 +241,7 @@ begin
   i := INADDR_NONE;
   if Pos('_', s) > 0 then C := '_' else C := ':';
   GetWrd(s, z, C);
-  if s <> '' then
-  begin
+  if s <> '' then begin
     i := Vl(s);
     if i = INVALID_VALUE then Exit;
   end;
@@ -277,8 +276,10 @@ const
 type
   TIPMonThread = class(T_Thread)
     Again: Boolean;
-    MemIn, MemOut: array[0..DaemonMemSize - 1] of Integer;
-    TCPIP_In, TCPIP_Out: DWORD;
+    MemIn,
+    MemOut: array[0..DaemonMemSize - 1] of Integer;
+    TCPIP_In,
+    TCPIP_Out: DWORD;
     constructor Create;
     destructor Destroy; override;
     procedure InvokeExec; override;
@@ -331,7 +332,7 @@ var
   r: TResolveAsyncStruc;
   req: TResolveRequest;
   rsp: TResolveResponse;
-  he: PHostEnt;
+  phe: PHostEnt;
 begin
   for i := 0 to Async.Count - 1 do
   begin
@@ -344,28 +345,22 @@ begin
         if rsp.HostName = r.HostName then Resp.AtFree(j);
       end;
 
-      he := @r.HostBuf;
+      phe := @r.HostBuf;
 
       Rsp := TResolveResponse.Create;
       Rsp.HostName := StrAsg(r.HostName);
       Rsp.Error := a.err;
-      if a.err = 0 then
-      begin
-        if he^.h_addr_list <> nil then
-        begin
-          Rsp.Addr := PDwordArray(he^.h_addr_list^)^[0];
-        end else
-        begin
+      if a.err = 0 then begin
+        if phe^.h_addr_list <> nil then begin
+          Rsp.Addr := PDwordArray(phe^.h_addr_list^)^[0];
+        end else begin
           Rsp.Error := -199;
         end;
       end;
       Resp.Insert(Rsp);
-
-      for j := OutReq.Count - 1 downto 0 do
-      begin
+      for j := OutReq.Count - 1 downto 0 do begin
         req := OutReq[j];
-        if r.HostName = req.HostName then
-        begin
+        if r.HostName = req.HostName then begin
           SetEvt(req.oEvt);
           OutReq.AtFree(j);
         end;
@@ -383,11 +378,9 @@ var
   a: TResolveAsyncStruc;
 begin
   Result := False;
-  for i := 0 to Async.Count - 1 do
-  begin
+  for i := 0 to Async.Count - 1 do begin
     a := Async[i];
-    if a.MsgIdx = Idx then
-    begin
+    if a.MsgIdx = Idx then begin
       Result := True;
       Break;
     end;
@@ -406,21 +399,17 @@ begin
   for i := 0 to Async.Count - 1 do
   begin
     r := Async[i];
-    if r.HostName = HostName then
-    begin
+    if r.HostName = HostName then begin
       Found := True;
       Break;
     end;
   end;
-  if (not Found) then
-  begin
+  if (not Found) then begin
     if (Async.Count = WM__NUMRESOLVE) then
-    Result := False
-    else
-    begin
+      Result := False
+    else begin
       j := -1;
-      for i := 0 to WM__NUMRESOLVE - 1 do
-      begin
+      for i := 0 to WM__NUMRESOLVE - 1 do begin
         if not AsyncIdxFound(i) then begin j := i; Break end;
       end;
       if j = -1 then GlobalFail('%s', ['TResolveThread.StartAsyncRequest AsyncIdx Not Found']);
@@ -444,27 +433,22 @@ var
   j: Integer;
 begin
   Result := False;
-  for k := InReq.Count - 1 downto 0 do
-  begin
+  for k := InReq.Count - 1 downto 0 do begin
     rreq := InReq[k];
     j := -1;
-    for i := 0 to Resp.Count - 1 do
-    begin
+    for i := 0 to Resp.Count - 1 do begin
       rres := Resp[i];
-      if rres.HostName = rreq.HostName then
-      begin
+      if rres.HostName = rreq.HostName then begin
         j := i;
         Break;
       end;
     end;
     AsyncStarted := StartAsyncRequest(StrAsg(rreq.HostName));
-    if (j = -1) then
-    begin
+    if (j = -1) then begin
       if not AsyncStarted then Exit;
       OutReq.Insert(rreq);
       InReq.AtDelete(k);
-    end else
-    begin
+    end else begin
       SetEvt(rreq.oEvt);
       InReq.AtFree(k);
     end;
@@ -476,8 +460,7 @@ procedure TResolveThread.InvokeExec;
 var
   DoWait: Boolean;
 begin
-  if not Again then
-  begin
+  if not Again then begin
     Again := True;
     WaitEvtInfinite(oStartResolve);
   end;
@@ -512,11 +495,10 @@ var
   i: Integer;
   a: TResolveAsyncStruc;
 begin
-  for i := 0 to Async.Count - 1 do
-  begin
-    a := Async[i];
-    WSACancelAsyncRequest(a.Handle);
-    SkipCleanup := True;
+  for i := 0 to Async.Count - 1 do begin
+     a := Async[i];
+     WSACancelAsyncRequest(a.Handle);
+     SkipCleanup := True;
   end;
   FreeObject(InReq);
   FreeObject(OutReq);
@@ -626,10 +608,8 @@ function WSAErrMsg(Msg: Integer): string;
 var
   i: Integer;
 begin
-  for i := 0 to WSA_ErrMsgMax do
-  begin
-    if Msg = WSA_ErrMsg[i].n then
-    begin
+  for i := 0 to WSA_ErrMsgMax do begin
+    if Msg = WSA_ErrMsg[i].n then begin
       Result := WSA_ErrMsg[i].s;
       Exit;
     end;
@@ -696,69 +676,66 @@ var
   Thr: TSockPort;
 
 function __setblock(const h: TSocket; p: u_long): Integer;
-var b: u_long;
+var
+   b: u_long;
 begin
-  b := p;
-  Result := ioctlsocket(h, FIONBIO, b);
+   b := p;
+   Result := ioctlsocket(h, FIONBIO, b);
 end;
 
 function __unblock(h: TSocket): Integer;
 begin
-  Result := WSAEventSelect(h, 0, 0);
-  if Result = SOCKET_ERROR then Exit;
-  Result := __setblock(h, 0);
+   Result := WSAEventSelect(h, 0, 0);
+   if Result = SOCKET_ERROR then Exit;
+   Result := __setblock(h, 0);
 end;
 
 procedure __close(var h: TSocket);
 var
   ls: TSocket;
-  e: Integer;
+   e: Integer;
 begin
-  ls := INVALID_SOCKET;
-  XChg(h, ls);
-  if (ls = INVALID_SOCKET) or (ls = 0) then Exit;
-  if closesocket(ls) <> 0 then
-  begin
-    if not IniFile.DisableWinsockTraps then
-    begin
-      e := WSAGetLastError;
-      GlobalFail('closesocket error %d (%s)', [e, WSAErrMsg(e)]);
-    end;
-  end;
-  Dec(SocksAlloc);
+   ls := INVALID_SOCKET;
+   XChg(h, ls);
+   if (ls = INVALID_SOCKET) or (ls = 0) then Exit;
+   if closesocket(ls) <> 0 then begin
+      if not IniFile.DisableWinsockTraps then begin
+         e := WSAGetLastError;
+         GlobalFail('closesocket error %d (%s)', [e, WSAErrMsg(e)]);
+      end;
+   end;
+   Dec(SocksAlloc);
 end;
 
 function __socket: TSocket;
 begin
-  if WinSock2 then
-  begin
-    Result := WSASocket(PF_INET, SOCK_STREAM, IPPROTO_IP, nil, 0, WSA_FLAG_OVERLAPPED);
-  end else
-  begin
-    Result := socket(PF_INET, SOCK_STREAM, 0);
-  end;
-  if Result <> INVALID_SOCKET then Inc(SocksAlloc);
+   if WinSock2 then begin
+      Result := WSASocket(PF_INET, SOCK_STREAM, IPPROTO_IP, nil, 0, WSA_FLAG_OVERLAPPED);
+   end else begin
+      Result := socket(PF_INET, SOCK_STREAM, 0);
+   end;
+   if Result <> INVALID_SOCKET then Inc(SocksAlloc);
 end;
 
 function __reuse(h: DWORD): Integer;
 var
-  bt: DWORD;
+   bt: DWORD;
 begin
-  bt := 1;
-  Result := setsockopt(h, SOL_SOCKET, SO_REUSEADDR, @bt, SizeOf(bt));
-  if Result = SOCKET_ERROR then Exit;
+   bt := 1;
+   Result := setsockopt(h, SOL_SOCKET, SO_REUSEADDR, @bt, SizeOf(bt));
+   if Result = SOCKET_ERROR then Exit;
 end;
 
 function __bind(AHandle, APort: DWORD; var Adr: TSockAddr): Integer;
 begin
-  Adr.sin_family      := AF_INET;
-  Adr.sin_port        := htons(APort);
+   Adr.sin_family      := AF_INET;
+   Adr.sin_port        := htons(APort);
   // visual. allow bind IPDaemon to specified interface
-  if (UpperCase(IniFile.BindAddr) = 'ANY') then
-    Adr.sin_addr.s_addr := INADDR_ANY
-  else
-    Adr.sin_addr.s_addr := Inet2Addr(IniFile.BindAddr);
-  Result := bind(AHandle, Adr, SizeOf(Adr));
+   if (UpperCase(IniFile.BindAddr) = 'ANY') then
+     Adr.sin_addr.s_addr := INADDR_ANY
+   else
+     Adr.sin_addr.s_addr := Inet2Addr(IniFile.BindAddr);
+   Result := bind(AHandle, Adr, SizeOf(Adr));
 end;
 
 var
@@ -821,17 +798,15 @@ end;
 
 function TTelnetFilter.OutFilter(B: Byte; var O: Byte): Boolean;
 begin
-  if OutIAC then
-  begin
-    O := TN_IAC;
-    OutIAC := False;
-    Result := False;
-  end else
-  begin
-    O := B;
-    if B = TN_IAC then OutIAC := True;
-    Result := OutIAC;
-  end;
+   if OutIAC then begin
+      O := TN_IAC;
+      OutIAC := False;
+      Result := False;
+   end else begin
+      O := B;
+      if B = TN_IAC then OutIAC := True;
+      Result := OutIAC;
+   end;
 end;
 
 function TSockPort.ReadNow: Integer;
@@ -846,23 +821,20 @@ begin
   inherited Create(TSockInThread, TSockOutThread);
   InitializeCriticalSection(SockW);
   FHandle := AHandle;
-  if Win32Platform <> VER_PLATFORM_WIN32_NT then
-  begin
-    // workaround for socket handle inheritance bug of Win9x
-    OrigHandle := FHandle;
-    if not DuplicateHandle(GetCurrentProcess, OrigHandle, GetCurrentProcess, @FHandle, 0, True, DUPLICATE_SAME_ACCESS) then
-    begin
-      e := GetLastError;
-      GlobalFail('Duplicate Socket Handle Failed, Error %d (%s)', [e, WSAErrMsg(e)]);
-    end;
-    Inc(SocksAlloc);
+  if Win32Platform <> VER_PLATFORM_WIN32_NT then begin
+     // workaround for socket handle inheritance bug of Win9x
+     OrigHandle := FHandle;
+     if not DuplicateHandle(GetCurrentProcess, OrigHandle, GetCurrentProcess, @FHandle, 0, True, DUPLICATE_SAME_ACCESS) then begin
+        e := GetLastError;
+        GlobalFail('Duplicate Socket Handle Failed, Error %d (%s)', [e, WSAErrMsg(e)]);
+     end;
+     Inc(SocksAlloc);
   end;
   FDCD := True;
   FCarrier := True;
-  if AFilter <> nil then
-  begin
-    Filter := AFilter;
-    Filter.CP := Self;
+  if AFilter <> nil then begin
+     Filter := AFilter;
+     Filter.CP := Self;
   end;
   IPPort := AIPPort;
   Typ := ATyp;
@@ -873,43 +845,37 @@ procedure __shutdown(FHandle: DWORD);
 var
   e: Integer;
 begin
-  if shutdown(FHandle, 2) = SOCKET_ERROR then
-  begin
-    if not IniFile.DisableWinsockTraps then
-    begin
-      e := WSAGetLastError;
-      GlobalFail('shutdown failed, error %d. Try using WinSockVersion registry variable', [e, WSAErrMsg(e)]);
-    end;
-  end;
+   if shutdown(FHandle, 2) = SOCKET_ERROR then begin
+      if not IniFile.DisableWinsockTraps then begin
+         e := WSAGetLastError;
+         GlobalFail('shutdown failed, error %d. Try using WinSockVersion registry variable', [e, WSAErrMsg(e)]);
+      end;
+   end;
 end;
 
 procedure TSockPort.CloseHW_A;
 begin
-  if not WinSock2 then
-  begin
+   if not WinSock2 then begin
     __shutdown(FHandle);
     __close(FHandle);
-    if Win32Platform <> VER_PLATFORM_WIN32_NT then
-    begin
-      __close(OrigHandle);
-    end;
-  end;
+      if Win32Platform <> VER_PLATFORM_WIN32_NT then begin
+       __close(OrigHandle);
+      end;
+   end;
 end;
 
 procedure TSockPort.CloseHW_B;
 begin
-   if WinSock2 then
-   begin
+   if WinSock2 then begin
       __close(TSocket(FHandle));
-      if Win32Platform <> VER_PLATFORM_WIN32_NT then
-      begin
+      if Win32Platform <> VER_PLATFORM_WIN32_NT then begin
          __close(OrigHandle);
       end;
    end;
    if Incoming then begin
       if SockMgr <> nil then begin
          Inc(SockMgr.SocksAvail);
-      end;   
+      end;
    end else begin
       Inc(OutConnsAvail);
    end;
@@ -919,19 +885,19 @@ end;
 
 procedure TSockPort.Err;
 var
-  ee: TComError;
+   ee: TComError;
 begin
-  ee := TComError.Create;
-  ee.Err := WSAGetLastError;
-  InsComErr(ee);
+   ee := TComError.Create;
+   ee.Err := WSAGetLastError;
+   InsComErr(ee);
 end;
 
 procedure TSockPort.DropDCD;
 begin
-  EnterCS(StatCS);
-  FDCD := False;
-  UpdateLineStatus;
-  LeaveCS(StatCS);
+   EnterCS(StatCS);
+   FDCD := False;
+   UpdateLineStatus;
+   LeaveCS(StatCS);
 end;
 
 function _recv(var AHandle: TSocket; var Buf; var Size: Integer; var Error: Boolean; OL: POverlapped): Integer;
@@ -941,8 +907,7 @@ var
   i: Integer;
   Actually: DWORD;
 begin
-  if WinSock2 then
-  begin
+  if WinSock2 then begin
     Result := 0;
     B.Buf := @Buf;
     B.Len := Size;
@@ -972,8 +937,7 @@ begin
       else Error := True;
     end;
     if Error then Result := 0;
-  end else
-  begin
+  end else begin
     Result := recv(AHandle, Buf, Size, 0);
     if Result = SOCKET_ERROR then begin Result := 0; Error := True end;
   end;
@@ -1070,8 +1034,7 @@ var
   Actually: DWORD;
   i: Integer;
 begin
-  if WinSock2 then
-  begin
+  if WinSock2 then begin
     Result := 0;
     B.Buf := @Buf;
     B.Len := Size;
@@ -1100,8 +1063,7 @@ begin
       else Error := True;
     end;
     if Error then Result := 0;
-  end else
-  begin
+  end else begin
     Result := send(AHandle, (@Buf)^, Size, 0);
     if Result = SOCKET_ERROR then begin Error := True; Result := 0 end;
   end;
@@ -1113,13 +1075,11 @@ var
   SockHandle: TSocket;
   IpSessionCount: integer;
 begin
-  if Terminated then Result := 0 else
-  begin
+  if Terminated then Result := 0 else begin
     Error := False;
     SockHandle := TSocket(CP.Handle);
     Result := _send(SockHandle, Buf, Size, Error, @CP.WriteOL);
-    if Error then
-    begin
+    if Error then begin
       TSockPort(CP).Err;
       Result := 0
     end;
@@ -1152,50 +1112,44 @@ begin
 end;
 
 begin
-  repeat
-    while More do
-    begin
-      More := DoFilter(0, AuxO[AuxSz]);
-      Inc(AuxSz); if AuxSz = Size then Exit;
-    end;
-    while not More do
-    begin
-      More := DoFilter(Arr[Rslt], AuxO[AuxSz]);
-      Inc(Rslt); Inc(AuxSz);
-      if (Rslt = Size) or (AuxSz = PortWriteBlockSize) then Exit;
-    end;
-  until Terminated;
+   repeat
+      while More do begin
+         More := DoFilter(0, AuxO[AuxSz]);
+         Inc(AuxSz); if AuxSz = Size then Exit;
+      end;
+      while not More do begin
+         More := DoFilter(Arr[Rslt], AuxO[AuxSz]);
+         Inc(Rslt); Inc(AuxSz);
+         if (Rslt = Size) or (AuxSz = PortWriteBlockSize) then Exit;
+      end;
+   until Terminated;
 end;
 
 procedure Flsh;
 var
-  i: Integer;
+   i: Integer;
 begin
-  if AuxSz > 0 then
-  repeat
-    i := SubWrite(AuxO, AuxSz);
-    Dec(AuxSz, i);
-    if AuxSz > 0 then
-    begin
-      Move(AuxO[i], AuxO[0], AuxSz);
-      if Result = 0 then Break;
-    end else Break;
-  until Terminated;
+   if AuxSz > 0 then repeat
+      i := SubWrite(AuxO, AuxSz);
+      Dec(AuxSz, i);
+      if AuxSz > 0 then begin
+         Move(AuxO[i], AuxO[0], AuxSz);
+         if Result = 0 then Break;
+      end else Break;
+   until Terminated;
 end;
 
 begin
-  EnterCS(TSockPort(CP).SockW);
-  if TSockPort(CP).Filter = nil then Result := SubWrite(Buf, Size) else
-  begin
-    Result := 0;
-    Flsh;
-    if AuxSz = 0 then
-    begin
-      ParseAux(TxByteArray(Buf), Result);
+   EnterCS(TSockPort(CP).SockW);
+   if TSockPort(CP).Filter = nil then Result := SubWrite(Buf, Size) else begin
+      Result := 0;
       Flsh;
-    end;
-  end;
-  LeaveCS(TSockPort(CP).SockW);
+      if AuxSz = 0 then begin
+         ParseAux(TxByteArray(Buf), Result);
+         Flsh;
+      end;
+   end;
+   LeaveCS(TSockPort(CP).SockW);
 end;
 
 class function TSockOutThread.ThreadName;
@@ -1205,54 +1159,50 @@ end;
 
 function OpenPort(AHandle: TSocket; Typ: TProtCore; IpPort: DWORD): TSockPort;
 var
-  F: TTelnetFilter;
+   F: TTelnetFilter;
 begin
-  if Typ = ptTelnet then F := TTelnetFilter.Create else F := nil;
-  Result := TSockPort.Create(AHandle, F, IpPort, Typ);
-  if F <> nil then F.Init;
+   if Typ = ptTelnet then F := TTelnetFilter.Create else F := nil;
+   Result := TSockPort.Create(AHandle, F, IpPort, Typ);
+   if F <> nil then F.Init;
 end;
 
 procedure TSockListen.TheEnd;
 begin
-  Terminated := True;
-  if WinSock2 then
-  begin
-    SetEvt(oAccept);
-  end else
-  begin
+   Terminated := True;
+   if WinSock2 then begin
+      SetEvt(oAccept);
+   end else begin
     __close(SocketHandle);
-  end;
+   end;
 end;
 
 class function TSockListen.ThreadName: string;
 begin
-  Result := 'Socket Listener';
+   Result := 'Socket Listener';
 end;
 
 function TSockListen.RecreateHandle: Boolean;
 var
-  LocalAdr: TSockAddr;
+   LocalAdr: TSockAddr;
 begin
-  Result := False;
-  SocketHandle := __socket;
-  if SocketHandle = INVALID_SOCKET then Exit;
-  if __reuse(SocketHandle) = SOCKET_ERROR then Exit;
-  if __bind(SocketHandle, IpPort, LocalAdr) = SOCKET_ERROR then Exit;
-  if WinSock2 then
-  begin
-    if __setblock(SocketHandle, 1) = SOCKET_ERROR then Exit;
-  end;
-  Result := True;
+   Result := False;
+   SocketHandle := __socket;
+   if SocketHandle = INVALID_SOCKET then Exit;
+   if __reuse(SocketHandle) = SOCKET_ERROR then Exit;
+   if __bind(SocketHandle, IpPort, LocalAdr) = SOCKET_ERROR then Exit;
+   if WinSock2 then begin
+      if __setblock(SocketHandle, 1) = SOCKET_ERROR then Exit;
+   end;
+   Result := True;
 end;
 
 destructor TSockListen.Destroy;
 begin
-  __close(SocketHandle);
-  if WinSock2 then
-  begin
-    ZeroHandle(oAccept);
-  end;
-  inherited Destroy;
+   __close(SocketHandle);
+   if WinSock2 then begin
+      ZeroHandle(oAccept);
+   end;
+   inherited Destroy;
 end;
 
 procedure TSockListen.InvokeExec;
@@ -1274,21 +1224,18 @@ end;
 
 begin // procedure TSockListen.InvokeExec;
   if Terminated then Exit;
-  if not Again then
-  begin
+  if not Again then begin
     Again := True;
     listen(SocketHandle, 5);
   end;
   RemoteAddrLen := SizeOf(RemoteAddr);
-  if WinSock2 then
-  begin
+  if WinSock2 then begin
     WSAEventSelect(SocketHandle, oAccept, FD_ACCEPT);
     WaitEvtInfinite(oAccept);
     if Terminated then Exit;
     Clear(ne, SizeOf(ne));
     dd := WSAEnumNetworkEvents(SocketHandle, oAccept, @ne);
-    if dd = SOCKET_ERROR then
-    begin
+    if dd = SOCKET_ERROR then begin
       Terminated := True;
       Exit
     end;
@@ -1297,27 +1244,23 @@ begin // procedure TSockListen.InvokeExec;
        Exit;
     end;
     NewHandle := WSAAccept(SocketHandle, RemoteAddr, RemoteAddrLen, nil, 0);
-  end else
-  begin
+  end else begin
     NewHandle := accept(SocketHandle, @RemoteAddr, @RemoteAddrLen);
   end;
 
   if NewHandle = INVALID_SOCKET then
      Terminated := True else Inc(SocksAlloc);
-  if Terminated then
-  begin
+  if Terminated then begin
     __close(NewHandle);
     Exit;
   end;
-  if WinSock2 then
-  begin
+  if WinSock2 then begin
     __unblock(NewHandle);
   end;
   SockMgr.NewSocks.Enter;
-  if SockMgr.SocksAvail = 0 then
-  begin
+  if SockMgr.SocksAvail = 0 then begin
     case Typ of
-      ptifcico, ptTelnet{$IFDEF EXTREME}, ptFTP, ptHTTP, ptPOP3, ptSMTP, ptGATE, ptNNTP{$ENDIF}: SendStr('BUSY' + ccCR);
+      ptifcico, ptTelnet, ptFTP, ptHTTP, ptPOP3, ptSMTP, ptGATE, ptNNTP: SendStr('BUSY' + ccCR);
       ptBinkP: SendStr(FormatBinkPMsg(M_BSY, 'Too many servers are running'));
       else GlobalFail('%s', ['TSockListen.ThreadExec unknown "Typ"']);
     end;
@@ -1325,8 +1268,7 @@ begin // procedure TSockListen.InvokeExec;
     __close(NewHandle);
     SockMgr.NewSocks.Leave;
     Exit;
-  end else
-  begin
+  end else begin
     Dec(SockMgr.SocksAvail);
     Thr := OpenPort(NewHandle, Typ, IpPort);
     Thr.CallerId := Addr2Inet(RemoteAddr.sin_addr.s_addr);
@@ -1339,46 +1281,45 @@ end;
 
 class function TInSockMgr.ThreadName: string;
 begin
-  Result := 'Socket Acceptor';
+   Result := 'Socket Acceptor';
 end;
 
 procedure TInSockMgr.InvokeExec;
 var
-  P: TSockPort;
-  NL: TNewIpInLine;
+   P: TSockPort;
+   NL: TNewIpInLine;
 begin
-  WaitEvtInfinite(oNewSocks);
-  if Terminated then Exit;
-  NewSocks.Enter;
-  while NewSocks.Count > 0 do
-  begin
-    P := NewSocks[0];
-    NewSocks.AtDelete(0);
-    NL := TNewIpInLine.Create;
-    NL.Port := P;
-    NL.Prot := P.Typ;
-    NL.IpPort := P.IpPort;
-    NL.aTyp := P.aType;
-    _PostMessage(MainWinHandle, WM_NEWSOCKPORT, 0, Integer(NL));
-  end;
-  NewSocks.Leave;
+   WaitEvtInfinite(oNewSocks);
+   if Terminated then Exit;
+   NewSocks.Enter;
+   while NewSocks.Count > 0 do begin
+      P := NewSocks[0];
+      NewSocks.AtDelete(0);
+      NL := TNewIpInLine.Create;
+      NL.Port := P;
+      NL.Prot := P.Typ;
+      NL.IpPort := P.IpPort;
+      NL.aTyp := P.aType;
+     _PostMessage(MainWinHandle, WM_NEWSOCKPORT, 0, Integer(NL));
+   end;
+   NewSocks.Leave;
 end;
 
 constructor TInSockMgr.Create;
 begin
-  inherited Create;
-  Priority := tpLower;
-  oNewSocks := CreateEvtA;
-  NewSocks := TColl.Create;
-  ListeningSocks := TColl.Create;
+   inherited Create;
+   Priority := tpLower;
+   oNewSocks := CreateEvtA;
+   NewSocks := TColl.Create;
+   ListeningSocks := TColl.Create;
 end;
 
 destructor  TInSockMgr.Destroy;
 begin
-  ZeroHandle(oNewSocks);
-  FreeObject(ListeningSocks);
-  FreeObject(NewSocks);
-  inherited Destroy;
+   ZeroHandle(oNewSocks);
+   FreeObject(ListeningSocks);
+   FreeObject(NewSocks);
+   inherited Destroy;
 end;
 
 procedure CreateListeningSocket(APort: Integer; ATyp: TProtCore);
@@ -1921,60 +1862,9 @@ begin
   if Result <> 0 then DbgStr(WSAErrMsg(Result), []);
 end;
 
-(*function ConnectProxy(AHandle, AAddr, APort: DWORD; ReadOL, WriteOL: POverlapped): Integer;
-type
-  TSocksRequest = packed record
-    VN: Byte;
-    CD: Byte;
-    DstPort: Word;
-    DstIP: DWORD;
-  end;
-const
-  cszr = SizeOf(TSocksRequest);
-var
-  r: TSocksRequest;
-  j, i: Integer;
-  UserId: string;
-  p: PxByteArray;
-  Error: Boolean;
-  szr: Integer;
-begin
-  szr := cszr;
-  Error := False;
-  UserId := 'ARGUS'#0;
-  Clear(r, szr);
-  r.VN := 4;
-  r.CD := 1;
-  r.DstPort := htons(APort);
-  r.DstIP := AAddr;
-  i := _send(AHandle, r, szr, Error, WriteOL);
-  if Error then begin Result := WSAGetLastError; Exit end;
-  if (i <> szr) then begin Result := -91; Exit end; //SOCKS request rejected or failed;
-  j := Length(UserId);
-  i := _send(AHandle, UserId[1], j, Error, WriteOL);
-  if Error then begin Result := WSAGetLastError; Exit end;
-  if i <> j then begin Result := -91; Exit end; //SOCKS request rejected or failed;
-  p := @r;
-  j := 0;
-  repeat
-    szr := cszr - j;
-    i := _recv(AHandle, p^[j], szr, Error, ReadOL);
-    if Error then begin Result := WSAGetLastError; Exit end;
-    if i <= 0 then begin Result := -91; Exit end; //SOCKS request rejected or failed;
-    Inc(j, i);
-  until j >= cszr;
-  if r.CD <> 90 then
-  begin
-    Result := -r.CD;
-    Exit;
-  end;
-  Result := 0;
-end;*)
-
 procedure TWSAConnectThread.InvokeExec;
 
 var
-//  h: Integer;
  ia: DWORD;
  dd: Integer;
 
@@ -2019,7 +1909,7 @@ begin
     __setblock(FSocket, 1);
   end;
 
-  Adr.sin_family      := AF_INET;
+  Adr.sin_family := AF_INET;
 
   if ProxyEnabled and FProxyFlag then
   begin
@@ -2096,18 +1986,13 @@ begin  // procedure TWSAConnectThread.InvokeExec;
   cr.Prot := Prot;
   cr.Terminated := Terminated;
   if (not cr.Terminated) and (not cr.Error) then cr.Port := OpenPort(FSocket, Prot, cr.IpPort);
-  if (cr.Port = nil) then
-  begin
+  if (cr.Port = nil) then begin
     __close(FSocket);
     Inc(OutConnsAvail);
   end;
-  if cr.Port <> nil then
-  begin
+  if cr.Port <> nil then begin
     if ia = INADDR_NONE then TDevicePort(cr.Port).CallerId := ProxyAddr
     else TDevicePort(cr.Port).CallerId := Addr2Inet(ia);
-//    TFidoPoll(cr.p).Owner.LastLogStr:='';
-//    PollInfo.Owner.LastLogStr:=PollInfo.Owner.LastLogStr + FormatLogStr(ltInfo, 'this is test', PollInfo.Owner.Name) + #13#10;
-
   end;
   _PostMessage(MainWinHandle, WM_CONNECTRES, 0, Integer(cr));
   Terminated := True;
@@ -2203,11 +2088,9 @@ procedure TIPMonThread.InvokeExec;
 var
   _in, _out, i: Integer;
 begin
-  if not Again then
-  begin
+  if not Again then begin
     Again := True;
-    for i := 0 to TCPIP_GrDataSz - 1 do
-    begin
+    for i := 0 to TCPIP_GrDataSz - 1 do begin
       TCPIP_OutGr[i] := -1;
       TCPIP_InGr[i] := -1;
     end;
@@ -2266,11 +2149,10 @@ end;
 
 function ConnectToRemoteHost;
 var
-  FAddr, FPort: DWORD;
+  FAddr,
+  FPort: DWORD;
   Adr: TSockAddr;
   Thr: TSockPort;
-//  fp: TFidoPoll;
-
   dd: Integer;
 
 begin
@@ -2319,44 +2201,37 @@ end;
 
 function DisconnectFromRemoteHost;
 begin
-//  RemotePort.Free;
-  __shutdown(FSocket);
-  __close(FSocket);
-
-  ZeroHandle(oBlk);
-
-  Result := 0;
+   __shutdown(FSocket);
+   __close(FSocket);
+   ZeroHandle(oBlk);
+   Result := 0;
 end;
 
 function SendToRemoteHost;
 var
-  Error: Boolean;
+   Error: Boolean;
   _Buf: array [0..20] of char;
   _BufLen: integer;
 
 begin
-  Result := 0;
-  Error := False;
+   Result := 0;
+   Error := False;
 
   _Buf := 'Hello admin'#13#10#0;
   _BufLen := Length(_Buf);
 
-//  BufLen := _send(FSocket, Buf, BufLen, Error, WriteOL);
    Thr.Write(_Buf, _BufLen);
 
-  if Error then begin Result := WSAGetLastError; Exit end;
+   if Error then begin Result := WSAGetLastError; Exit end;
 end;
 
 function ReadFromRemoteHost;
 var
-  Error: Boolean;
+   Error: Boolean;
 begin
-  Result := 0;
-  Error := False;
-
-//  BufLen := _recv(FSocket, Buf, BufLen, Error, ReadOL);
-//  Thr.Read
-  if Error then begin Result := WSAGetLastError; Exit end;
+   Result := 0;
+   Error := False;
+   if Error then begin Result := WSAGetLastError; Exit end;
 end;
 
 {$ENDIF}

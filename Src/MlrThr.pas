@@ -4752,23 +4752,6 @@ var
       LogTrafInfo;
    end;
 
-   {procedure ChkSoft;
-   var
-     s, z: string;
-   begin
-     s := a;
-     GetWrd(s, z, ' ');
-     s := z;
-     GetWrd(s, z, '/');
-     if z <> CProductName then Exit;
-     while s <> '' do GetWrd(s, z, '/');
-     s := z;
-     GetWrd(s, z, '#');
-     GetWrd(s, z, '#');
-     SD.rmtMailerSerialNo := z;
-   end;
-   }
-
 var
    B: string;
 begin
@@ -5344,7 +5327,8 @@ begin
       end;
       //Don't use dynamic routing in case of unsecure _incoming_ session!
       if (IniFile.DynamicRouting) and
-         (SD.PasswordProtected or (SD.ActivePoll <> nil)) then NetmailHolder.Route(SD.rmtAddrs[n], Log);
+         (SD.PasswordProtected or (SD.ActivePoll <> nil)) and
+         (NetmailHolder <> nil) then NetmailHolder.Route(SD.rmtAddrs[n], Log);
    end;
    CfgLeave;
    N := 0;
@@ -16068,32 +16052,32 @@ begin
    IPPolls.WaitFor;
    EndIpThreads;
    MailerThreads.Enter;
-   for i := 0 to MailerThreads.Count - 1 do
-      if not TMailerThread(MailerThreads[i]).DialupLine then
-      begin
+   for i := 0 to MailerThreads.Count - 1 do begin
+      if not TMailerThread(MailerThreads[i]).DialupLine then begin
          M := TMailerThread(MailerThreads[i]);
          M.InsertEvt(TMlrEvtShutdownTerminate.Create);
-         if (M.SD <> nil) and (M.SD.Prot <> nil) then
-         begin
-            M.Terminated := True;
+         if (M.SD <> nil) and (M.SD.Prot <> nil) then begin
             M.SD.Prot.CancelRequested := True;
          end;
+         M.Terminated := True;
       end;
+   end;
    MailerThreads.Leave;
    Application.ProcessMessages;
    MailerThreads.Enter;
-   for i := 0 to MailerThreads.Count - 1 do
-      if not TMailerThread(MailerThreads[i]).DialupLine then
-      begin
+   for i := 0 to MailerThreads.Count - 1 do begin
+      if not TMailerThread(MailerThreads[i]).DialupLine then begin
          TMailerThread(MailerThreads[i]).WaitFor;
       end;
+   end;
    MailerThreads.Leave;
    Application.ProcessMessages;
    MailerThreads.Enter;
-   for i := MailerThreads.Count - 1 downto 0 do
+   for i := MailerThreads.Count - 1 downto 0 do begin
       if not TMailerThread(MailerThreads[i]).DialupLine then MailerThreads.AtFree(i);
-   ShutdownDaemon;
+   end;
    FreeObject(IPPolls);
+   ShutdownDaemon;
    MailerThreads.Leave;
    IPMon.WaitFor;
    FreeObject(IPMon);

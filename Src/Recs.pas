@@ -1461,7 +1461,7 @@ begin
     'Joe Sysop',
     'Universe, Earth',
     '127.0.0.1',
-    'MO,CM,IBN,ITN,IFC,IFT,IHT,ISE,IMI']);
+    'MO,CM,IBN,ITN,IFC,IFT,IHT,ISE,IMI,INT']);
 
   IPData.InC := 16;
   IPData.OutC := 4;
