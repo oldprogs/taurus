@@ -530,7 +530,8 @@ LANGUAGE LANG_ENGLISH,0
         "bImport|&Import...\n"\
         "bSort|&Sort\n"\
         "bEditNode|Edit\n"\
-        "bExplain|Explain...\n"
+        "bExplain|Explain...\n"\
+        "lNNTPImport|Files to import NEWS List from\n"
 
  LngBaseEnglish+rsSetupForm "Taurus Setup\n"\
         "lblPageTitle|?\n"\

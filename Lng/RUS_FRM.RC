@@ -534,7 +534,8 @@ LANGUAGE LANG_RUSSIAN,0
         "bImport|Импорт...\n"\
         "bSort|Сортировка\n"\
         "bEditNode|Редактор\n"\
-        "bExplain|Объяснить...\n"
+        "bExplain|Объяснить...\n"\
+        "lNNTPImport|Импортировать список групп новостей из:\n"
 
  LngBaseRussian+rsSetupForm "Настройка Taurus\n"\
         "lblPageTitle|?\n"\
