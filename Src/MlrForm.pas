@@ -756,7 +756,7 @@ uses
    StupCfg, NodeLCfg, Wizard, Plus, Util, RadIni, tarif, IPCfg, ShellAPI,
    TracePl, Extrnls, PollCfg, xEvents, FreqCfg, SinglPwd, EncLinks,
    AdrIBox, FreqEdit, Attach, xDES, PwdInput, Setup, LogView, RadSav,
-   EvtEdit;
+   EvtEdit, xTAPI;
 
 {$R *.DFM}
 
@@ -2106,7 +2106,7 @@ begin
    lTotalRcvTime.Left := llTotalRcvTime.Left + llTotalRcvTime.Width + 6;
 
    lSessionTime.Left := llSessionTime.Left + llSessionTime.Width + 6;
-   llSessionCost.Left := lSessionTime.Left + lSessionTime.Width + 6;
+//   llSessionCost.Left := lSessionTime.Left + lSessionTime.Width + 6;
    lSessionCost.Left := llSessionCost.Left + llSessionCost.Width + 6;
 end;
 
@@ -4577,13 +4577,15 @@ end;
 
 procedure TMailerForm.WMStartTerm(var M: TMessage);
 var
-   p: TPortRec;
-   dataidx,
-   baudidx: integer;
+   h: THandle;
 begin
    if (ActiveLine is TMailerThread) and (ActiveLine.DialupLine) then begin
       if @F_OpenUniTerm <> nil then begin
-         F_OpenUniTerm(ActiveLine.CP.Handle);
+         if ActiveLine.TapiDevice then begin
+            (ActiveLine.CP as TTAPIPort).MakeCall;
+         end;
+         h := ActiveLine.CP.Handle;
+         F_OpenUniTerm(h);
       end;
    end;
    InsertEvt(TMlrEvtChStatus.Create(msInit));

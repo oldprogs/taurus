@@ -2687,6 +2687,7 @@ begin
       FActiveControl := nil;
       if Control.CanFocus then SetActiveControl(Control);
    end;
+   if IniFile = nil then exit;
    Font.Name := IniFile.ReadString('interface', 'FormsFontName', 'Arial');
    Font.Size := IniFile.ReadInteger('interface', 'FormsFontSize', 9);
    FormsFontAttr := IniFile.ReadString('interface', 'FormsFontAttr', '0000');
