@@ -89,7 +89,7 @@ object AtomEditorForm: TAtomEditorForm
     Height = 296
     Anchors = [akLeft, akTop, akRight, akBottom]
     Ctl3D = True
-    PageIndex = 7
+    PageIndex = 1
     ParentCtl3D = False
     TabOrder = 1
     object TPage
@@ -110,6 +110,8 @@ object AtomEditorForm: TAtomEditorForm
         Width = 424
         Height = 73
         Align = alTop
+        Constraints.MaxHeight = 73
+        Constraints.MinHeight = 73
         Shape = bsFrame
       end
       object lString: TLabel
@@ -147,6 +149,8 @@ object AtomEditorForm: TAtomEditorForm
         Width = 424
         Height = 73
         Align = alTop
+        Constraints.MaxHeight = 73
+        Constraints.MinHeight = 73
         Shape = bsFrame
       end
       object lCombo: TLabel
@@ -178,6 +182,8 @@ object AtomEditorForm: TAtomEditorForm
         Width = 424
         Height = 57
         Align = alTop
+        Constraints.MaxHeight = 57
+        Constraints.MinHeight = 57
         Shape = bsFrame
       end
       object lSpin: TLabel
@@ -213,6 +219,8 @@ object AtomEditorForm: TAtomEditorForm
         Width = 424
         Height = 49
         Align = alTop
+        Constraints.MaxHeight = 49
+        Constraints.MinHeight = 49
         Shape = bsFrame
       end
       object cbCheckBox: TCheckBox
@@ -238,6 +246,8 @@ object AtomEditorForm: TAtomEditorForm
         Width = 424
         Height = 122
         Align = alTop
+        Constraints.MaxHeight = 122
+        Constraints.MinHeight = 122
         Shape = bsFrame
       end
       object lDstrA: TLabel
@@ -287,11 +297,17 @@ object AtomEditorForm: TAtomEditorForm
       Left = 0
       Top = 0
       Caption = '6'
+      DesignSize = (
+        424
+        296)
       object bvl6: TBevel
         Left = 0
         Top = 0
         Width = 414
         Height = 297
+        Anchors = [akLeft, akTop, akRight, akBottom]
+        Constraints.MaxHeight = 297
+        Constraints.MinHeight = 297
         Shape = bsFrame
       end
       object MemoPageControl: TPageControl
@@ -354,6 +370,8 @@ object AtomEditorForm: TAtomEditorForm
         Width = 424
         Height = 297
         Anchors = [akLeft, akTop, akRight, akBottom]
+        Constraints.MaxHeight = 297
+        Constraints.MinHeight = 297
         Shape = bsFrame
       end
       object lGrid: TLabel
@@ -392,7 +410,7 @@ object AtomEditorForm: TAtomEditorForm
           107
           111
           80
-          77)
+          85)
       end
       object eGrid: TEdit
         Left = 10

@@ -222,6 +222,7 @@ type
     FEditorMode: Boolean;
     FColOffset: Integer;
     FFileNameCol: Integer;
+    FFileNameDir: boolean;
     function CalcCoordFromPoint(X, Y: Integer;
       const DrawInfo: TxGridDrawInfo): TxGridCoord;
     procedure CalcDrawInfo(var DrawInfo: TxGridDrawInfo);
@@ -396,6 +397,7 @@ type
     property TopRow: Longint read FTopLeft.Y write SetTopRow;
     property VisibleColCount: Integer read GetVisibleColCount;
     property VisibleRowCount: Integer read GetVisibleRowCount;
+    procedure SetFileNameCol(c: integer);
   public
     IgnoreAdjust: boolean;
     constructor Create(AOwner: TComponent); override;
@@ -404,7 +406,8 @@ type
     procedure AdjustDefault;
     procedure WndProc(var M: TMessage); override;
   published
-    property FileNameCol: Integer read FFileNameCol write FFileNameCol default -1;
+    property FileNameCol: Integer read FFileNameCol write SetFileNameCol default -1;
+    property FileNameDir: boolean read FFileNameDir write FFileNameDir default False;
     property TabStop default True;
     property FixedFont: TFont read FFixedFont write SetFixedFont;
     property OnGetFont: TxOnGetFont read FOnGetFont write FOnGetFont;
@@ -688,7 +691,7 @@ procedure Register;
 
 implementation
 
-uses Dialogs, Consts, LngTools, RadSav;
+uses Dialogs, Consts, LngTools, RadSav, PathNmEx;
 
 procedure Register;
 begin
@@ -1272,7 +1275,11 @@ begin
     end;
     s := SavFile.ReadString('ColWidths', FParentName + '_' + Name, '');
     for i := 0 to WordCount(s, [',']) - 1 do begin
-       ColWidths[i] := strtoint(extractword(i + 1, s, [',']));
+       if (i = 0) and (goDigitalRows in Options) then begin
+          ColWidths[i] := 33;
+       end else begin
+          ColWidths[i] := strtoint(extractword(i + 1, s, [',']));
+       end;   
     end;
     if FixedRows = 0 then begin
        w := 0;
@@ -4827,11 +4834,19 @@ procedure TAdvGrid.MouseDown;
 var
    DrawInfo: TxGridDrawInfo;
    tx: TxGridCoord;
+   ss: string;
 begin
    inherited;
    CalcDrawInfo(DrawInfo);
    Tx := CalcCoordFromPoint(X, Y, DrawInfo);
    if (X > 2) and (X < 18) then RowChecked[Tx.Y] := not RowChecked[Tx.Y];
+   if fName and FFileNameDir then begin
+      DrawButton(Tx.X, Tx.Y, True);
+      ss := Browse(Handle, Cells[Tx.X, Tx.Y]);
+      if ss <> '' then begin
+         Cells[Tx.X, Tx.Y] := ss;
+      end;
+   end else
    if fName then begin
       with TOpenDialog.Create(Self) do begin
          DrawButton(Tx.X, Tx.Y, True);
@@ -5537,6 +5552,14 @@ begin
   DroppedFiles := GetAPIDroppedFiles(Msg.wParam);
   OnApiDropFiles(Self);
   Msg.Result := 0;
+end;
+
+procedure TAdvCustomGrid.SetFileNameCol;
+begin
+   if c <> FFileNameCol then begin
+      FFileNameCol := c;
+      Invalidate;
+   end;
 end;
 
 end.

@@ -198,177 +198,177 @@ end;
 
 begin
   ct := CurTyp;
-  s := LngStr(ct+LngEvtBase);
+  s := LngStr(ct + LngEvtBase);
   Typ := GetEventParamTyp(ct);
   nb.Visible := Typ <> eptVoid;
   case Typ of
-    eptDMemo:
-      begin
+  eptDMemo:
+     begin
         nb.PageIndex := 6;
         Skip; Skip;
         tsMemoA.Caption := z;
         Skip;
         tsMemoB.Caption := z;
-      end;
-    eptDStr:
-      begin
+     end;
+  eptDStr:
+     begin
         nb.PageIndex := 5;
         Skip; Skip;
         lDStrA.Caption := z;
         Skip;
         lDStrB.Caption := z;
-      end;
-    eptString:
-      begin
+     end;
+  eptString:
+     begin
         nb.PageIndex := 1;
         Skip; Skip;
         lString.Caption := z;
-      end;
-    eptCombo:
-      begin
+     end;
+  eptCombo:
+     begin
         nb.PageIndex := 2;
         case ct of
-          eiRplStation     : Cfg.Station.FillCombo(cbCombo, rsRecsDefaultS, StationId);
-          eiRplModem       : Cfg.Modems.FillCombo(cbCombo, rsRecsDefaultM, ModemId);
-          eiRplRestriction : Cfg.Restrictions.FillCombo(cbCombo, rsRecsDefaultR, RestrictionId);
-          else GlobalFail('%s', ['TAtomEditorForm.UpdateNB eptCombo']);
+        eiRplStation     : Cfg.Station.FillCombo(cbCombo, rsRecsDefaultS, StationId);
+        eiRplModem       : Cfg.Modems.FillCombo(cbCombo, rsRecsDefaultM, ModemId);
+        eiRplRestriction : Cfg.Restrictions.FillCombo(cbCombo, rsRecsDefaultR, RestrictionId);
+        else GlobalFail('%s', ['TAtomEditorForm.UpdateNB eptCombo']);
         end;
         Skip; Skip;
         lCombo.Caption := z;
-      end;
-    eptSpin:
-      begin
+     end;
+  eptSpin:
+     begin
         nb.PageIndex := 3;
         Skip; Skip;
         lSpin.Caption := z;
         case ct of
-          eiAccDurMax:
-            begin
+        eiAccDurMax:
+           begin
               sSpin.Increment := 5;
               sSpin.MaxValue := 8640000;
               sSpin.Value := AccDurMax;
-            end;
-          eiTrsDurMax:
-            begin
+           end;
+        eiTrsDurMax:
+           begin
               sSpin.Increment := 5;
               sSpin.MaxValue := 8640000;
               sSpin.Value := TrsDurMax;
-            end;
-          eiAccSpeedMin:
-            begin
+           end;
+        eiAccSpeedMin:
+           begin
               sSpin.Increment := 2400;
               sSpin.MaxValue := 24576000;
               sSpin.Value := MinInConnectSpeed;
-            end;
-          eiTrsSpeedMin:
-            begin
+           end;
+        eiTrsSpeedMin:
+           begin
               sSpin.Increment := 2400;
               sSpin.MaxValue := 24576000;
               sSpin.Value := MinOutConnectSpeed;
-            end;
-          eiAccCPSMin:
-            begin
+           end;
+        eiAccCPSMin:
+           begin
               sSpin.Increment := 100;
               sSpin.MaxValue := 10000000;
               sSpin.Value := MinInCPS;
-            end;
-          eiTrsCPSMin:
-            begin
+           end;
+        eiTrsCPSMin:
+           begin
               sSpin.Increment := 100;
               sSpin.MaxValue := 10000000;
               sSpin.Value := MinOutCPS;
-            end;
-          eiTrafShOut:
-            begin
+           end;
+        eiTrafShOut:
+           begin
               sSpin.Increment := 256;
               sSpin.MaxValue := 99999999;
               sSpin.MinValue := 0;
               sSpin.Value := TrafShOut;
-            end;
-          eiTrafShIn:
-            begin
+           end;
+        eiTrafShIn:
+           begin
               sSpin.Increment := 256;
               sSpin.MaxValue := 99999999;
               sSpin.MinValue := 0;
               sSpin.Value := TrafShIn;
-            end;
-          eiAccBPSEfMin:
-            begin
+           end;
+        eiAccBPSEfMin:
+           begin
               sSpin.Increment := 10;
               sSpin.MaxValue := 10000;
               sSpin.MinValue := 1;
               sSpin.Value := MinInEfBPS;
-            end;
-          eiTrsBPSEfMin:
-            begin
+           end;
+        eiTrsBPSEfMin:
+           begin
               sSpin.Increment := 10;
               sSpin.MaxValue := 10000;
               sSpin.MinValue := 1;
               sSpin.Value := MinOutEfBPS;
-            end;
-          eiNumRings:
-            begin
+           end;
+        eiNumRings:
+           begin
               sSpin.Increment := 1;
               sSpin.MaxValue := 30;
               sSpin.Value := NumRings;
-            end;
-          eiFreqPwdDur:
-            begin
+           end;
+        eiFreqPwdDur:
+           begin
               sSpin.Increment := 1;
               sSpin.MaxValue := 14400;
               sSpin.Value := FreqPwdDur;
-            end;
-          eiFreqPubDur:
-            begin
+           end;
+        eiFreqPubDur:
+           begin
               sSpin.Increment := 1;
               sSpin.MaxValue := 14400;
               sSpin.Value := FreqPubDur;
-            end;
-          eiFreqPwdSz:
-            begin
+           end;
+        eiFreqPwdSz:
+           begin
               sSpin.Increment := 1;
               sSpin.MaxValue := 2000000;
               sSpin.Value := FreqPwdSz;
-            end;
-          eiFreqPubSz:
-            begin
+           end;
+        eiFreqPubSz:
+           begin
               sSpin.Increment := 1;
               sSpin.MaxValue := 2000000;
               sSpin.Value := FreqPubSz;
-            end;
-          eiFreqPwdCnt:
-            begin
+           end;
+        eiFreqPwdCnt:
+           begin
               sSpin.Increment := 1;
               sSpin.MaxValue := 10000;
               sSpin.Value := FreqPwdCnt;
-            end;
-          eiFreqPubCnt:
-            begin
+           end;
+        eiFreqPubCnt:
+           begin
               sSpin.Increment := 1;
               sSpin.MaxValue := 10000;
               sSpin.Value := FreqPubCnt;
-            end;
-          eiTimeDial:
-            begin
+           end;
+        eiTimeDial:
+           begin
               sSpin.Increment := 1;
               sSpin.MaxValue := 200;
               sSpin.MinValue := 30;
               sSpin.Value := TimeDial;
-            end;
-          eiRetry:
-            begin
+           end;
+        eiRetry:
+           begin
               sSpin.Increment := 1;
               sSpin.MaxValue := 20000;
               sSpin.MinValue := 10;
               sSpin.Value := Retry;
-            end;
-          else GlobalFail('%s', ['TAtomEditorForm.UpdateNB eptSpin']);
+           end;
+        else GlobalFail('%s', ['TAtomEditorForm.UpdateNB eptSpin']);
         end;
-      end;
-    eptVoid: nb.PageIndex := 1;
+     end;
+  eptVoid: nb.PageIndex := 1;
 
-    eptBool:
-      begin
+  eptBool:
+     begin
         nb.PageIndex := 4;
         Skip; Skip;
         cbCheckBox.Caption := z;
@@ -377,10 +377,10 @@ begin
           eiAccFreqs: cbCheckBox.Checked := DisableFreqs;
           else GlobalFail;
         end;}
-      end;
+     end;
 
-    eptGrid:
-      begin
+  eptGrid:
+     begin
         nb.PageIndex := 7;
         Skip; Skip;
         lGrid.Caption := z; Skip;
@@ -389,9 +389,9 @@ begin
         t3 := z; Skip;
         t4 := z; Skip;
         StringGrid.FillColTitles(['', t1, t2, t3, t4]);
-      end;
+     end;
 
-    else GlobalFail('%s', ['TAtomEditorForm.UpdateNB Typ ??']);
+  else GlobalFail('%s', ['TAtomEditorForm.UpdateNB Typ ??']);
   end;
   DoAdjustSize;
 end;

@@ -302,6 +302,7 @@ begin
   EMSILogFName := MakeNormName(dLog, 'Remsi.log');
   WaitLogFName := MakeNormName(dLog, 'WaitE.log');
   EntrLogFName := MakeNormName(dLog, 'Enter.log');
+  NetmailLog   := MakeNormName(dLog, 'Netml.log');
   CopyFile(PChar(EntrLogFName), PChar(MakeNormName(dLog, 'Enter.bak')), False);
   VersLogFName := MakeNormName(dLog, 'Tau_Ver');
   h := _CreateFileDir(VersLogFName, [cWrite, cCanPending]);
