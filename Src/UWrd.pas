@@ -94,16 +94,17 @@ begin
 end;
 
 function  wordp;
-var i:integer;
+var
+   i: integer;
 begin
-   i:=words(str, d);
+   i := words(str, d);
    if i < n then begin
       wordp := 0;
       exit;
    end;
-   i:=1;
-   while words(copy(str,1,i), d)<n do inc(i);
-   wordp   := i;
+   i := 1;
+   while words(copy(str, 1, i), d) < n do inc(i);
+   wordp := i;
 end;
 
 function wordi;

@@ -1615,26 +1615,26 @@ end;
 
 function MatchMaskAddressListMultiple(Addrs: TFidoAddrColl; const AMaskList: string): Boolean;
 var
-  s,
-  z: string;
-  a: TFidoAddress;
-  IsSimpleAddress: Boolean;
-  i: Integer;
-  Addr: TFidoAddress;
+   s,
+   z: string;
+   a: TFidoAddress;
+   IsSimpleAddress: Boolean;
+   i: Integer;
+   Addr: TFidoAddress;
 begin
-  Result := False;
-  s := AMaskList;
-  while s <> '' do begin
-    GetWrd(s, z, ' ');
-    IsSimpleAddress := ParseAddress(z, a);
-    for i := 0 to Addrs.Count - 1 do begin
-      Addr := Addrs[i];
-      if IsSimpleAddress then Result := CompareAddrs(Addr, a) = 0 else
-                              Result := MatchMaskAddress(Addr, z);
+   Result := False;
+   s := AMaskList;
+   while s <> '' do begin
+      GetWrd(s, z, ' ');
+      IsSimpleAddress := ParseAddress(z, a);
+      for i := 0 to Addrs.Count - 1 do begin
+         Addr := Addrs[i];
+         if IsSimpleAddress then Result := CompareAddrs(Addr, a) = 0 else
+                                 Result := MatchMaskAddress(Addr, z);
+         if Result then Break;
+      end;
       if Result then Break;
-    end;
-    if Result then Break;
-  end;
+   end;
 end;
 
 function MatchMaskAddressListSingle(const Addr: TFidoAddress; const AMaskList: string): Boolean;

@@ -367,6 +367,7 @@ type
 
   TProtocolRecord = record
     ChatEnabled: boolean;
+    CrypEnabled: boolean;
     HydraOEM: boolean;
     HydraShortNames: boolean;
     Addr: TFidoAddress;

@@ -1931,74 +1931,69 @@ end;
 
 function MakeFullDir(const D, S: string): string;
 begin
-  if (Pos(':', S) > 0) or (Copy(S, 1, 2) = '\\') then
-  begin
-    Result := S;
-  end else
-  begin
-    if Copy(S, 1, 1) = '\' then
-    begin
-      Result := MakeNormName(Copy(D, 1, Pos(':', D)), Copy(S, 2, Length(S) - 1));
-    end else
-    begin
-      Result := MakeNormName(D, S);
-    end;
-  end;
-  if Result[length(Result)] = '\' then Delete(Result, length(Result), 1);
+   if (Pos(':', S) > 0) or (Copy(S, 1, 2) = '\\') then begin
+      Result := S;
+   end else begin
+      if Copy(S, 1, 1) = '\' then begin
+         Result := MakeNormName(Copy(D, 1, Pos(':', D)), Copy(S, 2, Length(S) - 1));
+      end else begin
+         Result := MakeNormName(D, S);
+      end;
+   end;
+   if Result[length(Result)] = '\' then Delete(Result, length(Result), 1);
 end;
 
 function ExtractDir;
 var
-  i: Integer;
+   i: Integer;
 begin
-  Result := S; i := Length(S);
-  if (i > 3) and (S[i] = '\') then DelLC(Result);
+   Result := S; i := Length(S);
+   if (i > 3) and (S[i] = '\') then DelLC(Result);
 end;
 
 function MakeNormName;
 begin
-  Result := Path;
-  if (Result <> '') and (Result[Length(Result)] <> '\') then AddStr(Result, '\');
-  Result := Result + Name;
+   Result := Path;
+   if (Result <> '') and (Result[Length(Result)] <> '\') then AddStr(Result, '\');
+   Result := Result + Name;
 end;
 
 procedure AddStr;
 begin
-  S := S + C;
+   S := S + C;
 end;
 
 procedure Add_Str(var S: ShortString ; C : char);
 var
-  sl: Byte absolute S;
+   sl: Byte absolute S;
 begin
-  Inc(sl); S[sl] := C;
+   Inc(sl); S[sl] := C;
 end;
 
 procedure FSplit(const FName: string; var Path, Name, Ext: string);
 type
-  TStep = (sExt, sName, sPath);
+   TStep = (sExt, sName, sPath);
 var
-  Step : TStep;
-  I: Integer;
-  C: Char;
+   Step : TStep;
+   I: Integer;
+   C: Char;
 begin
-  I := Length(FName);
-  if Pos('.', FName) = 0 then Step := sName else Step := sExt;
-  Path := ''; Name := ''; Ext  := '';
-  while I > 0 do
-  begin
-    C := FName[I]; Dec(I);
-    case Step of
+   I := Length(FName);
+   if Pos('.', FName) = 0 then Step := sName else Step := sExt;
+   Path := ''; Name := ''; Ext  := '';
+   while I > 0 do begin
+      C := FName[I]; Dec(I);
+      case Step of
       sExt  :
-        case C of
-          '.': begin Ext := C + Ext; Inc(Step); end;
-          '\', ':': begin Name := Ext; Ext := ''; Path := C; Step := sPath; end;
-          else Ext := C + Ext;
-        end;
+         case C of
+         '.': begin Ext := C + Ext; Inc(Step); end;
+         '\', ':': begin Name := Ext; Ext := ''; Path := C; Step := sPath; end;
+         else Ext := C + Ext;
+         end;
       sName : if (C = '\') or (C = ':') then begin Path := C; Inc(Step) end else Name := C + Name;
       sPath : Path := C + Path;
-    end;
-  end;
+      end;
+   end;
 end;
 
 function ReplaceEx(const Pattern, ReplaceString: string; var S: string; CI: Boolean): Boolean;
@@ -3930,7 +3925,7 @@ begin
 {$IFDEF DEBUG_VERSION}
    if (IniFile <> nil) and IniFile.logWaitEvt then begin
       EnterList.Enter;
-      for i := 0 to EnterList.Count - 1 do begin
+      for i := EnterList.Count - 1 downto 0 do begin
          if pos(Pad('Enter_(pre)', 19) + ': EnterCS, ' + IntToStr(Integer(CS.DebugInfo)), EnterList[i]) > 0 then begin
             EnterList[i] := Pad('Enter', 19) + ': ' + s;
             break;

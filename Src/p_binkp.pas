@@ -154,6 +154,8 @@ type
     keysout: tkeys;
     LogFName: string;
     ChatEnabled: boolean;
+    CrypEnabled: boolean;
+    RemoteCanCrypt: boolean;
     RemoteCanTRS: boolean;
     function MakePwdStr(const AStr: string): string;
     procedure FreeChallenge;
@@ -492,6 +494,7 @@ begin
   FiStation := prec.Station;
   LogFName  := prec.LogFName;
   ChatEnabled := prec.ChatEnabled;
+  CrypEnabled := prec.CrypEnabled;
 end;
 
 function TBinkP.TimeoutValue: DWORD;
@@ -584,7 +587,8 @@ begin
            SendMsg(M_NUL, 'OPT BRK');
         end else
         if k = 'CRYPT' then begin
-           RemoteCanCryp := IniFile.RequestCRYPT;
+           RemoteCanCryp := IniFile.RequestCRYPT or CrypEnabled;
+           RemoteCanCrypt := True;
         end else
         if k = 'TRS' then begin
            RemoteCanTRS := True;
@@ -672,9 +676,9 @@ begin
      State := bdFinishFail;
      if Length(CustomInfo) = 1 then
      case CustomInfo[1] of
-       #1: SendMsg(M_ERR, 'Invalid addrs: ' + InMsg);
-       #3: State := bdSendBadPwd;
-       #4: State := bdAllAkasBusy;
+     #1: SendMsg(M_ERR, 'Invalid addrs: ' + InMsg);
+     #3: State := bdSendBadPwd;
+     #4: State := bdAllAkasBusy;
      end;
   end;
   FlushPkt;
@@ -682,12 +686,21 @@ end;
 
 procedure TBinkP.ChkPwd;
 begin
-  CustomInfo := UniqStr + ' ' + InMsg;
-  Finalize(UniqStr);
-  FLogFile(Self, lfBinkPPwd);
-  FlushPkt;
-  if CustomInfo = cBadPwd then State := bdSendBadPwd else
-  if CustomInfo = #4 then State := bdAllAkasBusy;
+   CustomInfo := UniqStr + ' ' + InMsg;
+   Finalize(UniqStr);
+   FLogFile(Self, lfBinkPPwd);
+   FlushPkt;
+   if CustomInfo = cBadPwd then State := bdSendBadPwd else
+   if CustomInfo = #4 then State := bdAllAkasBusy else
+   if CustomInfo = 'CRYPT' then begin
+      if RemoteCanCrypt then begin
+         if not RemoteCanCryp then begin
+            RemoteCanCryp := True;
+            SendMsg(M_NUL, 'OPT CRYPT');
+            FlushPkt;
+         end;
+      end;
+   end;
 end;
 
 procedure TBinkP.ReportTraf(txMail, txFiles: DWORD);
@@ -770,8 +783,8 @@ end;
 
 function AskCRYPT: string;
 begin
-  Result := '';
-  if IniFile.RequestCRYPT and not CramDisabled then Result := ' CRYPT';
+   Result := '';
+   if (IniFile.RequestCRYPT or CrypEnabled) and not CramDisabled then Result := ' CRYPT';
 end;
 
 function CanTRS: string;
@@ -1050,25 +1063,29 @@ begin
       FLogFile(Self, lfLog);
       ListBuf.AtFree(0);
    end;
-   for i := CollMax(TRSList) downto 0 do begin
-      s := TRSList[i];
-      if WordCount(s, [' ']) = 1 then begin
-         CustomInfo := 'Requesting transit to: ' + s;
-         FLogFile(Self, lfLog);
-         SendMsg(M_NUL, 'TRS ASK ' + s);
-         s := s + ' ASK';
-         TRSList[i] := s;
-      end else
-      if ExtractWord(2, s, [' ']) = 'ACK' then begin
-         CustomInfo := 'Transit request for: ' + ExtractWord(1, s, [' ']) + ' succeeded';
-         FLogFile(Self, lfLog);
-         TRSList.AtFree(i);
-      end else
-      if ExtractWord(2, s, [' ']) = 'NAK' then begin
-         CustomInfo := 'Transit request for: ' + ExtractWord(1, s, [' ']) + ' failed';
-         FLogFile(Self, lfLog);
-         TRSList.AtFree(i);
+   if IniFile.RequestTRS and RemoteCanTRS then begin
+      for i := CollMax(TRSList) downto 0 do begin
+         s := TRSList[i];
+         if WordCount(s, [' ']) = 1 then begin
+           CustomInfo := 'Requesting transit to: ' + s;
+            FLogFile(Self, lfLog);
+            SendMsg(M_NUL, 'TRS ASK ' + s);
+            s := s + ' ASK';
+            TRSList[i] := s;
+         end else
+         if ExtractWord(2, s, [' ']) = 'ACK' then begin
+            CustomInfo := 'Transit request for: ' + ExtractWord(1, s, [' ']) + ' succeeded';
+            FLogFile(Self, lfLog);
+            TRSList.AtFree(i);
+         end else
+         if ExtractWord(2, s, [' ']) = 'NAK' then begin
+            CustomInfo := 'Transit request for: ' + ExtractWord(1, s, [' ']) + ' failed';
+            FLogFile(Self, lfLog);
+            TRSList.AtFree(i);
+         end;
       end;
+   end else begin
+      TRSList.FreeAll;
    end;
 end;
 
@@ -1294,7 +1311,7 @@ begin
       end;
     bdtxSendSecondEOB:
       begin
-         if RemoteCanTRS and (TRSList.Count > 0) then begin
+         if RemoteCanTRS and (CollMax(TRSList) > -1) then begin
             FlushPkt;
             if CP.Carrier <> CP.DCD then begin
                TRSList.FreeAll;
