@@ -173,34 +173,31 @@ var
 begin
    i := MinD(T.D.BlkLen, T.D.FSize - T.D.FPos);
    SetLastError(0);
-   if (T.Stream.Read(aOut, i) <> i) or (GetLastError <> 0) then
-   begin
+   if (T.Stream.Read(aOut, i) <> i) or (GetLastError <> 0) then begin
       FFinishSend(Self, aaSysError);
       State := bdDone;
       exit;
-   end else
-   begin
+   end else begin
       TxBlkSize := i;
       TxBlkRead := i;
       TxBlkPos  := 0;
    end;
-   if CanSend then
-   begin
+   if CanSend then begin
       NewTimerSecs(Timer, BinkPTimeout);
       WriteProc(aOut[TxBlkPos], i);
+      CP.Flsh;
       if T.D.BlkLen < MaxSndBlkSz then T.D.BlkLen := T.D.BlkLen shl 1;
       if T.D.BlkLen > MaxSndBlkSz then T.D.BlkLen := MaxSndBlkSz;
       if TxBlkPos + i = TxBlkSize then begin
          Inc(T.D.FPos, TxBlkRead);
       end;
-      if T.D.FPos = T.D.FSize then
-      begin
+      if T.D.FPos = T.D.FSize then begin
          while CP.OutUsed > 0 do Application.ProcessMessages;
+         CP.Flsh;
          FFinishSend(Self, aaOK);
          State := bdDone;
          exit;
-      end else
-      begin
+      end else begin
          Inc(TxBlkPos, i);
       end;
    end else
