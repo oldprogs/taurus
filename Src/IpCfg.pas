@@ -416,7 +416,6 @@ begin
   end;
   IniFile.SaveGrid(gPOP3);
   IniFile.SaveGrid(gNNTP);
-  IniFile.StoreCfg;
   Cfg.IPData.InC := spIn.Value;
   Cfg.IPData.OutC := spOut.Value;
   Cfg.IPData.BList := spBL.Value;
@@ -426,14 +425,10 @@ begin
   EvtUpdateEvt;
   if Cfg.IpEvtIds.EvtCnt > 0 then FreeMem(Cfg.IpEvtIds.EvtIds, Cfg.IpEvtIds.EvtCnt*SizeOf(Integer));
 
-  if not EvtChanged then
-  begin
-    if CurEvtCnt <> OrgEvtCnt then EvtChanged := True else
-    begin
-      for i := 0 to CurEvtCnt - 1 do
-      begin
-        if CurEvtIds^[i] <> OrgEvtIds^[i] then
-        begin
+  if not EvtChanged then begin
+    if CurEvtCnt <> OrgEvtCnt then EvtChanged := True else begin
+      for i := 0 to CurEvtCnt - 1 do begin
+        if CurEvtIds^[i] <> OrgEvtIds^[i] then begin
           EvtChanged := True;
           Break;
         end;
@@ -446,21 +441,22 @@ begin
   Cfg.Proxy.Addr := lSocksAddr.Text;
   Cfg.Proxy.Port := FSocksPort;
   Cfg.Proxy.Enabled := rgProxyType.ItemIndex > 0;
-  IniFile.ProxyType := TProxyType(rgProxyType.ItemIndex);
 
+  CfgLeave;
+  StoreConfig(Handle);
+  AltStoreConfig(Handle);
+
+  IniFile.ProxyType := TProxyType(rgProxyType.ItemIndex);
   IniFile.EnableProxyAuth := cbAuth.Checked;
   IniFile.ProxyUserName := lUserName.Text;
   IniFile.ProxyPassword := lPassword.Text;
   IniFile.AllViaProxy := cbAllViaProxy.Checked;
   IniFile.EncryptProxyPassword := cbEncryptPassword.Checked;
 
-  CfgLeave;
   IniFile.InBandwidth := spSPin.Value;
   IniFile.OutBandwidth := spSPout.Value;
   IniFile.CashSize := xSpinCash.Value * 1024 * 1024;
 
-  StoreConfig(Handle);
-  AltStoreConfig(Handle);
   IniFile.StoreCfg;
 
   if DaemonStarted and (GenCRC <> GeneralCRC) then

@@ -4,7 +4,7 @@ unit RadIni;
 
 interface
 
-uses Windows, Classes, xFido, Recs, xBase, Menus, MGrids;
+uses Windows, Classes, xFido, Recs, xBase, Menus, MGrids, CfgFiles;
 
 const
   IniConfig = 'Taurus.ini';
@@ -140,6 +140,7 @@ type
             DynamicRouting: boolean;
             D5Out: boolean; //restart needed if changed
             RequestCRYPT: boolean;
+            RequestTRS: boolean;
             ibnRequestLIST: boolean;
             hydRequestLIST: boolean;
             Remote_Enabled: boolean;
@@ -249,7 +250,7 @@ var
 
 implementation
 
-uses SysUtils, Forms, IniFiles, wizard, crypt;
+uses SysUtils, Forms, Wizard, Crypt;
 
 const
   main = 'Main';
@@ -389,14 +390,13 @@ function TConfig.ReadSection;
 var
    i: integer;
 begin
+   Enter;
    with TIniFile.Create(IniFName) do begin
       try
-         Enter;
          Result := TStringList.Create;
          ReadSection('Grids', Result);
       finally
          Free;
-         Leave;
       end;
    end;
    for i := Result.Count - 1 downto 0 do begin
@@ -408,6 +408,7 @@ begin
       Result.Free;
       Result := nil;
    end;
+   Leave;
 end;
 
 function TConfig.GetStrings;
@@ -486,9 +487,9 @@ var i: integer;
     p: TDualColl;
     l: TStringList;
 begin
+   Enter;
    with TIniFile.Create(IniFName) do begin
       try
-         Enter;
          l := TStringList.Create;
          ReadSection('Grids', l);
          for i := l.Count - 1 downto 0 do begin
@@ -499,10 +500,8 @@ begin
          l.Free;
       finally
          Free;
-         Leave;
       end;
    end;
-   Enter;
    for i := 1 to g.RowCount - 1 do begin
       s := '';
       for n := g.FixedCols to g.ColCount - 1 do begin
@@ -560,111 +559,113 @@ end;
 procedure TConfig.ReadConfig;
 
 var
-  ini: TIniFile;
+   ini: TMemIniFile;
   _lang: integer;
-  l: TStringList;
-  i: integer;
-  s, o: string;
+   l: TStringList;
+   i: integer;
+   s,
+   o: string;
 
 function GetExtApp: TRadArrRec;
 var
-  S: TStringList;
-  tmpstr: string;
-  I: byte;
+   S: TStringList;
+   tmpstr: string;
+   I: byte;
 begin
-  S := TStringList.Create;
-  ini.ReadSection(ExtApps, s);
-  result.Count := s.Count;
-  if result.Count > 0 then
-    for I := 1 to result.Count do
-    begin
-      tmpstr := ini.ReadString(ExtApps, s.Strings[I - 1], 'n/a');
-      result.Table[I,1] := ExtractWord(1, tmpstr, ['|']);
-      result.Table[I,2] := ExtractWord(2, tmpstr, ['|']);
-    end;
-  S.Free;
+   S := TStringList.Create;
+   ini.ReadSection(ExtApps, s);
+   result.Count := s.Count;
+   if result.Count > 0 then begin
+      for I := 1 to result.Count do begin
+         tmpstr := ini.ReadString(ExtApps, s.Strings[I - 1], 'n/a');
+         result.Table[I,1] := ExtractWord(1, tmpstr, ['|']);
+         result.Table[I,2] := ExtractWord(2, tmpstr, ['|']);
+      end;
+   end;
+   S.Free;
 end;
 
 function GetBWZW: TRadBWZWWW;
 var
-  s: string;
-  i: byte;
+   s: string;
+   i: byte;
 begin
-  s := ini.ReadString(sizes, 'BWZListView', '133,60,60,63,57');
-  for i := 0 to 4 do result[i] := StrToIntDef(ExtractWord(i + 1, s, [',']), 70);
+   s := ini.ReadString(sizes, 'BWZListView', '133,60,60,63,57');
+   for i := 0 to 4 do result[i] := StrToIntDef(ExtractWord(i + 1, s, [',']), 70);
 end;
 
 function GetOut: TRadOutMgr;
 var
-  s: string;
-  i: byte;
+   s: string;
+   i: byte;
 begin
-  s := ini.ReadString(sizes, 'OutMgrHdr', '349,142,81,53,70,80');
-  for i := 0 to 5 do result[i] := StrToIntDef(ExtractWord(i + 1, s, [',']), 70);
+   s := ini.ReadString(sizes, 'OutMgrHdr', '349,142,81,53,70,80');
+   for i := 0 to 5 do result[i] := StrToIntDef(ExtractWord(i + 1, s, [',']), 70);
 end;
 
 function GetMF: TRadMFRec;
 var
-  s: string;
+   s: string;
 begin
-  s := Ini.ReadString(sizes, 'MainForm', '223,1,700,621,0');
-  result.Bounds[0] := StrToIntDef(ExtractWord(1, s, [',']), 223);
-  result.Bounds[1] := StrToIntDef(ExtractWord(2, s, [',']), 005);
-  result.Bounds[2] := StrToIntDef(ExtractWord(3, s, [',']), 700);
-  result.Bounds[3] := StrToIntDef(ExtractWord(4, s, [',']), 621);
-  result.Maximized := StrToIntDef(ExtractWord(5, s, [',']), 000);
-  if Result.Bounds[2] = 700 then begin
-     Result.Bounds[2] := Screen.Width  - 1 - Result.Bounds[0];
-  end;
+   s := Ini.ReadString(sizes, 'MainForm', '223,1,700,621,0');
+   result.Bounds[0] := StrToIntDef(ExtractWord(1, s, [',']), 223);
+   result.Bounds[1] := StrToIntDef(ExtractWord(2, s, [',']), 005);
+   result.Bounds[2] := StrToIntDef(ExtractWord(3, s, [',']), 700);
+   result.Bounds[3] := StrToIntDef(ExtractWord(4, s, [',']), 621);
+   result.Maximized := StrToIntDef(ExtractWord(5, s, [',']), 000);
+   if Result.Bounds[2] = 700 then begin
+      Result.Bounds[2] := Screen.Width  - 1 - Result.Bounds[0];
+   end;
 end;
 
 function GetNB: TRadMFRec;
 var
-  s: string;
+   s: string;
 begin
-  s := Ini.ReadString(sizes, 'NodeBrws', '391,12,619,470,0');
-  result.Bounds[0] := StrToIntDef(ExtractWord(1, s,[',']), 138);
-  result.Bounds[1] := StrToIntDef(ExtractWord(2, s,[',']), 194);
-  result.Bounds[2] := StrToIntDef(ExtractWord(3, s,[',']), 617);
-  result.Bounds[3] := StrToIntDef(ExtractWord(4, s,[',']), 496);
-  result.Maximized := StrToIntDef(ExtractWord(5, s,[',']),   0);
+   s := Ini.ReadString(sizes, 'NodeBrws', '391,12,619,470,0');
+   result.Bounds[0] := StrToIntDef(ExtractWord(1, s,[',']), 138);
+   result.Bounds[1] := StrToIntDef(ExtractWord(2, s,[',']), 194);
+   result.Bounds[2] := StrToIntDef(ExtractWord(3, s,[',']), 617);
+   result.Bounds[3] := StrToIntDef(ExtractWord(4, s,[',']), 496);
+   result.Maximized := StrToIntDef(ExtractWord(5, s,[',']),   0);
 end;
 
 function GetPolls: TRadPolls;
 var
-  s: string;
+   s: string;
 begin
-  s := ini.ReadString(sizes, 'PollsListView', '141,298,77,54,54,53,48,49');
-  result[0] := StrToIntDef(ExtractWord(1, s,[',']), 100);
-  result[1] := StrToIntDef(ExtractWord(2, s,[',']), 170);
-  result[2] := StrToIntDef(ExtractWord(3, s,[',']),  80);
-  result[3] := StrToIntDef(ExtractWord(4, s,[',']),  60);
-  result[4] := StrToIntDef(ExtractWord(5, s,[',']),  40);
-  result[5] := StrToIntDef(ExtractWord(6, s,[',']),  40);
-  result[6] := StrToIntDef(ExtractWord(7, s,[',']),  40);
-  result[7] := StrToIntDef(ExtractWord(8, s,[',']),  60);
+   s := ini.ReadString(sizes, 'PollsListView', '141,298,77,54,54,53,48,49');
+   result[0] := StrToIntDef(ExtractWord(1, s,[',']), 100);
+   result[1] := StrToIntDef(ExtractWord(2, s,[',']), 170);
+   result[2] := StrToIntDef(ExtractWord(3, s,[',']),  80);
+   result[3] := StrToIntDef(ExtractWord(4, s,[',']),  60);
+   result[4] := StrToIntDef(ExtractWord(5, s,[',']),  40);
+   result[5] := StrToIntDef(ExtractWord(6, s,[',']),  40);
+   result[6] := StrToIntDef(ExtractWord(7, s,[',']),  40);
+   result[7] := StrToIntDef(ExtractWord(8, s,[',']),  60);
 end;
 
 function GetFPF:TRadFidoPollsFlags;
 begin
-  result.TimeDial := Ini.ReadInteger(polls, 'TimeDial', 120);
-  result.Busy := Ini.ReadInteger(polls, 'Busy', 99);
-  result.NoC := Ini.ReadInteger(polls, 'NoC', 10);
-  result.Fail := Ini.ReadInteger(polls, 'Fail', 10);
-  result.Retry := Ini.ReadInteger(polls, 'Retry', 100);
-  result.StandOffBusy := Ini.ReadInteger(polls, 'StandOffBusy', 30);
-  result.StandOffNoc := Ini.ReadInteger(polls, 'StandOffNoc', 30);
-  result.StandOffFail := Ini.ReadInteger(polls, 'StandOffFail', 30);
-  result.uStandOffBusy := Ini.ReadBool(polls, 'uStandOffBusy', False);
-  result.uStandOffNoc := Ini.ReadBool(polls, 'uStandOffNoc', False);
-  result.uStandOffFail := Ini.ReadBool(polls, 'uStandOffFail', False);
+   result.TimeDial := Ini.ReadInteger(polls, 'TimeDial', 120);
+   result.Busy := Ini.ReadInteger(polls, 'Busy', 99);
+   result.NoC := Ini.ReadInteger(polls, 'NoC', 10);
+   result.Fail := Ini.ReadInteger(polls, 'Fail', 10);
+   result.Retry := Ini.ReadInteger(polls, 'Retry', 100);
+   result.StandOffBusy := Ini.ReadInteger(polls, 'StandOffBusy', 30);
+   result.StandOffNoc := Ini.ReadInteger(polls, 'StandOffNoc', 30);
+   result.StandOffFail := Ini.ReadInteger(polls, 'StandOffFail', 30);
+   result.uStandOffBusy := Ini.ReadBool(polls, 'uStandOffBusy', False);
+   result.uStandOffNoc := Ini.ReadBool(polls, 'uStandOffNoc', False);
+   result.uStandOffFail := Ini.ReadBool(polls, 'uStandOffFail', False);
 end;
 
 begin
-  ini := TIniFile.Create(IniFName);
+  Enter;
+  ini := TMemIniFile.Create(IniFName);
+  Leave;
   with ini do
     try
-      Enter;
       InTemp := MakeFullDir('', ReadString(paths, 'TempInbound', ExtractFilePath(ParamStr(0)) + 'INTMP'));
       InSecure := MakeFullDir('', ReadString(paths, 'SecureInbound', ExtractFilePath(ParamStr(0)) + 'INSEC'));
       Log := MakeFullDir('', ReadString(paths, 'Logs', ExtractFilePath(ParamStr(0)) + 'LOG'));
@@ -788,6 +789,7 @@ begin
 {$ENDIF}
       RequestCRYPT := ReadBool(binkp, 'RequestCRYPT', false);
       ibnRequestLIST := ReadBool(binkp, 'RequestLIST', false);
+      RequestTRS := ReadBool(binkp, 'RequestTRS', false);
 
       Remote_Enabled := ReadBool(remote, 'enabled', false);
       Remote_EncPwd := ReadBool(remote, 'EncPwd', False);
@@ -833,29 +835,26 @@ begin
       if EncryptProxyPassword then ProxyPassword := DecodeStr(ProxyPassword);
 
       l := TStringList.Create;
-      if NetmailAddrTo.Count <> 0 then
-      begin
-        NetmailAddrTo.FreeAll;
-        NetmailAddrFrom.FreeAll;
-        NetmailPwd.FreeAll;
+      if NetmailAddrTo.Count <> 0 then begin
+         NetmailAddrTo.FreeAll;
+         NetmailAddrFrom.FreeAll;
+         NetmailPwd.FreeAll;
       end;
 
       ReadSection(Netmail, l);
-      for i := 0 to l.Count - 1 do
-      begin
-        s := l[i];
-        NetmailAddrTo.Add(s);
-        s := Trim(ReadString(Netmail, s, ''));
-        o := s;
-        delete(o, pos('(', o) , length(o) - pos('(', o) + 1);
-        o := Trim(o);
-        NetmailAddrFrom.Add(o);
-        if pos('(', s) <> 0 then
-        begin
-          delete(s, 1, pos('(', s));
-          delete(s, pos(')', s), 1);
-        end else s := '';
-        NetmailPwd.Add(s);
+      for i := 0 to l.Count - 1 do begin
+         s := l[i];
+         NetmailAddrTo.Add(s);
+         s := Trim(ReadString(Netmail, s, ''));
+         o := s;
+         delete(o, pos('(', o) , length(o) - pos('(', o) + 1);
+         o := Trim(o);
+         NetmailAddrFrom.Add(o);
+         if pos('(', s) <> 0 then begin
+            delete(s, 1, pos('(', s));
+            delete(s, pos(')', s), 1);
+         end else s := '';
+         NetmailPwd.Add(s);
       end;
       l.Free;
 
@@ -867,10 +866,8 @@ begin
       SaveWaits := ReadBool(main, 'SaveWaits', False);
 
     finally
-      Leave;
       free;
     end;
-
     PostMsg(WM_TrayIcon);
 
     if Application.MainForm <> nil then PostMessage(Application.MainForm.Handle, WM_GRIDUPD,Ord(GridInBWZ), 0);//0 - BWZ; 1 - PV
@@ -899,277 +896,275 @@ end;
 
 procedure TConfig.WriteConfig;
 var
-  i: integer;
-  s: string;
+   i: integer;
+   s: string;
 begin
-  try
-    if not DirectoryExists(ExtractFilePath(IniFName)) then CreateDir(ExtractFilePath(IniFName));
-  except
-    {showmessage('can''t create homedir!')}
-    exit;
-  end;
-  with TIniFile.Create(IniFName) do begin
-    try
-      Enter;
-      WriteInteger(main, 'CPS_MinBytes', CPS_MinBytes);
-      WriteInteger(main, 'CPS_MinSecs', CPS_MinSecs);
-      WriteInteger(main, 'FlagsCheckPeriod', FlagsCheckPeriod);
-      WriteInteger(main, 'OnClose', OnClose);
-      WriteBool(main, 'FixedRetryTimeout', FixedRetryTimeout);
-      WriteBool(main, 'SessionAbortedFlag', SessionAbortedFlag);
-      WriteString(main, 'synch', Addr2Str(Synch));
-      WriteString(main, 'MainAddr', Addr2Str(MainAddr));
-      WriteInteger(main, 'SynchTimeShift', TimeShift);
-      WriteInteger(main, 'MainReg', MainReg);
-      WriteBool(main, 'DisableHTMLHelp', NoHTML);
-      WriteBool(main, 'UseSpace', UseSpace);
-      WriteInteger(main, 'FreeSpaceLimit', FreeSpaceLmt);
+   try
+      if not DirectoryExists(ExtractFilePath(IniFName)) then CreateDir(ExtractFilePath(IniFName));
+   except
+      exit;
+   end;
+   try
+   Enter;
+   with TIniFile.Create(IniFName) do begin
+      UpdateFile;
+      Free;
+   end;
+   with TMemIniFile.Create(IniFName) do begin
+     WriteInteger(main, 'CPS_MinBytes', CPS_MinBytes);
+     WriteInteger(main, 'CPS_MinSecs', CPS_MinSecs);
+     WriteInteger(main, 'FlagsCheckPeriod', FlagsCheckPeriod);
+     WriteInteger(main, 'OnClose', OnClose);
+     WriteBool(main, 'FixedRetryTimeout', FixedRetryTimeout);
+     WriteBool(main, 'SessionAbortedFlag', SessionAbortedFlag);
+     WriteString(main, 'synch', Addr2Str(Synch));
+     WriteString(main, 'MainAddr', Addr2Str(MainAddr));
+     WriteInteger(main, 'SynchTimeShift', TimeShift);
+     WriteInteger(main, 'MainReg', MainReg);
+     WriteBool(main, 'DisableHTMLHelp', NoHTML);
+     WriteBool(main, 'UseSpace', UseSpace);
+     WriteInteger(main, 'FreeSpaceLimit', FreeSpaceLmt);
 //      WriteBool(main, 'ExtBanner', ExtBanner);
-      WriteInteger(main, 'WinDlgTWait', WinDlgTWait);
-      WriteInteger(main, 'MaxTimeDiff', MaxTimeDiff);
-      WriteBool(main, 'FixedRetryTimeout', FixedRetryTimeout);
-      WriteBool(main, 'DynamicOutbound', DynamicOutbound);
-      WriteBool(main, 'D5Out', D5Out);
-      WriteBool(main, 'DynamicRouting', DynamicRouting);
-      WriteBool(main, 'SessionOKFlag', SessionOKFlag);
-      WriteInteger(main, 'MaxBWZAge', MaxBWZAge);
-      WriteInteger(main, 'MaxBSYAge', MaxBSYAge);
-      if MaxUDLAge = INVALID_FILE_SIZE then MaxUDLAge := 0;
-      WriteInteger(main, 'MaxUDLAge', MaxUDLAge);
-      if MaxUDLAge = 0 then MaxUDLAge := INVALID_FILE_SIZE; //bug fixup!
-      WriteString(main, 'ChatBell', ChatBell);
-      WriteBool(main, 'ChatEnabled', ChatEnabled);
-      WriteString(main, 'ChatIgnoreFile', ChatIgnoreFile);
-      WriteBool(main, 'UseNodelistData', UseNodelistData);
-      WriteBool(main, 'PlaySounds', PlaySounds);
-      DeleteKey(main, 'WaitCDDrop');
-      WriteBool(main, 'IgnoreCD', IgnoreCD);
-      WriteBool(main, 'TrayLamps', TrayLamps);
+     WriteInteger(main, 'WinDlgTWait', WinDlgTWait);
+     WriteInteger(main, 'MaxTimeDiff', MaxTimeDiff);
+     WriteBool(main, 'FixedRetryTimeout', FixedRetryTimeout);
+     WriteBool(main, 'DynamicOutbound', DynamicOutbound);
+     WriteBool(main, 'D5Out', D5Out);
+     WriteBool(main, 'DynamicRouting', DynamicRouting);
+     WriteBool(main, 'SessionOKFlag', SessionOKFlag);
+     WriteInteger(main, 'MaxBWZAge', MaxBWZAge);
+     WriteInteger(main, 'MaxBSYAge', MaxBSYAge);
+     if MaxUDLAge = INVALID_FILE_SIZE then MaxUDLAge := 0;
+     WriteInteger(main, 'MaxUDLAge', MaxUDLAge);
+     if MaxUDLAge = 0 then MaxUDLAge := INVALID_FILE_SIZE; //bug fixup!
+     WriteString(main, 'ChatBell', ChatBell);
+     WriteBool(main, 'ChatEnabled', ChatEnabled);
+     WriteString(main, 'ChatIgnoreFile', ChatIgnoreFile);
+     WriteBool(main, 'UseNodelistData', UseNodelistData);
+     WriteBool(main, 'PlaySounds', PlaySounds);
+     DeleteKey(main, 'WaitCDDrop');
+     WriteBool(main, 'IgnoreCD', IgnoreCD);
+     WriteBool(main, 'TrayLamps', TrayLamps);
 
-      WriteString(colors, 'GaugeFore', IntToHex(GaugeFore, 6));
-      WriteString(colors, 'GaugeBack', IntToHex(GaugeBack, 6));
-      WriteString(colors, 'LoggerFore', IntToHex(LoggerFore, 6));
-      WriteString(colors, 'LoggerBack', IntToHex(LoggerBack, 6));
-      WriteString(colors, 'BadWazooFore', IntToHex(BadWazooFore, 6));
-      WriteString(colors, 'BadWazooBack', IntToHex(BadWazooBack, 6));
+     WriteString(colors, 'GaugeFore', IntToHex(GaugeFore, 6));
+     WriteString(colors, 'GaugeBack', IntToHex(GaugeBack, 6));
+     WriteString(colors, 'LoggerFore', IntToHex(LoggerFore, 6));
+     WriteString(colors, 'LoggerBack', IntToHex(LoggerBack, 6));
+     WriteString(colors, 'BadWazooFore', IntToHex(BadWazooFore, 6));
+     WriteString(colors, 'BadWazooBack', IntToHex(BadWazooBack, 6));
 
-      WriteBool(tray, 'DoubleClick', DoubleClick);
-      WriteBool(tray, 'AlwaysInTray', AlwaysInTray);
-      WriteBool(tray, 'StealthMode', Stealth);
-      WriteString(tray, 'PopupKey', ShortCutToText(PopupKey));
+     WriteBool(tray, 'DoubleClick', DoubleClick);
+     WriteBool(tray, 'AlwaysInTray', AlwaysInTray);
+     WriteBool(tray, 'StealthMode', Stealth);
+     WriteString(tray, 'PopupKey', ShortCutToText(PopupKey));
 
-      WriteInteger(_system, 'StartPriority', Priority);
-      WriteBool(_system, 'StatxPurgeData', StatxPurgeData);
-      WriteBool(_system, 'IncrementArcmail', IncrementArcmail);
-      WriteBool(_system, 'IgnoreEndSession', IgnoreEndSession);
-      WriteBool(_system, 'ODBCLogging', ODBCLogging);
-      WriteBool(_system, 'ForceFaxPage', ForceAddFaxPage);
-      WriteBool(_system, 'CloseBWZFile', CloseBWZFile);
-      WriteBool(_system, 'DisableWinsockTraps', DisableWinsockTraps);
-      WriteBool(_system, 'SimpleBSY', SimpleBSY);
-      WriteBool(_system, 'IgnoreBWZSize', IgnoreBWZSize);
-      WriteBool(_system, 'AutoNodelist', AutoNodelist);
-     {$IFDEF EXTREME}
-      WriteBool(_system, 'UseAntiHang', true);
-     {$ELSE}
-      WriteBool(_system, 'UseAntiHang', false);
-     {$ENDIF} 
+     WriteInteger(_system, 'StartPriority', Priority);
+     WriteBool(_system, 'StatxPurgeData', StatxPurgeData);
+     WriteBool(_system, 'IncrementArcmail', IncrementArcmail);
+     WriteBool(_system, 'IgnoreEndSession', IgnoreEndSession);
+     WriteBool(_system, 'ODBCLogging', ODBCLogging);
+     WriteBool(_system, 'ForceFaxPage', ForceAddFaxPage);
+     WriteBool(_system, 'CloseBWZFile', CloseBWZFile);
+     WriteBool(_system, 'DisableWinsockTraps', DisableWinsockTraps);
+     WriteBool(_system, 'SimpleBSY', SimpleBSY);
+     WriteBool(_system, 'IgnoreBWZSize', IgnoreBWZSize);
+     WriteBool(_system, 'AutoNodelist', AutoNodelist);
+    {$IFDEF EXTREME}
+     WriteBool(_system, 'UseAntiHang', true);
+    {$ELSE}
+     WriteBool(_system, 'UseAntiHang', false);
+    {$ENDIF}
 
-      WriteBool(polls, 'TransmitHold', TransmitHold);
-      WriteBool(polls, 'DirectAsNormal', DirectAsNormal);
-      WriteString(polls, 'Flags', PollAddFlags);
+     WriteBool(polls, 'TransmitHold', TransmitHold);
+     WriteBool(polls, 'DirectAsNormal', DirectAsNormal);
+     WriteString(polls, 'Flags', PollAddFlags);
 
-      WriteBool(_Interface, 'ShowBalloon', ShowBalloon);
-      WriteBool(_Interface, 'ShowBalloonMin', ShowBalloonMin);
-      WriteBool(_Interface, 'ShowMenuIcons', ShowMenuIcons);
-      WriteBool(_interface, 'GridLinesInBWZ', GridInBWZ);
-      WriteBool(_interface, 'GridLinesInPV', GridInPV);
-      WriteInteger(_interface, 'language', lang);
-      WriteString(_interface, 'helplang', helplang);
-      WriteString(_interface, 'FormsFontName', FormsFontName);
-      WriteInteger(_interface, 'FormsFontSize', FormsFontSize);
-      WriteString(_interface, 'FormsFontAttr', FormsFontAttr);
-      WriteString(_interface, 'LoggerFontName', LoggerFontName);
-      WriteInteger(_interface, 'LoggerFontSize', LoggerFontSize);
-      WriteString(_interface, 'LoggerFontAttr', LoggerFontAttr);
+     WriteBool(_Interface, 'ShowBalloon', ShowBalloon);
+     WriteBool(_Interface, 'ShowBalloonMin', ShowBalloonMin);
+     WriteBool(_Interface, 'ShowMenuIcons', ShowMenuIcons);
+     WriteBool(_interface, 'GridLinesInBWZ', GridInBWZ);
+     WriteBool(_interface, 'GridLinesInPV', GridInPV);
+     WriteInteger(_interface, 'language', lang);
+     WriteString(_interface, 'helplang', helplang);
+     WriteString(_interface, 'FormsFontName', FormsFontName);
+     WriteInteger(_interface, 'FormsFontSize', FormsFontSize);
+     WriteString(_interface, 'FormsFontAttr', FormsFontAttr);
+     WriteString(_interface, 'LoggerFontName', LoggerFontName);
+     WriteInteger(_interface, 'LoggerFontSize', LoggerFontSize);
+     WriteString(_interface, 'LoggerFontAttr', LoggerFontAttr);
 
-      WriteString(paths, 'flags', FlagsDir);
-      WriteString(paths, 'TempInbound', InTemp);
-      WriteString(paths, 'SecureInbound', InSecure);
-      WriteString(paths, 'Logs', Log);
-      WriteString(paths, 'Outbound', Outbound);
-      WriteString(paths, 'Inbound', InCommon);
-      WriteString(paths, 'HomeDir', HomeDir);
-      WriteString(paths, 'config', CfgDir);
+     WriteString(paths, 'flags', FlagsDir);
+     WriteString(paths, 'TempInbound', InTemp);
+     WriteString(paths, 'SecureInbound', InSecure);
+     WriteString(paths, 'Logs', Log);
+     WriteString(paths, 'Outbound', Outbound);
+     WriteString(paths, 'Inbound', InCommon);
+     WriteString(paths, 'HomeDir', HomeDir);
+     WriteString(paths, 'config', CfgDir);
 
-      WriteString('MSG', 'Netmail', NetmailDir);
-      WriteBool('MSG', 'ScanMSG', ScanMSG);
+     WriteString('MSG', 'Netmail', NetmailDir);
+     WriteBool('MSG', 'ScanMSG', ScanMSG);
 
-      WriteString(LogNames, 'access_log', accessFName);
-      WriteString(LogNames, 'agent_log', agentFName);
-      WriteString(LogNames, 'binary_log', StatxFName);
-      WriteString(LogNames, 'polls.log', Polls_log);
-      WriteString(LogNames, 'cronapps.log', Cronapps_log);
-      WriteString(LogNames, 'tariff.log', tariff_log);
+     WriteString(LogNames, 'access_log', accessFName);
+     WriteString(LogNames, 'agent_log', agentFName);
+     WriteString(LogNames, 'binary_log', StatxFName);
+     WriteString(LogNames, 'polls.log', Polls_log);
+     WriteString(LogNames, 'cronapps.log', Cronapps_log);
+     WriteString(LogNames, 'tariff.log', tariff_log);
 {$IFDEF WS}
-      WriteString(LogNames, 'ipdaemon.log', IPDaemon_log);
+     WriteString(LogNames, 'ipdaemon.log', IPDaemon_log);
 {$ENDIF}
 {$IFDEF RASDIAL}
-      WriteString(LogNames, 'ras.log', ras_log);
+     WriteString(LogNames, 'ras.log', ras_log);
 {$ENDIF}
 
 {$IFDEF RASDIAL}
-      WriteBool(_RasDial, 'RASEnabled', RASEnabled);
-      WriteString(_RasDial, 'EntryName', iEntryName);
+     WriteBool(_RasDial, 'RASEnabled', RASEnabled);
+     WriteString(_RasDial, 'EntryName', iEntryName);
 {$ENDIF}
 
-      WriteBool(tariff, 'LogTariff', not DontLogTariff);
-      WriteBool(tariff, 'PerMinute', PerMinute);
+     WriteBool(tariff, 'LogTariff', not DontLogTariff);
+     WriteBool(tariff, 'PerMinute', PerMinute);
 
-      WriteBool(binkp, 'RequestCRYPT', RequestCRYPT);
-      WriteBool(binkp, 'RequestLIST', ibnRequestLIST);
+     WriteBool(binkp, 'RequestCRYPT', RequestCRYPT);
+     WriteBool(binkp, 'RequestLIST', ibnRequestLIST);
+     WriteBool(binkp, 'RequestTRS', RequestTRS);
 
-      WriteBool(hydra, 'UTCDefault', HydraUTCDefault);
-      WriteBool(hydra, 'Short_and_Long_filename', HydraShortLongfilename);
-      WriteBool(hydra, 'OEM_CHARSET', HydraOEM);
-      WriteBool(hydra, '_Debug', HydraDebug);
-      WriteInteger(hydra, 'TxWindow', HydraTxWindow);
-      WriteInteger(hydra, 'RxWindow', HydraRxWindow);
-      WriteBool(hydra, 'RequestLIST', hydRequestLIST);
+     WriteBool(hydra, 'UTCDefault', HydraUTCDefault);
+     WriteBool(hydra, 'Short_and_Long_filename', HydraShortLongfilename);
+     WriteBool(hydra, 'OEM_CHARSET', HydraOEM);
+     WriteBool(hydra, '_Debug', HydraDebug);
+     WriteInteger(hydra, 'TxWindow', HydraTxWindow);
+     WriteInteger(hydra, 'RxWindow', HydraRxWindow);
+     WriteBool(hydra, 'RequestLIST', hydRequestLIST);
 
-      WriteBool(FTP, 'FTPDebug', FTPDebug);
+     WriteBool(FTP, 'FTPDebug', FTPDebug);
 
 {$IFDEF USE_TAPI}
-      WriteBool(_tapi, 'TAPIDebug', TAPIDebug);
-      WriteInteger(_tapi, 'TAPIConnect', TAPIConnect);
+     WriteBool(_tapi, 'TAPIDebug', TAPIDebug);
+     WriteInteger(_tapi, 'TAPIConnect', TAPIConnect);
 {$ENDIF}
 
-      WriteBool(remote, 'enabled', Remote_Enabled);
-      WriteBool(remote, 'EncPwd', Remote_EncPwd);
-      if Remote_EncPwd then WriteString (remote, 'pwd', EncodeStr(Remote_Password))
-      else WriteString (remote, 'pwd', Remote_Password);
+     WriteBool(remote, 'enabled', Remote_Enabled);
+     WriteBool(remote, 'EncPwd', Remote_EncPwd);
+     if Remote_EncPwd then WriteString (remote, 'pwd', EncodeStr(Remote_Password))
+     else WriteString (remote, 'pwd', Remote_Password);
 
-      WriteString(colors, 'OldMail7Fore',  IntToHex(OldMail7Fore, 6));
-      WriteString(colors, 'OldMail14Fore', IntToHex(OldMail14Fore, 6));
-      WriteString(colors, 'OldMail21Fore', IntToHex(OldMail21Fore, 6));
-      WriteString(colors, 'OldMail28Fore', IntToHex(OldMail28Fore, 6));
-      WriteString(colors, 'OldMail7Back',  IntToHex(OldMail7Back, 6));
-      WriteString(colors, 'OldMail14Back', IntToHex(OldMail14Back, 6));
-      WriteString(colors, 'OldMail21Back', IntToHex(OldMail21Back, 6));
-      WriteString(colors, 'OldMail28Back', IntToHex(OldMail28Back, 6));
+     WriteString(colors, 'OldMail7Fore',  IntToHex(OldMail7Fore, 6));
+     WriteString(colors, 'OldMail14Fore', IntToHex(OldMail14Fore, 6));
+     WriteString(colors, 'OldMail21Fore', IntToHex(OldMail21Fore, 6));
+     WriteString(colors, 'OldMail28Fore', IntToHex(OldMail28Fore, 6));
+     WriteString(colors, 'OldMail7Back',  IntToHex(OldMail7Back, 6));
+     WriteString(colors, 'OldMail14Back', IntToHex(OldMail14Back, 6));
+     WriteString(colors, 'OldMail21Back', IntToHex(OldMail21Back, 6));
+     WriteString(colors, 'OldMail28Back', IntToHex(OldMail28Back, 6));
 
-{setfpf begin}
-      WriteInteger(polls, 'TimeDial', FPFlags.TimeDial);
-      WriteInteger(polls, 'NoC', FPFlags.NoC);
-      WriteInteger(polls, 'Busy', FPFlags.Busy);
-      WriteInteger(polls, 'Fail', FPFlags.Fail);
-      WriteInteger(polls, 'Retry', FPFlags.Retry);
-      WriteInteger(polls, 'StandOffBusy', FPFlags.StandOffBusy);
-      WriteInteger(polls, 'StandOffNoc', FPFlags.StandOffNoc);
-      WriteInteger(polls, 'StandOffFail', FPFlags.StandOffFail);
-      WriteBool(polls, 'uStandOffBusy', FPFlags.uStandOffBusy);
-      WriteBool(polls, 'uStandOffNoc', FPFlags.uStandOffNoc);
-      WriteBool(polls, 'uStandOffFail', FPFlags.uStandOffFail);
-{end}
+     WriteInteger(polls, 'TimeDial', FPFlags.TimeDial);
+     WriteInteger(polls, 'NoC', FPFlags.NoC);
+     WriteInteger(polls, 'Busy', FPFlags.Busy);
+     WriteInteger(polls, 'Fail', FPFlags.Fail);
+     WriteInteger(polls, 'Retry', FPFlags.Retry);
+     WriteInteger(polls, 'StandOffBusy', FPFlags.StandOffBusy);
+     WriteInteger(polls, 'StandOffNoc', FPFlags.StandOffNoc);
+     WriteInteger(polls, 'StandOffFail', FPFlags.StandOffFail);
+     WriteBool(polls, 'uStandOffBusy', FPFlags.uStandOffBusy);
+     WriteBool(polls, 'uStandOffNoc', FPFlags.uStandOffNoc);
+     WriteBool(polls, 'uStandOffFail', FPFlags.uStandOffFail);
 
-{sizes}
-      WriteString(sizes, 'PollsListView', IntToStr(RadPolls[0]) + ',' +
-                                          IntToStr(RadPolls[1]) + ',' +
-                                          IntToStr(RadPolls[2]) + ',' +
-                                          IntToStr(RadPolls[3]) + ',' +
-                                          IntToStr(RadPolls[4]) + ',' +
-                                          IntToStr(RadPolls[5]) + ',' +
-                                          IntToStr(RadPolls[6]) + ',' +
-                                          IntToStr(RadPolls[7]));
+     WriteString(sizes, 'PollsListView', IntToStr(RadPolls[0]) + ',' +
+                                         IntToStr(RadPolls[1]) + ',' +
+                                         IntToStr(RadPolls[2]) + ',' +
+                                         IntToStr(RadPolls[3]) + ',' +
+                                         IntToStr(RadPolls[4]) + ',' +
+                                         IntToStr(RadPolls[5]) + ',' +
+                                         IntToStr(RadPolls[6]) + ',' +
+                                         IntToStr(RadPolls[7]));
 
 
-      WriteString(sizes, 'MainForm',      IntToStr(RadMF.Bounds[0]) + ',' +
-                                          IntToStr(RadMF.Bounds[1]) + ',' +
-                                          IntToStr(RadMF.Bounds[2]) + ',' +
-                                          IntToStr(RadMF.Bounds[3]) + ',' +
-                                          IntToStr(RadMF.Maximized));
+     WriteString(sizes, 'MainForm',      IntToStr(RadMF.Bounds[0]) + ',' +
+                                         IntToStr(RadMF.Bounds[1]) + ',' +
+                                         IntToStr(RadMF.Bounds[2]) + ',' +
+                                         IntToStr(RadMF.Bounds[3]) + ',' +
+                                         IntToStr(RadMF.Maximized));
 
-      WriteString(sizes, 'NodeBrws',      IntToStr(RadNB.Bounds[0]) + ',' +
-                                          IntToStr(RadNB.Bounds[1]) + ',' +
-                                          IntToStr(RadNB.Bounds[2]) + ',' +
-                                          IntToStr(RadNB.Bounds[3]) + ',' +
-                                          IntToStr(RadNB.Maximized));
+     WriteString(sizes, 'NodeBrws',      IntToStr(RadNB.Bounds[0]) + ',' +
+                                         IntToStr(RadNB.Bounds[1]) + ',' +
+                                         IntToStr(RadNB.Bounds[2]) + ',' +
+                                         IntToStr(RadNB.Bounds[3]) + ',' +
+                                         IntToStr(RadNB.Maximized));
 
-      WriteString(sizes, 'BWZListView',   IntToStr(RadBWZ[0]) + ',' +
-                                          IntToStr(RadBWZ[1]) + ',' +
-                                          IntToStr(RadBWZ[2]) + ',' +
-                                          IntToStr(RadBWZ[3]) + ',' +
-                                          IntToStr(RadBWZ[4]));
+     WriteString(sizes, 'BWZListView',   IntToStr(RadBWZ[0]) + ',' +
+                                         IntToStr(RadBWZ[1]) + ',' +
+                                         IntToStr(RadBWZ[2]) + ',' +
+                                         IntToStr(RadBWZ[3]) + ',' +
+                                         IntToStr(RadBWZ[4]));
 
-      WriteString(sizes, 'OutMgrHdr',     IntToStr(RadOut[0]) + ',' +
-                                          IntToStr(RadOut[1]) + ',' +
-                                          IntToStr(RadOut[2]) + ',' +
-                                          IntToStr(RadOut[3]) + ',' +
-                                          IntToStr(RadOut[4]) + ',' +
-                                          IntToStr(RadOut[5]));
+     WriteString(sizes, 'OutMgrHdr',     IntToStr(RadOut[0]) + ',' +
+                                         IntToStr(RadOut[1]) + ',' +
+                                         IntToStr(RadOut[2]) + ',' +
+                                         IntToStr(RadOut[3]) + ',' +
+                                         IntToStr(RadOut[4]) + ',' +
+                                         IntToStr(RadOut[5]));
 
-      WriteString(sizes, 'Splitters', IntToStr(SplitA) + ',' +
-                                      IntToStr(SplitB));
-{end}
+     WriteString(sizes, 'Splitters', IntToStr(SplitA) + ',' +
+                                     IntToStr(SplitB));
 
-      EraseSection(ExtApps);
-      EraseSection(Netmail);
+     EraseSection(ExtApps);
+     EraseSection(Netmail);
 
-{Netmail}
-      if NetmailAddrTo.Count > 0 then
-        for i := 0 to NetmailAddrTo.Count - 1 do
-        begin
-          if (NetmailAddrFrom[i] = '*') and (NetmailAddrTo[i] = '*') then
-            s := '*'
-          else
-            s := Trim(NetmailAddrFrom[i]) + ' (' + NetmailPwd[i] + ')';
-          if i = NetmailAddrTo.Count - 1 then s := s + #13#10;
-          WriteString(netmail, NetmailAddrTo[i] , s)
+     if NetmailAddrTo.Count > 0 then begin
+        for i := 0 to NetmailAddrTo.Count - 1 do begin
+           if (NetmailAddrFrom[i] = '*') and (NetmailAddrTo[i] = '*') then begin
+              s := '*'
+           end else begin
+              s := Trim(NetmailAddrFrom[i]) + ' (' + NetmailPwd[i] + ')';
+           end;
+           if i = NetmailAddrTo.Count - 1 then s := s + #13#10;
+           WriteString(netmail, NetmailAddrTo[i] , s)
         end;
-{end}
+     end;
 
-{setextapp}
-      if ExtApp.Count > 0 then
-        for i := 1 to ExtApp.Count do
-          writestring(ExtApps, format('App%.2d', [i]), ExtApp.Table[i, 1] + '|' +
-                                                       ExtApp.Table[i, 2]);
-{end}
+     if ExtApp.Count > 0 then begin
+        for i := 1 to ExtApp.Count do begin
+           WriteString(ExtApps, format('App%.2d', [i]), ExtApp.Table[i, 1] + '|' +
+                                                        ExtApp.Table[i, 2]);
+        end;
+     end;
 
-{IP}
-      WriteInteger(IP, 'ProxyType', Integer(ProxyType));
-      WriteString (IP, 'BindAddr', BindAddr);
-      WriteInteger(IP, 'ProxyType', Integer(ProxyType));
-      WriteInteger(Ip, 'InIpBandwidth', InBandwidth);
-      WriteInteger(IP, 'OutIpBandwidth', OutBandwidth);
-      WriteInteger(NNTP, 'CashSize', CashSize);
-      WriteBool   (IP, 'EnableProxyAuth',EnableProxyAuth);
-      WriteString (IP, 'ProxyUserName', ProxyUserName);
-      WriteBool   (IP, 'EncryptProxyPassword', EncryptProxyPassword);
-      if EncryptProxyPassword then begin
+     WriteInteger(IP, 'ProxyType', Integer(ProxyType));
+     WriteString (IP, 'BindAddr', BindAddr);
+     WriteInteger(IP, 'ProxyType', Integer(ProxyType));
+     WriteInteger(Ip, 'InIpBandwidth', InBandwidth);
+     WriteInteger(IP, 'OutIpBandwidth', OutBandwidth);
+     WriteInteger(NNTP, 'CashSize', CashSize);
+     WriteBool   (IP, 'EnableProxyAuth',EnableProxyAuth);
+     WriteString (IP, 'ProxyUserName', ProxyUserName);
+     WriteBool   (IP, 'EncryptProxyPassword', EncryptProxyPassword);
+     if EncryptProxyPassword then begin
         WriteString (IP, 'ProxyPassword', EncodeStr(ProxyPassword))
-      end else begin
+     end else begin
         WriteString (IP, 'ProxyPassword', ProxyPassword);
-      end;  
-      WriteBool   (IP, 'AllViaProxy', AllViaProxy);
-{end}
-    finally
-      Leave;
-      Free;
-    end;
-
-//    (Application.MainForm As TMailerForm).TrayIcon.SeparateIcon :=  AlwaysInTray;
-
-  end;
+     end;
+     WriteBool   (IP, 'AllViaProxy', AllViaProxy);
+     s := ChangeFileExt(IniFName, '.BAK');
+     if CopyFile(PChar(IniFName), PChar(s), False) then begin
+        UpdateFile;
+     end;
+     Free;
+   end
+   finally
+     Leave;
+   end;
 end;
 
 procedure TConfig.StoreCFG;
 begin
-  WriteConfig;
+   WriteConfig;
 end;
 
 procedure TDualColl.Add;
 var
-  p : ^TDualRec;
+   p : ^TDualRec;
 begin
    New(p);
    p.nam := NewStr(nam);
@@ -1180,7 +1175,7 @@ end;
 
 procedure TDualColl.FreeItem;
 var
-  r : ^TDualRec absolute p;
+   r : ^TDualRec absolute p;
 begin
    DisposeStr(r.nam);
    DisposeStr(r.st1);
@@ -1189,9 +1184,10 @@ begin
 end;
 
 function TDualColl.MatchAddr;
-var i: integer;
-    s: string;
-    r:^TDualRec;
+var
+   i: integer;
+   s: string;
+   r:^TDualRec;
 begin
    Result := -1;
    for i := 0 to Count - 1 do begin

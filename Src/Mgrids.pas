@@ -1288,8 +1288,8 @@ begin
       for i := 0 to WordCount(s, [',']) - 1 do begin
          ColWidths[i] := strtoint(extractword(i + 1, s, [',']));
       end;
-      IniFile.Leave;
       Free;
+      IniFile.Leave;
     end;
     if FixedRows = 0 then begin
        w := 0;
@@ -1316,8 +1316,8 @@ begin
            s := s + inttostr(ColWidths[i]) + ',';
         end;
         WriteString('ColWidths', FParentName + '_' + Name, s);
-        IniFile.Leave;
         Free;
+        IniFile.Leave;
      end;
   end;
   ReallocMem(FColWidths, 0);

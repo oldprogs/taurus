@@ -2684,24 +2684,22 @@ var
   FormsFontAttr: string[4];
   {$ENDIF}
 begin
-  inherited Loaded;
-  if ActiveControl <> nil then
-  begin
-    Control := ActiveControl;
-    FActiveControl := nil;
-    if Control.CanFocus then SetActiveControl(Control);
-  end;
+   inherited Loaded;
+   if ActiveControl <> nil then begin
+      Control := ActiveControl;
+      FActiveControl := nil;
+      if Control.CanFocus then SetActiveControl(Control);
+   end;
   {$IFDEF EXTREME}
-  with TIniFile.Create(IniName) do
-  begin
-     Font.Name := ReadString('interface', 'FormsFontName', 'Arial');
-     Font.Size := ReadInteger('interface', 'FormsFontSize', 9);
-     FormsFontAttr := ReadString('interface', 'FormsFontAttr', '0000');
-     if FormsFontAttr[1] = '1' then Font.Style := Font.Style + [fsBold];
-     if FormsFontAttr[2] = '1' then Font.Style := Font.Style + [fsItalic];
-     if FormsFontAttr[3] = '1' then Font.Style := Font.Style + [fsUnderline];
-     if FormsFontAttr[4] = '1' then Font.Style := Font.Style + [fsStrikeOut];
-     free;
+   with TIniFile.Create(IniName) do begin
+      Font.Name := ReadString('interface', 'FormsFontName', 'Arial');
+      Font.Size := ReadInteger('interface', 'FormsFontSize', 9);
+      FormsFontAttr := ReadString('interface', 'FormsFontAttr', '0000');
+      if FormsFontAttr[1] = '1' then Font.Style := Font.Style + [fsBold];
+      if FormsFontAttr[2] = '1' then Font.Style := Font.Style + [fsItalic];
+      if FormsFontAttr[3] = '1' then Font.Style := Font.Style + [fsUnderline];
+      if FormsFontAttr[4] = '1' then Font.Style := Font.Style + [fsStrikeOut];
+      free;
    end;
    {$ENDIF}
 end;

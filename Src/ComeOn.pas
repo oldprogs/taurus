@@ -17,8 +17,8 @@ uses
   Forms, SysUtils,
   Messages,
   classes, AltRecs, {$IFDEF NETMAIL} Netmail,{$ENDIF}
-  NdlUtil, MClasses, {$IFDEF RASDIAL} rasthrd, {$ENDIF}
-                     {$IFDEF USE_TAPI} xtapi, {$ENDIF}
+  NdlUtil, MClasses, {$IFDEF RASDIAL} RasThrd, {$ENDIF}
+                     {$IFDEF USE_TAPI} xTAPI, {$ENDIF}
   xBase, xMisc, Recs, RadIni,
 
 {$IFDEF GRAB}
@@ -31,7 +31,7 @@ uses
 
 {$ENDIF}
 
-  OutBound, Windows, OdbcLog, cmdln, wizard, inifiles, plus;
+  OutBound, Windows, OdbcLog, CmdLn, Wizard, IniFiles, Plus;
 
 var
   inipath: string;
@@ -157,35 +157,32 @@ begin
   {$IFDEF EXTREME}
   IniName := inipath;
   {$ENDIF}
-  with TIniFile.Create(inipath) do
-  begin
-    sMutexName := ReadString('system', 'MutexName', 'ARGUS_SEMAPHORE');
-    sActivateEventName := ReadString('system', 'ActivateEventName', 'ARGUS_EVENT_ACTIVATE');
-    TNodelistDataFixUp := ReadBool('system', 'TNodelistDataFixUp', false);
-    free;
+  with TIniFile.Create(inipath) do begin
+     sMutexName := ReadString('system', 'MutexName', 'ARGUS_SEMAPHORE');
+     sActivateEventName := ReadString('system', 'ActivateEventName', 'ARGUS_EVENT_ACTIVATE');
+     TNodelistDataFixUp := ReadBool('system', 'TNodelistDataFixUp', false);
+     free;
   end;
   hMutex := CreateMutex(nil, False, PCHAR(sMutexName));
   if (hMutex = 0) then AnotherArgus;
-  if (GetLastError = ERROR_ALREADY_EXISTS) then
-  begin
-    ZeroHandle(hMutex);
-    H := OpenEvent(EVENT_MODIFY_STATE, False, PCHAR(sActivateEventName));
-    if H = INVALID_HANDLE_VALUE then AnotherArgus else
-    begin
-      SetEvent(H);
-      ZeroHandle(H);
-      Halt;
-    end;
+  if (GetLastError = ERROR_ALREADY_EXISTS) then begin
+     ZeroHandle(hMutex);
+     H := OpenEvent(EVENT_MODIFY_STATE, False, PCHAR(sActivateEventName));
+     if H = INVALID_HANDLE_VALUE then AnotherArgus else begin
+        SetEvent(H);
+        ZeroHandle(H);
+        Halt;
+     end;
   end;
 end;
 
 function GetEMSICR: string;
 var
-  s: string;
+   s: string;
 begin
-  s := GetRegStringDef('EMSI_CR', '%0D');
-  UnpackRFC1945(s);
-  Result := s;
+   s := GetRegStringDef('EMSI_CR', '%0D');
+   UnpackRFC1945(s);
+   Result := s;
 end;
 
 function proc_i: string;
@@ -254,14 +251,13 @@ begin
 
   StartTime := GetTickCount;
 
-  with TIniFile.Create(inipath) do
-  begin
-    s := ReadString('system', 'EMSI_CR', GetRegStringDef('EMSI_CR', '%0D'));
-    UnpackRFC1945(s);
-    sEMSI_CR := s;
-    WinSockVersion := ReadInteger('system', 'WinSockVersion', GetRegIntegerDef('WinSockVersion', 0));
-    ThrTimesLog := (Win32Platform = VER_PLATFORM_WIN32_NT) and ReadBool('system','LogThreadTimes', GetRegBooleanDef('LogThreadTimes', False));
-    Free;
+  with TIniFile.Create(inipath) do begin
+     s := ReadString('system', 'EMSI_CR', GetRegStringDef('EMSI_CR', '%0D'));
+     UnpackRFC1945(s);
+     sEMSI_CR := s;
+     WinSockVersion := ReadInteger('system', 'WinSockVersion', GetRegIntegerDef('WinSockVersion', 0));
+     ThrTimesLog := (Win32Platform = VER_PLATFORM_WIN32_NT) and ReadBool('system','LogThreadTimes', GetRegBooleanDef('LogThreadTimes', False));
+     Free;
   end;
 
   st2 := proc_i;
