@@ -129,6 +129,7 @@ begin
    NodeWizzardForm := TNodeWizzardForm.Create(Application);
    NodeWizzardForm.SetData;
    NodeWizzardForm.cbCurNode.ItemIndex := NodeWizzardForm.cbCurNode.Items.IndexOf(a);
+   NodeWizzardForm.cbCurNodeClick(nil);
    Result := NodeWizzardForm.ShowModal = mrOK;
    FreeObject(NodeWizzardForm);
    if Result then PostMsg(WM_SETUPOK);

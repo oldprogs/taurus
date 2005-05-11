@@ -2890,14 +2890,14 @@ end;
 
 function FindNo;
 var
-  I: Integer;
+   I: Integer;
 begin
-  Result := -1;
-  for I := 0 to L.Count - 1 do if TElement(L[I]).Id = N then
-  begin
-    Result := I;
-    Exit;
-  end;
+   Result := -1;
+   for I := 0 to L.Count - 1 do
+   if TElement(L[I]).Id = N then begin
+      Result := I;
+      Exit;
+   end;
 end;
 
 function TElementColl.GetIdCombo(cb: TComboBox): Integer;
@@ -6656,7 +6656,12 @@ begin
   cb := TStringColl.Create;
   CfgEnter;
   if APasswordProtected then Result := IniFile.InSecure else
-                             Result := IniFile.InCommon;
+
+  if IniFile.UPBoxes then begin
+     if Addr.Point = 0 then s := '' else s := '.' + IntToStr(Addr.Point);
+     if IniFile.D5Out then s := s + '.' + Addr.Domain;
+     Result := IniFile.InCommon + '\' + IntToStr(Addr.Zone) + '.' + IntToStr(Addr.Net) + '.' + IntToStr(Addr.Node) + s;
+  end else Result := IniFile.InCommon;
 
   Cfg.ExtCollA.AppendTo(ca);
   Cfg.ExtCollB.AppendTo(cb);

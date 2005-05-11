@@ -489,6 +489,8 @@ type
     AssignEvents1: TMenuItem;
     EditEvents1: TMenuItem;
     N33: TMenuItem;
+    AttachFiles1: TMenuItem;
+    N34: TMenuItem;
     procedure MainTabControlChange(Sender: TObject);
     procedure bAbortClick(Sender: TObject);
     procedure bStartClick(Sender: TObject);
@@ -2142,9 +2144,13 @@ begin
    ActiveLine := p;
    UpdateTabs;
    MainTabControlChange(nil);
-   if IniFile.Stealth then begin
+   if IniFile.Stealth or IniFile.HideInTray then begin
       WindowState := wsMinimized;
       Application.ShowMainForm := False;
+      if IniFile.HideInTray then begin
+         FormActivate(Self);
+         TrayIcon.Minimized := True;
+      end;
    end else Show;
    SetHotKey;
 end;
@@ -5448,7 +5454,7 @@ end;
 
 procedure TMailerForm.TrayIconMinimize(Sender: TObject);
 begin
-   if IniFile.Stealth then ShowWindow(Application.Handle, SW_Hide);
+   if IniFile.Stealth or IniFile.HideInTray then ShowWindow(Application.Handle, SW_Hide);
    UpdateLampsAll;
 end;
 
@@ -5471,8 +5477,11 @@ end;
 
 procedure TMailerForm.RestoreFromTray;
 begin
+   Application.ShowMainForm := True;
+   Application.MainForm.WindowState := wsNormal;
+   Application.MainForm.Visible := True;
+   Application.BringToFront;
    Application.Restore;
-   Application.RestoreTopmosts;
    SetForegroundWindow(Application.MainForm.Handle);
    TMailerForm(Application.MainForm).RereadOutbound(false);
 end;
@@ -5493,23 +5502,13 @@ begin
 end;
 
 procedure TMailerForm.tpCreatePollClick(Sender: TObject);
-var
-   doit : boolean;
 begin
-   doit := TrayIcon.Minimized;
-   if doit then RestoreFromTray;
    NewPoll;
-   if doit then Application.Minimize;
 end;
 
 procedure TMailerForm.tpBrowseNodelistClick(Sender: TObject);
-var
-   doit : boolean;
 begin
-   doit := TrayIcon.Minimized;
-   if doit then RestoreFromTray;
    BrowseNodes;
-   if doit then Application.Minimize;
 end;
 
 procedure TMailerForm.CreateOutFileFlag(const AA: TFidoAddress; Status: TOutStatus);
@@ -5554,13 +5553,8 @@ begin
 end;
 
 procedure TMailerForm.tpEditFileRequestClick(Sender: TObject);
-var
-   doit : boolean;
 begin
-   doit := TrayIcon.Minimized;
-   if doit then RestoreFromTray;
    EditFileRequest;
-   if doit then Application.Minimize;
 end;
 
 procedure TMailerForm.msAdministrativeModeClick(Sender: TObject);
@@ -6624,10 +6618,7 @@ var
    L: TFidoAddrColl;
    i: Integer;
    A: TFidoAddress;
-   doit : boolean;
 begin
-   doit := TrayIcon.Minimized;
-   if doit then RestoreFromTray;
    L := InputFidoAddress(LngStr(rsMMCrtFF), True, nil);
    if L <> nil then begin
      for i := 0 to CollMax(L) do begin
@@ -6638,7 +6629,6 @@ begin
      RereadOutbound(false);
      FreeObject(L);
    end;
-   if doit then Application.Minimize;
 end;
 
 procedure TMailerForm.mpPauseClick(Sender: TObject);
@@ -6811,15 +6801,29 @@ procedure TMailerForm.pBWZPopup(Sender: TObject);
 begin
    if BWListView.ItemFocused <> nil then begin
       mnuDelBWZ.Enabled := true;
+      mnuDelBWZ.Visible := true;
       mnuDelBWZ.Caption := LngStr(rsDeleteFromBWZ);
       mnuDelBWZ.Caption := Format(mnuDelBWZ.Caption, [BWListView.Items.Item[BWListView.ItemFocused.Index].Caption]);
-   end else
+   end else begin
       mnuDelBWZ.Enabled := false;
+      mnuDelBWZ.Visible := false;
+   end;
+   mnuTossBWZ.Enabled := BWZColl.Count > 0;
 end;
 
 procedure TMailerForm.mnuTossBwzClick(Sender: TObject);
+var
+   i: integer;
+   m: TMailerThread;
 begin
-   ActiveLine.TossBWZ(true);
+   MailerThreads.Enter;
+   for i := 0 to MailerThreads.Count - 1 do begin
+      m := MailerThreads[i];
+      if m.DialupLine then begin
+         m.TossBWZ(True);
+      end;
+   end;
+   MailerThreads.Leave;
 end;
 
 procedure TMailerForm.mnuArgusCloneClick(Sender: TObject);
@@ -7001,7 +7005,13 @@ begin
       l := C.Lines[i];
       if ActiveLine.LineId = l.Id then begin
          b := EditMailerLine(1, C.Lines[i], C, b);
-         XChg(Integer(C.FList^[i]), Integer(Cfg.Lines));
+         if b then begin
+            CfgEnter;
+            XChg(Integer(C.FList^[0]), Integer(Cfg.Lines));
+            CfgLeave;
+            StoreConfig(Handle);
+         end;
+         break;
       end;
    end;
    FreeObject(C);

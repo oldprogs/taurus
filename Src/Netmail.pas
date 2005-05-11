@@ -1172,6 +1172,11 @@ begin
       end;
       if n.Size > SizeOf(h) then begin
       n.Read(h, sizeof(h));
+      if h.OrigNode = $3250 then begin
+         n.Free;
+         NetColl.Leave;
+         exit;
+      end;
       while n.Position < n.Size - sizeof(m) + 3 do begin
          l := TNetmailMsg.Create;
          l.Offs := n.Position;

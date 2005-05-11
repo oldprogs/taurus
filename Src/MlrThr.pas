@@ -4828,22 +4828,27 @@ const
    var
       OurDig,
       OurPwd,
+      U,
       Uniq: string;
       i: Integer;
       j: integer;
+      c: integer;
       n: TAdvNode;
       d: TAdvNodeData;
    const
       cCRAM = 'CRAM-MD5-';
    begin
-      GetWrd(P.CustomInfo, Uniq, ' ');
+      GetWrd(P.CustomInfo, U, ' ');
       if StrBegsU(cCRAM, P.CustomInfo) then begin
          Delete(P.CustomInfo, 1, Length(cCRAM));
          if not SD.rmtPrimaryAddrSet then begin
             P.CustomInfo := cBadPwd;
             Exit
          end;
-         OurPwd := GetBinkPPwd(SD.rmtPrimaryAddr);
+         for c := 0 to CollMax(SD.rmtAddrs) do begin
+//         OurPwd := GetBinkPPwd(SD.rmtPrimaryAddr);
+         Uniq := U;
+         OurPwd := GetBinkPPwd(SD.rmtAddrs[c]);
          SD.Prot.FiPassword := trim(OurPwd);
          DelFC(OurPwd);
 
@@ -4864,6 +4869,10 @@ const
                AddToBlackList(P.CP.CallerId);
             end;
             Exit;
+         end else
+         if (OurPwd <> '-') and (UpperCase(OurDig) = UpperCase(P.CustomInfo)) then begin
+            break;
+         end;
          end;
          P.CustomInfo := OurPwd;
          P.RemoteCanCram := True;
@@ -6685,7 +6694,7 @@ begin
                      end;
                   end;
                end;
-               CommonLog.Add(SD.rmtPrimaryAddr, sss, True, i, DS.rmtSoft);
+               CommonLog.Add(P.T.r.Address, sss, True, i, DS.rmtSoft);
             end;
          aaRefuse:
             begin
@@ -6693,7 +6702,7 @@ begin
                   sss := ''
                end else begin
                   sss := KAR[r.KillAction];
-               end;   
+               end;
                LogFmt(ltInfo, 'Remote refused ''%s''%s', [P.T.D.FName, sss]);
             end;
          end;
@@ -6799,8 +6808,8 @@ begin
    if P.FillOutList then begin
       SD.OutFiles.Enter;
       SD.OutFiles.FreeAll;
-      SD.txMail := 0;
-      SD.txFiles := 0;
+//      SD.txMail := 0;
+//      SD.txFiles := 0;
       ScanOut(True);
       FreeObject(P.OutFiles);
       FreeObject(P.OutPaths);
@@ -6922,6 +6931,8 @@ begin
          P.T.D.Start := uGetSystemTime;
          P.T.D.FName := Format('%.8x.PKT', [GetTickCount xor xRandom32]);
          P.T.Stream := s;
+         P.T.r := TOutFile.Create;
+         P.T.r.Address := SD.rmtPrimaryAddr;
          Log(ltInfo, Format('Sending dummy ''%s'' (%sb)', [P.T.D.FName, Int2Str(P.T.D.FSize)]));
          DisplayData;
          Exit;
@@ -12014,7 +12025,7 @@ begin
                if copy(w, 1, 8) = 'TAPI OFF' then begin
                   Result := mrpTapi;
                end;
-               if IniFile.PlaySounds then begin
+               if SoundsON then begin
                   if (Result = mrpRing) or (Result = mrpTapi) then begin
                      PlaySnd('Ring', SoundsON);
                   end else begin
@@ -13346,6 +13357,11 @@ begin
          end;
    else
       GlobalFail('%s', ['TMailerThread.DoMisc ??']);
+   end;
+   if EP.VoidFound(eiSNDEvent) then begin
+      SoundsON := EP.BoolValueD(eiSNDEvent, False);
+   end else begin
+      SoundsON := Inifile.PlaySounds;
    end;
 end;
 

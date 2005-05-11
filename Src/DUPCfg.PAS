@@ -398,32 +398,34 @@ var
   cn: Integer;
   cl: TElementColl;
   ne: TElement;
-  b, evc: Boolean;
+   b,
+ evc: Boolean;
 begin
-  cn := CurNo;
-  cl := C[cn];
-  ne := ec[cn].Create;
-  ne.SetDefault;
-  ne.Id := GetFreeNo([cl, C[cn + 5]]);
+   cn := CurNo;
+   cl := C[cn];
+   ne := ec[cn].Create;
+   ne.SetDefault;
+   ne.Id := GetFreeNo([cl, C[cn + 5]]);
   cl.Insert(ne);
-  evc := False;
-  case CurNo of
+   evc := False;
+   case CurNo of
     0 : b := EditMailerLine(0, ne, C, evc);
     1 : b := EditStation(ne);
     2 : b := EditPort(ne);
     3 : b := EditModem(ne);
     4 : b := EditRestriction(ne);
-    else b := Boolean(GlobalFail('TMainConfigForm.bNewClick CurNo=%d', [CurNo]));
-  end;
-  EvtChanged := EvtChanged or evc;
-  if b then begin
-    Changed := True;
-    UpdatePage(CurNo); if CurNo <> 0 then UpdatePage(0);
-    UpdateButtons;
-  end else begin
-    cl.Delete(ne);
-    FreeObject(ne);
-  end;
+   else b := Boolean(GlobalFail('TMainConfigForm.bNewClick CurNo=%d', [CurNo]));
+   end;
+   EvtChanged := EvtChanged or evc;
+   if b then begin
+      Changed := True;
+      UpdatePage(CurNo);
+      if CurNo <> 0 then UpdatePage(0);
+      UpdateButtons;
+   end else begin
+      cl.Delete(ne);
+      FreeObject(ne);
+   end;
 end;
 
 procedure TMainConfigForm.bEditClick(Sender: TObject);
@@ -451,30 +453,30 @@ end;
 
 procedure TMainConfigForm.bCopyClick(Sender: TObject);
 var
-  cn: Integer;
-  cl: TElementColl;
-  ne: TElement;
+   cn: Integer;
+   cl: TElementColl;
+   ne: TElement;
 begin
-  cn := CurNo;
-  cl := C[cn];
-  ne := TAdvCpObject(cl[List(cn).ItemFocused.Index]).Copy;
-  ne.Id := GetFreeNo([cl, C[cn + 5]]);
-  cl.Insert(ne);
-  UpdatePage(cn); if cn <> 0 then UpdatePage(0);
-  UpdateButtons;
+   cn := CurNo;
+   cl := C[cn];
+   ne := TAdvCpObject(cl[List(cn).ItemFocused.Index]).Copy;
+   ne.Id := GetFreeNo([cl, C[cn + 5]]);
+   cl.Insert(ne);
+   UpdatePage(cn); if cn <> 0 then UpdatePage(0);
+   UpdateButtons;
 end;
 
 procedure TMainConfigForm.bDefaultClick(Sender: TObject);
 var
-  cl: TElementColl;
-  cn: Integer;
+   cl: TElementColl;
+   cn: Integer;
 begin
-  Changed := True;
-  cn := CurNo;
-  cl := C[cn];
-  cl.SetDefaultIdx(List(cn).ItemFocused.Index);
-  UpdatePage(cn); if cn <> 0 then UpdatePage(0);
-  UpdateButtons;
+   Changed := True;
+   cn := CurNo;
+   cl := C[cn];
+   cl.SetDefaultIdx(List(cn).ItemFocused.Index);
+   UpdatePage(cn); if cn <> 0 then UpdatePage(0);
+   UpdateButtons;
 end;
 
 procedure TMainConfigForm.bDeleteClick(Sender: TObject);

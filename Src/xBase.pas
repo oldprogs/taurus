@@ -41,7 +41,7 @@ const
   CProductMinorVersion = 00;
   CProductMajorVersion = 00;
   CProductName     = 'Taurus';
-  CReleaseSpec     = 'Markiz';
+  CReleaseSpec     = 'Spring';
 
   CProductNameFull = 'Taurus by Taurus (based on Radius (based on Argus))';
 

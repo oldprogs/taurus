@@ -323,6 +323,7 @@ type
     gNetPath: TAdvGrid;
     lnet_log: TLabel;
     enet_log: TEdit;
+    cbHide: TCheckBox;
     procedure tvPagesChange(Sender: TObject; Node: TTreeNode);
     procedure FormCreate(Sender: TObject);
     procedure btnReloadRASEntriesClick(Sender: TObject);
@@ -476,6 +477,7 @@ begin
 //Tray tab
   IniFile.AlwaysInTray := cbAlwaysInTray.Checked;
   IniFile.Stealth := cbStealth.Checked;
+  IniFile.HideInTray := cbHide.Checked;
   IniFile.PopupKey := hkPopup.HotKey;
   SetHotKey;
   IniFile.ShowBalloon := cbBalloon.Checked;
@@ -776,6 +778,7 @@ begin
   FreeHotKey;
   cbAlwaysInTray.Checked := IniFile.AlwaysInTray;
   cbStealth.Checked := IniFile.Stealth;
+  cbHide.Checked := IniFile.HideInTray;
   hkPopup.HotKey := IniFile.PopupKey;
 //  hkPopup.Enabled := cbStealth.Checked;
   cbBalloon.Checked := IniFile.ShowBalloon;

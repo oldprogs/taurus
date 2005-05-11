@@ -387,41 +387,34 @@ begin
 end;
 
 function ExtractWord(const N: Byte; const S: String; const WordDelims: TwCharSet): String;
- var
-  I: Word;
-  Count, Len: Word;
+var
+   I: Word;
+   Count,
+   Len: Word;
   {$IFDEF DOS}
-  Result: String;
+   Result: String;
   {$ENDIF}
- begin
-  Count := 0;
-  I := 1;
-  Len := 0;
-  Result := '';
+begin
+   Count := 0;
+   I := 1;
+   Len := 0;
+   Result := '';
 
-  while (I <= Length(S)) and (Count <> N) do
-   begin
-    while (I <= Length(S)) and (S[I] in WordDelims) do
-     Inc(I);
-
-     if I <= Length(S) then
-      Inc(Count);
-
-     while (I <= Length(S)) and not (S[I] in WordDelims) do
-      begin
-       if Count = N then
-        begin
-         Inc(Len);
-         SetLength(Result, Len);
-         Result[Len] := S[I];
-        end;
-
-       Inc(I);
+   while (I <= Length(S)) and (Count <> N) do begin
+      while (I <= Length(S)) and (S[I] in WordDelims) do Inc(I);
+      if I <= Length(S) then Inc(Count);
+      while (I <= Length(S)) and not (S[I] in WordDelims) do begin
+         if Count = N then begin
+            Inc(Len);
+            SetLength(Result, Len);
+            Result[Len] := S[I];
+         end;
+         Inc(I);
       end;
    end;
 
   {$IFDEF DOS}
-  ExtractWord := Result;
+   ExtractWord := Result;
   {$ENDIF}
  end;
 

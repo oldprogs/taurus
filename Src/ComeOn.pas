@@ -272,7 +272,7 @@ begin
   if inifile.RASEnabled then begin
      RasThrd.StartRas;
   end else begin
-    RasThread := nil
+     RasThread := nil
   end;
 
   StartWatcher;

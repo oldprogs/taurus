@@ -674,7 +674,7 @@ begin
                h.OrigPoint := FiAddr.Point;
                h.DestPoint := inifile.MainAddr.Point;
                if fPass <> '' then begin
-                  move(fPass[1], h.Password, Length(fPass));
+                  move(fPass[1], h.Password, Length(copy(fPass, 1, 8)));
                end;
                p.MsgType   := 2;
                p.OrigNode  := aFrom.Node;

@@ -636,6 +636,7 @@ LANGUAGE LANG_ENGLISH,0
         "lPopup|HotKey to popup from stealth mode\n"\
         "lBalloon| Balloon \n"\
         "cbAlwaysInTray|Always in tray\n"\
+        "cbHide|Hide in tray at startup\n"\
         "cbStealth|Stealth mode\n"\
         "cbBalloon|Show balloon tooltip\n"\
         "cbBalloonMin|Show balloon tooltip when minimized\n"\

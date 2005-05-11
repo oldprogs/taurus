@@ -75,6 +75,7 @@ type
             BadWazooBack: integer;
             AlwaysInTray: boolean;
             Stealth: boolean;
+            HideInTray: boolean;
             PopupKey: TShortCut;
             Priority: DWORD;
             ShowBalloon: boolean;
@@ -95,6 +96,7 @@ type
             iEntryName:  string;
             TAPIDebug: boolean;
             TAPIConnect: DWORD;
+
             HomeDir:  string;
             CfgDir:   string;
             InTemp:   string;
@@ -196,6 +198,8 @@ type
             logDelete: boolean;
             logWaitEvt: boolean;
             SaveWaits: boolean;
+
+            UPBoxes: boolean;
 
             constructor Create(const fn: string); override;
             destructor Destroy; override;
@@ -469,6 +473,7 @@ begin
 
       AlwaysInTray := ReadBool(tray, 'AlwaysInTray', true);
       Stealth := ReadBool(tray, 'StealthMode', false);
+      HideInTray := ReadBool(tray, 'HideInTray', false);
       PopupKey := TextToShortCut(ReadString(tray, 'PopupKey', 'Ctrl+Alt+R'));
       DoubleClick := ReadBool(tray, 'DoubleClick', false);
 
@@ -593,6 +598,8 @@ begin
       logWaitEvt := ReadBool(main, 'LogWaitEvt', False);
       SaveWaits := ReadBool(main, 'SaveWaits', False);
 
+      UPBoxes := ReadBool(main, 'UPBoxes', False);
+
    finally
       free;
    end;
@@ -681,6 +688,7 @@ begin
      WriteBool(tray, 'DoubleClick', DoubleClick);
      WriteBool(tray, 'AlwaysInTray', AlwaysInTray);
      WriteBool(tray, 'StealthMode', Stealth);
+     WriteBool(tray, 'HideInTray', HideInTray);
      WriteString(tray, 'PopupKey', ShortCutToText(PopupKey));
 
      WriteInteger(_system, 'StartPriority', Priority);

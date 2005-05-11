@@ -134,7 +134,7 @@ object SetupForm: TSetupForm
     Width = 418
     Height = 337
     Anchors = [akLeft, akTop, akRight, akBottom]
-    PageIndex = 9
+    PageIndex = 4
     TabOrder = 1
     object TPage
       Left = 0
@@ -1400,14 +1400,14 @@ object SetupForm: TSetupForm
       end
       object Bevel14: TBevel
         Left = 15
-        Top = 147
+        Top = 174
         Width = 387
         Height = 5
         Shape = bsTopLine
       end
       object lBalloon: TLabel
         Left = 25
-        Top = 139
+        Top = 167
         Width = 46
         Height = 14
         Caption = ' Balloon '
@@ -1421,7 +1421,7 @@ object SetupForm: TSetupForm
       end
       object lPopup: TLabel
         Left = 20
-        Top = 88
+        Top = 115
         Width = 193
         Height = 15
         Caption = 'HotKey to popup from stealth mode'
@@ -1436,7 +1436,7 @@ object SetupForm: TSetupForm
       end
       object cbBalloon: TCheckBox
         Left = 20
-        Top = 165
+        Top = 192
         Width = 350
         Height = 17
         Caption = 'Show balloon tooltip'
@@ -1444,7 +1444,7 @@ object SetupForm: TSetupForm
       end
       object cbBalloonMin: TCheckBox
         Left = 20
-        Top = 189
+        Top = 216
         Width = 350
         Height = 17
         Caption = 'Show balloon tooltip when minimized'
@@ -1452,7 +1452,7 @@ object SetupForm: TSetupForm
       end
       object cbStealth: TCheckBox
         Left = 20
-        Top = 63
+        Top = 88
         Width = 350
         Height = 17
         Caption = 'Stealth mode'
@@ -1461,7 +1461,7 @@ object SetupForm: TSetupForm
       end
       object hkPopup: THotKey
         Left = 20
-        Top = 107
+        Top = 134
         Width = 117
         Height = 24
         HotKey = 49234
@@ -1469,6 +1469,14 @@ object SetupForm: TSetupForm
         Modifiers = [hkCtrl, hkAlt]
         TabOrder = 2
         OnChange = hkPopupChange
+      end
+      object cbHide: TCheckBox
+        Left = 20
+        Top = 63
+        Width = 350
+        Height = 17
+        Caption = 'Hide in tray at startup'
+        TabOrder = 5
       end
     end
     object TPage

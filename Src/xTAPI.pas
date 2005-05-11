@@ -41,6 +41,7 @@ type
     CallsArray           : THandleArray;
     OldLines             : integer;
     OldCalls             : integer;
+    MakingCall           : boolean;
     function  SaveHandle(var a: THandleArray; h: THandle): boolean;
     function  NextHandle(var a: THandleArray): THandle;
     procedure FreeHandle(var a: THandleArray; h: THandle);
@@ -681,7 +682,10 @@ var
    c: HCALL;
 begin
    Result := False;
+   if MakingCall then exit;
+   MakingCall := True;
    OpenLine;
+   MakingCall := False;
    if Line = 0 then begin
       exit;
    end;

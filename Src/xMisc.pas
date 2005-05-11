@@ -993,7 +993,7 @@ var e: integer;
 begin
    if IniFile.Stealth then exit;
    if MidStarted then mciSendString('close snd', nil, 0, 0);
-   if not Inifile.PlaySounds and not Play then exit;
+   if not Inifile.PlaySounds or not Play then exit;
    if not IniFile.ReadBool('Sounds', 'c_' + s) then exit;
    p := Inifile.ReadString('Sounds', s);
    if p = s then begin

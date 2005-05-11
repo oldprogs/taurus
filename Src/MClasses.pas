@@ -129,7 +129,7 @@ Type
     procedure ShowHint(const Title, Text: string);
 
   published
-    property Minimized: Boolean read fMinimized;
+    property Minimized: Boolean read fMinimized write fMinimized;
     property Active:Boolean read fActive write SetActive;
     property Hint:string read fHint write SetHint;
     property Icon:TIcon read fIcon write SetIcon;

@@ -639,6 +639,7 @@ LANGUAGE LANG_RUSSIAN,0
         "lPopup|HotKey для возврата из скрытого режима\n"\
         "lBalloon| Balloon \n"\
         "cbAlwaysInTray|Всегда в трее\n"\
+        "cbHide|Прятать в трей при запуске\n"\
         "cbStealth|Невидимый режим\n"\
         "cbBalloon|Всплывающее инфо в трее\n"\
         "cbBalloonMin|Всплывающее инфо в трее в свернутом состоянии\n"\
