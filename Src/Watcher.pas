@@ -18,8 +18,6 @@ type
     nSize: integer;
     fTime: TFileTime;
     Busy: boolean;
-//    hOutboundReader: THandle;
-//    hOutboundEvent: THandle;
     constructor Create;
     destructor Destroy; override;
     procedure FillArray;
@@ -37,7 +35,6 @@ type
                    wtFileFlags,
                    wtHomeDir,
                    wtStopEvent
-//                   wtOutReader
                  );
 var
   DirectoryWatcher: TDirectoryWatcher;
@@ -77,19 +74,6 @@ begin
   hHomeDirWatcher := FindFirstChangeNotification(PChar(JustPathName(IniFName)),
                       Bool(Integer(Subtree)), FILE_NOTIFY_CHANGE_LAST_WRITE);
 
-{  hOutboundReader := CreateFile (
-          PChar(FullPath(FullPath(outboundpath))),
-          GENERIC_READ or GENERIC_WRITE,        // access (read-write) mode
-          FILE_SHARE_READ or FILE_SHARE_DELETE, // share mode
-          nil,                                  // security descriptor
-          OPEN_EXISTING,                        // how to create
-          FILE_FLAG_BACKUP_SEMANTICS or
-          FILE_FLAG_OVERLAPPED,                 // file attributes
-          0                                     // file with attributes to copy
-        );
-
-  hOutboundEvent := CreateEvt(False);}
-
   Priority := tpLowest;
 end;
 
@@ -98,9 +82,10 @@ var
    l: TStringList;
    i: integer;
 begin
+   EnterNlCs;
    try
-      EnterNlCs;
       if NodeController = nil then exit;
+      if NodeController.Lists = nil then exit;
       l := TStringList.Create;
       l.CaseSensitive := False;
       l.Duplicates := dupIgnore;
@@ -146,7 +131,7 @@ begin
          hNetmailWatcher[i] := FindFirstChangeNotification(PChar(TDualRec(d[i]^).St1^),
                                False, FILE_NOTIFY_CHANGE_LAST_WRITE);
       end;
-   end;   
+   end;
 end;
 
 destructor TDirectoryWatcher.Destroy;
@@ -165,8 +150,6 @@ begin
    end;
    FreeMem(hNodelistsWatcher);
    FreeMem(hNetmailWatcher);
-//  CloseHandle(hOutboundReader);
-//  ZeroHandle(hOutboundEvent);
    inherited Destroy;
 end;
 
@@ -179,27 +162,22 @@ begin
    if IniFile = nil then exit;
    if IniFile.AutoNodelist then begin
       EnterNlCs;
-      if NodeController <> nil then begin
-         for i := 0 to NodeController.Lists.Count - 1 do begin
-            o := Int64(NodeController.Lists.Objects[i]);
-            c := Plus.GetFileTime(NodeController.Lists[i]);
-            if o <> c then begin
-               PostMsg(WM_COMPILENL);
-               break
+      try
+         if (NodeController <> nil) and (NodeController.Lists <> nil) then begin
+            for i := 0 to NodeController.Lists.Count - 1 do begin
+               o := Int64(NodeController.Lists.Objects[i]);
+               c := Plus.GetFileTime(NodeController.Lists[i]);
+               if o <> c then begin
+                  PostMsg(WM_COMPILENL);
+                  break
+               end;
             end;
          end;
+      finally
+         LeaveNlCs;
       end;
-      LeaveNlCs;
    end;
 end;
-
-{type
-  _FILE_NOTIFY_INFORMATION = record
-     NextEntryOffset,
-     Action,
-     FileNameLength: DWORD;
-     FileName: WideChar;
-   end;}
 
 procedure TDirectoryWatcher.InvokeExec;
 var
@@ -208,23 +186,12 @@ var
    i: integer;
    n: integer;
   p3: TFileTime;
-{  o: integer;
- FNI: array[0..1024] of _FILE_NOTIFY_INFORMATION;
- Ov: TOverlapped;}
 begin
    if Terminated {or ApplicationDowned} or ExitNow then exit;
    if hOutboundWatcher = INVALID_HANDLE_VALUE then begin Terminated := True; Exit end;
    if hFileFlagsWatcher = INVALID_HANDLE_VALUE then begin Terminated := True; Exit end;
    if hHomeDirWatcher = INVALID_HANDLE_VALUE then begin Terminated := True; Exit end;
    if hDirectoryWatcherEvent = INVALID_HANDLE_VALUE then begin Terminated := True; Exit end;
-
-{  FillChar(Ov, SizeOf(Ov), #0);
-  Ov.hEvent := hOutboundEvent;
-
-  if (hOutboundReader <> 0) then begin
-     ReadDirectoryChangesW(
-        hOutboundReader, @FNI, SizeOf(FNI), True, FILE_NOTIFY_CHANGE_SIZE, @o, @Ov, nil);
-  end;}
 
    if IniFile.AutoNodelist then begin
       FillArray;
@@ -303,12 +270,6 @@ begin
              FindNextChangeNotification(hHomeDirWatcher);
           end;
        end;
-{    wtOutReader:
-       begin
-          ReadDirectoryChangesW(
-             hOutboundReader, @FNI, SizeOf(FNI), True, FILE_NOTIFY_CHANGE_SIZE, @o, @Ov, nil);
-          FindNextChangeNotification(hOutboundWatcher);
-       end;}
      3..999:
        begin
          if (not Terminated) and (Application <> nil) and (Application.MainForm <> nil) and (IniFile.AutoNodelist) then begin
@@ -410,13 +371,13 @@ begin
    fname.seek(EH.AdrPE + 248, soFrombeginning);
 
    For n := 1 to PEH.Nobj do begin
-       fname.read(RSRC, 40);
-       if RSRC.ObjName = '.rsrc' then begin
+      fname.read(RSRC, 40);
+      if RSRC.ObjName = '.rsrc' then begin
          fname.seek(RSRC.PhysOffs, soFrombeginning);
          fname.read(First, 8);
          Break;
-       end;
-     end;
+      end;
+   end;
    If RSRC.ObjName <> '.rsrc' then
       result := 'unknown'
    else

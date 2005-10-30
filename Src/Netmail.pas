@@ -435,7 +435,7 @@ begin
       h.orig_net  := m.From.Net;
       h.dest_net  := m.Addr.Net;
       h.date_arrived := DateTimeToDosDateTime(Date + Time);
-      h.date_arrived := (h.date_arrived and $FFFF0000) shr 16 + (h.date_arrived and $0000FFFF) shl 16;
+      h.date_arrived := (h.date_arrived and integer($FFFF0000)) shr 16 + (h.date_arrived and integer($0000FFFF)) shl 16;
       h.attr := h.attr and (not Local);
       if not AddrColl.Search(@m.Addr, j) then begin
          h.attr := m.Attr or KillSent or InTransit;
@@ -459,17 +459,27 @@ begin
       NetmailLogger.MLogger := L;
       NetmailLogger.LogMSG(m, x, '+');
       NetmailLogger.MLogger := nil;
-      if (m.Attr and AuditRequest > 0) or
+      if (m.Attr and AuditRequest > 0) or (UpSt(m.Tonm) = 'PING') or
         ((m.Attr and ReturnReceiptRequest > 0) and (AddrColl.Search(@m.Addr, o))) then
       begin
          NewMessage(m.From, m.Frnm, 'Transit confirmation');
          WriteLine(
               #13' Your message to: ' + Addr2Str(m.Addr) + ' (' + m.Tonm + ')'#13 +
-                 '            from: ' + m.Date + #13 +
+                 '           dated: ' + m.Date + #13 +
                  '         subject: ' + m.Subj + #13 +
               #13' was received at: ' + Addr2Str(IniFile.MainAddr) + #13 +
                  '              on: ' + FormatDateTime('dd mmm yy  hh:nn:ss', Date + Time) + #13#13 +
-              #13'   Message route:'#13#13
+              #13' Message kludges:'#13#13
+                  );
+         for o := 0 to CollMax(m.Klug) do begin
+            t := m.Klug[o];
+            if copy(t, 2, 4) <> 'Via ' then begin
+               t[1] := '@';
+               WriteLine(t);
+            end;
+         end;
+         WriteLine(
+           #13#13' Message route:'#13#13
                   );
          for o := 0 to CollMax(m.Klug) do begin
             t := m.Klug[o];
@@ -507,11 +517,11 @@ begin
       end;
       m.HRec.PktType := 0;
       NetmailLogger.LogMSG(m, 0, '-');
-      if (m.Attr and AuditRequest > 0) then begin
+      if (m.Attr and AuditRequest > 0) or (UpSt(m.Tonm) = 'PING') then begin
          NewMessage(m.From, m.Frnm, 'Transit confirmation');
          WriteLine(
               #13' Your message to: ' + Addr2Str(m.Addr) + ' (' + m.Tonm + ')'#13 +
-                 '            from: ' + m.Date + #13 +
+                 '           dated: ' + m.Date + #13 +
                  '         subject: ' + m.Subj + #13 +
               #13'  was routed via: ' + Addr2Str(a) + #13 +
                  '              on: ' + FormatDateTime('dd mmm yy  hh:nn:ss', Date + Time) + #13#13 +
@@ -900,7 +910,7 @@ begin
    end;
 end;
 
-procedure SetValue(var a: integer; const b: integer);
+procedure SetValue(var a: word; const b: word);
 begin
    if a = 0 then begin
       a := b;
@@ -1507,13 +1517,18 @@ begin
             if i <> nil then begin
                p := TNetStream.Create(n, fmOpenReadWrite);
                if p <> nil then begin
-                  i.Seek($3A, soFromBeginning);
-                  p.Seek(-2, soFromEnd);
-                  p.CopyFrom(i, i.Size - $3A);
-                  FreeObject(i);
-                  FreeObject(p);
-                  DeleteFile(o);
-                  RenameFile(n, o);
+                  try
+                     i.Seek($3A, soFromBeginning);
+                     p.Seek(-2, soFromEnd);
+                     p.CopyFrom(i, i.Size - $3A);
+                     FreeObject(i);
+                     FreeObject(p);
+                     DeleteFile(o);
+                     RenameFile(n, o);
+                  except
+                     FreeObject(i);
+                     RenameFile(o, o + '.bad');
+                  end;
                   FreeObject(p);
                end;
                FreeObject(i);
@@ -1548,10 +1563,12 @@ var
 begin
    LogColl.Add(s);
    NetmailLog   := MakeNormName(dLog, IniFile.net_log);
-   if _LogOK(NetmailLog, t) then begin
-      While LogColl.Count > 0 do begin
+   While LogColl.Count > 0 do begin
+      if _LogOK(NetmailLog, t) then begin
         _LogWriteStr(' ' + uFormat(uGetLocalTime) + ' ' + Dos2Win(LogColl[0]), t);
          LogColl.AtFree(0);
+      end else begin
+         exit;
       end;
       ZeroHandle(t);
    end;

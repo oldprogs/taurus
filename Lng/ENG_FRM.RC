@@ -260,7 +260,7 @@ LANGUAGE LANG_ENGLISH,0
         "mpPause|Pa&use\n"\
         "ppPause|Pa&use\n"\
         "mfRestart|&Restart\n"\
-        "llSessionCost|Cost\n"\
+        "llSessionCost|Cost:\n"\
         "llSessionTime|Total elapsed time\n"\
         "SessionBox|Session\n"\
         "llTotalAtInbound|Total at inbound:\n"\

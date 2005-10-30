@@ -26,10 +26,11 @@ var
 
   Term : boolean;
   StartTime: DWORD;
+  ExitNow: Boolean;
 
 type
-  TProtCore = (ptUndefined, ptDialup, ptifcico, ptTelnet, ptBinkP{$IFDEF EXTREME}, ptFTP, ptHTTP, ptSMTP, ptPOP3, ptGATE, ptNNTP{$ENDIF});
-  TSessionCore = (scUndefined, scFTS1, scEmsiWz, scBinkP{$IFDEF EXTREME}, scFTP, scHTTP, scSMTP, scPOP3, scGATE, scNNTP{$ENDIF});
+  TProtCore = (ptUndefined, ptDialup, ptifcico, ptTelnet, ptBinkP, ptFTP, ptHTTP, ptSMTP, ptPOP3, ptGATE, ptNNTP);
+  TSessionCore = (scUndefined, scFTS1, scEmsiWz, scBinkP, scFTP, scHTTP, scSMTP, scPOP3, scGATE, scNNTP);
 
   TLangName = (lnEnglish, lnRussian);
 
@@ -41,7 +42,7 @@ const
   CProductMinorVersion = 00;
   CProductMajorVersion = 00;
   CProductName     = 'Taurus';
-  CReleaseSpec     = 'Spring';
+  CReleaseSpec     = 'Autumn';
 
   CProductNameFull = 'Taurus by Taurus (based on Radius (based on Argus))';
 
@@ -92,7 +93,6 @@ const
 
   EMSI_TZP = '-TZP16B2-';
   EMSI_PZT = '-PZT8AF6-';
-  EMSI_RCC = '-RCC0000-';
 
   TCPIP_GrDataSz = 2000 ;
   TCPIP_Round = 8;
@@ -199,6 +199,7 @@ const
   WM_LASTOUT       = WM__ARGUS + 63;
   WM_CHECKNETMAIL  = WM__ARGUS + 64;
   WM_ROUTEEXPORT   = WM__ARGUS + 65;
+  WM_OUTEXPORT     = WM__ARGUS + 66; 
 
   WM_NEWSOCKPORT   = WM__ARGUS + 100;
   WM_ADDDAEMONLOG  = WM__ARGUS + 101;
@@ -314,21 +315,6 @@ type
   PItemList = ^TItemList;
   TItemList = array[0..MaxCollSize - 1] of Pointer;
 
-  TIndexSet = class
-  private
-    fIndexes: PxByteArray;
-    Allocated: DWORD;
-    Capacity: DWORD;
-    function GetIndex(Index: DWORD): Boolean;
-    procedure SetIndex(Index: DWORD; OnOff: Boolean);
-  public
-    constructor Create;
-    destructor Destroy; override;
-    procedure GrowTo(Index: DWORD);
-    property Indexes[Index: DWORD]: Boolean read GetIndex write SetIndex; default;
-    procedure DeleteIndex(Index: DWORD);
-  end;
-
   TCollError = class(Exception)
     constructor Create(ACode, ACnt, AInfo: Integer; const AClassName: string);
   end;
@@ -342,6 +328,7 @@ type
     function GetSize: DWORD;
   public
     GotStarter, GotTerminator, FreeLastLoaded: Boolean;
+    Tag: integer;
     function Read(var Buffer; Count: DWORD): DWORD; virtual; abstract;
     function Write(const Buffer; Count: DWORD): DWORD; virtual; abstract;
     function Seek(Offset: Integer; Origin: Word): DWORD; virtual; abstract;
@@ -413,6 +400,7 @@ type
    public
       OwnHandle: Boolean;
       Handle: DWORD;
+      fMode: TCreateFileModeSet;
 
       constructor Create(AHandle: DWORD);
 
@@ -551,13 +539,13 @@ type
     function At(Index: Integer): Pointer;
     procedure AtDelete(Index: Integer);
     procedure AtFree(Index: Integer);
-    procedure AtInsert(Index: Integer; Item: Pointer);
+    procedure AtInsert(Index: Integer; Item: Pointer); virtual;
     procedure AtPut(Index: Integer; Item: Pointer);
     procedure Delete(Item: Pointer);
     procedure DeleteAll;
     procedure Error(Code, Cnt, Info: Integer);
     procedure FFree(Item: Pointer);
-    procedure FreeAll;
+    procedure FreeAll; virtual;
     procedure FreeItem(Item: Pointer); virtual;
     function IndexOf(Item: Pointer): Integer; virtual;
     procedure Insert(Item: Pointer); virtual;
@@ -572,7 +560,7 @@ type
     function Crc32(Init: DWORD): DWORD; virtual;
     procedure ForEach(Proc: TForEachProc); virtual;
     procedure Sort(Compare: TListSortCompare);
-    procedure Concat(AColl: TColl);
+    procedure Concat(AColl: TColl); virtual;
     procedure Enter;
     procedure Leave;
   end;
@@ -640,7 +628,6 @@ type
     function Crc32Item(Item: Pointer; Crc32: DWORD): DWORD; override;
     function Found(const Str: string): Boolean;
     function Matched(const Str: string): Integer;
-    function FoundU(const Str: string): Boolean;
     function FoundUC(const Str: string): Boolean;
     procedure FillEnum(Str: string; Delim: TCharSet; Sorted: Boolean);
     function LongString: string;
@@ -680,6 +667,12 @@ type
     BufPos: DWORD;
     Buf: TTextReaderBuf;
     Skip1: Boolean;
+    SavPos: DWORD;
+  protected
+    function GetPosition: int64;
+    procedure SetPosition(ofs: int64);
+  public
+    property Position: int64 read GetPosition write SetPosition;
   end;
 
   { Standard event timer record structure used by all timing routines }
@@ -710,10 +703,8 @@ function EscapeChars(const S: string): string;
 function CreateDosStream(const FName: string; Mode: TCreateFileModeSet): TDosStream;
 function CreateDosStreamDir(const FName: string; Mode: TCreateFileModeSet): TDosStream;
 function OpenRead(const FName: string): TDosStream;
-function OpenAppend(const FName: string): TDosStream;
 function OpenWrite(const FName: string): TDosStream;
 function SeekEof(Handle: DWORD): DWORD;
-function FilePos(Handle: DWORD): DWORD;
 function xRandom32: DWORD;
 function xRandom(a: DWORD): DWORD;
 
@@ -725,7 +716,6 @@ procedure uNix2WinTime(I: DWORD; var T: TSystemTime);
 function uWin2NixTime(const T: TSystemTime): DWORD;
 
 function uDosDateTimeToFileTime(wFatDate, wFatTime: Word; var uTime: DWORD): Boolean;
-function uFileTimeToDosDateTime(uTime: DWORD; var wFatDate, wFatTime: Word): Boolean;
 
 function uGetLocalTime: DWORD;
 function uGetSystemTime: DWORD;
@@ -756,18 +746,11 @@ procedure NewTimerMSecs(var ET : EventTimer; MSecs : DWORD);
 procedure ClearTimer(var ET: EventTimer);
 function TimerInstalled(const ET: EventTimer): Boolean;
 function TimerExpired(const ET : EventTimer) : Boolean;
-
 function ElapsedTime(const ET : EventTimer) : DWORD;
-function RemainingTime(const ET : EventTimer) : DWORD;
-
-function ElapsedTimeMsecs(const ET : EventTimer) : DWORD;
 function RemainingTimeMsecs(const ET : EventTimer) : DWORD;
-
-function ElapsedTimeSecs(const ET : EventTimer) : DWORD;
 function RemainingTimeSecs(const ET : EventTimer) : DWORD;
 
 { --- string Routines }
-function StrBegs(const Substr, S: string): Boolean;
 function StrBegsU(const Substr, S: string): Boolean;
 function StrBegsF(const Substr: string; SubstrLen: Integer; const S: string; SLen: Integer): Boolean;
 function PackRFC1945(const s: string; Chars: TCharSet): string;
@@ -775,7 +758,6 @@ function UnpackRFC1945(var s: string): Boolean;
 function StrQuote(const s: string): string;
 function StrDeQuote(var s: string): Boolean;
 function DivideDash(const S: string): string;
-//function _MatchMaskBody(AName, AMask: string; SupportPercent: Boolean): Boolean;
 function _MatchMask(const AName: string; const AMask: string; SupportPercent: Boolean): Boolean;
 function MatchMask(const AName, AMask: string): Boolean;
 function IsWild(const S: string): Boolean;
@@ -797,11 +779,9 @@ function MakeNormName(const Path, Name: string): string;
 function ExtractDir(const S: string): string;
 function MakeFullDir(const D, S: string): string;
 procedure AddStr(var S: string ; C : char);
-procedure Add_Str(var S: ShortString ; C : char);
 procedure FSplit(const FName: string; var Path, Name, Ext: string);
 function  Replace(const Pattern, ReplaceString: string; var S: string): Boolean;
 function ReplaceCI(const Pattern, ReplaceString: string; var S: string): Boolean;
-procedure DelDoubles(const St : string;var Source : string);
 function DelLeft(const S: string): string;
 function DelRight(const S: string): string;
 function CopyLeft(const S: string; I: Integer): string;
@@ -813,8 +793,6 @@ procedure DelFC(var s: string);
 procedure DelLC(var s: string);
 function Int2Str(L: Integer): string;
 function Int2StrK(L: Integer): string;
-function FormatMinSec(Sec: Integer): string;
-function ExtractFileRoot(const FileName: string): string;
 function WipeChars(const AStr, AWipeChars: string): string;
 procedure FillCharSet(const AStr: string; var CharSet: TCharSet);
 function DigitsOnly(const AStr: string): Boolean;
@@ -833,7 +811,6 @@ function  CmpInt(H,M,AH,AM: Byte): Integer;
 function NulSearch(const Buffer): Integer;
 function ShortBuf2Str(const Buffer; AMaxLen: Integer): string;
 function ShortBuf2StrEx(const Buffer; AMaxLen: Integer; AC: Char): string;
-//function Buf2Str(const Buffer): string;
 procedure LowerPrec(var A, B: Integer; Bits: Byte);
 procedure Clear(var Buf; Count: Integer);
 function MemEqu(const A, B; Sz: Integer): Boolean;
@@ -843,8 +820,6 @@ function MemEqu(const A, B; Sz: Integer): Boolean;
 function UpdateCrc32(CurByte : Byte; CurCrc : DWORD) : DWORD;
 function UpdateCrc16Usd(CurByte : Byte; CurCrc : Word) : Word;
 function UpdateCrc16Prop(CurByte : Byte; CurCrc : Word) : Word;
-function UpdateChecksum(CurByte : Byte; CheckSum : Word) : Word;
-function UpdateCrcKermit(CurByte : Byte; CurCrc : Word) : Word;
 function Crc16Post( Crc : word ) : word;
 function Crc32Post( Crc : DWORD) : DWORD;
 function Crc16UsdBlock(const Buf; Len : DWORD) : word;
@@ -862,15 +837,6 @@ function  WaitEvts(const id: array of THandle; Timeout: DWORD): DWORD;
 function  WaitEvtsAll(const id: array of THandle; Timeout: DWORD): DWORD;
 function  WaitEvt(H: THandle; Timeout: DWORD): DWORD;
 function  WaitEvtInfinite(H: THandle): DWORD;
-//function  SignaledEvt(id: DWORD): Boolean;
-
-{ --- Scroll Extensions }
-
-procedure MakeScroll(Code, Pos, AType: Integer; AHandle: DWORD; AMin, AMax, Page: Integer; var Value: Integer);
-procedure ClearScrollRec(var R: TScrollRec);
-procedure ClearScrollData(var D: TScrollData);
-function UpdateScrollBar(var D: TScrollRec; AHandle, AType: DWORD): Boolean;
-function UpdateScrollBars(var D: TScrollData; AHandle: DWORD): Boolean;
 
 function UpdateDetailsBox(AB: TListView; AC: TColl): Boolean;
 
@@ -890,7 +856,6 @@ function _CreateFileSecurity(const FName: string; Mode: TCreateFileModeSet; lpSe
 function _CreateFile(const FName: string; Mode: TCreateFileModeSet): DWORD;
 function _CreateFileDir(const FName: string; Mode: TCreateFileModeSet): DWORD;
 function _GetFileSize(const FName: string): DWORD;
-//function _DiskFree(const Root: string): Integer;
 function _DiskSpaceInfo(const Root: string; var Info: TDiskSpaceInfo): Boolean;
 
 function CreateTextReaderByStream(Stream: TxStream): TTextReader;
@@ -913,21 +878,9 @@ function ReadRegInt(Key: HKey; const AStrName: string): Integer;
 function WriteRegBin(Key: HKey; const rvn: string; Bin: Pointer; Sz: Integer): Boolean;
 function ReadRegBin(Key: HKey; const rvn: string; Bin: Pointer; Sz: Integer): Boolean;
 
-{ --- ListBox Routines }
-
-{function  LB_FocusedIndex(L: TListBox): integer;
-function  LB_HaveSelected(L: TListBox): Boolean;
-function  LB_HaveItems(L: TListBox): Boolean;
-function  LB_ExistBoth(Src, Dst: TListBox; SrcIdx: Integer): Boolean;
-procedure LB_CopySelected(Src, Dst: TListBox);
-procedure LB_CopyAll(Src, Dst: TListBox);
-procedure LB_DeleteSelected(L: TListBox);
-procedure LB_DeleteAll(L: TListBox);}
-
 { --- Rectangle Routines }
 
 function _InflateRect(const R: TRect; X,Y: Integer): TRect;
-function _ValidRect(const R: TRect): TRect;
 function _EmptyRect(const R: TRect): Boolean;
 function _OffsetRect(const R: TRect; X, Y: Integer): TRect;
 
@@ -965,23 +918,21 @@ procedure ClearErrorMsg;
 
 procedure FreeVIntArr(var A: TvIntArr);
 procedure AddVIntArr(var A: TvIntArr; i: Integer);
-//procedure DelVIntArr(var A: TvIntArr; Idx: Integer);
 
 function ControlString(C: TControl): string;
 
 procedure CollDeleteAll(C: TColl);
-procedure CollInsert(var C: TColl; Item: Pointer);
 function CollMax(C: TColl): Integer;
 function CollCount(C: TColl): Integer;
 
 function CreateTCollEL(const n: string): TColl;
-procedure XorStr(P: PxByteArray; Len: Integer; const S: string);
 procedure MoveColl(Src, Dst: TColl; Idx: Integer);
 function CreateTempFile(const APath, APfx: string; var FName: string): Integer;
 function TempFileName(const APath, APfx: string): string;
 function SysErrorMsg(ErrorCode: Integer): string;
 procedure SetHotKey;
 procedure FreeHotKey;
+function StripTmp(const n: string): string;
 
 const
   HelpLanguageRussian = LANG_RUSSIAN;
@@ -999,22 +950,12 @@ const
   ProductName      : string[ProductNameLen] = CProductName;
   ProductNameFullLen   = Length(CProductNameFull);
   ProductNameFull      : string[ProductNameFullLen] = CProductNameFull;
-//  OSShortLen = Length(COSshort);
-//  OSShort : string[OSShortLen] = COSShort;
-//  ProductVersionLen= Length(CProductVersion);
-//  ProductVersion   : string[ProductVersionLen] = CProductVersion;
   ProductPlatformLen= Length(CProductPlatform);
   ProductPlatform   : string[ProductPlatformLen] = CProductPlatform;
-//  ProductDateLen= Length(CProductDate);
-//  ProductDate   : string[ProductDateLen] = CProductDate;
-//  ProductNameVerLen= Length(CProductNameVer);
-//  ProductNameVer   : string[ProductNameVerLen] = CProductNameVer;
 
 var
-{$IFDEF WS}
   DaemonStarted: Boolean;
   OnlineStarted: boolean;
-{$ENDIF}
   StartupOptions: Byte;
   hMutex: DWORD;
   oRecalcEvents: DWORD;
@@ -1049,7 +990,6 @@ var
 {$DEFINE SOFTTICKER}
 {$IFDEF SOFTTICKER}
 TickCounter: DWORD;
-//TickCounter2: DWORD;
 {$ELSE}
 function TickCounter: DWORD;
 {$ENDIF}
@@ -1105,11 +1045,10 @@ function DOWE(d: Integer): string;
 function DOWE2(d: Integer): string;
 procedure ShowExceptionCallback(Buffer, Title: PChar);
 function RFCDateStr: string; overload;
-function RFCDateUTC: string; 
+function RFCDateUTC: string;
 function RFCDateStr(const D: TSystemTime): string; overload;
 function RFCDateStr(const D: DWORD): string; overload;
 function StrQuotePartEx(const s: string; OldC, NewC, NewC1: Char): string;
-//function GetRegExpEx(const APattern: string; AOptions: TPattOptions): TPCRE;
 procedure FreeRegExprList;
 function GetRegExpr(const APattern: string): Pointer;
 function FileTimeToMsecs(F: TFileTime): DWORD;
@@ -1118,7 +1057,6 @@ var
   ThrTimesLog: Boolean;
   TNodelistDataFixUp: boolean;
   IsHtmlHelp: Boolean;
-//  DisableWinsockTraps: Boolean;
   IniFName: string;
   sMutexName:string;
   sActivateEventName:string;
@@ -1143,35 +1081,6 @@ const
 //                          Time Routines                             //
 //                                                                    //
 ////////////////////////////////////////////////////////////////////////
-
-{$IFNDEF SOFTTICKER}
-
-var
-  TickIncrement: DWORD;
-  LastTickCount: DWORD;
-  TickCS: TRtlCriticalSection;
-
-function TickCounter: DWORD;
-var
-  tc, oldtc: DWORD;
-begin
-  tc := GetTickCount;
-  oldtc := tc;
-  XChg(LastTickCount, oldtc);
-  if oldtc > tc then
-  begin
-    EnterCS(TickCS);
-    Inc(TickIncrement, $100000000 div 50);
-    LeaveCS(TickCS);
-  end;
-  Result := TickIncrement + (tc div 50);
-end;
-
-procedure InitTickTimer;
-begin
-end;
-
-{$ELSE}
 
 type
   TTickThread = class(T_Thread)
@@ -1212,7 +1121,6 @@ end;
 
 var
   TickThr: TTickThread;
-//  FlagsThr: TTickThread;
 
 procedure DeInitTickTimer;
 begin
@@ -1226,8 +1134,6 @@ begin
   TickThr.Priority := tpTimeCritical;
   TickThr.Suspended := False;
 end;
-
-{$ENDIF}
 
 function GetOSVer: string;
 var OS: TOSVersionInfo;
@@ -1336,26 +1242,9 @@ asm
 @@end:
 end;
 
-function uCvtSecs(L, H: DWORD): DWORD; assembler;
-asm
-   cmp  edx, cSecScale / 2
-   jb   @@ok
-   mov  eax, 0
-   jmp  @@end
-@@ok:
-   mov  ecx, cSecScale
-   div  ecx
-@@end:
-end;
-
 function FileTimeToMsecs(F: TFileTime): DWORD;
 begin
   Result := uCvtMsecs(F.dwLowDateTime, F.dwHighDateTime);
-end;
-
-function FileTimeToSecs(F: TFileTime): DWORD;
-begin
-  Result := uCvtSecs(F.dwLowDateTime, F.dwHighDateTime);
 end;
 
 procedure uCvtSetFileTime(T: DWORD; var L, H: DWORD); assembler;
@@ -1395,18 +1284,6 @@ begin
   Result := DosDateTimeToFileTime(wFatDate, wFatTime, T);
   if Result then uTime := uCvtGetFileTime(T.dwLowDateTime, T.dwHighDateTime)
             else uTime := uGetSystemTime;
-end;
-
-function uFileTimeToDosDateTime;
-var
-  T: TFileTime;
-begin
-  uCvtSetFileTime(uTime, T.dwLowDateTime, T.dwHighDateTime);
-  Result := FileTimeToDosDateTime(T, wFatDate, wFatTime);
-  if not Result then
-  begin
-    if not uFileTimeToDosDateTime(uGetSystemTime, wFatDate, wFatTime) then GlobalFail('%s', ['uFileTimeToDosDateTime failed']);
-  end;
 end;
 
 function uGetLocalTime: DWORD;
@@ -1488,7 +1365,7 @@ end;
 
 function uFormatDateTime(const Format: string; uTime: DWORD): string;
 begin
-  SetNormalMonths;
+//  SetNormalMonths;
   Result := FormatDateTime(Format, uDelphiTime(uTime));
 end;
 
@@ -1560,44 +1437,6 @@ begin
   if TimerInstalled(ET)
     then Result := TickCounter - ET.StartTicks
     else Result := High(Result);
-end;
-
-function ElapsedTimeMsecs;
-  {-Returns elapsed time, in msecs, for this timer}
-begin
-  if TimerInstalled(ET)
-    then Result := (TickCounter - ET.StartTicks) * 50
-    else Result := High(Result);
-end;
-
-function ElapsedTimeSecs;
-  {-Returns elapsed time, in secs, for this timer}
-begin
-  if TimerInstalled(ET)
-    then Result := (TickCounter - ET.StartTicks) div 20
-    else Result := High(Result);
-end;
-
-
-function RemainingTime;
-  {-Returns remaining time, in tics, for this timer}
-var
-  tc: DWORD;
-begin
-  if TimerInstalled(ET) then
-    begin
-      tc := TickCounter;
-      if tc > ET.ExpireTicks then
-      begin
-        Result := 0
-      end else
-      begin
-        Result := ET.ExpireTicks - tc;
-      end;
-    end else
-    begin
-      Result := High(Result);
-    end;
 end;
 
 function RemainingTimeMSecs;
@@ -1849,6 +1688,9 @@ begin
    end else begin
       if pos(':', Name) > 0 then begin
          Result := Name;
+      end else
+      if pos('..', Name) > 0 then begin
+         Result := Name;
       end else begin
          Result := Result + Name;
       end;
@@ -1858,13 +1700,6 @@ end;
 procedure AddStr;
 begin
    S := S + C;
-end;
-
-procedure Add_Str(var S: ShortString ; C : char);
-var
-   sl: Byte absolute S;
-begin
-   Inc(sl); S[sl] := C;
 end;
 
 procedure FSplit(const FName: string; var Path, Name, Ext: string);
@@ -1927,17 +1762,6 @@ end;
 function ReplaceCI(const Pattern, ReplaceString: string; var S: string): Boolean;
 begin
    Result := ReplaceEx(Pattern, ReplaceString, S, True);
-end;
-
-procedure DelDoubles;
-var
-   i: Integer;
-begin
-   repeat
-      i := Pos(ST, Source);
-      if i = 0 then Break;
-      Delete(Source, I, 1);
-   until False;
 end;
 
 function DelLeft(const S: string): string;
@@ -2019,17 +1843,6 @@ begin
          Result := Result + 'M';
       end;
    end;
-end;
-
-function FormatMinSec(Sec: Integer): string;
-begin
-   if Sec = -1 then Result := '' else
-   Result := Format('%.2d:%.2d:%.2d', [Sec div 3600, (Sec div 60) mod 60, Sec mod 60]);
-end;
-
-function ExtractFileRoot(const FileName: string): string;
-begin
-   Result := Copy(FileName, 1, Pos(':', FileName) + 1);
 end;
 
 function WipeChars;
@@ -2384,28 +2197,6 @@ begin
   end;
 end;
 
-function UpdateCrcKermit(CurByte : Byte; CurCrc : Word) : Word;
-  {-Returns an updated Crc16 (kermit style)}
-var
-  I    : Integer;
-  Temp : Word;
-begin
-  for I := 0 to 7 do begin
-    Temp := CurCrc xor CurByte;
-    CurCrc := CurCrc shr 1;
-    if Odd(Temp) then
-      CurCrc := CurCrc xor CRC16PROP_POLY;
-    CurByte := CurByte shr 1;
-  end;
-  UpdateCrcKermit := CurCrc;
-end;
-
-function UpdateChecksum(CurByte : Byte; CheckSum : Word) : Word;
-  {-Returns an updated checksum}
-begin
-  UpdateCheckSum := CheckSum + CurByte;
-end;
-
 // CRC-16 proper, used for both CCITT and the one used by ARC
 function UpdateCrc16Prop(CurByte : Byte; CurCrc : Word) : Word;
   {-Returns an updated CRC16}
@@ -2553,83 +2344,6 @@ end;
 function T_Thread.WaitEvtInfinite(H: THandle; eName: string = ''): DWORD;
 begin
   Result := WaitEvt(H, INFINITE, eName);
-end;
-
-{function SignaledEvt(id: DWORD): Boolean;
-begin
-  Result := WaitForSingleObject(id, 0) = id;
-end;}
-
-////////////////////////////////////////////////////////////////////////
-//                                                                    //
-//                      Scroll Extensions                             //
-//                                                                    //
-////////////////////////////////////////////////////////////////////////
-
-procedure MakeScroll;
-var
-  _Page: Integer;
-begin
-  _Page := Page - Page div 4;
-  case Code of
-    SB_BOTTOM        :  Value := AMin;
-    SB_LINELEFT      :  Value := MaxI(AMin, Value - 1);
-    SB_LINERIGHT     :  Value := MinI(MaxI(AMin, AMax-_Page), Value + 1);
-    SB_PAGELEFT      :  Value := MaxI(AMin, Value - Page);
-    SB_PAGERIGHT     :  Value := MinI(MaxI(AMin, AMax-_Page), Value + Page);
-    SB_THUMBTRACK    :  Value := MinI(MaxI(AMin, AMax-_Page), Pos);
-    SB_TOP           :  Value := AMax;
-  end
-end;
-
-procedure ClearScrollRec(var R: TScrollRec);
-begin
-  R.lMin := -1; R.lMax := -1; R.lPage := -1; R.lPos := -1;
-end;
-
-procedure ClearScrollData(var D: TScrollData);
-begin
-  ClearScrollRec(D.h);
-  ClearScrollRec(D.v);
-end;
-
-function UpdateScrollBar(var D: TScrollRec; AHandle, AType: DWORD): Boolean;
-var
-  ScrollInfo: TScrollInfo;
-begin
-  Result := False;
-  with ScrollInfo, D do
-  begin
-    cbSize := SizeOf(TScrollInfo);
-    fMask := 0;
-    if (rMin <> lMin) or (rMax <> lMax) or (rPage <> lPage) then
-    begin
-      fMask := fMask or SIF_RANGE or SIF_PAGE;
-      lMin := rMin; nMin := rMin;
-      lMax := rMax; nMax := rMax;
-      lPage := rPage; nPage := rPage;
-      lPos := MaxInt;
-    end;
-    if (rPos <> lPos) then
-    begin
-      fMask := fMask or SIF_POS;
-      lPos := rPos;  nPos := rPos;
-    end;
-    if fMask <> 0 then
-    begin
-      SetScrollInfo(AHandle, AType, ScrollInfo, True);
-      Result := True;
-    end
-  end;
-end;
-
-function UpdateScrollBars(var D: TScrollData; AHandle: DWORD): Boolean;
-var
-  a, b: Boolean;
-begin
-  a := UpdateScrollBar(D.h, AHandle, SB_HORZ);
-  b := UpdateScrollBar(D.v, AHandle, SB_VERT);
-  Result := a or b;
 end;
 
 ////////////////////////////////////////////////////////////////////////
@@ -3511,88 +3225,6 @@ begin
    end;
 end;
 
-{ TIndexSet }
-
-constructor TIndexSet.Create;
-begin
-   inherited Create;
-   Capacity := 0;
-   Allocated := 0;
-   fIndexes := nil;
-   GrowTo(10);
-end;
-
-destructor TIndexSet.Destroy;
-begin
-   if fIndexes <> nil then FreeMem(fIndexes, Allocated);
-   inherited Destroy;
-end;
-
-procedure TIndexSet.GrowTo;
-var
-   P: PxByteArray;
-   A: DWORD;
-begin
-   A := 1 + Index div 8; if A < Allocated then Exit;
-   P := AllocMem(A);
-   if P <> nil then begin
-      Clear(P^, A);
-      if fIndexes <> nil then begin
-         Move(fIndexes^, P^, Allocated);
-         FreeMem(fIndexes, Allocated);
-      end;
-      fIndexes := P;
-      Allocated := A;
-      Capacity := A * 8;
-   end;
-end;
-
-function TIndexSet.GetIndex;
-begin
-   Result := False;
-   if Index >= Capacity then begin
-      GrowTo(Index);
-      if Index >= Capacity then Exit;
-   end;
-   Result := fIndexes^[Index div 8] and (1 shl (Index mod 8)) <> 0;
-end;
-
-procedure TIndexSet.SetIndex;
-var
-   A,
-   B: Integer;
-begin
-   if Index >= Capacity then begin
-      GrowTo(Index);
-      if Index >= Capacity then Exit;
-   end;
-   A := Index div 8; B := (1 shl (Index mod 8));
-   if OnOff then fIndexes^[A] := fIndexes^[A] or B
-            else fIndexes^[A] := fIndexes^[A] and not B;
-end;
-
-procedure TIndexSet.DeleteIndex;
-var
-   I,
-   J: Integer;
-   B: Byte;
-begin
-   if Index >= Capacity then begin
-      GrowTo(Index);
-      if Index >= Capacity then Exit;
-   end;
-   J := Index div 8; I := Index mod 8;
-   if (J < Integer(Allocated) - 1) and (fIndexes^[J + 1] and 1 <> 0) then B := $80
-                                                                     else B := 0;
-   fIndexes^[J] := B or fIndexes^[J] and ($FF shr (8 - I))
-                    or ((fIndexes^[J] and ($FF shl (I + 1))) shr 1);
-   for I := J + 1 to Integer(Allocated) - 1 do begin
-      if (I < Integer(Allocated) - 1) and (fIndexes^[I + 1] and 1 <> 0) then B := $80
-                                                                        else B := 0;
-      fIndexes^[I] := (fIndexes^[I] shr 1) or B;
-   end;
-end;
-
 function CreateDosStream(const FName: string; Mode: TCreateFileModeSet): TDosStream;
 var
    h: DWORD;
@@ -3602,6 +3234,7 @@ begin
    h := _CreateFile(FName, Mode);
    if h = INVALID_HANDLE_VALUE then begin SetErrorMsg(FName); Exit end;
    Result := TDosStream.Create(h);
+   Result.fMode := Mode;
    Result.OwnHandle := True;
 end;
 
@@ -3679,17 +3312,6 @@ begin
    Result := SetFilePointer(Handle, 0, nil, File_End);
 end;
 
-function FilePos(Handle: DWORD): DWORD;
-begin
-   Result := SetFilePointer(Handle, 0, nil, File_Current);
-end;
-
-function OpenAppend(const FName: string): TDosStream;
-begin
-   Result := CreateDosStream(FName, [cWrite]);
-   if Result <> nil then Result.Position := Result.Size;
-end;
-
 function OpenWrite(const FName: string): TDosStream;
 begin
    Result := CreateDosStream(FName, [cTruncate]);
@@ -3705,9 +3327,10 @@ begin
    Result := SetEndOfFile(Handle);
 end;
 
-function TDosStream.Read;
+function TDosStream.Read(var Buffer; Count: DWORD): DWORD;
 begin
    if not ReadFile(Handle, Buffer, Count, DWORD(Result), nil) then Result := 0;
+   Tag := Result;
 end;
 
 function TDosStream.Write;
@@ -3780,8 +3403,18 @@ procedure TColl.Concat(AColl: TColl);
 var
    i: Integer;
 begin
-   for i := 0 to AColl.Count - 1 do Insert(AColl[i]);
-   AColl.DeleteAll;
+   AColl.Enter;
+   try
+      Enter;
+      try
+         for i := 0 to AColl.Count - 1 do Insert(AColl[i]);
+      finally
+         Leave;
+      end;
+      AColl.DeleteAll;
+   finally
+      AColl.Leave;
+   end;
 end;
 
 var
@@ -3851,6 +3484,7 @@ var
    i: integer;
 {$ENDIF}
 begin
+   if CS.DebugInfo = nil then exit;
    Windows.LeaveCriticalSection(CS);
 {$IFDEF DEBUG_VERSION}
    if (IniFile <> nil) and IniFile.logWaitEvt then begin
@@ -3873,7 +3507,6 @@ procedure PurgeCS;
 begin
    if CS.DebugInfo = nil then exit;
    if CS.LockCount > -1 then begin
-//      GlobalFail('CS section is not finished properly: %d', [CS.LockCount]);
       while CS.LockCount > -1 do
          LeaveCS(CS);
       end;
@@ -4029,10 +3662,15 @@ begin
 end;
 
 procedure TColl.Delete(Item: Pointer);
+var
+   i: integer;
 begin
-   if IndexOf(Item) >= 0 then begin
-      AtDelete(IndexOf(Item));
+   Enter;
+   i := IndexOf(Item);
+   if i > -1 then begin
+      AtDelete(i);
    end;
+   Leave;
 end;
 
 procedure TColl.DeleteAll;
@@ -4056,7 +3694,11 @@ procedure TColl.FreeAll;
 var
    I: Integer;
 begin
-   for I := 0 to FCount - 1 do FreeItem(At(I));
+   Enter;
+   for I := 0 to FCount - 1 do begin
+      FreeItem(At(I));
+   end;
+   Leave;
    FCount := 0;
 end;
 
@@ -4251,14 +3893,6 @@ begin
          exit;
       end;
    end;
-end;
-
-function TStringColl.FoundU(const Str: string): Boolean;
-var
-   i: Integer;
-begin
-   Result := False;
-   for i := 0 to Count - 1 do if Str = Strings[i] then begin Result := True; Exit end;
 end;
 
 function TStringColl.IdxOfUC(const Str: string): Integer;
@@ -4528,6 +4162,7 @@ var
 begin
    Result := ''; if Eof then Exit; PrevC := #0;
    CurLen := 0; BufBeg := BufPos; Was := False;
+   SavPos := FilePos;
    repeat
       if BufPos = BufSz then begin
          DoAddStr(Result, False);
@@ -4604,14 +4239,6 @@ begin
    Result.Right  := R.Right  - X;
    Result.Top    := R.Top    + Y;
    Result.Bottom := R.Bottom - Y;
-end;
-
-function _ValidRect;
-begin
-   Result.Left := MinI(R.Left, R.Right);
-   Result.Right := MaxI(R.Left, R.Right);
-   Result.Top := MinI(R.Top, R.Bottom);
-   Result.Bottom := MaxI(R.Top, R.Bottom);
 end;
 
 function _EmptyRect(const R: TRect): Boolean;
@@ -4934,7 +4561,9 @@ procedure SetNormalMonths;
 var
    i: Integer;
 begin
-   for i := 1 to 12 do ShortMonthNames[i] := MonthE(i);
+   for i := 1 to 12 do
+      if ShortMonthNames[i] <> MonthE(i) then
+         ShortMonthNames[i] := MonthE(i);
 end;
 
 procedure GetBias;
@@ -5117,22 +4746,17 @@ end;
 
 procedure xBaseDone;
 begin
-  {.$IFDEF SOFTTICKER}
    TickThr.Terminated := True;
-  {.$ENDIF}
    EventWaiterThr.Terminated := True;
    SetEvent(EventWaiterThr.hActivate);
    Finalize(FCompleteFilter);
    FreeObject(xRegExtensions);
-  {.$IFDEF SOFTTICKER}
    TickThr.WaitFor;
    FreeObject(TickThr);
-  {.$ENDIF}
    EventWaiterThr.WaitFor;
    FreeObject(EventWaiterThr);
    if Thr_Coll.Count <> 0 then
       GlobalFail('xBaseDone while ThreadCount=%d', [Thr_Coll.Count]);
-//  FreeObject(ThrZombies);
    FreeObject(Thr_Coll);
    FreeObject(ThreadNfoColl);
    FreeObject(ioRecColl);
@@ -5166,73 +4790,6 @@ begin
    Result := 0;
    DoFail(AMessage, AParams);
 end;
-
-{.$DEFINE ALLOW_LOCAL_MASKS}
-
-{$IFDEF ALLOW_LOCAL_MASKS}
-
-function CompareMask(const n, m: string; SupportPercent: Boolean): Boolean;
-var
-   i: Integer;
-begin
-   Result := False;
-   for i := 1 to Length(m) do begin
-      if (m[i] = '?') then Continue;
-      if (i > Length(n)) or (n[i] <> m[i]) then begin
-         if SupportPercent and (m[i] = '%') and (n[i] in ['0'..'9']) then else Exit;
-      end;
-   end;
-   Result := True;
-end;
-
-function PosMask(const m, s: string; SupportPercent: Boolean): Integer;
-var
-   i: Integer;
-begin
-   Result := 0;
-   for i := 1 to Length(s) - Length(m) + 1 do begin
-      if CompareMask(Copy(s, i, Length(m)), m, SupportPercent) then begin
-         Result := i;
-         Exit;
-      end;
-   end;
-end;
-
-function _MatchMaskBody(AName, AMask: string; SupportPercent: Boolean): Boolean;
-var
-   i, j: Integer;
-   Scan: Boolean;
-begin
-   Result := False;
-   Scan := False;
-   while True do begin
-      i := Pos('*', AMask);
-      if i = 0 then begin
-         if AMask = '' then begin Result := True; Exit end;
-         j := PosMask(AMask, AName, SupportPercent);
-         if j = 0 then Exit;
-         if (j + Length(AMask)) <= Length(AName) then Exit;
-         Result := True;
-         Exit;
-      end else begin
-         if i > 1 then begin
-            if Scan then j := PosMask(Copy(AMask, 1, i - 1), AName, SupportPercent) else if CompareMask(AName, Copy(AMask, 1, i-1), SupportPercent) then j := i-1 else j := 0;
-            if j = 0 then Exit else Delete(AName, 1, j);
-         end;
-         Delete(AMask, 1, i);
-      end;
-      Scan := True;
-   end;
-end;
-
-function _MatchMaskLocal(const AName: string; AMask: string; SupportPercent: Boolean): Boolean;
-begin
-   Replace('?*', '*', AMask);
-   Replace('*?', '*', AMask);
-   Replace('**', '*', AMask);
-   Result := _MatchMaskBody(UpperCase(AName), UpperCase(AMask), SupportPercent);
-end;
-{$ENDIF}
 
 function StrQuotePartEx(const s: string; OldC, NewC, NewC1: Char): string;
 var
@@ -5330,16 +4887,10 @@ begin
       end;
    end;
 
-  //(remove this)EnterCS(RegExprCS);
-
    RE := GetRegExpr('(?i)^' + z + '$');
    RE.PattOptions := [poCaseLess];
    Result := (RE.ErrPtr = 0) and (RE.Match(AName) > 0) and (RE[0] <> '');
    RE.Unlock;
-//  FreeObject(RE);
-
-  //(remove this)LeaveCS(RegExprCS);
-  //(remove this)PurgeRegExpList;
 end;
 
 function MatchMask(const AName, AMask: string): Boolean;
@@ -5387,16 +4938,6 @@ begin
    A.Arr^[A.Cnt - 1] := i;
 end;
 
-{procedure DelVIntArr(var A: TvIntArr; Idx: Integer);
-var
-  i: Integer;
-begin
-  i := A.Cnt-Idx-1;
-  if i > 0 then Move(A.Arr^[Idx+1], A.Arr^[Idx], i*SizeOf(Integer));
-  Dec(A.Cnt);
-  ReallocMem(A.Arr, A.Cnt*SizeOf(Integer));
-end;}
-
 procedure FreeVIntArr(var A: TvIntArr);
 begin
    if A.Arr <> nil then ReallocMem(A.Arr, 0);
@@ -5405,17 +4946,6 @@ end;
 function CreateTCollEL(const n: string): TColl;
 begin
    Result := TColl.Create(n);
-end;
-
-procedure XorStr(P: PxByteArray; Len: Integer; const S: string);
-var
-  sl,
-   i: Integer;
-begin
-   sl := Length(s); if sl = 0 then Exit;
-   for i := 0 to Len - 1 do begin
-      P^[i] := P^[i] xor Byte(S[(i mod sl) + 1]);
-   end;
 end;
 
 function GetEnvVariable(const Name: string): string;
@@ -5475,12 +5005,6 @@ begin
    if C <> nil then C.DeleteAll;
 end;
 
-procedure CollInsert;
-begin
-   if C = nil then C := TColl.Create('');
-   C.Insert(Item);
-end;
-
 function CollCount;
 begin
    if C = nil then Result := 0 else Result := C.Count;
@@ -5489,14 +5013,6 @@ end;
 function CollMax;
 begin
    Result := CollCount(C) - 1;
-end;
-
-procedure FillStartupInfo(var SI: TStartupInfo; Minimized: Boolean);
-begin
-   if Minimized then begin
-      SI.dwFlags := STARTF_USESHOWWINDOW;
-      SI.wShowWindow := SW_SHOWMINNOACTIVE;
-   end;
 end;
 
 procedure MoveColl(Src, Dst: TColl; Idx: Integer);
@@ -5973,39 +5489,6 @@ end;
 var
    xRandSeed: DWORD;
 
-procedure       Randomize;
-var
-   systemTime :
-   record
-      wYear   : Word;
-      wMonth  : Word;
-      wDayOfWeek:
-                Word;
-      wDay    : Word;
-      wHour   : Word;
-      wMinute : Word;
-      wSecond : Word;
-      wMilliSeconds:
-                Word;
-      reserved: array [0..7] of char;
-   end;
-asm
-   LEA     EAX, systemTime
-   PUSH    EAX
-   CALL    GetSystemTime
-   MOVZX   EAX, systemTime.wHour
-   IMUL    EAX, 60
-   ADD     AX,systemTime.wMinute   { sum = hours * 60 + minutes    }
-   IMUL    EAX, 60
-   XOR     EDX, EDX
-   MOV     DX, systemTime.wSecond
-   ADD     EAX, EDX                 { sum = sum * 60 + seconds              }
-   IMUL    EAX, 1000
-   MOV     DX, systemTime.wMilliSeconds
-   ADD     EAX, EDX                 { sum = sum * 1000 + milliseconds       }
-   MOV     xRandSeed, EAX
-end;
-
 function xRandom32: DWORD; assembler;
 asm
    mov     eax, xRandSeed
@@ -6021,12 +5504,6 @@ asm
    call    xRandom32
    mul     ecx
    mov     eax, edx
-end;
-
-
-function StrBegs(const Substr, S: string): Boolean;
-begin
-   Result := Copy(S, 1, Length(SubStr)) = Substr;
 end;
 
 function StrBegsU(const Substr, S: string): Boolean;
@@ -6254,13 +5731,6 @@ begin
    if not ResetEvent(oEvt) then GlobalFail('ResetEvent(%d) Error %d', [oEvt, GetLastError]);
 end;
 
-{procedure PurgeThrZombies;
-begin
-  ThrZombies.Enter;
-  ThrZombies.FreeAll;
-  ThrZombies.Leave;
-end;}
-
 function _GetComputerName: string;
 var
    b: array[0..MAX_COMPUTERNAME_LENGTH + 1] of Char;
@@ -6347,15 +5817,14 @@ begin
    ItoS(D.wYear) + ' ' +
    ItoSz(D.wHour, 2) + ':' +
    ItoSz(D.wMinute, 2) + ':' +
-//  ItoSz(D.wSecond, 2) + ' UTC ' + s;
-   ItoSz(D.wSecond, 2) + ' '{UTC'} + s; //according to RFC 2822
+   ItoSz(D.wSecond, 2) + ' ' + s; //according to RFC 2822
 end;
 
 function RFCDateStr: string;
 var
    D: TSystemTime;
 begin
-   GetLocalTime(D);
+   GetSystemTime(D);
    Result := RFCDateStr(D);
 end;
 
@@ -6442,11 +5911,6 @@ begin
    TPCRE(Result).Lock;
 end;
 
-{function GetRegExp(const APattern: string): TPCRE;
-begin
-  Result := GetRegExpEx(APattern, [poCaseless]);
-end;}
-
 procedure DbgStr;
 begin
    OutputDebugString(PChar(Format(FormatStr, Args)));;
@@ -6460,7 +5924,7 @@ begin
    for i := 1 to length(S) do begin
       if (S[i] < ' ') or (S[i] > 'z') then result := result + Format('\%.2x', [ord(S[i])])
                                       else result := result + S[i];
-   end;                                      
+   end;
 end;
 
 {$IFDEF DEBUG_VERSION}
@@ -6526,6 +5990,27 @@ end;
 var
    date: TDateTime;
 
+function TTextReader.GetPosition: int64;
+begin
+   Result := SavPos;
+end;
+
+procedure TTextReader.SetPosition(ofs: int64);
+begin
+   Stream.Position := ofs;
+   FilePos := ofs;
+   BufPos := 0;
+   Bufsz := 0;
+end;
+
+function StripTmp(const n: string): string;
+begin
+   Result := n;
+   if pos('.TMP', UpperCase(n)) = Length(n) - 3 then begin
+      Result := copy(n, 1, Length(n) - 4);
+   end;
+end;
+
 initialization
    TrapCatched := False;
    if GetBuildDate(paramstr(0), date) then begin
@@ -6556,22 +6041,10 @@ initialization
 
    HotKeySet := False;
 
-{$IFNDEF SOFTTICKER}
-   InitializeCriticalSection(TickCS);
-{$ENDIF}
-
 finalization
    PurgeCS(CollCS);
-{$IFNDEF SOFTTICKER}
-   PurgeCS(TickCS);
-{$ENDIF}
 {$IFDEF DEBUG_VERSION}
    EnterList.Free;
 {$ENDIF}
 
 end.
-
-
-
-
-

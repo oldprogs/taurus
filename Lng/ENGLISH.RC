@@ -208,7 +208,7 @@ LANGUAGE LANG_ENGLISH,0
 
   LngBaseEnglish+rsNdlNoData       "Missing nodelist data"
   LngBaseEnglish+rsNdlOKtoCancel   "OK to cancel compiling?"
-  LngBaseEnglish+rsNdlFinished     "Compiling Finished"
+  LngBaseEnglish+rsNdlFinished     "Compilation finished"
   LngBaseEnglish+rsNdlSorting      "Sorting nodes"
   LngBaseEnglish+rsNdlComp         "Compiling the net %d:%d"
 
@@ -456,6 +456,8 @@ LANGUAGE LANG_ENGLISH,0
   LngBaseEnglishEvt+eiAccFilesRqd     "Accept Files Required|Mask List"
   LngBaseEnglishEvt+eiAccFilesFrb     "Accept Files Delayed|Mask List"
   LngBaseEnglishEvt+eiAccFilesFrK     "Accept Files Refuse Delete|Mask List"
+  LngBaseEnglishEvt+eiAccFilesSiz     "Accept Files Delay (Size)|Size(Kb)"
+  LngBaseEnglishEvt+eiDelFilesSiz     "Accept Files Refuse (Size)|Size(Kb)"
 
   LngBaseEnglishEvt+eiAccNodesRqd     "Accept Nodes Required|Nodes List"
   LngBaseEnglishEvt+eiAccNodesFrb     "Accept Nodes Forbidden|Nodes List"

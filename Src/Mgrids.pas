@@ -633,11 +633,9 @@ type
 //    procedure PM_Popup(Sender: TObject);
     procedure PM_DeleteAllRows(Sender: TObject);
   protected
-    procedure MouseDown(Button: TMouseButton; Shift: TShiftState;
-      X, Y: Integer); override;
+    procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
     procedure ColumnMoved(FromIndex, ToIndex: Longint); override;
-    procedure DrawCell(ACol, ARow: Longint; ARect: TRect;
-      AState: TxGridDrawState); override;
+    procedure DrawCell(ACol, ARow: Longint; ARect: TRect; AState: TxGridDrawState); override;
     function GetEditText(ACol, ARow: Longint): string; override;
     procedure SetEditText(ACol, ARow: Longint; const Value: string); override;
     procedure RowMoved(FromIndex, ToIndex: Longint); override;
@@ -3851,14 +3849,10 @@ begin
 end;
 
 procedure TAdvCustomGrid.UpdateDesigner;
-{var
-  ParentForm: TCustomForm;}
 begin
   if (csDesigning in ComponentState) and HandleAllocated and
     not (csUpdating in ComponentState) then
   begin
-//    ParentForm := GetParentForm(Self);
-//    if Assigned(ParentForm) and Assigned(ParentForm.Designer) then ParentForm.Designer.Modified;
   end;
 end;
 
@@ -3877,11 +3871,6 @@ begin
     else inherited WndProc(M);
   end;
 end;
-
-{procedure TAdvCustomGrid.WMMouseWheel(var M: TMessage);
-begin
-  MouseWheel(M.wParam and $FFFF, (M.wParam shr 16) and $FFFF, M.lParam and $FFFF, (M.lParam shr 16) and $FFFF);
-end;}
 
 { TAdvDrawGrid }
 

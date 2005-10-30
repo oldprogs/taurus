@@ -1400,14 +1400,14 @@ object SetupForm: TSetupForm
       end
       object Bevel14: TBevel
         Left = 15
-        Top = 174
+        Top = 199
         Width = 387
         Height = 5
         Shape = bsTopLine
       end
       object lBalloon: TLabel
         Left = 25
-        Top = 167
+        Top = 192
         Width = 46
         Height = 14
         Caption = ' Balloon '
@@ -1421,7 +1421,7 @@ object SetupForm: TSetupForm
       end
       object lPopup: TLabel
         Left = 20
-        Top = 115
+        Top = 140
         Width = 193
         Height = 15
         Caption = 'HotKey to popup from stealth mode'
@@ -1436,7 +1436,7 @@ object SetupForm: TSetupForm
       end
       object cbBalloon: TCheckBox
         Left = 20
-        Top = 192
+        Top = 217
         Width = 350
         Height = 17
         Caption = 'Show balloon tooltip'
@@ -1444,7 +1444,7 @@ object SetupForm: TSetupForm
       end
       object cbBalloonMin: TCheckBox
         Left = 20
-        Top = 216
+        Top = 241
         Width = 350
         Height = 17
         Caption = 'Show balloon tooltip when minimized'
@@ -1459,9 +1459,17 @@ object SetupForm: TSetupForm
         TabOrder = 1
         OnClick = cbStealthClick
       end
+      object cbLamps: TCheckBox
+        Left = 20
+        Top = 113
+        Width = 180
+        Height = 17
+        Caption = 'Lamps in tray'
+        TabOrder = 6
+      end
       object hkPopup: THotKey
         Left = 20
-        Top = 134
+        Top = 159
         Width = 117
         Height = 24
         HotKey = 49234
@@ -2001,20 +2009,12 @@ object SetupForm: TSetupForm
         OnClick = btnChatBellClick
       end
       object cbIgnoreCD: TCheckBox
-        Left = 213
+        Left = 16
         Top = 247
         Width = 180
         Height = 17
         Caption = 'Ignore CD'
         TabOrder = 11
-      end
-      object cbLamps: TCheckBox
-        Left = 16
-        Top = 247
-        Width = 180
-        Height = 17
-        Caption = 'Lamps in tray'
-        TabOrder = 12
       end
     end
     object TPage

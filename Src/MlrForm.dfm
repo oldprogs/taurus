@@ -1,8 +1,8 @@
 object MailerForm: TMailerForm
-  Left = 198
-  Top = 135
-  Width = 743
-  Height = 448
+  Left = 194
+  Top = 121
+  Width = 768
+  Height = 556
   HelpContext = 1500
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -27,8 +27,8 @@ object MailerForm: TMailerForm
   object MainTabControl: TTabControl
     Left = 0
     Top = 0
-    Width = 735
-    Height = 393
+    Width = 760
+    Height = 503
     Align = alClient
     HotTrack = True
     TabOrder = 0
@@ -38,11 +38,11 @@ object MailerForm: TMailerForm
     TabIndex = 0
     OnChange = MainTabControlChange
     DesignSize = (
-      735
-      393)
+      760
+      503)
     object lTime0: TLabel
-      Left = 509
-      Top = 2
+      Left = 528
+      Top = 4
       Width = 90
       Height = 16
       Alignment = taRightJustify
@@ -51,8 +51,8 @@ object MailerForm: TMailerForm
       Layout = tlCenter
     end
     object lTime1: TLabel
-      Left = 618
-      Top = 2
+      Left = 641
+      Top = 4
       Width = 108
       Height = 16
       Alignment = taRightJustify
@@ -69,8 +69,8 @@ object MailerForm: TMailerForm
     object MainPanel: TTransPan
       Left = 4
       Top = 27
-      Width = 727
-      Height = 362
+      Width = 752
+      Height = 472
       Align = alClient
       BevelOuter = bvNone
       BorderStyle = bsSingle
@@ -80,8 +80,8 @@ object MailerForm: TMailerForm
       object LogBox: TLogger
         Left = 0
         Top = 329
-        Width = 723
-        Height = 118
+        Width = 748
+        Height = 99
         Cursor = crHandPoint
         Align = alClient
         Color = clBtnFace
@@ -99,8 +99,8 @@ object MailerForm: TMailerForm
       object ChatPan: TTransPan
         Left = 0
         Top = 329
-        Width = 723
-        Height = 118
+        Width = 748
+        Height = 99
         Align = alClient
         BevelOuter = bvNone
         FullRepaint = False
@@ -115,19 +115,19 @@ object MailerForm: TMailerForm
         OnResize = ChatPanResize
         object Panel13: TTransPan
           Left = 0
-          Top = 87
-          Width = 723
+          Top = 68
+          Width = 748
           Height = 31
           Align = alBottom
           BevelOuter = bvNone
           TabOrder = 0
           DesignSize = (
-            723
+            748
             31)
           object eType: TEdit
             Left = 1
             Top = 4
-            Width = 869
+            Width = 894
             Height = 24
             Anchors = [akLeft, akTop, akRight, akBottom]
             TabOrder = 0
@@ -137,19 +137,19 @@ object MailerForm: TMailerForm
         object ChatCaptionPan: TTransPan
           Left = 0
           Top = 0
-          Width = 723
+          Width = 748
           Height = 23
           Align = alTop
           TabOrder = 2
           OnConstrainedResize = ChatCaptionPanConstrainedResize
           EraseBackGround = True
           DesignSize = (
-            723
+            748
             23)
           object imgHeader: TImage
             Left = 1
             Top = 1
-            Width = 721
+            Width = 746
             Height = 21
             Align = alClient
             Picture.Data = {
@@ -201,7 +201,7 @@ object MailerForm: TMailerForm
             Stretch = True
           end
           object sbCloseChat: TSpeedButton
-            Left = 648
+            Left = 673
             Top = 2
             Width = 18
             Height = 18
@@ -239,8 +239,8 @@ object MailerForm: TMailerForm
         object Panel15: TTransPan
           Left = 0
           Top = 23
-          Width = 723
-          Height = 64
+          Width = 748
+          Height = 45
           Align = alClient
           BevelOuter = bvNone
           ParentColor = True
@@ -248,7 +248,7 @@ object MailerForm: TMailerForm
           object ChatMemo1: TMemo
             Left = 0
             Top = 0
-            Width = 723
+            Width = 748
             Height = 191
             TabStop = False
             Align = alTop
@@ -261,7 +261,7 @@ object MailerForm: TMailerForm
           object ChatMemo2: TMemo
             Left = 0
             Top = 191
-            Width = 723
+            Width = 748
             Height = 198
             TabStop = False
             Align = alClient
@@ -275,8 +275,8 @@ object MailerForm: TMailerForm
       end
       object BottomPanel: TTransPan
         Left = 0
-        Top = 318
-        Width = 723
+        Top = 428
+        Width = 748
         Height = 40
         Align = alBottom
         BevelOuter = bvNone
@@ -286,7 +286,7 @@ object MailerForm: TMailerForm
         object PollBtnPanel: TTransPan
           Left = 0
           Top = 0
-          Width = 723
+          Width = 748
           Height = 40
           Align = alClient
           BevelOuter = bvNone
@@ -511,7 +511,7 @@ object MailerForm: TMailerForm
             OnClick = mpPauseClick
           end
           object lInfo1: TLabel
-            Left = 363
+            Left = 388
             Top = 0
             Width = 360
             Height = 40
@@ -529,7 +529,7 @@ object MailerForm: TMailerForm
         object DaemonBtnPanel: TTransPan
           Left = 0
           Top = 0
-          Width = 723
+          Width = 748
           Height = 40
           Align = alClient
           BevelOuter = bvNone
@@ -539,14 +539,14 @@ object MailerForm: TMailerForm
           object RasLabelPan: TTransPan
             Left = 0
             Top = 0
-            Width = 511
+            Width = 536
             Height = 40
             Align = alClient
             BevelOuter = bvNone
             ParentBackground = False
             TabOrder = 1
             DesignSize = (
-              511
+              536
               40)
             object lStatus2: TLabel
               Left = 33
@@ -556,7 +556,7 @@ object MailerForm: TMailerForm
               Caption = 'Connected to Corex VPN'
             end
             object lTimeCon: TLabel
-              Left = 497
+              Left = 522
               Top = 14
               Width = 57
               Height = 16
@@ -571,7 +571,7 @@ object MailerForm: TMailerForm
             end
           end
           object RasBtnPan: TTransPan
-            Left = 511
+            Left = 536
             Top = 0
             Width = 212
             Height = 40
@@ -604,7 +604,7 @@ object MailerForm: TMailerForm
         object SystemBtnPanel: TTransPan
           Left = 0
           Top = 0
-          Width = 723
+          Width = 748
           Height = 40
           Align = alClient
           BevelOuter = bvNone
@@ -637,7 +637,7 @@ object MailerForm: TMailerForm
             OnClick = bbDeleteClick
           end
           object lInfo2: TLabel
-            Left = 363
+            Left = 388
             Top = 0
             Width = 360
             Height = 40
@@ -656,7 +656,7 @@ object MailerForm: TMailerForm
         object MailerBtnPanel: TTransPan
           Left = 0
           Top = 0
-          Width = 723
+          Width = 748
           Height = 40
           Align = alClient
           BevelOuter = bvNone
@@ -856,7 +856,7 @@ object MailerForm: TMailerForm
             OnClick = bChatClick
           end
           object LampsPanelCarrier: TTransPan
-            Left = 558
+            Left = 583
             Top = 0
             Width = 165
             Height = 40
@@ -972,7 +972,7 @@ object MailerForm: TMailerForm
             end
           end
           object lClock: TTransPan
-            Left = 458
+            Left = 483
             Top = 0
             Width = 100
             Height = 40
@@ -1001,7 +1001,7 @@ object MailerForm: TMailerForm
         object OutMgrBtnPanel: TTransPan
           Left = 0
           Top = 0
-          Width = 723
+          Width = 748
           Height = 40
           Align = alClient
           BevelOuter = bvNone
@@ -1010,7 +1010,7 @@ object MailerForm: TMailerForm
           TabOrder = 3
           Visible = False
           object Clock2: TJvxClock
-            Left = 626
+            Left = 651
             Top = 3
             Width = 94
             Height = 34
@@ -1133,7 +1133,7 @@ object MailerForm: TMailerForm
           object pobRight: TTransPan
             Left = 501
             Top = 3
-            Width = 125
+            Width = 150
             Height = 34
             Align = alClient
             BevelOuter = bvNone
@@ -1144,17 +1144,310 @@ object MailerForm: TMailerForm
       object TopNotebookPanel: TTransPan
         Left = 0
         Top = 0
-        Width = 723
+        Width = 748
         Height = 329
         Align = alTop
         BevelOuter = bvNone
         FullRepaint = False
         ParentBackground = False
         TabOrder = 0
+        object DaemonPanel: TTransPan
+          Left = 0
+          Top = 0
+          Width = 748
+          Height = 329
+          Align = alClient
+          BevelOuter = bvNone
+          ParentBackground = False
+          TabOrder = 2
+          Visible = False
+          EraseBackGround = True
+          object MainDaemonPanel: TTransPan
+            Left = 10
+            Top = 0
+            Width = 728
+            Height = 315
+            Align = alClient
+            BevelOuter = bvNone
+            ParentBackground = False
+            TabOrder = 0
+            object PanelE: TTransPan
+              Left = 0
+              Top = 0
+              Width = 352
+              Height = 315
+              Align = alClient
+              BorderWidth = 7
+              TabOrder = 1
+              object edListView: TListView
+                Left = 8
+                Top = 8
+                Width = 336
+                Height = 299
+                Align = alClient
+                Columns = <
+                  item
+                    AutoSize = True
+                    Caption = 'Event'
+                  end
+                  item
+                    Alignment = taRightJustify
+                    Caption = 'Start'
+                    Width = 80
+                  end
+                  item
+                    Alignment = taRightJustify
+                    Caption = 'End'
+                    Width = 80
+                  end>
+                Font.Charset = DEFAULT_CHARSET
+                Font.Color = clWindowText
+                Font.Height = -13
+                Font.Name = 'Courier New'
+                Font.Style = []
+                GridLines = True
+                ReadOnly = True
+                RowSelect = True
+                ParentFont = False
+                PopupMenu = EventMenu
+                SmallImages = ilMainMenu
+                SortType = stData
+                TabOrder = 0
+                ViewStyle = vsReport
+                OnCompare = evListViewCompare
+                OnDblClick = evListViewDblClick
+              end
+            end
+            object PanelD: TTransPan
+              Left = 352
+              Top = 0
+              Width = 376
+              Height = 315
+              Align = alRight
+              TabOrder = 0
+              object Panel7: TTransPan
+                Left = 1
+                Top = 157
+                Width = 374
+                Height = 157
+                Align = alBottom
+                BevelOuter = bvNone
+                ParentBackground = False
+                TabOrder = 0
+                object Panel9: TTransPan
+                  Left = 0
+                  Top = 0
+                  Width = 112
+                  Height = 157
+                  Align = alLeft
+                  BevelOuter = bvNone
+                  BorderWidth = 8
+                  ParentBackground = False
+                  TabOrder = 0
+                  object DaemonPI: TTransPan
+                    Left = 8
+                    Top = 8
+                    Width = 96
+                    Height = 20
+                    Align = alTop
+                    Alignment = taLeftJustify
+                    BevelOuter = bvNone
+                    Caption = ' Input'
+                    ParentBackground = False
+                    TabOrder = 0
+                  end
+                  object Panel16: TTransPan
+                    Left = 8
+                    Top = 28
+                    Width = 96
+                    Height = 121
+                    Align = alClient
+                    BorderWidth = 1
+                    ParentBackground = False
+                    TabOrder = 1
+                    object gInput: TNavyGauge
+                      Left = 2
+                      Top = 2
+                      Width = 92
+                      Height = 117
+                      Align = alClient
+                    end
+                  end
+                end
+                object Panel12: TTransPan
+                  Left = 112
+                  Top = 0
+                  Width = 262
+                  Height = 157
+                  Align = alClient
+                  BevelOuter = bvNone
+                  BorderWidth = 8
+                  ParentBackground = False
+                  TabOrder = 1
+                  object DaemonPIH: TTransPan
+                    Left = 8
+                    Top = 8
+                    Width = 246
+                    Height = 20
+                    Align = alTop
+                    Alignment = taLeftJustify
+                    BevelOuter = bvNone
+                    Caption = ' Input History'
+                    ParentBackground = False
+                    TabOrder = 0
+                  end
+                  object Panel18: TTransPan
+                    Left = 8
+                    Top = 28
+                    Width = 246
+                    Height = 121
+                    Align = alClient
+                    BorderWidth = 1
+                    ParentBackground = False
+                    TabOrder = 1
+                    object gInputGraph: TNavyGraph
+                      Left = 2
+                      Top = 2
+                      Width = 242
+                      Height = 117
+                      Align = alClient
+                      EraseBackGround = True
+                    end
+                  end
+                end
+              end
+              object Panel6: TTransPan
+                Left = 1
+                Top = 1
+                Width = 374
+                Height = 156
+                Align = alClient
+                BevelOuter = bvNone
+                ParentBackground = False
+                TabOrder = 1
+                object Panel8: TTransPan
+                  Left = 0
+                  Top = 0
+                  Width = 112
+                  Height = 156
+                  Align = alLeft
+                  BevelOuter = bvNone
+                  BorderWidth = 8
+                  ParentBackground = False
+                  TabOrder = 0
+                  object DaemonPO: TTransPan
+                    Left = 8
+                    Top = 8
+                    Width = 96
+                    Height = 20
+                    Align = alTop
+                    Alignment = taLeftJustify
+                    BevelOuter = bvNone
+                    Caption = ' Output'
+                    ParentBackground = False
+                    TabOrder = 0
+                  end
+                  object Panel111: TTransPan
+                    Left = 8
+                    Top = 28
+                    Width = 96
+                    Height = 120
+                    Align = alClient
+                    BorderWidth = 1
+                    ParentBackground = False
+                    TabOrder = 1
+                    object gOutput: TNavyGauge
+                      Left = 2
+                      Top = 2
+                      Width = 92
+                      Height = 116
+                      Align = alClient
+                    end
+                  end
+                end
+                object Panel10: TTransPan
+                  Left = 112
+                  Top = 0
+                  Width = 262
+                  Height = 156
+                  Align = alClient
+                  BevelOuter = bvNone
+                  BorderWidth = 8
+                  ParentBackground = False
+                  TabOrder = 1
+                  object DaemonPOH: TTransPan
+                    Left = 8
+                    Top = 8
+                    Width = 246
+                    Height = 20
+                    Align = alTop
+                    Alignment = taLeftJustify
+                    BevelOuter = bvNone
+                    Caption = ' Output History'
+                    ParentBackground = False
+                    TabOrder = 0
+                  end
+                  object Panel17: TTransPan
+                    Left = 8
+                    Top = 28
+                    Width = 246
+                    Height = 120
+                    Align = alClient
+                    BorderWidth = 1
+                    ParentBackground = False
+                    TabOrder = 1
+                    object gOutputGraph: TNavyGraph
+                      Left = 2
+                      Top = 2
+                      Width = 242
+                      Height = 116
+                      Align = alClient
+                      EraseBackGround = True
+                    end
+                  end
+                end
+              end
+            end
+          end
+          object Panel19: TTransPan
+            Left = 0
+            Top = 315
+            Width = 748
+            Height = 14
+            Align = alBottom
+            BevelOuter = bvNone
+            ParentBackground = False
+            TabOrder = 1
+            EraseBackGround = True
+          end
+          object Panel20: TTransPan
+            Left = 738
+            Top = 0
+            Width = 10
+            Height = 315
+            Align = alRight
+            BevelOuter = bvNone
+            ParentBackground = False
+            TabOrder = 2
+            EraseBackGround = True
+          end
+          object Panel21: TTransPan
+            Left = 0
+            Top = 0
+            Width = 10
+            Height = 315
+            Align = alLeft
+            BevelOuter = bvNone
+            ParentBackground = False
+            TabOrder = 3
+            Visible = False
+            EraseBackGround = True
+          end
+        end
         object MailerAPanel: TTransPan
           Left = 0
           Top = 0
-          Width = 723
+          Width = 748
           Height = 329
           Align = alClient
           BevelOuter = bvNone
@@ -1164,7 +1457,7 @@ object MailerForm: TMailerForm
           TabOrder = 1
           Visible = False
           object SplitterAPanel: TSplitter
-            Left = 399
+            Left = 424
             Top = 0
             Width = 4
             Height = 329
@@ -1174,7 +1467,7 @@ object MailerForm: TMailerForm
             OnMoved = SplitterAPanelMoved
           end
           object TermsPanel: TTransPan
-            Left = 403
+            Left = 428
             Top = 0
             Width = 320
             Height = 329
@@ -1199,7 +1492,7 @@ object MailerForm: TMailerForm
           object DialupInfoPanel: TTransPan
             Left = 0
             Top = 0
-            Width = 399
+            Width = 424
             Height = 329
             Align = alClient
             BevelOuter = bvNone
@@ -1211,7 +1504,7 @@ object MailerForm: TMailerForm
             object StatusCarrier: TTransPan
               Left = 9
               Top = 9
-              Width = 381
+              Width = 406
               Height = 60
               Align = alTop
               BevelOuter = bvNone
@@ -1222,7 +1515,7 @@ object MailerForm: TMailerForm
               object StatusBox: TGroupBox
                 Left = 0
                 Top = 0
-                Width = 381
+                Width = 406
                 Height = 60
                 Align = alClient
                 Caption = ' Status '
@@ -1238,7 +1531,7 @@ object MailerForm: TMailerForm
                   Layout = tlCenter
                 end
                 object TimeoutBox: TTransPan
-                  Left = 266
+                  Left = 291
                   Top = 18
                   Width = 113
                   Height = 40
@@ -1299,7 +1592,7 @@ object MailerForm: TMailerForm
             object StatusLine: TTransPan
               Left = 9
               Top = 78
-              Width = 381
+              Width = 406
               Height = 242
               Align = alClient
               BevelOuter = bvNone
@@ -1311,14 +1604,14 @@ object MailerForm: TMailerForm
               object GroupLine: TGroupBox
                 Left = 0
                 Top = 0
-                Width = 381
+                Width = 406
                 Height = 242
                 Align = alClient
                 TabOrder = 0
                 object TransPan2: TTransPan
                   Left = 2
                   Top = 18
-                  Width = 377
+                  Width = 402
                   Height = 222
                   Align = alClient
                   BevelOuter = bvNone
@@ -1329,7 +1622,7 @@ object MailerForm: TMailerForm
                   object Clock: TJvAnalogClock
                     Left = 20
                     Top = 20
-                    Width = 337
+                    Width = 362
                     Height = 182
                     Date = True
                     SpiderClock = True
@@ -1345,7 +1638,7 @@ object MailerForm: TMailerForm
               object evListView: TListView
                 Left = 0
                 Top = 0
-                Width = 381
+                Width = 406
                 Height = 242
                 Align = alClient
                 Columns = <
@@ -1384,7 +1677,7 @@ object MailerForm: TMailerForm
             object TransPan1: TTransPan
               Left = 9
               Top = 69
-              Width = 381
+              Width = 406
               Height = 9
               Align = alTop
               BevelOuter = bvNone
@@ -1396,7 +1689,7 @@ object MailerForm: TMailerForm
         object PollsListPanel: TTransPan
           Left = 0
           Top = 0
-          Width = 723
+          Width = 748
           Height = 329
           Align = alClient
           BevelOuter = bvNone
@@ -1407,7 +1700,7 @@ object MailerForm: TMailerForm
           object PollsListView: TAdvListView
             Left = 0
             Top = 0
-            Width = 723
+            Width = 748
             Height = 329
             Align = alClient
             AllocBy = 128
@@ -1457,248 +1750,10 @@ object MailerForm: TMailerForm
             OnApiDropFiles = PollsListViewApiDropFiles
           end
         end
-        object DaemonPanel: TTransPan
-          Left = 0
-          Top = 0
-          Width = 723
-          Height = 329
-          Align = alClient
-          BevelOuter = bvNone
-          ParentBackground = False
-          TabOrder = 2
-          Visible = False
-          EraseBackGround = True
-          object MainDaemonPanel: TTransPan
-            Left = 10
-            Top = 0
-            Width = 703
-            Height = 315
-            Align = alClient
-            BevelOuter = bvNone
-            ParentBackground = False
-            TabOrder = 0
-            object Panel7: TTransPan
-              Left = 0
-              Top = 158
-              Width = 703
-              Height = 157
-              Align = alBottom
-              BevelOuter = bvNone
-              ParentBackground = False
-              TabOrder = 0
-              object Panel9: TTransPan
-                Left = 0
-                Top = 0
-                Width = 112
-                Height = 157
-                Align = alLeft
-                BevelOuter = bvNone
-                BorderWidth = 8
-                ParentBackground = False
-                TabOrder = 0
-                object DaemonPI: TTransPan
-                  Left = 8
-                  Top = 8
-                  Width = 96
-                  Height = 20
-                  Align = alTop
-                  Alignment = taLeftJustify
-                  BevelOuter = bvNone
-                  Caption = ' Input'
-                  ParentBackground = False
-                  TabOrder = 0
-                end
-                object Panel16: TTransPan
-                  Left = 8
-                  Top = 28
-                  Width = 96
-                  Height = 121
-                  Align = alClient
-                  BorderWidth = 1
-                  ParentBackground = False
-                  TabOrder = 1
-                  object gInput: TNavyGauge
-                    Left = 2
-                    Top = 2
-                    Width = 92
-                    Height = 117
-                    Align = alClient
-                  end
-                end
-              end
-              object Panel12: TTransPan
-                Left = 112
-                Top = 0
-                Width = 591
-                Height = 157
-                Align = alClient
-                BevelOuter = bvNone
-                BorderWidth = 8
-                ParentBackground = False
-                TabOrder = 1
-                object DaemonPIH: TTransPan
-                  Left = 8
-                  Top = 8
-                  Width = 575
-                  Height = 20
-                  Align = alTop
-                  Alignment = taLeftJustify
-                  BevelOuter = bvNone
-                  Caption = ' Input History'
-                  ParentBackground = False
-                  TabOrder = 0
-                end
-                object Panel18: TTransPan
-                  Left = 8
-                  Top = 28
-                  Width = 575
-                  Height = 121
-                  Align = alClient
-                  BorderWidth = 1
-                  ParentBackground = False
-                  TabOrder = 1
-                  object gInputGraph: TNavyGraph
-                    Left = 2
-                    Top = 2
-                    Width = 571
-                    Height = 117
-                    Align = alClient
-                    EraseBackGround = True
-                  end
-                end
-              end
-            end
-            object Panel6: TTransPan
-              Left = 0
-              Top = 0
-              Width = 703
-              Height = 158
-              Align = alClient
-              BevelOuter = bvNone
-              ParentBackground = False
-              TabOrder = 1
-              object Panel8: TTransPan
-                Left = 0
-                Top = 0
-                Width = 112
-                Height = 158
-                Align = alLeft
-                BevelOuter = bvNone
-                BorderWidth = 8
-                ParentBackground = False
-                TabOrder = 0
-                object DaemonPO: TTransPan
-                  Left = 8
-                  Top = 8
-                  Width = 96
-                  Height = 20
-                  Align = alTop
-                  Alignment = taLeftJustify
-                  BevelOuter = bvNone
-                  Caption = ' Output'
-                  ParentBackground = False
-                  TabOrder = 0
-                end
-                object Panel111: TTransPan
-                  Left = 8
-                  Top = 28
-                  Width = 96
-                  Height = 122
-                  Align = alClient
-                  BorderWidth = 1
-                  ParentBackground = False
-                  TabOrder = 1
-                  object gOutput: TNavyGauge
-                    Left = 2
-                    Top = 2
-                    Width = 92
-                    Height = 118
-                    Align = alClient
-                  end
-                end
-              end
-              object Panel10: TTransPan
-                Left = 112
-                Top = 0
-                Width = 591
-                Height = 158
-                Align = alClient
-                BevelOuter = bvNone
-                BorderWidth = 8
-                ParentBackground = False
-                TabOrder = 1
-                object DaemonPOH: TTransPan
-                  Left = 8
-                  Top = 8
-                  Width = 575
-                  Height = 20
-                  Align = alTop
-                  Alignment = taLeftJustify
-                  BevelOuter = bvNone
-                  Caption = ' Output History'
-                  ParentBackground = False
-                  TabOrder = 0
-                end
-                object Panel17: TTransPan
-                  Left = 8
-                  Top = 28
-                  Width = 575
-                  Height = 122
-                  Align = alClient
-                  BorderWidth = 1
-                  ParentBackground = False
-                  TabOrder = 1
-                  object gOutputGraph: TNavyGraph
-                    Left = 2
-                    Top = 2
-                    Width = 571
-                    Height = 118
-                    Align = alClient
-                    EraseBackGround = True
-                  end
-                end
-              end
-            end
-          end
-          object Panel19: TTransPan
-            Left = 0
-            Top = 315
-            Width = 723
-            Height = 14
-            Align = alBottom
-            BevelOuter = bvNone
-            ParentBackground = False
-            TabOrder = 1
-            EraseBackGround = True
-          end
-          object Panel20: TTransPan
-            Left = 713
-            Top = 0
-            Width = 10
-            Height = 315
-            Align = alRight
-            BevelOuter = bvNone
-            ParentBackground = False
-            TabOrder = 2
-            EraseBackGround = True
-          end
-          object Panel21: TTransPan
-            Left = 0
-            Top = 0
-            Width = 10
-            Height = 315
-            Align = alLeft
-            BevelOuter = bvNone
-            ParentBackground = False
-            TabOrder = 3
-            Visible = False
-            EraseBackGround = True
-          end
-        end
         object MailerBPanel: TTransPan
           Left = 0
           Top = 0
-          Width = 723
+          Width = 748
           Height = 329
           Align = alClient
           BevelOuter = bvNone
@@ -1814,6 +1869,7 @@ object MailerForm: TMailerForm
                 Height = 70
                 Kind = gkPie
                 BorderStyle = bsNone
+                MaxValue = 0
                 Progress = 0
                 Visible = False
               end
@@ -1965,6 +2021,7 @@ object MailerForm: TMailerForm
                 Height = 70
                 Kind = gkPie
                 BorderStyle = bsNone
+                MaxValue = 0
                 Progress = 0
                 Visible = False
               end
@@ -2072,7 +2129,6 @@ object MailerForm: TMailerForm
                 Width = 31
                 Height = 16
                 Alignment = taRightJustify
-                Anchors = [akTop, akRight]
                 Caption = 'Cost:'
                 Layout = tlCenter
               end
@@ -2096,7 +2152,7 @@ object MailerForm: TMailerForm
           object Panel3: TTransPan
             Left = 379
             Top = 0
-            Width = 344
+            Width = 369
             Height = 329
             Align = alClient
             BevelOuter = bvNone
@@ -2107,7 +2163,7 @@ object MailerForm: TMailerForm
             object SessionHist: TTransPan
               Left = 12
               Top = 222
-              Width = 320
+              Width = 345
               Height = 95
               Align = alBottom
               ParentBackground = False
@@ -2116,7 +2172,7 @@ object MailerForm: TMailerForm
               object MHistO: TNavyGraph
                 Left = 1
                 Top = 1
-                Width = 318
+                Width = 343
                 Height = 46
                 Align = alTop
                 EraseBackGround = True
@@ -2124,7 +2180,7 @@ object MailerForm: TMailerForm
               object MHistI: TNavyGraph
                 Left = 1
                 Top = 48
-                Width = 318
+                Width = 343
                 Height = 46
                 Align = alBottom
                 EraseBackGround = True
@@ -2133,7 +2189,7 @@ object MailerForm: TMailerForm
             object SessionNfoPnl: TTransPan
               Left = 12
               Top = 12
-              Width = 320
+              Width = 345
               Height = 207
               Align = alTop
               BevelOuter = bvNone
@@ -2142,7 +2198,7 @@ object MailerForm: TMailerForm
               object gTabCnt: TTabControl
                 Left = 0
                 Top = 0
-                Width = 320
+                Width = 345
                 Height = 207
                 Align = alClient
                 TabOrder = 0
@@ -2176,7 +2232,7 @@ object MailerForm: TMailerForm
                 object gNfo: TAdvGrid
                   Left = 109
                   Top = 27
-                  Width = 207
+                  Width = 232
                   Height = 176
                   FixedFont.Charset = DEFAULT_CHARSET
                   FixedFont.Color = clWindowText
@@ -2225,101 +2281,6 @@ object MailerForm: TMailerForm
               end
             end
           end
-        end
-      end
-      object OutMgrPanel: TTransPan
-        Left = 0
-        Top = 0
-        Width = 676
-        Height = 31
-        BevelOuter = bvNone
-        ParentBackground = False
-        TabOrder = 5
-        Visible = False
-        object OutMgrBevel: TBevel
-          Left = 0
-          Top = 26
-          Width = 676
-          Height = 5
-          Align = alBottom
-          Shape = bsBottomLine
-        end
-        object OutMgrHeader: THeaderControl
-          Left = 0
-          Top = 0
-          Width = 676
-          Height = 21
-          HotTrack = True
-          Sections = <
-            item
-              ImageIndex = -1
-              Text = 'Outbound'
-              Width = 180
-            end
-            item
-              ImageIndex = -1
-              Text = 'Sysop Name'
-              Width = 200
-            end
-            item
-              Alignment = taRightJustify
-              ImageIndex = -1
-              Text = 'Size'
-              Width = 100
-            end
-            item
-              Alignment = taCenter
-              ImageIndex = -1
-              Text = 'Type'
-              Width = 60
-            end
-            item
-              ImageIndex = -1
-              Text = 'On sent'
-              Width = 60
-            end
-            item
-              Alignment = taCenter
-              ImageIndex = -1
-              Text = 'Age'
-              Width = 80
-            end>
-          OnSectionClick = OutMgrHeaderSectionClick
-          OnSectionResize = OutMgrHeaderSectionResize
-        end
-        object OutMgrOutline: TxOutlin
-          Left = 0
-          Top = 21
-          Width = 676
-          Height = 5
-          FileNameCol = 0
-          FixedFont.Charset = DEFAULT_CHARSET
-          FixedFont.Color = clWindowText
-          FixedFont.Height = -13
-          FixedFont.Name = 'MS Sans Serif'
-          FixedFont.Style = []
-          OutlineStyle = osText
-          Options = []
-          Style = otOwnerDraw
-          ItemHeight = 16
-          OnDrawItem = OutMgrOutlineDrawItem
-          Align = alClient
-          Font.Charset = DEFAULT_CHARSET
-          Font.Color = clWindowText
-          Font.Height = -11
-          Font.Name = 'Arial'
-          Font.Style = []
-          TabOrder = 1
-          OnMouseDown = OutMgrOutlineMouseDown
-          OnDblClick = OutMgrOutlineDblClick
-          OnKeyDown = OutMgrOutlineKeyDown
-          BorderStyle = bsNone
-          ItemSeparator = '\'
-          ParentFont = False
-          PopupMenu = OutMgrPopup
-          EraseBackGround = True
-          OnApiDropFiles = OutMgrOutlineApiDropFiles
-          Data = {1F}
         end
       end
       object SystemPanel: TTransPan
@@ -2467,6 +2428,101 @@ object MailerForm: TMailerForm
           end
         end
       end
+      object OutMgrPanel: TTransPan
+        Left = 0
+        Top = 0
+        Width = 676
+        Height = 31
+        BevelOuter = bvNone
+        ParentBackground = False
+        TabOrder = 5
+        Visible = False
+        object OutMgrBevel: TBevel
+          Left = 0
+          Top = 26
+          Width = 676
+          Height = 5
+          Align = alBottom
+          Shape = bsBottomLine
+        end
+        object OutMgrHeader: THeaderControl
+          Left = 0
+          Top = 0
+          Width = 676
+          Height = 21
+          HotTrack = True
+          Sections = <
+            item
+              ImageIndex = -1
+              Text = 'Outbound'
+              Width = 180
+            end
+            item
+              ImageIndex = -1
+              Text = 'Sysop Name'
+              Width = 200
+            end
+            item
+              Alignment = taRightJustify
+              ImageIndex = -1
+              Text = 'Size'
+              Width = 100
+            end
+            item
+              Alignment = taCenter
+              ImageIndex = -1
+              Text = 'Type'
+              Width = 60
+            end
+            item
+              ImageIndex = -1
+              Text = 'On sent'
+              Width = 60
+            end
+            item
+              Alignment = taCenter
+              ImageIndex = -1
+              Text = 'Age'
+              Width = 80
+            end>
+          OnSectionClick = OutMgrHeaderSectionClick
+          OnSectionResize = OutMgrHeaderSectionResize
+        end
+        object OutMgrOutline: TxOutlin
+          Left = 0
+          Top = 21
+          Width = 676
+          Height = 5
+          FileNameCol = 0
+          FixedFont.Charset = DEFAULT_CHARSET
+          FixedFont.Color = clWindowText
+          FixedFont.Height = -13
+          FixedFont.Name = 'MS Sans Serif'
+          FixedFont.Style = []
+          OutlineStyle = osText
+          Options = []
+          Style = otOwnerDraw
+          ItemHeight = 16
+          OnDrawItem = OutMgrOutlineDrawItem
+          Align = alClient
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -11
+          Font.Name = 'Arial'
+          Font.Style = []
+          TabOrder = 1
+          OnMouseDown = OutMgrOutlineMouseDown
+          OnDblClick = OutMgrOutlineDblClick
+          OnKeyDown = OutMgrOutlineKeyDown
+          BorderStyle = bsNone
+          ItemSeparator = '\'
+          ParentFont = False
+          PopupMenu = OutMgrPopup
+          EraseBackGround = True
+          OnApiDropFiles = OutMgrOutlineApiDropFiles
+          Data = {1F}
+        end
+      end
     end
   end
   object MainMenu: TMainMenu
@@ -2481,12 +2537,6 @@ object MailerForm: TMailerForm
         ImageIndex = 0
         ShortCut = 115
         OnClick = mwCreateMirrorClick
-      end
-      object mwRemoteMirror: TMenuItem
-        Caption = 'Mirror (remote)'
-        Enabled = False
-        Visible = False
-        OnClick = mwRemoteMirrorClick
       end
       object mwClose: TMenuItem
         Caption = '&Close Window'

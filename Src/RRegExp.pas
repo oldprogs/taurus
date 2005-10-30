@@ -403,7 +403,6 @@ end;
 
 initialization
 //  InitTables;
-finalization
 //  FreeMem(PcreTables);
 end.
 

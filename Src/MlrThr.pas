@@ -631,6 +631,8 @@ type
     TryBusy,
     TryNoConnect,
     TrySessionAborted: DWORD;
+    TryDialup,
+    TryIp: DWORD;
     Typ: TPollType;
     Keep: boolean;
     Flav: set of TOutStatus;
@@ -989,8 +991,6 @@ type
     MayYooHoo,
     DummyZFrb,
     MayEMSI,
-    MayRCC,
-    RemRCC,
     EMSI_Logged,
     NeedModemStatx,
     InitModemLogged,
@@ -1410,6 +1410,7 @@ var
   CronThr: TCronThread;
   IPPolls: TIPPollsThread;
   EventsThr : TEventsThread;
+  DaemonEvents: TDaemonEventProcessor;
 
 function OpenMailerThread(APort: TPort; ALineId: DWORD; NI: TNewIPLineData; ACW, ACH: Integer): TMailerThread;
 procedure ShowIt(const S: String; ShowBalloonTT: boolean);
@@ -1450,9 +1451,9 @@ uses
    NTdyn, Util, {$IFDEF USEANSI} AnsiColr, {$ENDIF} Watcher,
    LngTools, NdlUtil, Forms, ShellApi, Ras, p_Zmodem, p_Hydra,
    p_Binkp, FTS1, xNiagara, tarif, AltRecs, Plus,
-   p_RCC, p_FTP, p_HTTP, p_SMTP, p_POP3, p_GATE, p_NNTP,
+   p_FTP, p_HTTP, p_SMTP, p_POP3, p_GATE, p_NNTP,
    MlrForm, RasThrd, Netmail, RadIni, Wizard, SysUtils, mmSystem,
-   Reader, xIP, xTAPI, RadSav, UStr;
+   Reader, xIP, xTAPI, RadSav, UStr, DateUtils;
 
 procedure ShowIt(const S: string; ShowBalloonTT: boolean);
 var
@@ -1832,8 +1833,8 @@ var
    CommonLog: TCommonLog;
    Zombies: TColl;
    LastZombiesPurged: EventTimer;
-   DaemonEvents: TDaemonEventProcessor;
    DaemonActiveFlag: TLockFile;
+   QueuedProcessColl: TStringColl;
 
    // --- Service routines
 
@@ -1913,7 +1914,7 @@ begin
    end;
    if (IPPolls <> nil) then begin
       SetEvt(IPPolls.oSleep);
-   end;   
+   end;
 end;
 
 procedure _RecalcPolls;
@@ -1949,11 +1950,111 @@ begin
    end;
 end;
 
-function CronMatchEx(const t: TSystemTime; const c: TCronRecord; AllowPermanent: Boolean): Boolean;
+function CronMatchEx(const t: TSystemTime; const c: TCronRecord; AllowPermanent: Boolean; var age: dword): Boolean;
 const
    DowXlt: array[0..6] of Byte = (6, 0, 1, 2, 3, 4, 5);
+   XltDow: array[0..6] of Byte = (1, 2, 3, 4, 5, 6, 0);
 var
    i: Integer;
+
+   function CalcMatch(const c: TCronRecord): DWORD;
+   var
+      i: integer;
+      m: integer;
+      a: TSystemTime;
+
+   type
+      TDSet = 0..60;
+      TWSet = set of TDSet;
+
+      function PrevMatch(const w: word; s: TWSet): word;
+      var
+         r: word;
+      begin
+         Result := 0;
+         r := w;
+         while not (r in s) and (r > 0) do Dec(r);
+         if r in s then begin
+            Result := r;
+            exit;
+         end;
+         if Result = 0 then begin
+            Result := PrevMatch(60, s);
+         end;
+      end;
+
+      procedure DecY(var a: TSystemTime);
+      begin
+         dec(a.wYear);
+      end;
+
+      procedure DecM(var a: TSystemTime);
+      begin
+         dec(a.wMonth);
+         if a.wMonth = 0 then begin
+            DecY(a);
+            a.wMonth := 12;
+         end;
+      end;
+
+      procedure DecD(var a: TSystemTime; d: integer = 1);
+      begin
+         dec(a.wDay, d);
+         if (a.wDay = 0) or (a.wDay > 31) then begin
+            DecM(a);
+            a.wDay := DaysInAMonth(a.wYear, a.wMonth) + a.wDay;
+         end;
+         dec(a.wDayOfWeek, d);
+         if a.wDayOfWeek > 6 then begin
+            a.wDayOfWeek := 7 + a.wDayOfWeek;
+         end;
+      end;
+
+      procedure DecH(var a: TSystemTime);
+      begin
+         dec(a.wHour);
+         if a.wHour > 24 then begin
+            decD(a);
+            a.wHour := 23;
+         end;
+      end;
+
+   begin
+      Result := 0;
+      a := t;
+      for i := 0 to c.Count - 1 do begin
+         m := PrevMatch(a.wMinute, c.p^[i].Minutes);
+         if m > a.wMinute then begin
+            decH(a);
+         end;
+         a.wMinute := m;
+         m := PrevMatch(a.wHour, c.p^[i].Hours);
+         if m > a.wHour then begin
+            DecD(a);
+         end;
+         a.wHour := m;
+         m := PrevMatch(DowXlt[a.wDayOfWeek], c.p^[i].Dows);
+         if m < DowXlt[a.wDayOfWeek] then begin
+            DecD(a, DowXlt[a.wDayOfWeek] - m);
+         end else
+         if m > DowXlt[a.wDayOfWeek] then begin
+            DecD(a, 7 - m + DowXlt[a.wDayOfWeek]);
+         end;
+         m := PrevMatch(a.wDay - 1, c.p^[i].Days);
+         if m > a.wDay - 1 then begin
+            DecM(a);
+         end;
+         a.wDay := m + 1;
+         a.wDayOfWeek := XltDow[DayOfTheWeek(SystemTimeToDateTime(a)) - 1];
+         m := PrevMatch(a.wMonth - 1, c.p^[i].Months);
+         if m > a.wMonth - 1 then begin
+            DecY(a);
+         end;
+         a.wMonth := m + 1;
+         if CalcTime(a) > Result then Result := CalcTime(a);
+      end;
+   end;
+
 begin
    if c.IsPermanent then begin
       Result := True;
@@ -1966,19 +2067,34 @@ begin
             (t.wDay - 1 in c.p^[i].Days) and
             (t.wMonth - 1 in c.p^[i].Months) and
             (DowXlt[t.wDayOfWeek] in c.p^[i].Dows);
-         if Result then Exit;
+         if Result then begin
+            c.Delay := False;
+            c.Match := t;
+            age := 0;
+            exit;
+         end else begin
+            age := CalcTime(t) - CalcMatch(c);
+            if CalcTime(c.Match) < CalcMatch(c) then begin
+               Result := True;
+               c.Delay := True;
+               c.Match := t;
+               exit;
+            end;
+         end;
       end;
    end;
 end;
 
 function CronMatch(const t: TSystemTime; const c: TCronRecord): Boolean;
+var
+   a: dword;
 begin
-   Result := CronMatchEx(t, c, False);
+   Result := CronMatchEx(t, c, False, a);
 end;
 
-function CronMatchP(const t: TSystemTime; const c: TCronRecord): Boolean;
+function CronMatchP(const t: TSystemTime; const c: TCronRecord; var age: dword): Boolean;
 begin
-   Result := CronMatchEx(t, c, True);
+   Result := CronMatchEx(t, c, True, age);
 end;
 
 function PollOwnerName(p: TFidoPoll): string;
@@ -1999,8 +2115,8 @@ var
    PP: TPollPtr;
 begin
    Result := nil;
+   OwnPolls.Enter;
    try
-      OwnPolls.Enter;
       for i := CollMax(OwnPolls) downto 0 do begin
          PP := OwnPolls[i];
          if P = PP.Poll then begin
@@ -2081,11 +2197,10 @@ begin
       end;
       if (P.Typ <> ptpManual) and
          (P.Typ <> ptpImm) and
-         (P.Typ <> ptpRCC) and
          (P.Typ <> ptpBack) and
          (P.Typ <> ptpNmIm) then
       begin
-         t := NodeFSC62TimeEx(d.Flags, P.Node.Addr, False);
+         t := NodeFSC62TimeEx(d.Flags, P.Node.Addr, False, not Dialup);
          if not (TQ in t) then begin
             if SC <> nil then LogThis('!', Format('%s (%s UTC / %s Local)', [LngStr(rsMMpiNWT), FSC62TimeToStr(t), FSC62TimeToStr(NodeFSC62TimeEx(d.Flags, P.Node.Addr, True))]));
             Continue;
@@ -2116,7 +2231,7 @@ begin
    end else begin
       ss := ss + ' failed';
    end;
-   p.Reset;
+//   p.Reset;
    p.Typ := ptpOutb;
    MailerTransit.Enter;
    For i := CollMax(MailerTransit) downto 0 do begin
@@ -2133,7 +2248,7 @@ begin
             end;
             if (m.SD <> nil) and (m.SD.Prot <> nil) then begin
                m.SD.Prot.SendTRSMSG(s, c);
-            end;   
+            end;
          end;
       end;
       SetEvt(m.oEvt);
@@ -2168,7 +2283,6 @@ var
       end;
       if (p.Typ <> ptpManual) and
          (p.Typ <> ptpImm) and
-         (p.Typ <> ptpRCC) and
          (p.Typ <> ptpBack) and
          (p.Typ <> ptpNmIm) then
       begin
@@ -2190,7 +2304,6 @@ var
       end;
       if (p.Typ <> ptpManual) and
          (p.Typ <> ptpImm) and
-         (p.Typ <> ptpRCC) and
          (p.Typ <> ptpBack) and
          (p.Typ <> ptpNmIm) and
         ((p.CountersExceeded) or (p.FileSendDelayedBusy) or (p.FileSendDelayedNoc) or (p.FileSendDelayedFail)) then
@@ -2344,7 +2457,6 @@ begin
                   s := Format('Address %s is busy', [Addr2Str(p.Node.Addr)]);
                   if (p.Typ = ptpManual) or
                      (p.Typ = ptpImm) or
-                     (p.Typ = ptpRCC) or
                      (p.Typ = ptpBack) or
                      (p.Typ = ptpNmIm) then
                   begin
@@ -2480,10 +2592,10 @@ var
    AP: TFidoPoll;
     I: Integer;
 const
-   CTyp: array[TPollType] of string = ('???', 'Outb', 'MSG', 'Cron', 'Test', 'Manual', 'Outb/Imm', 'Callback', 'Mirror', 'MSG/Imm');
+   CTyp: array[TPollType] of string = ('???', 'Outb', 'MSG', 'Cron', 'Test', 'Manual', 'Outb/Imm', 'Callback', 'MSG/Imm');
 begin
    Result := False;
-   if FidoPolls = nil then exit;
+   if FidoPolls = nil then begin FreeObject(ANode); exit; end;
    EnterFidoPolls;
    AP := nil;
    for I := 0 to CollMax(FidoPolls) do begin
@@ -2525,6 +2637,9 @@ begin
       MailerThreads.Leave;
       if IPPolls <> nil then InsertOwnPoll(IPPolls.OwnPolls, P);
       AP := P;
+      if IPPolls <> nil then begin
+         SetEvt(IPPolls.oSleep);
+      end;
    end;
    if (AP.Typ = ptpTest) then begin
       if (OldTyp <> ptpTest) then begin
@@ -2634,8 +2749,8 @@ var
    m: TMailerThread;
 begin
    Result := False;
+   MailerThreads.Enter;
    try
-      MailerThreads.Enter;
       for i := 0 to CollMax(MailerThreads) do begin
          m := MailerThreads[i];
          if m.DialupLine then Continue;
@@ -2875,7 +2990,19 @@ var
     SetFlag: Boolean;
    ShowMode: TExecShowMode;
    ss: string;
+   ii: integer;
+   pc: TColl;
 begin
+   pc := Alogger.GetProcessColl;
+   if pc.Count > 0 then begin
+      QueuedProcessColl.Enter;
+      QueuedProcessColl.Add(Astr);
+      QueuedProcessColl.Objects[QueuedProcessColl.IdxOf(Astr)] := ALogger;
+      QueuedProcessColl.Leave;
+      ALogger.Log(ltInfo, 'Process queued: ' + Astr);
+      Result := True;
+      exit;
+   end;
    ss := AStr;
    Result := CheckExecPrefixes(ss, Priority, Detached, ShowMode, SetFlag);
    if not Result then begin
@@ -2945,7 +3072,6 @@ begin
       piPOP3: Result := CreatePOP3Protocol(CP);
       piGATE: Result := CreateGATEProtocol(CP);
       piNNTP: Result := CreateNNTPProtocol(CP);
-      piRCC:  Result := CreateRCCProtocol(CP);
       piFTS1: Result := CreateFTS1Protocol(CP);
       piZmodem,
       piZmodem8K,
@@ -3066,6 +3192,19 @@ begin
    CfgEnter;
    Result := StrAsg(Cfg.Passwords.Password(Addr));
    CfgLeave;
+end;
+
+procedure SetPassword(const Addr: TFidoAddress; const Pass: string);
+var
+   pr: TPasswordRec;
+begin
+   CfgEnter;
+   pr := TPasswordRec.Create;
+   pr.AddrList.Add(Addr);
+   pr.PswStr := StrAsg(Pass);
+   Cfg.Passwords.Add(pr);
+   CfgLeave;
+   StoreConfig(0);
 end;
 
 function GetPasswordEvt(const Addr: TFidoAddress; EP: TMailerThreadEventProcessor): string;
@@ -3211,8 +3350,6 @@ begin
    if (NI <> nil) and (NI.Poll <> nil) then begin
       NI.Poll.Owner := m;
       m.SD.ActivePoll := NI.Poll;
-   end else begin
-      m.SD.MayRCC := True;
    end;
    FreeObject(NI);
 
@@ -3396,12 +3533,12 @@ var
    l: TLineRec;
    i: DWORD;
 begin
+   CfgEnter;
    repeat
       i := GlobalEvtUpdateTick;
       if i = UpdateTick then Break;
       UpdateTick := i;
       FreeIds;
-      CfgEnter;
       if LineId = 0 then
          RefillEx(Cfg.IpEvtIds.EvtCnt, Cfg.IpEvtIds.EvtIds)
       else begin
@@ -3409,8 +3546,8 @@ begin
          if l.Id <> LineId then GlobalFail('%s', ['TMailerThreadEventProcessor.Refill']);
          RefillEx(l.EvtCnt, l.EvtIds);
       end;
-      CfgLeave;
    until False;
+   CfgLeave;
 end;
 
 constructor TDaemonEventProcessor.Create;
@@ -3460,6 +3597,7 @@ var
    Code: DWORD;
 begin
    ProcessColl := GetProcessColl;
+   ProcessColl.Enter;
    for i := CollMax(ProcessColl) downto 0 do begin
       ProcNfo := ProcessColl[i];
       if not GetExitCodeProcess(ProcNfo.PI.hProcess, Code) then Code := 0;
@@ -3470,6 +3608,18 @@ begin
       Zombies.Leave;
       ProcessColl.AtDelete(i);
    end;
+   QueuedProcessColl.Enter;
+   for i := 0 to QueuedProcessColl.Count - 1 do begin
+      if QueuedProcessColl.Objects[i] = Self then begin
+         if ProcessColl.Count = 0 then begin
+            AddToExec(QueuedProcessColl[i], QueuedProcessColl.Objects[i]);
+            QueuedProcessColl.AtDelete(i);
+            break;
+         end;
+      end;
+   end;
+   QueuedProcessColl.Leave;
+   ProcessColl.Leave;
 end;
 
 procedure TAbstractLogger.LeaveProcesses;
@@ -3480,6 +3630,7 @@ var
 begin
    TestRunningProcesses;
    ProcessColl := GetProcessColl;
+   ProcessColl.Enter;
    Zombies.Enter;
    for i := 0 to CollMax(ProcessColl) do begin
       ProcNfo := ProcessColl[i];
@@ -3488,6 +3639,7 @@ begin
    end;
    Zombies.Leave;
    ProcessColl.DeleteAll;
+   ProcessColl.Leave;
 end;
 
 function TAbstractLogger.ChkErrMsg;
@@ -3853,6 +4005,8 @@ begin
    TryBusy := 0;
    TryNoConnect := 0;
    TrySessionAborted := 0;
+   TryDialup := 0;
+   TryIp := 0;
 end;
 
 procedure TFidoPoll.IncNoConnectTries;
@@ -3904,7 +4058,8 @@ begin
       s := '';
       SendTRSMSG(Self, 'NAK', s);
       FidoPollsLog(s);
-      Typ := ptpOutb;
+//      Typ := ptpOutb;
+      self.Done := pdnOK;
    end;
 end;
 
@@ -4109,12 +4264,6 @@ begin
    Result := cREQ;
    if SD.NiagaraAllowed then
    begin
-      if SD.MayRCC then
-      begin
-         Result := Result +
-                   EMSI_RCC +
-                   EMSI_CR;
-      end;
       Result := Result + EMSI_PZT + EMSI_CR;
    end;
 end;
@@ -4238,7 +4387,7 @@ begin
    else begin
       if not DialupLine then begin
          Sleep(500); // wait to drain out
-         FreeCP
+         FreeCP;
       end else begin
          Sleep(200); // wait to drain out
          DoRemoveNiagara;
@@ -4377,14 +4526,13 @@ begin
    if SD = nil then exit;
    if SD.Prot = nil then exit;
    if SD.rmtAddrs = nil then exit;
-   EnterCS(DisplayDataCS);
+//   EnterCS(DisplayDataCS);
    ScanOut(True);
    SD.OutFiles.PurgeDuplicates(SD.TxMail, SD.TxFiles);
-   LeaveCS(DisplayDataCS);
-   if SD.OutFiles.Count > 0 then
-   begin
-      if SD.Prot is TBiDirProtocol then
-      begin
+   PublicD.txTot := SD.txMail + SD.TxFiles;
+//   LeaveCS(DisplayDataCS);
+   if SD.OutFiles.Count > 0 then begin
+      if SD.Prot is TBiDirProtocol then begin
          TBiDirProtocol(SD.Prot).StartBatch;
       end;
    end;
@@ -4871,6 +5019,8 @@ const
             Exit;
          end else
          if (OurPwd <> '-') and (UpperCase(OurDig) = UpperCase(P.CustomInfo)) then begin
+            SD.rmtPrimaryAddr := SD.rmtAddrs[c];
+            SD.rmtAddrs.MoveTo(c, 0);
             break;
          end;
          end;
@@ -4886,14 +5036,17 @@ const
          for i := 0 to CollMax(SD.rmtAddrs) do begin
             n := FindNode(SD.rmtAddrs[i]);
             if n <> nil then begin
-               for j := 0 to CollMax(n.IPData) do begin
-                  d := n.IPData[j];
-                  if pos('CRYPT', d.Flags) > 0 then begin
-                     P.CustomInfo := 'CRYPT';
-                     exit;
+               try
+                  for j := 0 to CollMax(n.IPData) do begin
+                     d := n.IPData[j];
+                     if pos('CRYPT', d.Flags) > 0 then begin
+                        P.CustomInfo := 'CRYPT';
+                        exit;
+                     end;
                   end;
+               finally
+                  FreeObject(n);
                end;
-               FreeObject(n);
             end;
          end;
       end;
@@ -4949,6 +5102,9 @@ const
       n: TAdvNode;
    begin
       Log(ltInfo, 'Remote requested to test transit to: ' + P.CustomInfo);
+      if ParseAddress(P.CustomInfo, a) and (SD.rmtAddrs.IndexOf(@a) > -1) then begin
+         P.CustomInfo := 'ACK';
+      end else
       if ParseAddress(P.CustomInfo, a) then begin
          n := FindNode(a);
          if (n <> nil) and (n.IPData <> nil) then begin
@@ -5056,6 +5212,7 @@ begin
       lfNodePassw: FindPassword(P.FiAddr, P);
       lfChat: Log(ltInfo, 'Remote supports interactive chat');
       lfGZIP: Log(ltInfo, 'Switching to compression mode');
+      lfSZIP: Log(ltInfo, 'Switching to stream compression mode');
       lfPZIP: Log(ltInfo, 'Switching to packet compression mode');
       lfNZIP: Log(ltInfo, 'Switching to noncompression mode');
       lfDYNA: Log(ltInfo, 'Remote supports multiple batches');
@@ -5123,6 +5280,33 @@ begin
                   (o.Name = f.Orig) then
                begin
                   n.Files.AtFree(j);
+                  exit;
+               end;
+            end;
+         end;
+      end;
+   finally
+      LeaveCS(OutMgrThread.NodesCS);
+   end;
+end;
+
+procedure ChgNodeOutBound(f: TOutFile);
+var
+   i: integer;
+   j: integer;
+   o: TOutFile;
+   n: TOutNode;
+begin
+   try
+      EnterCS(OutMgrThread.NodesCS);
+      for i := 0 to CollMax(OutMgrThread.Nodes) do begin
+         n := OutMgrThread.Nodes[i];
+         if CompareAddrs(f.Address, n.Address) = 0 then begin
+            for j := 0 to CollMax(n.Files) do begin
+               o := n.Files[j];
+               if (o.Name = f.Orig) then begin
+                  n.Files[j] := f.Copy;
+                  FreeObject(o);
                   exit;
                end;
             end;
@@ -5208,6 +5392,12 @@ var
    //visual x}
 
 begin
+   i := 0;
+   while ScanActive do begin
+      Sleep(100);
+      inc(i);
+      if i = 200 then break;
+   end;
    if (SD.rmtAddrs = nil) and (SD.ActivePoll <> nil) then begin
       SD.rmtAddrs := TFidoAddrColl.Create;
       SD.rmtAddrs.Add(SD.ActivePoll.Node.Addr);
@@ -5248,7 +5438,10 @@ begin
       end;
       if (IniFile.DynamicRouting or IniFile.ScanMSG) and
          (SD.PasswordProtected or (SD.ActivePoll <> nil)) and
-         (NetmailHolder <> nil) and not (SD.SessionCore in [scNNTP]) then NetmailHolder.Route(SD.rmtAddrs[n], SD.rmtPassword, SD.ActivePoll <> nil, Log);
+         (NetmailHolder <> nil) and not (SD.SessionCore in [scNNTP]) then
+      begin
+         NetmailHolder.Route(SD.rmtAddrs[n], SD.rmtPassword, SD.ActivePoll <> nil, Log);
+      end;
    end;
    N := 0;
    TransmitHold := SD.ActivePoll = nil;
@@ -5298,11 +5491,7 @@ begin
       LogOnce(ltInfo, 'ZMH event in progress. Outgoing trafic is restricted');
    end;
 
-   EnterCS(DisplayDataCS);
-//   SD.txMail := SD.txTran;
-//   SD.txMail := 0;
    txMl := 0;
-//   SD.txFiles := 0;
    txFl := 0;
    SD.OutFiles.FreeAll;
 
@@ -5494,15 +5683,6 @@ begin
    FreeObject(TransmitRequired);
    FreeObject(TransmitForbidden);
 
-   if not SD.WeHaveReported then begin
-      SD.WeHaveReported := True;
-      if (txMl + txFl = 0) then
-         Log(ltInfo, 'Nothing for them')
-      else begin
-         LogFmt(ltInfo, 'We have %sb of mail and %sb of files for them', [Int2Str(txMl), Int2Str(txFl)]);
-      end;
-      if ProtCore in [ptBinkP, ptPOP3, ptGATE] then SD.Prot.ReportTraf(txMl, txFl);
-   end;
    Ok := True;
    SD.OutFiles.Enter;
    SD.OutFiles.PurgeDuplicates(txMl, txFl);
@@ -5530,12 +5710,22 @@ begin
       txFl := txFl + tof.Nfo.Size;
    end;
    SD.SentFiles.Leave;
-   LeaveCS(DisplayDataCS);
    IgnoreNextEvent := False;
    if txMl + txFl > SD.txMail + SD.txFiles then begin
       SD.txMail  := txMl;
       SD.txFiles := txFl;
-   end;   
+      PublicD.txTot := txMl + txFl;
+   end;
+   if not SD.WeHaveReported then begin
+      SD.WeHaveReported := True;
+      if (txMl + txFl = 0) then
+         Log(ltInfo, 'Nothing for them')
+      else begin
+         LogFmt(ltInfo, 'We have %sb of mail and %sb of files for them', [Int2Str(txMl), Int2Str(txFl)]);
+      end;
+      if ProtCore in [ptBinkP, ptPOP3, ptGATE] then SD.Prot.ReportTraf(txMl, txFl);
+   end;
+   UpdateData;
 end;
 
 function TMailerThread.AcceptFile(P: TBaseProtocol): TTransferFileAction;
@@ -5691,6 +5881,24 @@ function TMailerThread.AcceptFile(P: TBaseProtocol): TTransferFileAction;
          end;
          if Match then begin
             LogFmt(ltWarning, '"%s" will be deleted at remote, reason is "%s" forbidden, matched "%s"', [P.R.D.FName, osss, sss]);
+            Result := aaRefuse;
+            Exit;
+         end;
+      end;
+
+      d := EP.DwordValueD(eiAccFilesSiz, 0);
+      if d > 0 then begin
+         if (P.R.d.FSize > d * 1024) then begin
+            LogFmt(ltWarning, '"%s" (%dKb) will be accepted later, reason is filesize exceeds %dKb', [P.R.D.FName, P.R.d.FSize div 1024, d]);
+            Result := aaAcceptLater;
+            Exit;
+         end;
+      end;
+
+      d := EP.DwordValueD(eiDelFilesSiz, 0);
+      if d > 0 then begin
+         if (P.R.d.FSize > d * 1024) then begin
+            LogFmt(ltWarning, '"%s" (%dKb) will be deleted at remote, reason is filesize exceeds %dKb', [P.R.D.FName, P.R.d.FSize div 1024, d]);
             Result := aaRefuse;
             Exit;
          end;
@@ -6591,8 +6799,10 @@ begin
                      if SD.HReqDelete.Search(@r.Name, I) then SD.HReqDelete.AtFree(I);
                   end;
                   FidoOut.Lock(r.Address, osBusy, True);
+                  IgnoreNextEvent := True;
                   DeleteOutFile(r.Name);
                   if r.Twin <> '' then begin
+                     IgnoreNextEvent := True;
                      DeleteOutFile(r.Twin);
                   end;
                   OA := True;
@@ -6600,6 +6810,7 @@ begin
             kaBsoTruncateAfter:
                begin
                   P.T.Stream.Seek(0, FILE_BEGIN);
+                  IgnoreNextEvent := True;
                   SetEndOfFile(TDosStream(P.T.Stream).Handle);
                   FreeObject(P.T.Stream);
                   OA := True;
@@ -6607,6 +6818,7 @@ begin
             kaFbKillAfter:
                begin
                   FreeObject(P.T.Stream);
+                  IgnoreNextEvent := True;
                   if not DelFile('FinishSend', PChar(r.Name)) then begin
                      LogFmt(ltWarning, 'Cannot delete %s (%s)', [r.Name, SysErrorMessage(GetLastError)]);
                   end else begin
@@ -6618,10 +6830,12 @@ begin
                   FreeObject(P.T.Stream);
                   st := r.Status;
                   MoveTo := ReplaceDirMacro(r.MoveTo, @r.Address, @st, [rmkTime, rmkAddr, rmkStatus], nil);
+                  IgnoreNextEvent := True;
                   if not CreateDirInheritance(MoveTo) then begin
                      ChkErrMsg;
                   end else begin
                      sss := MakeNormName(MoveTo, ExtractFileName(r.Name));
+                     IgnoreNextEvent := True;
                      ok := MoveFileSmart(r.Name, sss, True, Overwritten);
                      if Overwritten then LogOverwritten(sss);
                      if not ok then
@@ -6643,6 +6857,7 @@ begin
                if inifile.DynamicOutbound then begin
                   FidoOut.Lock(r.Address, osBusy, True);
                end;
+               IgnoreNextEvent := True;
                FidoOut.DeleteFile(r.Address, r.Name, r.FStatus);
                if inifile.DynamicOutbound then begin
                   sss := GetOutFileName(r.Address, osNone);
@@ -6716,6 +6931,7 @@ begin
                LogFmt(ltWarning, 'Remote will accept ''%s'' later', [P.T.D.FName]);
                if (r <> nil) and (r.Orig <> '') and (r.Link = '') then begin
                   FreeObject(P.T.Stream);
+                  IgnoreNextEvent := True;
                   MergeMail(r.Address, r.Name, r.Orig);
                end;
             end;
@@ -6725,6 +6941,7 @@ begin
                LogFmt(ltWarning, 'Protocol aborted while sending ''%s''', [P.T.D.FName]);
                if (r <> nil) and (r.Orig <> '') and (r.Link = '') then begin
                   FreeObject(P.T.Stream);
+                  IgnoreNextEvent := True;
                   MergeMail(r.Address, r.Name, r.Orig);
                end;
             end;
@@ -6735,6 +6952,7 @@ begin
    FreeObject(P.T.Stream);
    if P.SendFTPFile then begin
       if (r <> nil) and (r.Orig <> '') and (r.Link = '') then begin
+         IgnoreNextEvent := True;
          MergeMail(r.Address, r.Name, r.Orig);
          r.Name := r.Orig;
          r.Orig := '';
@@ -6748,6 +6966,10 @@ begin
       end;
    end else
    if r <> nil then begin
+      SD.SentFiles.Enter;
+      SD.SentFiles.Insert(r);
+      SD.SentFiles.Leave;
+      DelNodeOutbound(r);
       SD.OutFiles.Enter;
       for i := CollMax(SD.OutFiles) downto 0 do begin
          t := SD.OutFiles[i];
@@ -6756,10 +6978,6 @@ begin
          end;
       end;
       SD.OutFiles.Leave;
-      SD.SentFiles.Enter;
-      SD.SentFiles.Insert(r);
-      SD.SentFiles.Leave;
-      DelNodeOutbound(r);
    end;
    SD.txTran := 0;
    Inc(D.txBytes, P.T.D.FSize);
@@ -6796,7 +7014,7 @@ var
 
    procedure Fre0;
    begin
-      Inc(D.TxBytes, F.Nfo.Size);
+//      Inc(D.TxBytes, F.Nfo.Size);
       if SD.DisabledFiles = nil then SD.DisabledFiles := TStringColl.Create;
       SD.DisabledFiles.Ins(UpperCase(f.Name));
       SD.OutFiles.Enter;
@@ -6821,7 +7039,7 @@ begin
             P.OutFiles.Add(JustFileName(f.Orig) + ' ' + inttostr(f.Nfo.Size));
             P.OutPaths.Add(f.Orig);
          end else begin
-            P.OutFiles.Add(StrQuote(JustFileName(f.Name)) + ' ' + inttostr(f.Nfo.Size));
+            P.OutFiles.Add(StrQuote(StripTmp(JustFileName(f.Name))) + ' ' + inttostr(f.Nfo.Size));
             P.OutPaths.Add(f.Name);
          end;
       end;
@@ -7002,6 +7220,7 @@ begin
                FidoOut.Lock(f.Address, osBusy, True);
                IgnoreNextEvent := True;
                RenameFile(f.Orig, f.Name);
+               DelNodeOutbound(f);
                SD.txTran := f.Nfo.Size;
                FidoOut.Unlock(f.Address, osBusy);
             end;
@@ -7015,7 +7234,9 @@ begin
                f.Orig := f.Name;
                f.Name := GetOutFileName(F.Address, osNone) + '.TMP\' + ExtractFileName(F.Name) + '.TMP';
                FidoOut.Lock(f.Address, osBusy, True);
+               IgnoreNextEvent := True;
                CreateDir(ExtractFilePath(F.Name));
+               IgnoreNextEvent := True;
                if f.Link <> '' then begin
                   l := TStringColl.Create;
                   zzz := f.Link;
@@ -7034,6 +7255,7 @@ begin
                end;
                IgnoreNextEvent := True;
                RenameFile(f.Orig, f.Name);
+               ChgNodeOutbound(f);
                if f.KillAction = kaBsoTruncateAfter then begin
                   IgnoreNextEvent := True;
                   s := CreateDosStream(f.Orig, [cWrite]);
@@ -7041,6 +7263,8 @@ begin
                   f.KillAction := kaFbKillAfter;
                end;
                FidoOut.Unlock(f.Address, osBusy);
+            end else begin
+               //
             end;
             PTDFName := JustName(f.Name);
          end;
@@ -7056,8 +7280,8 @@ begin
       s := CreateDosStream(f.Name, cf);
 
       if s = nil then begin
-         SetErrorMsg(f.Name);
-         ChkErrMsg;
+//         SetErrorMsg(f.Name);
+//         ChkErrMsg;
          Fre0;
          Continue;
       end;
@@ -7267,7 +7491,9 @@ begin
    for i := 0 to CollMax(SD.rmtAddrs) do begin
       a := SD.rmtAddrs[I];
       s := GetPassword(a, EP);
-      if s = '' then Continue;
+      if s = '' then begin
+         Continue;
+      end;
       SD.locPassword := s;
       if UpperCase(s) = RmtPwdU then begin
          if not SD.rmtPwdAddrSet then begin
@@ -7306,6 +7532,10 @@ begin
    if (SD.ActivePoll = nil) and (not RemoteListed) and (EP.BoolValueD(eiAccListed, False)) then begin
       Log(ltWarning, 'Incoming sessions with unlisted nodes are forbidden by atom "Accept Nodes Only Listed"');
       Exit;
+   end;
+
+   if IniFile.AllowAddPassword and (RmtPwdU <> '') and (not SD.rmtPwdAddrSet) then begin
+      SetPassword(SD.rmtPrimaryAddr, RmtPwd);
    end;
 
    Result := True;
@@ -7981,8 +8211,6 @@ begin
    msHSh_s1c:
       begin
          SetTmr1(toEMSI_CR, msHSh_s1t);
-         //visual. Send <CR> until ANY character is received.
-         if SD.MayRCC then SendStr(EMSI_RCC) else
          if length(SD.InB) > 0 then begin
             SD.Tries := 0;
             SetTmr1(1, msHSh_s1t);
@@ -8012,24 +8240,15 @@ begin
             end;
          es_NOC: State := msSE_SessionAborted;
          es_REQ:
-            if SD.MayRCC then exit else
             if SD.MayEMSI then
                State := msEMSI_c1z
             else
                SUnExp;
          es_PZT:
-            if SD.MayRCC then exit else
             if SD.NiagaraAllowed then
                State := msHSh_TCP
             else
                SUnExp;
-         es_RCC:
-            begin
-               if SD.NiagaraAllowed or not DialupLine then begin
-                  State := msHSh_TCP;
-               end;
-               SD.RemRCC := True;
-            end;
          else
             SUnExp;
          end;
@@ -8088,7 +8307,6 @@ begin
       begin
          ClearTmr1;
          SendStr(__EMSI_REQ);
-         if SD.MayRCC then SendStr(EMSI_RCC);
          if SD.Station = nil then GetStationData;
          SendStr(SD.LogonBanner);
          State := msHSh_r2;
@@ -8140,12 +8358,6 @@ begin
                   State := msHSh_TCP
                else
                   RUnExp;
-            es_RCC:
-               if SD.NiagaraAllowed or not DialupLine then begin
-                  State := msHSh_TCP;
-                  SD.RemRCC := True;
-               end else
-                  RUnExp;
             es_INQ,
             es_DATerror:
                if SD.MayEMSI then
@@ -8180,42 +8392,13 @@ end;
 
 procedure TMailerThread.LogEMSIData;
 const
-   CNone = Pointer($FFFFFFFF);
+   CNone = nil;
 var
    REP: TPCRE;
    dt: TDateTime;
    localt : boolean;
 
-   (*Procedure EmsiXDateTimeToDateTime written by *)
-   (*        Vladislav Irdullin (2:5093/55.111)   *)
-
-     { 'Fri, 01 Jun 2001 17:53:27 +0600' }
-     { \D+,\s\d+\s\D+\s\d+\s\d+:\d+:\d+\s\+\d+
-     {  1234567890123456789012345678901  }
-     {           1         2         3   }
-
    function EmsiXDateTimeToDateTime(const s: string; local: boolean): TDateTime;
-
-      (*    function MonthToInt(m: pchar): Integer;//assembler;
-          const
-            Months: Array[1..12] Of PChar =
-              ('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec');
-          begin
-            result:=0;
-                 if lstrcmp(m,Months[1]{'Jan'})=1 then Result := 1
-            else if lstrcmp(m,'Feb')=1 then Result := 2
-            else if lstrcmp(m,'Mar')=1 then Result := 3
-            else if lstrcmp(m,'Apr')=1 then Result := 4
-            else if lstrcmp(m,'May')=1 then Result := 5
-            else if lstrcmp(m,'Jun')=1 then Result := 6
-            else if lstrcmp(m,'Jul')=1 then Result := 7
-            else if lstrcmp(m,'Aug')=1 then Result := 8
-            else if lstrcmp(m,'Sep')=1 then Result := 9
-            else if lstrcmp(m,'Oct')=1 then Result := 10
-            else if lstrcmp(m,'Nov')=1 then Result := 11
-            else if lstrcmp(m,'Dec')=1 then Result := 12;
-          end;
-      *)
 
     function MonthToInt(m: pchar): word;//(c) by Denis Voituk 2:5012/38
     asm
@@ -8322,10 +8505,15 @@ begin
 
    if SD.rmtPrimaryAddrSet then begin
       if (DS.rmtStationName = '') and ObtainNode then DS.rmtStationName := Node.Station;
+      FreeObject(Node);
       if (DS.rmtSysopName = '') and ObtainNode then DS.rmtSysopName := Node.Sysop;
+      FreeObject(Node);
       if (DS.rmtLocation = '') and ObtainNode then DS.rmtLocation := Node.Location;
+      FreeObject(Node);
       if (DS.rmtPhone = '') and ObtainNode then DS.rmtPhone := Node.Phone;
+      FreeObject(Node);
       if (DS.rmtFlags = '') and ObtainNode then DS.rmtFlags := Node.Flags;
+      FreeObject(Node);
    end;
 
    if (SD.SessionCore = scEmsiWz) or (DS.rmtStationName <> '') then
@@ -8404,6 +8592,8 @@ begin
    if not (SD.SessionCore in [scBinkP, scFTP, scHTTP, scSMTP, scPOP3, scGATE, scNNTP]) and (SD.ActivePoll = nil) then begin
       CP.SendString('(CONNECT ' + DS.ConnectString + ')'#13#10);
    end;
+   CP.Rec := 0;
+   CP.Snd := 0;
 end;
 
 procedure TMailerThread.FilterProtocols(const AFlags: string);
@@ -8477,14 +8667,6 @@ begin
    OutPoll := SD.ActivePoll <> nil;
    SD.ConnectStart := uGetSystemTime;
    LogConnect;
-   if OutPoll and (SD.ActivePoll.Typ = ptpRCC) then begin
-      SD.MayRCC := True;
-      SD.NiagaraAllowed := True;
-      exit;
-   end else
-   if not OutPoll then begin
-      SD.MayRCC := True;
-   end;
    CfgEnter;
    SD.AcceptReq := not (foDisable in Cfg.FreqData.Options);
    CfgLeave;
@@ -8517,7 +8699,6 @@ begin
          {based on access server, which connect remote FTN-mailer}
          {with Argus via TCP/IP chanel}
          SD.NiagaraAllowed := SD.NiagaraAllowed and ((DialupLine or (ProtCore = ptifcico)) and (not EP.VoidFound(eiNiagara[OutPoll]))); // visual
-         SD.MayRCC := ((SD.MayRCC and SD.NiagaraAllowed) or not DialupLine) and not OutPoll;
          SD.MayEMSI := SD.MayEMSI and (not EP.VoidFound(eiEMSI[OutPoll]));
          SD.MayYooHoo := SD.MayYooHoo and (not EP.VoidFound(eiYooHoo[OutPoll]));
       end else begin
@@ -8654,24 +8835,6 @@ procedure TMailerThread.DoWZ;
    begin
       IsDialUp := DialUpLine;
       prec.tzshift := SD.tzshift;
-      if SD.MayRCC and SD.RemRCC then begin
-        prec.ChatEnabled := false;
-        prec.CrypEnabled := false;
-        prec.Addr := SD.rmtPrimaryAddr;
-        prec.Sysop := '';
-        prec.Station := '';
-        prec.LogFName := LogFName;
-        Result := CreateTransferProtocol(piRCC, CP, [], IsZModem, '', prec);
-      end else
-      if SD.MayRCC and (SD.ActivePoll <> nil) then begin
-        prec.ChatEnabled := false;
-        prec.CrypEnabled := false;
-        prec.Addr := SD.rmtPrimaryAddr;
-        prec.Sysop := '';
-        prec.Station := '';
-        prec.LogFName := LogFName;
-        Result := CreateTransferProtocol(piRCC, CP, [], IsZModem, '', prec);
-      end else
       if SD.ActivePoll <> nil then begin
         ChatEnabled := IniFile.ChatEnabled;
         s := EP.StrValue(eiChatEnabled);
@@ -8790,10 +8953,7 @@ procedure TMailerThread.DoWZ;
       SD.rmtPassword := ShortBuf2Str(SD.YooHooPkt.d.my_password, 8);
       i := SD.YooHooPkt.d.product;
       SD.rmtMailerCode := Int2Hex(i);
-      if (i <= MaxProductCode) and (i >= 0) then
-         SD.rmtMailerName := SProdCodes[i]
-      else
-         SD.rmtMailerName := SD.rmtMailerCode;
+      SD.rmtMailerName := SD.rmtMailerCode;
       DS.rmtSoft := Format('%s/%s', [SD.rmtMailerName, SD.rmtMailerVersion]);
 
       Addr.Zone := SD.YooHooPkt.d.my_zone;
@@ -8887,8 +9047,7 @@ procedure TMailerThread.DoWZ;
       begin
          CP.SendString(ccYooHooHdr);
          CRC := CRC16USD_INIT;
-         for I := 0 to 127 do
-         begin
+         for I := 0 to 127 do begin
             crc := UpdateCrc16Usd(PxByteArray(@pkt)^[i], crc);
          end;
          crc := UpdateCrc16Usd(0, CRC);
@@ -8981,7 +9140,7 @@ procedure TMailerThread.DoWZ;
          p := FidoPolls[i];
          if (p.Typ <> ptpTest) and (p.FileSendDelayedNoc or FidoOut.Paused(p.Node.Addr)) then begin
             if SD.Prot.TRSList.Matched(Addr2Str(p.Node.Addr)) = -1 then begin
-               if not SD.rmtAddrs.Search(@p.Node.Addr, j) then begin
+               if not SD.rmtAddrs.Search(@p.Node.Addr, j) and not MatchMaskAddressListSingle(p.Node.Addr, SD.OutAddrs) then begin
                   SD.Prot.TRSList.Ins(Addr2Str(p.Node.Addr));
                   SD.Prot.TransitRequested := True;
                end;
@@ -9073,8 +9232,6 @@ begin
    msStartWZ:
       begin
          SD.SessionOK := False;
-         SD.txMail := 0;
-         SD.txFiles := 0;
          FstTic := GetTickCount;
          if SD.rmtPrimaryAddr.Zone = 0 then;
          SD.Accumulate := False;
@@ -9143,7 +9300,7 @@ begin
             end;
             if SD.SessionCore = scBinkP then begin
                if not DialupLine then
-                  SD.Prot.BinkPTimeout := 360
+                  SD.Prot.BinkPTimeout := 180
                else
                   SD.Prot.BinkPTimeout := 60;
             end;
@@ -9217,6 +9374,8 @@ begin
             SD.Rec := 0;
             SD.Snd := 0;
          end;
+         SD.txMail := 0;
+         SD.txFiles := 0;
          if DialupLine then
             Priority := tpLower;
          if SD.SessionOK then
@@ -9321,6 +9480,8 @@ begin
    else NeedRescan := False;
    end;
 
+   DisplayData;
+
 end;
 
 function TMailerThread.ValidConnection: Boolean;
@@ -9345,13 +9506,10 @@ var
    procedure UnExpC4Q;
    begin
       LogUnexpEMSI(seq);
-      if TimerExpired(SD.AuxTmr) then
-      begin
+      if TimerExpired(SD.AuxTmr) then begin
          NewTimerSecs(SD.AuxTmr, 5);
          State := msEMSI_c2
-      end
-      else
-      begin
+      end else begin
          State := msEMSI_c4_;
       end;
    end;
@@ -9369,7 +9527,7 @@ var
    end;
 
    procedure UnExpC4Q_NoNiagara;
-begin
+   begin
       LogNoNiagara;
       State := msHSh_TCP;
    end;
@@ -9381,19 +9539,14 @@ begin
          begin
             Inc(SD.Tries);
             if SD.Tries > 6 then State := msEMSI_FailTries;
-            if SD.ActivePoll <> nil then
-            begin
-               if SD.Tries > 1 then
-               begin
+            if SD.ActivePoll <> nil then begin
+               if SD.Tries > 1 then begin
                   LogFmt(ltWarning, 'EMSI retry %d', [SD.Tries - 1]);
                   SendStr(EMSI_NAK + EMSI_CR);
                   State := msEMSI_h3;
-               end
-               else
+               end else
                   State := msEMSI_h4;
-            end
-            else
-            begin
+            end else begin
                if SD.Tries > 1 then Log(ltWarning, 'EMSI retry');
                SendStr(EMSI_REQ + EMSI_CR);
                State := msEMSI_h3;
@@ -9414,27 +9567,19 @@ begin
                es_NOC: State := msSE_SessionAborted;
                es_TZP:
                  begin
-                   if (SD.NiagaraAllowed) and (SD.ActivePoll = nil) then
-                   begin
-                     State := msHSh_TCP
-                   end else
-                   begin
-                     if (not SD.NiagaraAllowed) and (SD.ActivePoll = nil) then
-                       UnExpH4_NoNiagara
-                     else
-                       UnExpH4;
-                   end;
+                   if (SD.NiagaraAllowed) and (SD.ActivePoll = nil) then begin
+                      State := msHSh_TCP
+                   end else begin
+                      if (not SD.NiagaraAllowed) and (SD.ActivePoll = nil) then
+                         UnExpH4_NoNiagara
+                      else
+                         UnExpH4;
+                    end;
                  end;
                es_PZT:
                   if (SD.NiagaraAllowed) and (SD.ActivePoll <> nil) then
                      State := msHSh_TCP
                   else
-                     UnExpH4;
-               es_RCC:
-                  if (SD.NiagaraAllowed) and (SD.ActivePoll <> nil) then begin
-                     State := msHSh_TCP;
-                     SD.RemRCC := True;
-                  end else
                      UnExpH4;
                es_DATerror:
                   begin
@@ -9484,24 +9629,19 @@ begin
             else
                Log(ltWarning, 'Remote reported password failure');
             State := msEMSI_PswVio;
-         end
-         else
-         begin
+         end else begin
             State := msEMSI_h5b
          end;
       msEMSI_h5b:
          begin
             if SD.ActivePoll = nil then SD.OutAddrs := GetInAKAs;
             SD.BadPassword := (not ValidEncryptedAKAs) or (not CheckPasswords);
-            if LockAKAs then
-            begin
+            if LockAKAs then begin
                if SD.ActivePoll = nil then
                   State := msEMSI_h5calc
                else
                   State := msStartWZ;
-            end
-            else
-            begin
+            end else begin
                State := msSE_SessionAborted;
             end;
          end;
@@ -9520,13 +9660,8 @@ begin
 
             SendStr(EMSI_INQ + EMSI_CR);
 
-            if SD.NiagaraAllowed then
-            begin
-               if SD.ActivePoll = nil then SendStr(EMSI_PZT + EMSI_CR) else
-               if SD.MayRCC then
-                  SendStr(
-                          EMSI_RCC +
-                          EMSI_CR);
+            if SD.NiagaraAllowed then begin
+               if SD.ActivePoll = nil then SendStr(EMSI_PZT + EMSI_CR);
             end;
 
             State := msEMSI_c1;
@@ -9536,7 +9671,7 @@ begin
             ClearTmr1;
             SetTmrPublic(MaxD(RemainingTimeSecs(D.TmrPublic), toEMSI_Timeout), msEMSI_Timeout);
             NewTimerSecs(SD.AuxTmr, 5);
-            Log(ltInfo, 'EMSI data send');
+            Log(ltInfo, 'EMSI data sent');
             SD.StateDeltaDCD := msEMSI_DCD;
             SD.Tries := 0;
             State := msEMSI_c2;
@@ -9617,8 +9752,6 @@ begin
                   begin
                      Log(ltWarning, 'Got EMSI_NAK');
                      SD.NiagaraAllowed := False;
-{                     State := msEMSI_c5;
-                     SD.AckReceived := True}
                      // we ignore additional EMSI_NAKs came in a same second
                      if (not TimerInstalled(SD.HshrLast)) or TimerExpired(SD.HshrLast) then begin
                         NewTimerSecs(SD.HshrLast, 1);
@@ -9701,11 +9834,9 @@ var
    C: TAddrStringColl;
 begin
    Result := nil;
-   for i := 0 to CollMax(L) do
-   begin
+   for i := 0 to CollMax(L) do begin
       C := L[i];
-      if CompareAddrs(A, C.Addr) = 0 then
-      begin
+      if CompareAddrs(A, C.Addr) = 0 then begin
          Result := C;
          Break;
       end;
@@ -9787,7 +9918,7 @@ begin
       cbi := Trim(cb[i]);
       if (cbi = '') then Continue;
       case (cbi[1]) of
-         '&': Continue; // inbound redirection
+      '&': Continue; // inbound redirection
       end;
       Replace(';', ' ', s);
       Replace(',', ' ', s);
@@ -9934,23 +10065,19 @@ begin
    end;
 end;
 
-//function RunExtApp(Mlr: TMailerThread; ALogger: TAbstractLogger; const AName: string; APoll: TFidoPoll; AExtPoll: Boolean; var AExtAppStr: string; var AExtAppProcessNfo: TProcessInformation): Boolean;
-
 function RunExtApp(Mlr: TMailerThread; ALogger: TAbstractLogger; const AName: string; APoll: TFidoPoll; ANode: TAdvNode; var AExtAppStr: string; var AExtAppProcessNfo: TProcessInformation; PAuxStr: Pstring; APassHandleSupported: Boolean): Boolean;
 var
    EnvStr,
-      _DCE,
-      _DTE,
-      _CONNECT,
-      _CONTROL,
-      _NAME,
-      _LINE,
-      _HANDLE,
-      _NUMBER,
-      _INDEX,
-
+   _DCE,
+   _DTE,
+   _CONNECT,
+   _CONTROL,
+   _NAME,
+   _LINE,
+   _HANDLE,
+   _NUMBER,
+   _INDEX,
    _TIMEFOREND,
-
    _NODE,
    _STATION,
    __LOCATION,
@@ -9971,7 +10098,6 @@ var
       li: Integer;
       ad: TAdvNodeData;
       t: SYSTEMTIME;
-      //  n: TAdvNode;
    begin
       _NAME := AName;
       Replace(' ', '_', _NAME);
@@ -10116,7 +10242,6 @@ begin
          end;
       end;
    end;
-
    Result := DoCreateExtAppProcess(Trim(s), AExtAppProcessNfo, PChar(EnvStr), ALogger, InheritHandles);
 end;
 
@@ -10307,72 +10432,6 @@ begin
          end;
    end;
 end;
-
-(*procedure TMailerThread.DoRedir;
-var
-  n: TAdvNode;
-  RcvChar: byte;
-  RemoteHost, Banner: string;
-  Buf: array[0..2048] of byte;
-  BufLen: integer;
-  ReadOL, WriteOL: TOverlapped;
-  i: integer;
-
-begin
-  case State of
-     msRedir_0:
-       begin
-         RemoteHost:=Format('%s',[UpperCase(Copy(SD.ExtAppStr,pos(':',SD.ExtAppStr)+1, MAX_PATH))]);
-         SetStatusMsg(rsMMRedirect, RemoteHost);
-         Banner := FormatLng(rsMMRedirect, [RemoteHost])+CRLF;
-
-         CP.Write(Banner[1], length(Banner));
-         DbgStr(Banner,[]);
-
-         D.ExtApp := True;
-
-  ReadOL.hEvent := CreateEvt(False);
-  WriteOL.hEvent := CreateEvt(False);
-
-         if ConnectToRemoteHost(RemoteSocket,'10.34.1.20',21) = 0 then
-           State := msRedir_1
-         else
-           State := msRedir_2;
-       end;
-     msRedir_1:
-       begin
-//         if CP.CharReady then
-           if length(SD.InB) > 0 then begin
-             OutPutDebugString(PChar(Format('rcv: %s',[SD.InB])));
-//             CP.PutChar(RcvChar);
-//             for i:=0 to length(SD.InB)-1 do
-//               Buf[i]:=byte(SD.InB[i+1]);
-
-             BufLen:=length(SD.InB);
-             SendToRemoteHost(RemoteSocket, SD.InB[1], BufLen, @WriteOL);
-             Delete(SD.InB,1,length(SD.InB));
-           end;
-
-         BufLen := 2048;
-         if ReadFromRemoteHost(RemoteSocket, Buf, BufLen, @ReadOL) = 0 then
-           if BufLen > 0 then
-             for i:=0 to BufLen - 1 do CP.PutChar(Buf[i]);
-
-         if not CP.DCD then State := msRedir_2;
-       end;
-     msRedir_2:
-       begin
-         D.ExtApp := False;
-         DisconnectFromRemoteHost(RemoteSocket);
-
-  ZeroHandle(ReadOL.hEvent);
-  ZeroHandle(WriteOL.hEvent);
-
-         State := msInit;
-       end;
-  end;
-end;
-*)
 
 procedure TMailerThread._read_in;
 var
@@ -12032,8 +12091,6 @@ begin
                      if (Result = mrpConnect) then begin
                         PlaySnd('Connect', SoundsON);
                         PostMsgP(WM_CONNECT, Self);
-                        CP.Rec := 0;
-                        CP.Snd := 0;
                      end;
                   end;
                end;
@@ -12121,6 +12178,7 @@ procedure TMailerThread.DoSE_NoConnect;
 begin
    if SD.ActivePoll <> nil then begin
       SD.ActivePoll.IncNoConnectTries;
+      if DialupLine then Inc(SD.ActivePoll.TryDialup) else Inc(SD.ActivePoll.TryIp);
       if (SD.ActivePoll.Typ = ptpBack) and
          (SD.ActivePoll.TryNoConnect > 2) then
       begin
@@ -13107,6 +13165,12 @@ begin
                   exit;
                end;
             end;
+            if (SD.ActivePoll.Node.IPData <> nil) and (SD.ActivePoll.TryIp = 0) then begin
+               SD.ActivePoll.Release;
+               SetStatusMsg(rsMMIdle, '');
+               State := msStartIdle;
+               exit;
+            end;
             SD.ConnectSpeedGot := False;
             ClearTmr1;
             if SD.ActivePoll.Node.Ext = nil then begin
@@ -13794,7 +13858,9 @@ begin
       PublicD.NoCP := False;
       PublicD.CPOutUsed := CP.OutUsed;
    end;
-   PublicD.txTot := SD.txMail + SD.TxFiles;
+   if SD.txMail + SD.txFiles > PublicD.txTot then begin
+      PublicD.txTot := SD.txMail + SD.TxFiles;
+   end;
    FreeObject(PubBatchT);
    FreeObject(PubBatchR);
    if SD.Prot <> nil then begin
@@ -13853,11 +13919,7 @@ end;
 
 function CheckEvents: DWORD;
 var
-   i,
-   j,
-   k: Integer;
-   t: TSystemTime;
-   ol: TOlEventContainer;
+   i: DWORD;
 
 type
    TDSet = 0..60;
@@ -13873,25 +13935,106 @@ type
       if r in s then Result := r;
    end;
 
-begin
-   EventsThr.Events.Enter;
-   Result := $99999999;
-   for k := 0 to EventsThr.Events.Count - 1 do begin
-      ol := EventsThr.Events[k];
-      if ol.CronRec.IsPermanent then continue;
-      if ol.Active then continue;
-      if ol.CronRec.IsUTC then GetSystemTime(T) else GetLocalTime(T);
-      for j := 0 to ol.CronRec.Count - 1 do begin
-         if not ((T.wMonth - 1) in ol.CronRec.p^[j].Months) then break;
-         if not ((T.wDay - 1) in ol.CronRec.p^[j].Days) then break;
-         if not (T.wDayOfWeek in ol.CronRec.p^[j].Dows) then break;
-         i := (NextMatch(T.wHour, ol.CronRec.p^[j].Hours) - T.wHour) * 60 * 60 * 1000;
-         i := (NextMatch(T.wMinute, ol.CronRec.p^[j].Minutes) - T.wMinute) * 60 * 1000 + i;
-         if i > 0 then i := i - T.wSecond * 1000;
-         if DWORD(i) < DWORD(Result) then Result := DWORD(i);
+   function CheckCronRec(const T: TSystemTime; const Cron: TCronRec): DWORD;
+   begin
+      Result := $99999999;
+      if not ((T.wMonth - 1) in Cron.Months) then exit;
+      if not ((T.wDay - 1) in Cron.Days) then exit;
+      if not (T.wDayOfWeek in Cron.Dows) then exit;
+      i := Cardinal((NextMatch(T.wHour, Cron.Hours) - T.wHour) * 60 * 60 * 1000);
+      i := Cardinal((NextMatch(T.wMinute + 1, Cron.Minutes) - T.wMinute) * 60 * 1000) + i;
+      if i > 0 then i := i - T.wSecond * 1000;
+      if DWORD(i) < DWORD(Result) then Result := DWORD(i);
+   end;
+
+   function CheckEvtColl(const Events: TColl): DWORD;
+   var
+      i,
+      j,
+      k: Integer;
+      t: TSystemTime;
+     ol: TOlEventContainer;
+   begin
+      Result := $99999999;
+      if Events = nil then exit;
+      Events.Enter;
+      try
+      for k := 0 to CollMax(Events) do begin
+         ol := Events[k];
+         if ol.CronRec.IsPermanent then continue;
+         if ol.Active then continue;
+         if ol.CronRec.IsUTC then GetSystemTime(T) else GetLocalTime(T);
+         for j := 0 to ol.CronRec.Count - 1 do begin
+            i := CheckCronRec(T, ol.CronRec.p^[j]);
+            if DWORD(i) < DWORD(Result) then Result := DWORD(i);
+         end;
+      end;
+      finally
+         Events.Leave;
       end;
    end;
-   EventsThr.Events.Leave;
+
+   function CheckCrnColl(const Events: TColl): DWORD;
+   var
+      i,
+      j,
+      k: Integer;
+      t: TSystemTime;
+     ol: TCronRecord;
+     cr: TCronRec;
+   begin
+      Result := $99999999;
+      if Events = nil then exit;
+      Events.Enter;
+      try
+         for j := 0 to CollMax(Events) do begin
+            ol := Events[j];
+            if ol.IsUTC then GetSystemTime(T) else GetLocalTime(T);
+            for k := 0 to ol.Count - 1 do begin
+               cr := ol.p^[k];
+               i := CheckCronRec(T, cr);
+               if DWORD(i) < DWORD(Result) then Result := DWORD(i);
+            end;
+         end;
+      finally
+         Events.Leave;
+      end;
+   end;
+
+   function CheckPlsColl(const Events: TColl): DWORD;
+   var
+      pp: TPerPollRec;
+      i: Integer;
+      j: integer;
+      k: integer;
+      t: TSystemTime;
+   begin
+      Result := $99999999;
+      if Events = nil then exit;
+      Events.Enter;
+      try
+         for k := 0 to CollMax(Events) do begin
+            pp := Events[k];
+            if pp.CronRec = nil then continue;
+            if pp.CronRec.IsUTC then GetSystemTime(T) else GetLocalTime(T);
+            for j := 0 to pp.CronRec.Count - 1 do begin
+               i := CheckCronRec(T, pp.CronRec.p^[j]);
+               if DWORD(i) < DWORD(Result) then Result := DWORD(i);
+            end;
+         end;
+      finally
+         Events.Leave;
+      end;
+   end;
+
+begin
+   Result := $99999999;
+   i := CheckEvtColl(EventsThr.Events);
+   if i < Result then Result := i;
+   i := CheckCrnColl(CronThr.ProcsCron);
+   if i < Result then Result := i;
+   i := CheckPlsColl(CronThr.PerPolls);
+   if i < Result then Result := i;
 end;
 
 procedure TMailerThread.LetsSleep;
@@ -14067,8 +14210,12 @@ end;
 procedure TMailerThread.FreeSD;
 begin
    if SD <> nil then begin
-      FreeFaxModem;
       Enter;
+      if SD.WzRec <> nil then begin
+         SD.WzRec.Locked := False;
+         FreeBWZ(SD.WzRec);
+      end;
+      FreeFaxModem;
       FreeObject(SD);
       Leave;
    end;
@@ -14120,7 +14267,7 @@ begin
    if RASInvoked then begin
       postmessage(MainwinHandle, WM_LINEDESTROYED, integer(self), LineID);
    end;
-   RefreshOutbound;
+//   RefreshOutbound;
    postmessage(MainwinHandle, WM_UPDATELAMPS, 0, 0);
    if DialupLine then begin
       PlaySnd('EndLine', SoundsON);
@@ -14131,8 +14278,9 @@ begin
    PurgeCS(LogCS);
    PurgeCS(CP_CS);
 
-   inherited Destroy;
    ScanCounter := 1;
+
+   inherited Destroy;
 end;
 
 procedure TMailerThread.DoPollsRecalc;
@@ -14155,7 +14303,7 @@ begin
       c := FidoOut.GetOutColl(False, False);
       ChkErrMsg;
       if c <> nil then begin
-         RecreatePolls(c);
+//         RecreatePolls(c);
          FreeObject(c);
       end;
       p := nil;
@@ -14390,7 +14538,7 @@ procedure TCronThread.DoRecalc;
       CfgLeave;
       for i := 0 to CollMax(PerPolls) do begin
          pp := PerPolls[i];
-         pp.CronRec := ParseCronRec(pp.Cron, False, False, Err);
+         pp.CronRec := ParseCronRec('Polls.' + pp.Cron, pp.Cron, False, False, Err);
          if pp.CronRec = nil then GlobalFail('TCronThread.DoRecalc, ParseCronRec=nil; Error=%s', [Err]);
       end;
    end;
@@ -14405,7 +14553,7 @@ procedure TCronThread.DoRecalc;
       c := Pointer(Cfg.CrnCollA.Copy);
       ProcsStrs := Pointer(Cfg.CrnCollB.Copy);
       CfgLeave;
-      ProcsCron := ParseCronColl(c);
+      ProcsCron := ParseCronColl('Procs.', c);
       FreeObject(c);
       if ProcsCron = nil then
          FreeObject(ProcsStrs)
@@ -14418,6 +14566,7 @@ begin
    RecalcPolls;
    RecalcProcs;
    GetSystemTime(LastTimeUTC);
+   GetLocalTime(LastTimeLocal);
 end;
 
 procedure TCronThread.CheckProcesses;
@@ -14425,6 +14574,7 @@ var
    i: Integer;
    r: TCronRecord;
    m: Boolean;
+   s: string;
 begin
    for i := 0 to CollMax(ProcsCron) do begin
       r := ProcsCron[i];
@@ -14432,7 +14582,13 @@ begin
          m := CronMatch(LastTimeUTC, r)
       else
          m := CronMatch(LastTimeLocal, r);
-      if m then AddToExec(ProcsStrs[i], ProcsLogger);
+      if m then begin
+         ProcsLogger.LogFmt(ltInfo, '', []);
+         s := 'Cron event: %s invoked';
+         if r.Delay then s := s + ' (delayed)';
+         ProcsLogger.LogFmt(ltInfo, s, [r.Id]);
+         AddToExec(ProcsStrs[i], ProcsLogger);
+      end;
    end;
 end;
 
@@ -14441,13 +14597,15 @@ var
    i,
    j: Integer;
    c: TFidoAddrColl;
-   an: TAdvNode;
+  an: TAdvNode;
    a: TFidoAddress;
    p: TPerPollRec;
    m: Boolean;
+   t: TSystemTime;
 begin
    for i := 0 to CollMax(PerPolls) do begin
       p := PerPolls[i];
+      t := p.CronRec.Match;
       if p.CronRec.IsUTC then
          m := CronMatch(LastTimeUTC, p.CronRec)
       else
@@ -14457,7 +14615,10 @@ begin
          for j := 0 to c.Count - 1 do begin
             a := c[j];
             an := FindNode(A);
-            if an = nil then Continue;
+            if an = nil then begin
+               p.CronRec.Match := t;
+               Continue;
+            end;
             InsertPoll(an, [], ptpCron);
          end;
       end;
@@ -14480,7 +14641,7 @@ begin
       DoRecalc;
       Check;
    end;
-   ToSleep := MinD(20000, CheckEvents);
+   ToSleep := MinD(30000, CheckEvents);
    WaitEvts([oEvt, oRecalcEvents], ToSleep);
    if Terminated then Exit;
    if RecalcEvents then DoRecalc;
@@ -14500,7 +14661,7 @@ begin
    for i := 1 to ProcessColl.Count do begin
       WaitEvts[i] := TProcessNfo(ProcessColl[i - 1]).PI.hProcess;
    end;
-   i := MinD(10000, CheckEvents);
+   i := MinD(30000, CheckEvents);
    if WaitEvtA(ProcessColl.Count + 1, @WaitEvts, i) = WAIT_FAILED then GlobalFail('%s', ['TCronThread.InvokeExec WaitFailed']);
    if Terminated then Exit;
    ProcsLogger.TestRunningProcesses;
@@ -14583,7 +14744,7 @@ begin
    for i := 0 to c.Count - 1 do begin
       e := c[i];
       oc := TOlEventContainer.Create;
-      oc.CronRec := ParseCronRec(e.Cron, e.Permanent, e.UTC, Err);
+      oc.CronRec := ParseCronRec('', e.Cron, e.Permanent, e.UTC, Err);
       if oc.CronRec = nil then GlobalFail('TEventsThread.DoRecalc, ParseCronRec=nil; Error=%s', [Err]);
       oc.Id := e.Id;
       oc.Len := e.Len;
@@ -14622,12 +14783,12 @@ begin
    for i := 0 to Events.Count - 1 do begin
       oc := Events[i];
       if oc.CronRec.IsUTC then begin
-         m := CronMatchP(LastTimeUTC, oc.CronRec)
+         m := CronMatchP(LastTimeUTC, oc.CronRec, oc.Age)
       end else begin
-         m := CronMatchP(LastTimeLocal, oc.CronRec);
+         m := CronMatchP(LastTimeLocal, oc.CronRec, oc.Age);
       end;
       if m then begin
-         oc.Age := 0;
+//         oc.Age := 0;
       end else begin
          Inc(oc.Age);
          for n := 0 to oc.Atoms.Count - 1 do begin
@@ -14932,7 +15093,7 @@ begin
    end else begin
       c := FidoOut.GetOutColl(False, False);
       if c <> nil then begin
-         RecreatePolls(c);
+//         RecreatePolls(c);
          FreeObject(c);
       end;
       DaemonExtPollThreads.Enter;
@@ -15148,7 +15309,10 @@ begin
    FreeObject(CommonLog);
    CronThr.WaitFor;
    EventsThr.WaitFor;
+   OutMgrThread.Terminated := True;
+   ResetEvt(OutMgrThread.oEvt);
    OutMgrThread.WaitFor;
+   DelFile('DoneMailers', EventsFName);
    FreeObject(CronThr);
    FreeObject(EventsThr);
    FreeObject(OutMgrThread);
@@ -15163,30 +15327,17 @@ begin
 end;
 
 constructor TOutMgrThread.Create;
-{var OutName: string;}
 begin
    inherited Create;
    ForcedUpdate := True;
    HandUpdate := false;
    InitializeCriticalSection(NodesCS);
    oEvt := CreateEvtA;
-   Priority := tpLowest;
-{   OutName := JustPathName(inifile.Outbound);
-   hDir := CreateFile (
-          PChar(OutName),                       // pointer to the file name
-          GENERIC_READ or GENERIC_WRITE,        // access (read-write) mode
-          FILE_SHARE_READ or FILE_SHARE_DELETE, // share mode
-          nil,                                  // security descriptor
-          OPEN_EXISTING,                        // how to create
-          FILE_FLAG_BACKUP_SEMANTICS,           // file attributes
-          0                                     // file with attributes to copy
-        );}
-
+//   Priority := tpLower;
 end;
 
 destructor TOutMgrThread.Destroy;
 begin
-{   ZeroHandle(hDir);}
    FreeObject(Nodes);
    ZeroHandle(oEvt);
    PurgeCS(NodesCS);
@@ -15213,11 +15364,6 @@ var
    Update: Boolean;
    NewC: int64;
 
-{   j: integer;
-   FNI: array[0..1024] of _FILE_NOTIFY_INFORMATION;
-   FNP:^_FILE_NOTIFY_INFORMATION;
-   FNN: widestring;}
-
 begin
    if Terminated then exit;
    if exitnow then begin
@@ -15226,16 +15372,7 @@ begin
    end;
    if FidoOut = nil then exit;
 
-{      ReadDirectoryChangesW(hDir, @FNI, SizeOf(FNI), True, FILE_NOTIFY_CHANGE_SIZE, @i, nil, nil);
-      j := 0; FNP := @FNI;
-      while i > 0 do begin
-         setlength(FNN, FNP.FileNameLength div 2);
-         move(FNP.FileName, FNN[1], FNP.FileNameLength);
-         handupdate := handupdate and not (pos('.BSY', UpperCase(FNN)) > 0);
-         i := FNP.NextEntryOffset;
-         FNP := Pointer(DWORD(FNP) + FNP.NextEntryOffset);
-      end;
-}
+   ScanActive := True;
    NewNodes := nil;
    StackNodes := nil;
    Update := ForcedUpdate;
@@ -15303,6 +15440,7 @@ begin
 
    ResetEvt(oEvt);
    ScanActive := False;
+   if Terminated then exit;
    WaitEvt(oEvt, INFINITE);
    ScanActive := True;
    OldC := NewC;
@@ -16779,6 +16917,7 @@ begin
             n := GetListedNode(fa);
             if n <> nil then
             begin
+               FreeObject(n);
                Listed := True;
                Break;
             end;
@@ -16905,10 +17044,12 @@ initialization
    TryCount2 := -1;
    ErrLogFile := TStringList.Create;
    ErrLogString := TStringList.Create;
+   QueuedProcessColl := TStringColl.Create;
 
 finalization
 
    ErrLogFile.Free;
    ErrLogString.Free;
+   QueuedProcessColl.Free;
 
 end.

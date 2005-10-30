@@ -128,6 +128,7 @@ type
             RequestTRS: boolean;
             ibnRequestLIST: boolean;
             hydRequestLIST: boolean;
+            AllowAddPassword: boolean;
             Remote_Enabled: boolean;
             Remote_Password: string;
             Remote_EncPwd: boolean;
@@ -426,8 +427,8 @@ begin
       SessionOKFlag := ReadBool(main, 'SessionOKFlag', false);
       SessionAbortedFlag := ReadBool(main, 'SessionAbortedFlag', false);
       D5Out := ReadBool(main, 'D5Out', false);
-      ParseAddress(ReadString(main, 'synch', '0:0/0.0'), Synch);
       ParseAddress(ReadString(main, 'MainAddr', '0:0/0.0'), MainAddr);
+      ParseAddress(ReadString(main, 'synch', '0:0/0.0'), Synch);
       TimeShift := ReadInteger(main, 'SynchTimeShift', 0);
       MainReg := ReadInteger(main, 'MainReg', 0);
       NoHTML := ReadBool(main, 'DisableHTMLHelp', GetRegBooleanDef('DisableHtmlHelp', False));
@@ -488,6 +489,7 @@ begin
       SimpleBSY := ReadBool(_system, 'SimpleBSY', GetRegBooleanDef('SimpleBSY', False));
       IgnoreBWZSize := ReadBool(_system, 'IgnoreBWZSize', False);
       AutoNodelist := ReadBool(_system, 'AutoNodelist', True);
+      AllowAddPassword := ReadBool(_system, 'AllowAddPassword', false);
 
       TransmitHold := ReadBool(polls, 'TransmitHold', true);
       DirectAsNormal := ReadBool(polls, 'DirectAsNormal', true);
@@ -703,6 +705,7 @@ begin
      WriteBool(_system, 'IgnoreBWZSize', IgnoreBWZSize);
      WriteBool(_system, 'AutoNodelist', AutoNodelist);
      WriteBool(_system, 'UseAntiHang', true);
+     WriteBool(_system, 'AllowAddPassword', AllowAddPassword);
 
      WriteBool(polls, 'TransmitHold', TransmitHold);
      WriteBool(polls, 'DirectAsNormal', DirectAsNormal);

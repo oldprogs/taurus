@@ -25,20 +25,20 @@ implementation
 function  space;
 var   i : integer;
 tempstr : string;
-     begin
-        tempstr:='';
-        for i:=1 to n do tempstr:=tempstr+' ';
-        space:=tempstr;
-     end;
+begin
+   tempstr:='';
+   for i:=1 to n do tempstr:=tempstr+' ';
+   space:=tempstr;
+end;
 
 function  replicate;
 var   i : integer;
 tempstr : string;
-     begin
-        tempstr:='';
-        for i:=1 to n do tempstr:=tempstr+ch;
-        replicate:=tempstr;
-     end;
+begin
+   tempstr := '';
+   for i := 1 to n do tempstr := tempstr + ch;
+   replicate := tempstr;
+end;
 
 function  trim;
 var i,j : integer;
@@ -224,7 +224,6 @@ var
    result := o;
    end;
 
-
 begin
    result := false;
    x := length(a);
@@ -246,18 +245,20 @@ begin
 end;
 
 function  center;
-var tempstr : string;
-          j : integer;
-     begin
-        j := n - length(trim(str));
-        if j > 0 then tempstr := space(j - j div 2) + trim(str) + space(j div 2)
-                 else tempstr := trim(str);
-        center := tempstr;
-     end;
+var
+   tempstr: string;
+   j: integer;
+begin
+   j := n - length(trim(str));
+   if j > 0 then tempstr := space(j - j div 2) + trim(str) + space(j div 2)
+            else tempstr := trim(str);
+   center := tempstr;
+end;
 
 function UpSt;
-var t : string;
-    i : integer;
+var
+   t: string;
+   i: integer;
 begin
    t := s;
    for i := 1 to length(s) do t[i] := UpCase(s[i]);
@@ -265,9 +266,10 @@ begin
 end;
 
 function LoSt;
-var t : string;
-    i : integer;
-    n : integer;
+var
+   t: string;
+   i: integer;
+   n: integer;
 begin
    t := s;
    n := length(s);
@@ -285,13 +287,13 @@ begin
    rpad := s + replicate(c, n - length(s));
 end;
 
-    function addbackslash;
-    begin
-       if length(p) > 0 then
-       if p[length(p)] = '\' then addbackslash := p
-                             else addbackslash := p + '\'
-                        else addbackslash := p;
-    end;
+function addbackslash;
+begin
+   if length(p) > 0 then
+   if p[length(p)] = '\' then addbackslash := p
+                         else addbackslash := p + '\'
+                    else addbackslash := p;
+end;
 
 function match(sm : string; var st: string) : boolean;
 var p : integer;
@@ -312,9 +314,10 @@ begin
 end;
 
 function lines;
-var o : string;
-    i : longint;
-    n : longint;
+var
+   o: string;
+   i: longint;
+   n: longint;
 begin
     if l > 0 then begin
        i := p * s div l;
@@ -326,7 +329,8 @@ begin
 end;
 
 function LoCase;
-var t : char;
+var
+   t: char;
 begin
    if (c >= 'A') and (c <= 'Z') then t := chr(ord(c) + 32)
                                 else t := c;
@@ -341,7 +345,7 @@ end;
     I := Succ(Word(Length(PathName)));
     repeat
       Dec(I);
-    until (PathName[I] in ['\',':',#0]) or (I = 1);
+    until (PathName[I] in ['\', ':', #0]) or (I = 1);
 
     if I = 1 then
       {Had no drive or directory name}
@@ -388,7 +392,6 @@ end;
     JustName := PathName;
   end;
 
-
 function CRC16(s : string) : system.word;  { By Kevin Cooney }
 var
   crc : longint;
@@ -399,7 +402,7 @@ begin
   begin
     crc := (crc xor (ord(s[t]) shl 8));
     for r := 1 to 8 do
-      if (crc and $8000)>0 then
+      if (crc and $8000) > 0 then
         crc := ((crc shl 1) xor $1021)
           else
             crc := (crc shl 1);

@@ -4,8 +4,8 @@ object NodelistCompiler: TNodelistCompiler
   BorderIcons = [biSystemMenu]
   BorderStyle = bsDialog
   Caption = 'Compiling The Nodelist'
-  ClientHeight = 171
-  ClientWidth = 373
+  ClientHeight = 178
+  ClientWidth = 383
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText

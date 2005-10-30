@@ -67,6 +67,7 @@ type
     procedure DropHand;
     procedure DropCall;
     procedure HandOff;
+    procedure ResetLine;
   published
     property CallID: HCALL read Call write SetCallID;
     property Answer: boolean read fAnswer write SetAnswer;
@@ -722,9 +723,42 @@ begin
        Result := True;
     end else begin
        NeedDrop := False;
-       CloseLine;
+       ResetLine;
     end;
 
+end;
+
+procedure TTAPIPort.ResetLine;
+var
+   i: integer;
+ Ext: TLINEEXTENSIONID;
+begin
+   DropCall;
+   CloseLine;
+   if GetLineName(Device) = DevNam then begin
+      Execute(
+         'lineNegotiateAPIVersion',
+         lineNegotiateAPIVersion(TapiAppHandler, Device, LoVer, HiVer, @Version, @Ext));
+      if Version = 0 then begin
+         DisplayError('TAPI version installed is too high or too low  '#13#10 +
+                      'We need versions ' + inttostr(LoVer shr 16) +
+                      '.' + inttostr(LoVer and $FFFF) +
+                      ' - ' + inttostr(HiVer shr 16) +
+                      '.' + inttostr(HiVer and $FFFF) +
+                      ' to work properly  '#13#10, 0);
+      end else begin
+         StorLine('Version:  ' + inttostr(Version shr 16) +
+                           '.' + inttostr(Version and $FFFF), True);
+      end;
+   end;
+   MediaModes := VerifyUsableLine(Device);
+   StorLine('Mediamd: ' + HexW(MediaModes), True);
+   for i := 1 to 14 do begin
+      if Mmd[i].v and MediaModes > 0 then begin
+         StorLine('   ' + Mmd[i].n, True);
+      end;
+   end;
+   SetPriority;
 end;
 
 procedure TTAPIPort.DropHand;

@@ -162,6 +162,7 @@ begin
    case APageIndex of
    2: IPcfgForm.tb.ActivePage := IPcfgForm.lAKA;
    4: IPcfgForm.tb.ActivePage := IPcfgForm.lRestrict;
+   5: IpcfgForm.tb.ActivePage := IPcfgForm.lEvents;
    else
       IPcfgForm.tb.ActivePageIndex := SavFile.ReadInteger('IPCfg', 'Page', 0);
    end;
@@ -171,7 +172,7 @@ begin
    IPCfgForm.RTh.Terminated := True;
    IPCfgForm.RTh.WaitFor;
    FreeObject(IPCfgForm.RTh);
-   if aPageIndex > 0 then begin
+   if aPageIndex = 0 then begin
       SavFile.WriteInteger('IPCfg', 'Page', IPcfgForm.tb.ActivePageIndex);
    end;
    if Result and IPcfgForm.EvtChanged then begin

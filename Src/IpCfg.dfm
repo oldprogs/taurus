@@ -782,8 +782,8 @@ object IPcfgForm: TIPcfgForm
         566
         265)
       object lNNTPImport: TLabel
-        Left = 36
-        Top = 20
+        Left = 4
+        Top = 28
         Width = 168
         Height = 15
         Caption = 'Files to import NEWS List from'
@@ -815,10 +815,10 @@ object IPcfgForm: TIPcfgForm
         CheckBoxes = False
         ColWidths = (
           64
-          490)
+          479)
       end
       object gbCache: TGroupBox
-        Left = 235
+        Left = 299
         Top = 2
         Width = 229
         Height = 45

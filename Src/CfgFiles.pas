@@ -14,7 +14,6 @@ type
     FFileName: string;
   public
     constructor Create(const FileName: string);
-    function SectionExists(const Section: string): Boolean;
     function ReadString(const Section, Ident, Default: string): string; virtual; abstract;
     procedure WriteString(const Section, Ident, Value: String); virtual; abstract;
     function ReadInteger(const Section, Ident: string; Default: Longint): Longint; virtual;
@@ -37,7 +36,6 @@ type
     procedure EraseSection(const Section: string); virtual; abstract;
     procedure DeleteKey(const Section, Ident: String); virtual; abstract;
     procedure UpdateFile; virtual; abstract;
-    function ValueExists(const Section, Ident: string): Boolean;
     property FileName: string read FFileName;
   end;
 
@@ -93,9 +91,7 @@ type
   private
     FSections: TStringList;
     function AddSection(const Section: string): TStrings;
-    function GetCaseSensitive: Boolean;
     procedure LoadValues;
-    procedure SetCaseSensitive(Value: Boolean);
   public
     constructor Create(const FileName: string);
     destructor Destroy; override;
@@ -107,11 +103,9 @@ type
     procedure ReadSections(Strings: TStrings); override;
     procedure ReadSectionValues(const Section: string; Strings: TStrings); override;
     function ReadString(const Section, Ident, Default: string): string; override;
-    procedure Rename(const FileName: string; Reload: Boolean);
     procedure SetStrings(List: TStrings);
     procedure UpdateFile; override;
     procedure WriteString(const Section, Ident, Value: String); override;
-    property CaseSensitive: Boolean read GetCaseSensitive write SetCaseSensitive;
   end;
 
 {$IFDEF MSWINDOWS}
@@ -150,19 +144,6 @@ uses RTLConsts
 constructor TCustomIniFile.Create(const FileName: string);
 begin
   FFileName := FileName;
-end;
-
-function TCustomIniFile.SectionExists(const Section: string): Boolean;
-var
-  S: TStrings;
-begin
-  S := TStringList.Create;
-  try
-    ReadSection(Section, S);
-    Result := S.Count > 0;
-  finally
-    S.Free;
-  end;
 end;
 
 function TCustomIniFile.ReadInteger(const Section, Ident: string;
@@ -281,19 +262,6 @@ const
   Values: array[Boolean] of string = ('0', '1');
 begin
   WriteString(Section, Ident, Values[Value]);
-end;
-
-function TCustomIniFile.ValueExists(const Section, Ident: string): Boolean;
-var
-  S: TStrings;
-begin
-  S := TStringList.Create;
-  try
-    ReadSection(Section, S);
-    Result := S.IndexOf(Ident) > -1;
-  finally
-    S.Free;
-  end;
 end;
 
 function TCustomIniFile.ReadBinaryStream(const Section, Name: string;
@@ -508,7 +476,7 @@ var
   Key: string;
 begin
   if FNameHashValid then Exit;
-  
+
   if FNameHash = nil then
     FNameHash := TStringHash.Create
   else
@@ -534,7 +502,7 @@ var
   I: Integer;
 begin
   if FValueHashValid then Exit;
-  
+
   if FValueHash = nil then
     FValueHash := TStringHash.Create
   else
@@ -553,9 +521,6 @@ constructor TMemIniFile.Create(const FileName: string);
 begin
   inherited Create(FileName);
   FSections := THashedStringList.Create;
-{$IFDEF LINUX}
-  FSections.CaseSensitive := True;
-{$ENDIF}
   LoadValues;
 end;
 
@@ -571,7 +536,7 @@ function TMemIniFile.AddSection(const Section: string): TStrings;
 begin
   Result := THashedStringList.Create;
   try
-    THashedStringList(Result).CaseSensitive := CaseSensitive;
+//    THashedStringList(Result).CaseSensitive := CaseSensitive;
     FSections.AddObject(Section, Result);
   except
     Result.Free;
@@ -615,11 +580,6 @@ begin
   end;
 end;
 
-function TMemIniFile.GetCaseSensitive: Boolean;
-begin
-  Result := FSections.CaseSensitive;
-end;
-
 procedure TMemIniFile.GetStrings(List: TStrings);
 var
   I, J: Integer;
@@ -627,8 +587,7 @@ var
 begin
   List.BeginUpdate;
   try
-    for I := 0 to FSections.Count - 1 do
-    begin
+    for I := 0 to FSections.Count - 1 do begin
       List.Add('[' + FSections[I] + ']');
       Strings := TStrings(FSections.Objects[I]);
       for J := 0 to Strings.Count - 1 do List.Add(Strings[J]);
@@ -657,8 +616,7 @@ begin
     Clear;
 end;
 
-procedure TMemIniFile.ReadSection(const Section: string;
-  Strings: TStrings);
+procedure TMemIniFile.ReadSection(const Section: string; Strings: TStrings);
 var
   I, J: Integer;
   SectionStrings: TStrings;
@@ -683,8 +641,7 @@ begin
   Strings.Assign(FSections);
 end;
 
-procedure TMemIniFile.ReadSectionValues(const Section: string;
-  Strings: TStrings);
+procedure TMemIniFile.ReadSectionValues(const Section: string; Strings: TStrings);
 var
   I: Integer;
 begin
@@ -714,30 +671,6 @@ begin
     end;
   end;
   Result := Default;
-end;
-
-procedure TMemIniFile.Rename(const FileName: string; Reload: Boolean);
-begin
-  FFileName := FileName;
-  if Reload then
-    LoadValues;
-end;
-
-procedure TMemIniFile.SetCaseSensitive(Value: Boolean);
-var
-  I: Integer;
-begin
-  if Value <> FSections.CaseSensitive then
-  begin
-    FSections.CaseSensitive := Value;
-    for I := 0 to FSections.Count - 1 do
-      with THashedStringList(FSections.Objects[I]) do
-      begin
-        CaseSensitive := Value;
-        Changed;
-      end;
-    THashedStringList(FSections).Changed;
-  end;
 end;
 
 procedure TMemIniFile.SetStrings(List: TStrings);
@@ -945,13 +878,6 @@ end;
 procedure TIniFile.UpdateFile;
 begin
   WritePrivateProfileString(nil, nil, nil, PChar(FFileName));
-end;
-{$ELSE}
-
-destructor TIniFile.Destroy; 
-begin
-  UpdateFile;
-  inherited Destroy;
 end;
 
 {$ENDIF}

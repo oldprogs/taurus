@@ -6,7 +6,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls,
-  Forms, Dialogs, StdCtrls, ComCtrls, Buttons,   mGrids,
+  Forms, Dialogs, StdCtrls, ComCtrls, Buttons, mGrids,
   MClasses, ExtCtrls, xBase;
 
 type
@@ -141,9 +141,9 @@ type
     cbDisableWinsockTraps: TCheckBox;
     cbCryptRCCPwd: TCheckBox;
     MainPan1: TPanel;
-    Bevel6: TBevel;
     Bevel2: TBevel;
     Bevel4: TBevel;
+    Bevel6: TBevel;
     lAddressOptions: TLabel;
     sbMainAKABrowse: TSpeedButton;
     sbSynchClockBrowse: TSpeedButton;
@@ -369,8 +369,7 @@ var
 implementation
 
 uses LngTools, RadIni, xFido, PathNmEx, CfgFiles, RasThrd,
-     AdrIBox, Recs, ShellApi, RCCUnit, MlrThr, MlrForm,
-     UNetCfg;
+     AdrIBox, Recs, ShellApi, MlrThr, MlrForm, UNetCfg;
 
 var
    FidoAddr1: TFidoAddress;
@@ -390,9 +389,6 @@ begin
   SetupForm.sbMainNext.Font.Style := [fsBold];
   SetupForm.sbMainPrev.Font.Color := clBlue;
   SetupForm.sbMainNext.Font.Color := clBlue;
-  if Remote then begin
-     TreatForm(SetupForm);
-  end;
   SetupForm.cbScanMSGClick(nil);
   Result := SetupForm.ShowModal = mrOK;
   if result and SetupForm.btnApply.Enabled then begin
@@ -434,7 +430,10 @@ begin
   IniFile.IgnoreCD := cbIgnoreCD.Checked;
   IniFile.TrayLamps := cbLamps.Checked;
   IniFile.ChatBell := eChatBell.Text;
-  IniFile.D5Out := cbD5Out.Checked;
+  if IniFile.D5Out <> cbD5Out.Checked then begin
+     IniFile.D5Out := cbD5Out.Checked;
+     PostMsg(WM_COMPILENL);
+  end;
   IniFile.UseNodelistData := cbUseNodelistData.Checked;
   IniFile.AutoNodelist := cbCompileNodelist.Checked;
   IniFile.playsounds := cbPlaySounds.Checked;

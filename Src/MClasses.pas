@@ -2514,6 +2514,7 @@ procedure TLogContainer.Log(const S: string);
       P: TStringHolder;
    begin
       if FMsg = WM_NULL then exit;
+      if ExitNow then exit;
       if not IsWindow(MainWinHandle) then exit;
       P := TStringHolder.Create;
       P.S := StrAsg(S);

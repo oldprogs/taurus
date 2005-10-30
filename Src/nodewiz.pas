@@ -154,7 +154,6 @@ begin
    end;
 end;
 
-
 procedure TNodeWizzardForm.cbCurNodeClick(Sender: TObject);
 var
   i, j: Integer;
@@ -206,6 +205,7 @@ begin
     lWrkTimeUTC.Text := FSC62TimeToStr(NodeFSC62TimeEx(fn.Flags, fn.Addr, False));
     lWrkTimeUTC.Hint := 'Time (Local): '+FSC62TimeToStr(NodeFSC62TimeEx(fn.Flags, fn.Addr, True));
     llWrkTimeUTC.Hint := lWrkTimeUTC.Hint;
+    FreeObject(fn);
   end;
   lbAtoms.Items.Clear;
   for i := 0 to CollMax(r.EvtIds) do

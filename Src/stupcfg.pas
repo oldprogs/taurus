@@ -122,6 +122,7 @@ begin
   if cbFastLog.Checked then i := i or stoFastLog;
   if not cbLogWZ.Checked then i := i or stoSkipLogWZ;
   Cfg.StartupData.Options := i;
+  StartupOptions := i;
   CfgLeave;
   StoreConfig(Handle);
   IniFile.ODBCLogging := cbODBCLog.Checked;

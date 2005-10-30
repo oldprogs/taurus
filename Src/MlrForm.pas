@@ -8,7 +8,7 @@ uses
    Classes, Menus, Forms, MClasses, ComCtrls, ExtCtrls, mGrids,
    Controls, StdCtrls, Windows, xFido, MlrThr, Outbound,
    Graphics, xMisc, Messages, xBase, SysUtils, Buttons,
-   Dialogs, ImgList, RemoteUnit, xOutline, Netmail, JvComponent,
+   Dialogs, ImgList, xOutline, Netmail, JvComponent,
    JvAnalogClock, JvxClock;
 
 type
@@ -182,7 +182,6 @@ type
     mwClose: TMenuItem;
     N2: TMenuItem;
     mwCreateMirror: TMenuItem;
-    mwRemoteMirror: TMenuItem;
     mfExit: TMenuItem;
     mConfig: TMenuItem;
     mTool: TMenuItem;
@@ -231,6 +230,10 @@ type
     PollsListView: TAdvListView;
     DaemonPanel: TTransPan;
     MainDaemonPanel: TTransPan;
+    PanelE: TTransPan;
+    edListView: TListView;
+    PanelD: TTransPan;
+    Panel6: TTransPan;
     Panel7: TTransPan;
     Panel9: TTransPan;
     DaemonPI: TTransPan;
@@ -240,7 +243,6 @@ type
     DaemonPIH: TTransPan;
     Panel18: TTransPan;
     gInputGraph: TNavyGraph;
-    Panel6: TTransPan;
     Panel8: TTransPan;
     DaemonPO: TTransPan;
     Panel111: TTransPan;
@@ -499,7 +501,6 @@ type
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure mcPathnamesClick(Sender: TObject);
     procedure mwCreateMirrorClick(Sender: TObject);
-    procedure mwRemoteMirrorClick(Sender: TObject);
     procedure mcDialupClick(Sender: TObject);
     procedure NodesPasswords1Click(Sender: TObject);
     procedure mlCloseClick(Sender: TObject);
@@ -741,7 +742,6 @@ type
 procedure InitMsgDispatcher;
 procedure DoneMsgDispatcher;
 procedure OpenMailerForm(AThread: TMailerThread; DoShow: Boolean);
-function  OpenRemoteForm(P: Pointer): TRemoteForm;
 procedure UpdateLampsAll;
 procedure UpdateTerm(Struc: Integer);
 procedure ClearTerms(AThr: Integer);
@@ -983,6 +983,46 @@ begin
    g.Free;
 end;
 
+procedure ExportOutb(const P: longint);
+var
+   S: pstring absolute P;
+   g: TStringList;
+   i: integer;
+   n: TOutNode;
+   m: integer;
+   x: integer;
+   y: integer;
+   o: TOutNodeColl;
+begin
+   EnterCS(OutMgrThread.NodesCS);
+   try
+     if OutMgrThread.Nodes <> nil then O := OutMgrThread.Nodes.Copy else exit;
+   finally
+     LeaveCS(OutMgrThread.NodesCS);
+   end;
+   x := 0;
+   y := 0;
+   for i := 0 to CollMax(O) do begin
+      n := O[i];
+      if n.Files <> nil then n.Files.PurgeDuplicates;
+      n.PrepareNfo;
+      m := Length(Addr2Str(n.Address));
+      if m > x then x := m;
+      m := Length(n.SizeString);
+      if m > y then y := m;
+   end;
+
+   g := TStringList.Create;
+   g.Add('Outbound state:');
+   g.Add('');
+   for i := 0 to o.Count - 1 do begin
+      n := O[i];
+      g.Add(Pad(Addr2Str(n.Address), x + 3) + n.SizeString(y) + '   ' + n.AgeString);
+   end;
+   g.SaveToFile(S^);
+   g.Free;
+end;
+
 {$I utility.inc}
 
 type
@@ -991,6 +1031,7 @@ type
       RASConnect: boolean;
       RASMailLin: dword;
       RASWaitPtr: integer;
+              CS: TRTLCriticalSection; 
       constructor Create;
       destructor Destroy; override;
       procedure WndProc(var Msg: TMessage);
@@ -1114,8 +1155,19 @@ const
    CTimerTick = 1000;
 begin
    inherited Create;
+   InitializeCriticalSection(CS);
    MainWinHandle := AllocateHWnd(WndProc);
    SetTimer(MainWinHandle, 1, CTimerTick, nil);
+end;
+
+destructor TMsgDispatcher.Destroy;
+begin
+   try
+      DeallocateHWnd(MainWinHandle);
+   except
+
+   end;
+   inherited Destroy;
 end;
 
 {.$IFDEF THRLOG}
@@ -1124,12 +1176,6 @@ begin
    IncLong(AppThrInvoked);
 end;
 {.$ENDIF}
-
-destructor TMsgDispatcher.Destroy;
-begin
-   DeallocateHWnd(MainWinHandle);
-   inherited Destroy;
-end;
 
 procedure GetTermBounds(var cw, ch: Integer);
 begin
@@ -1209,6 +1255,7 @@ begin
       end;
       IPPolls.Logger.Log(ltInfo, s);
       TFidoPoll(cr.p).IncNoConnectTries;
+      Inc(TFidoPoll(cr.p).TryIp);
       p := cr.p;
       RollPoll(p);
       cr.p := p;
@@ -1313,7 +1360,7 @@ var
                   reload := True;
                   Application.Title := LR.Name + ' closed';
                   If (Application.MainForm as TMailerForm).TrayIcon <> nil then begin
-                  (Application.MainForm as TMailerForm).TrayIcon.Hint := LR.Name + ' closed';
+                     (Application.MainForm as TMailerForm).TrayIcon.Hint := LR.Name + ' closed';
                   end;
                   Sleep(2000);
                end;
@@ -1321,9 +1368,9 @@ var
             MailerThreads.Leave;
          end else
          if open then begin
+            DeleteFile(FOpen);
             t := OpenMailer(LR.Id, INVALID_HANDLE_VALUE);
             if t <> nil then reload := True;
-            DeleteFile(FOpen);
          end;
       end;
       FreeObject(Lines);
@@ -1425,6 +1472,21 @@ var
             e := g[0];
             SendMessage(MainWinHandle, WM_ROUTEEXPORT, Integer(@e), 0);
             FidoPolls.Log.LogSelf(Format('Detected %s - forced routing table export to: %s', [s, e]));
+         end else begin
+            FidoPolls.Log.LogSelf(Format('Detected empty %s - nothing to do', [s]));
+         end;
+         g.Free;
+      end;
+
+      s := MakeFullDir(IniFile.FlagsDir, 'OUTBOUND.EXP');
+      if _FileExists(s) then begin
+         g := TStringList.Create;
+         g.LoadFromFile(s);
+         DeleteFile(s);
+         if g.Count > 0 then begin
+            e := g[0];
+            SendMessage(MainWinHandle, WM_OUTEXPORT, Integer(@e), 0);
+            FidoPolls.Log.LogSelf(Format('Detected %s - forced outbound state export to: %s', [s, e]));
          end else begin
             FidoPolls.Log.LogSelf(Format('Detected empty %s - nothing to do', [s]));
          end;
@@ -1593,6 +1655,10 @@ var
    LinesCnt: integer;
 begin
    LiveCounter := 0;
+   if ExitNow then begin
+      Msg.Result := DefWindowProc(MainWinHandle, Msg.Msg, Msg.wParam, Msg.lParam);
+      Exit;
+   end;
    if (Msg.Msg in [WM_QUERYENDSESSION, WM_ENDSESSION]) and (IniFile.IgnoreEndSession) then begin
       MSG.Result := 1;
       exit;
@@ -1823,11 +1889,6 @@ begin
             end;
          WM_SETUPOK:
             if not ExitNow then SetupOK;
-         WM_OPENREMOTE:
-            begin
-              msg.Result := Integer(OpenRemoteForm(Pointer(msg.WParam)));
-              exit;
-            end;
          WM_CLICKMENU:
             begin
                Save := TMenuItem(msg.LParam).ShortCut;
@@ -1878,6 +1939,10 @@ begin
          WM_ROUTEEXPORT:
             begin
                ExportRoute(Msg.WParam);
+            end;
+         WM_OUTEXPORT:
+            begin
+               ExportOutb(Msg.WParam);
             end;
          WM_RESOLVE..WM_RESOLVE + WM__NUMRESOLVE - 1: HostResolveComplete(Msg.Msg - WM_RESOLVE, Msg.lParam);
          WM_ADDDAEMONLOG: AddSpcLogStr(Msg.lParam, PanelOwnerDaemon);
@@ -2019,7 +2084,7 @@ var
 begin
    FreeObject(OutMgrExpanded);
 
-   OutMgrSelectedItemAddr.Zone := -1;
+   OutMgrSelectedItemAddr.Zone := word(-1);
 
    sitem := OutMgrOutline.SelectedItem;
    for i := 1 to OutMgrOutLine.ItemCount do
@@ -2099,12 +2164,9 @@ begin
       aOutbound.Visible := False;
       aOutbound.Active := False;
    end;
-   try
-      if IniFile.InSecure[2] <> ':' then dsk := 0
-                                    else dsk := ord(Upcase(IniFile.InSecure[1])) - $40;
-      lAvaibleAtInbound.Caption := FloatToStr(Round(DiskFree(dsk) / 1048576 - IniFile.FreeSpaceLmt)) + ' Mb';
-   except on E: Exception do ProcessTrap(E.Message, 'procedure TMailerForm.UpdateOutboundManager: Disk space check');
-   end;
+   if IniFile.InSecure[2] <> ':' then dsk := 0
+                                 else dsk := ord(Upcase(IniFile.InSecure[1])) - $40;
+   lAvaibleAtInbound.Caption := FloatToStr(Round(DiskFree(dsk) / 1048576 - IniFile.FreeSpaceLmt)) + ' Mb';
    floutb;
 end;
 
@@ -2180,7 +2242,7 @@ begin
    lTotalRcvTime.Left := llTotalRcvTime.Left + llTotalRcvTime.Width + 6;
 
    lSessionTime.Left := llSessionTime.Left + llSessionTime.Width + 6;
-//   llSessionCost.Left := lSessionTime.Left + lSessionTime.Width + 6;
+   llSessionCost.Left := lSessionTime.Left + lSessionTime.Width + 6;
    lSessionCost.Left := llSessionCost.Left + llSessionCost.Width + 6;
 end;
 
@@ -2225,22 +2287,10 @@ begin
    SetPriorityClass(GetCurrentProcess, IniFile.Priority);
 end;
 
-function OpenRemoteForm;
-var
-   RemoteForm: TRemoteForm;
-begin
-   Application.CreateForm(TRemoteForm, RemoteForm);
-   Result := RemoteForm;
-   RemoteForm.prot := P;
-   RemoteForm.Show;
-end;
-
 procedure InitMsgDispatcher;
 begin
    MsgDispatcher := TMsgDispatcher.Create;
-   {.$IFDEF THRLOG}
    Application.OnMessage := MsgDispatcher.AppMessage;
-   {.$ENDIF}
 end;
 
 ////////////////////////////////////////////////////////////////////////
@@ -2343,6 +2393,7 @@ end;
 
 procedure TMailerForm.SetEnabledO(L: TObject; c: TWcb; V: Boolean);
 begin
+   if L = nil then exit;
    if V = (c in wcb) then Exit;
    if V then
       Include(wcb, c)
@@ -2478,10 +2529,8 @@ var
 
    procedure SetSndTot(const B: Boolean);
    begin
-      SetVisible(SndTot, wcb_SndTot, B);
+      SetVisible(SndTot, wcb_SndTot, {B} True);
    end;
-
-   // visual {
 
    procedure SetSndTime(B: Boolean);
    begin
@@ -2572,12 +2621,14 @@ var
 
       Cost := CalcCost(TarifPlan, OperTimeItem);
       SetLabel(lSessionCost, wcslSessionCost, Format('%5.2f', [Cost]));
+      lSessionCost.Left := SessionBox.Width - 16 - lSessionCost.Width;
+      llSessionCost.Left := lSessionCost.Left - 6 - llSessionCost.Width;
       SetSessionCost(True)
    end;
 
    procedure SetRcvTot(const B: Boolean);
    begin
-      SetVisible(RcvTot, wcb_RcvTot, B);
+      SetVisible(RcvTot, wcb_RcvTot, {B} True);
    end;
 
    procedure SetSndBar(C, M: Integer);
@@ -2606,6 +2657,9 @@ var
    rxAdd,
    txAdd: DWORD;
    i: Integer;
+   x,
+   y: Integer;
+   o: boolean;
    Seconds: extended; // visual
    RxCPS,
    TxCPS: integer; // visual
@@ -2657,6 +2711,9 @@ begin
 
    lSessionTime.Caption := FormatDateTime('hh:mm:ss', EncodeTime(((activeline.timeonline div 1000) div 60) div 60, ((activeline.timeonline div 1000) div 60) mod 60, (activeline.timeonline div 1000) mod 60, activeline.timeonline mod 1000));
    SetSessionTime(True);
+
+   lRcvCPS.Left := llRcvCPS.Left - 5 - lRcvCPS.Width;
+   lSndCPS.Left := llSndCPS.Left - 5 - lSndCPS.Width;
 
    txAdd := 0;
    rxAdd := 0;
@@ -2720,12 +2777,27 @@ begin
          end;
       end;
    end;
-   if bs = bsActive then
+   if bs = bsActive then begin
       s := T.D.FName
-   else
+   end else begin
       s := LngStr(bsMsg[bs]);
+   end;
+
+   i := lSndFile.Canvas.TextWidth(s);
+   o := False;
+   if i + lSndFile.Left > lSndCPS.Left then begin
+      o := True;
+      while lSndFile.Canvas.TextWidth(s + '..') + lSndFile.Left > lSndCPS.Left do begin
+         s := copy(s, 1, Length(s) - 1);
+      end;
+      s := s + '..';
+   end;
 
    SetLabel(lSndFile, wcsSndFile, s);
+
+   if o then begin
+      lSndFile.Hint := T.D.FName;
+   end;
 
    if R = nil then begin
       SetRcvSize(False);
@@ -2807,21 +2879,35 @@ begin
       end;
    end;
 
-   if bs = bsActive then
+   if bs = bsActive then begin
       s := R.D.FName
-   else
+   end else begin
       s := LngStr(bsMsg[bs]);
+   end;
+
+   i := lRcvFile.Canvas.TextWidth(s);
+   o := False;
+   if i + lRcvFile.Left > lRcvCPS.Left then begin
+      o := True;
+      while lRcvFile.Canvas.TextWidth(s + '..') + lRcvFile.Left > lRcvCPS.Left do begin
+         s := copy(s, 1, Length(s) - 1);
+      end;
+      s := s + '..';
+   end;
 
    SetLabel(lRcvFile, wcsRcvFile, s);
+   if o then begin
+      lRcvFile.Hint := R.D.FName;
+   end;
 
    a := D.TxTot;
    b := D.txBytes + txAdd;
    if b > a then b := a;
    if (a = b) then SetSndTime(False);
-   if (a = 0) or (a < b) then begin
+   if (a = 0) then begin
       SetSndTotalTime(False); // visual
-      SetSndTot(False)
-   end else begin
+      SetSndTot(False);
+   end else {begin}
       SetSndTot(True);
       SetSndGauge(b, a);
       if (TxCPS > 0) then begin
@@ -2829,14 +2915,14 @@ begin
          Seconds := (DWORD(a) - MinD(DWORD(a), b)) div DWORD(TxCPS);
          SetLabel(lTotalSndTime, wcslTotalSndTime, FormatDateTime('hh:mm:ss', Seconds / 86400));
       end;
-   end;
+{   end;}
    a := D.rmtForUs;
    b := D.rxBytes + rxAdd;
    if (a = b) then SetRcvTime(False);
    if (a = 0) or (a < b) then begin
       SetRcvTotalTime(False); // visual
       SetRcvTot(False);
-   end else begin
+   end else {begin}
       SetRcvTot(True);
       SetRcvGauge(b, a);
       if (RxCPS > 0) then begin
@@ -2844,7 +2930,7 @@ begin
          Seconds := (DWORD(a) - MinD(DWORD(a), b)) div DWORD(RxCPS);
          SetLabel(lTotalRcvTime, wcslTotalRcvTime, FormatDateTime('hh:mm:ss', Seconds / 86400));
       end;
-   end;
+{   end;}
    CalcSessionCost;
    SetTopPageIndex(1);
 end;
@@ -2947,7 +3033,12 @@ begin
    else
       j := 0;
    LeaveCS(ActiveLine.CP_CS);
-   if not OK then Exit;
+   if not OK then begin
+      if (Application.MainForm <> nil) and ((Application.MainForm as TMailerForm).TrayIcon <> nil) then begin
+         (Application.MainForm as TMailerForm).TrayIcon.Icon := Application.Icon;
+      end;
+      Exit;
+   end;
    mlDCD.Lit := j and MS_RLSD_ON <> 0;
    mlDSR.Lit := j and MS_DSR_ON  <> 0;
    mlCTS.Lit := j and MS_CTS_ON  <> 0;
@@ -3073,6 +3164,8 @@ begin
             s2 := '-Unknown sysop-'
          else
             s2 := Node2.Sysop;
+         FreeObject(Node1);
+         FreeObject(Node2);
          C := CompareText(s1, s2);
          if c = 0 then Cmp0;
       end;
@@ -3120,6 +3213,195 @@ begin
    end;
    if OutMgrNodeCC < 0 then C := -C;
    Result := C;
+end;
+
+procedure FillEventList(evListView: TListView; ActiveLine: TMailerThread);
+var
+   b: boolean;
+   c: TColl;
+   k: integer;
+   i: integer;
+   j: integer;
+   u: TSystemTime;
+   s: TSystemTime;
+   l: TSystemTime;
+   y: TSystemTime;
+   a: TDateTime;
+  ol: TOlEventContainer;
+   e: TListItem;
+  zi: TTimeZoneInformation;
+  st: string;
+
+   type
+      TDSet = 0..60;
+      TWSet = set of TDSet;
+
+   function NextMatch(const w: word; s: TWSet): word;
+   var
+      r: word;
+   begin
+      Result := 0;
+      r := w;
+      while not (r in s) and (r < 60) do Inc(r);
+      if r in s then begin
+         Result := r;
+         exit;
+      end;
+      if Result = 0 then begin
+         Result := NextMatch(0, s);
+      end;
+   end;
+
+   function PrevMatch(const w: word; s: TWSet): word;
+   var
+      r: word;
+   begin
+      Result := 0;
+      r := w;
+      while not (r in s) and (r > 0) do Dec(r);
+      if r in s then begin
+         Result := r;
+         exit;
+      end;
+      if Result = 0 then begin
+         Result := PrevMatch(60, s);
+      end;
+   end;
+
+begin
+   if ActiveLine = PanelOwnerDaemon then begin
+      if DaemonEvents <> nil then begin
+         c := DaemonEvents.GetEventList;
+      end;   
+   end else begin
+      c := ActiveLine.EP.GetEventList;
+   end;
+   b := False;
+   for k := 0 to CollMax(c) do begin
+      ol := c[k];
+      if ol.CronRec.IsPermanent then begin
+         e := evListView.FindCaption(0, ol.EName, False, True, True);
+         if e = nil then begin
+            b := True;
+            e := evListView.Items.Add;
+            e.Caption := ol.EName;
+            e.SubItems.Add('--:--');
+            e.SubItems.Add('--:--');
+            e.ImageIndex := 05;
+         end;
+         e.DropTarget := False;
+      end else begin
+      if ol.CronRec.IsUTC then GetSystemTime(S) else GetLocalTime(S);
+      u := s;
+      for j := 0 to ol.CronRec.Count - 1 do begin
+         if not ol.Active then begin
+            if not (S.wMonth - 1 in ol.CronRec.p^[j].Months) then continue;
+            if not (S.wDay - 1 in ol.CronRec.p^[j].Days) then continue;
+            if not (S.wDayOfWeek in ol.CronRec.p^[j].Dows) then continue;
+            i := NextMatch(S.wMinute, ol.CronRec.p^[j].Minutes);
+            if i < S.wMinute then begin
+               inc(S.wHour);
+               if S.wHour > 23 then begin
+                  S.wHour := 0;
+               end;
+            end;
+            S.wMinute := i;
+            S.wHour := NextMatch(S.wHour, ol.CronRec.p^[j].Hours);
+         end else begin
+            S.wMinute := PrevMatch(S.wMinute, ol.CronRec.p^[j].Minutes);
+            S.wHour := PrevMatch(S.wHour, ol.CronRec.p^[j].Hours);
+         end;
+         S.wSecond := 0;
+         S.wMilliseconds := 0;
+         e := evListView.FindCaption(0, ol.EName, False, True, True);
+         if e = nil then begin
+            b := True;
+            e := evListView.Items.Add;
+            e.Caption := ol.EName;
+            e.SubItems.Add('');
+            e.SubItems.Add('');
+         end;
+         if ol.CronRec.IsUTC then begin
+            GetTimeZoneInformation(zi);
+            SystemTimeToTzSpecificLocalTime(@zi, S, L);
+            y := l;
+            try
+               A := SystemTimeToDateTime(L);
+            except
+               on E: Exception do ProcessTrap(E.Message + ', ' +
+                  'S.Y = ' + IntToStr(S.wYear) + ', ' +
+                  'S.M = ' + IntToStr(S.wMonth) + ', ' +
+                  'S.D = ' + IntToStr(S.wDay) + ', ' +
+                  'S.W = ' + IntToStr(S.wDayOfWeek) + ', ' +
+                  'S.H = ' + IntToStr(S.wHour) + ', ' +
+                  'S.M = ' + IntToStr(S.wMinute) + ', ' +
+                  'L.Y = ' + IntToStr(L.wYear) + ', ' +
+                  'L.M = ' + IntToStr(L.wMonth) + ', ' +
+                  'L.D = ' + IntToStr(L.wDay) + ', ' +
+                  'L.W = ' + IntToStr(L.wDayOfWeek) + ', ' +
+                  'L.H = ' + IntToStr(L.wHour) + ', ' +
+                  'L.M = ' + IntToStr(L.wMinute) + ', ',
+                  'UpdateMlr (SystemTimeToDateTime)');
+            end;
+         end else begin
+            y := s;
+            try
+               A := SystemTimeToDateTime(S);
+            except
+               on E: Exception do ProcessTrap(E.Message + ', ' +
+                  'S.Y = ' + IntToStr(S.wYear) + ', ' +
+                  'S.M = ' + IntToStr(S.wMonth) + ', ' +
+                  'S.D = ' + IntToStr(S.wDay) + ', ' +
+                  'S.W = ' + IntToStr(S.wDayOfWeek) + ', ' +
+                  'S.H = ' + IntToStr(S.wHour) + ', ' +
+                  'S.M = ' + IntToStr(S.wMinute) + ', ',
+                  'UpdateMlr (SystemTimeToDateTime)');
+            end;
+         end;
+         st := FormatDateTime('hh:mm', A);
+         if e.SubItems[0] <> st then begin
+            b := True;
+            e.SubItems[0] := st;
+         end;
+         uNix2WinTime(uWin2NixTime(S) + ol.Len * 60, S);
+         if ol.CronRec.IsUTC then begin
+            GetTimeZoneInformation(zi);
+            SystemTimeToTzSpecificLocalTime(@zi, S, L);
+            A := SystemTimeToDateTime(L);
+            s := l;
+         end else begin
+            A := SystemTimeToDateTime(S);
+         end;
+         st := FormatDateTime('hh:mm', A);
+         if e.SubItems[1] <> st then begin
+            b := True;
+            e.SubItems[1] := st;
+         end;
+         if ol.Active then begin
+            if e.ImageIndex <> 05 then begin
+               e.ImageIndex := 05;
+            end;
+         end else begin
+            if e.ImageIndex <> -1 then begin
+               e.ImageIndex := -1;
+            end;
+         end;
+         e.DropTarget := False;
+      end;
+      end;
+   end;
+   if c <> nil then begin
+      c.DeleteAll;
+   end;
+   FreeObject(c);
+   for k := evListView.Items.Count - 1 downto 0 do begin
+      if evListView.Items[k].DropTarget then begin
+         evListView.Items.Delete(k);
+      end;
+   end;
+   if b then begin
+      evListView.AlphaSort;
+   end;
 end;
 
 procedure TMailerForm.UpdateViewOutMgr;
@@ -3197,19 +3479,7 @@ procedure TMailerForm.UpdateView(fromcc: boolean);
       R: TBatch;
       CPOutUsed: Integer;
       B: Boolean;
-      i: word;
-      j,
       k: Integer;
-      c: TColl;
-      u: TSystemTime;
-      s: TSystemTime;
-      l: TSystemTime;
-      y: TSystemTime;
-      a: TDateTime;
-     ol: TOlEventContainer;
-      e: TListItem;
-     zi: TTimeZoneInformation;
-     st: string;
 
    type
       TDSet = 0..60;
@@ -3328,104 +3598,8 @@ procedure TMailerForm.UpdateView(fromcc: boolean);
          evListView.Items[k].DropTarget := True;
       end;
       UpdateGlobalEvtUpdateFlag;
-      c := ActiveLine.EP.GetEventList;
-      b := False;
-      for k := 0 to CollMax(c) do begin
-         ol := c[k];
-         if ol.CronRec.IsPermanent then begin
-            e := evListView.FindCaption(0, ol.EName, False, True, True);
-            if e = nil then begin
-               b := True;
-               e := evListView.Items.Add;
-               e.Caption := ol.EName;
-               e.SubItems.Add('--:--');
-               e.SubItems.Add('--:--');
-               e.ImageIndex := 05;
-            end;
-            e.DropTarget := False;
-         end else begin
-         if ol.CronRec.IsUTC then GetSystemTime(S) else GetLocalTime(S);
-         u := s;
-         for j := 0 to ol.CronRec.Count - 1 do begin
-            if not ol.Active then begin
-               if not (S.wMonth - 1 in ol.CronRec.p^[j].Months) then continue;
-               if not (S.wDay - 1 in ol.CronRec.p^[j].Days) then continue;
-               if not (S.wDayOfWeek in ol.CronRec.p^[j].Dows) then continue;
-               i := NextMatch(S.wMinute, ol.CronRec.p^[j].Minutes);
-               if i < S.wMinute then begin
-                  inc(S.wHour);
-                  if S.wHour > 23 then begin
-                     S.wHour := 0;
-                  end;
-               end;
-               S.wMinute := i;
-               S.wHour := NextMatch(S.wHour, ol.CronRec.p^[j].Hours);
-            end else begin
-               S.wHour := PrevMatch(S.wHour, ol.CronRec.p^[j].Hours);
-               S.wMinute := PrevMatch(S.wMinute, ol.CronRec.p^[j].Minutes);
-            end;
-            S.wSecond := 0;
-            e := evListView.FindCaption(0, ol.EName, False, True, True);
-            if e = nil then begin
-               b := True;
-               e := evListView.Items.Add;
-               e.Caption := ol.EName;
-               e.SubItems.Add('');
-               e.SubItems.Add('');
-            end;
-            if ol.CronRec.IsUTC then begin
-               GetTimeZoneInformation(zi);
-               SystemTimeToTzSpecificLocalTime(@zi, S, L);
-               y := l;
-               A := SystemTimeToDateTime(L);
-            end else begin
-               y := s;
-               A := SystemTimeToDateTime(S);
-            end;
-            st := FormatDateTime('hh:mm', A);
-            if e.SubItems[0] <> st then begin
-               b := True;
-               e.SubItems[0] := st;
-            end;
-            uNix2WinTime(uWin2NixTime(S) + ol.Len * 60, S);
-            if ol.CronRec.IsUTC then begin
-               GetTimeZoneInformation(zi);
-               SystemTimeToTzSpecificLocalTime(@zi, S, L);
-               A := SystemTimeToDateTime(L);
-               s := l;
-            end else begin
-               A := SystemTimeToDateTime(S);
-            end;
-            st := FormatDateTime('hh:mm', A);
-            if e.SubItems[1] <> st then begin
-               b := True;
-               e.SubItems[1] := st;
-            end;
-            if ol.Active then begin
-               if e.ImageIndex <> 05 then begin
-                  e.ImageIndex := 05;
-               end;
-            end else begin
-               if e.ImageIndex <> -1 then begin
-                  e.ImageIndex := -1;
-               end;
-            end;
-            e.DropTarget := False;
-         end;
-         end;
-      end;
-      if c <> nil then begin
-         c.DeleteAll;
-      end;
-      FreeObject(c);
-      for k := evListView.Items.Count - 1 downto 0 do begin
-         if evListView.Items[k].DropTarget then begin
-            evListView.Items.Delete(k);
-         end;
-      end;
-      if b then begin
-         evListView.AlphaSort;
-      end;
+      AssignEvents1.Tag := 0;
+      FillEventList(evListView, ActiveLine);
    end;
 
    procedure UpdateRasDial;
@@ -3453,7 +3627,7 @@ procedure TMailerForm.UpdateView(fromcc: boolean);
 
    procedure UpdatePolls;
    const
-      PT: array[TPollType] of Integer = (-1, rsMMptAuto, rsMMptNetm, rsMMptCron, rsMMptTest, rsMMptManual, rsMMptImm, rsMMptBack, rsMMptRCC, rsMMptNmIm);
+      PT: array[TPollType] of Integer = (-1, rsMMptAuto, rsMMptNetm, rsMMptCron, rsMMptTest, rsMMptManual, rsMMptImm, rsMMptBack, rsMMptNmIm);
    var
       C: TColl;
       S: TStringColl;
@@ -3571,6 +3745,9 @@ procedure TMailerForm.UpdateView(fromcc: boolean);
          if mpPause.Caption <> s then begin
             mpPause.Caption := s;
          end;
+         if ppPause.Caption <> s then begin
+            ppPause.Caption := s;
+         end;
       end;
 
       SetEnabledO(mpPause, wcb_mpPause, Z);
@@ -3620,6 +3797,9 @@ procedure TMailerForm.UpdateView(fromcc: boolean);
          RasLabelPan.Visible := False;
          RasBtnPan.Visible := False;
       end;
+//      AssignEvents1.Enabled := False;
+      AssignEvents1.Tag := 1;
+      FillEventList(edListView, ActiveLine);
    end;
 
    procedure UpdateSystem;
@@ -3922,20 +4102,16 @@ begin
    for i := 0 to MailerThreads.Count - 1 do begin
       TMailerThread(MailerThreads[i]).Terminated := True;
       TMailerThread(MailerThreads[i]).InsertEvt(TMlrEvtShutdownTerminate.Create);
+      SetEvt(TMailerThread(MailerThreads[i]).oEvt);
    end;
    MailerThreads.Leave;
    Application.ProcessMessages;
    MailerThreads.Enter;
    for i := 0 to MailerThreads.Count - 1 do begin
       TMailerThread(MailerThreads[i]).WaitFor;
+      MailerThreads.AtFree(i);
    end;
    MailerThreads.Leave;
-   i := 0;
-   while (MailerThreads.Count > 0) and (i < 40) do begin
-      Application.ProcessMessages;
-      Sleep(500);
-      Inc(i);
-   end;
    if DaemonStarted then _ShutdownDaemon;
 end;
 
@@ -4018,7 +4194,6 @@ var
 begin
    Action := caFree;
    if _Closed then Exit;
-   _Closed := True;
    Inc(ListUpd);
    if Application.MainForm = Self then begin
    if not WMCLOSE then
@@ -4042,6 +4217,7 @@ begin
       else
          ;
       end; {case}
+     _Closed := True;
       Application.Minimize;
       ExitNow := true;
       if DaemonStarted then _ShutdownDaemon;
@@ -4118,21 +4294,6 @@ begin
    PostMsg(WM_UPDOUTMGR);
    PostMsg(WM_UPDATEMENUS);
    PostMsg(WM_UPDBWZ);
-end;
-
-procedure TMailerForm.mwRemoteMirrorClick(Sender: TObject);
-var
-   A: TFidoAddrColl;
-  an: TAdvNode;
-begin
-   A := InputFidoAddress(LngStr(rsMMpollNodes), True, nil);
-   if A = nil then Exit;
-   an := FindNode(A[0]);
-   if an = nil then exit;
-   InsertPoll(an, [osImmed], ptpRCC);
-  _RecalcPolls(True);
-{   OpenRemoteForm(A[0]);}
-   FreeObject(A);
 end;
 
 procedure TMailerForm.mcDialupClick(Sender: TObject);
@@ -4309,7 +4470,7 @@ begin
    mbp.lpszText := PChar(
       ProductNameFull + #10 +
       'Version: ' + ProductVersion + #10#10 +
-      '© 2003-2004 by Taurus. All rights reserved'#10 +
+      '© 2003-2005 by Taurus. All rights reserved'#10 +
       'FidoNet: 2:461/700, 701, 702, e-mail: taurus@rinet.ru'#10#10 +
       '© 2003-2004 by RadSoft. All rights reserved'#10#10 +
       '© 2000-2003 by Denis Voituk. All rights reserved'#10 +
@@ -4467,6 +4628,11 @@ var
       ModuleName := MakeNormName(HomeDir, 'wTerminal.dll');
       ModuleHandle := LoadLibrary(PChar(ModuleName));
       result := ModuleHandle <> 0;
+      if not Result then begin
+         ModuleName := MakeNormName(HomeDir, '..\Term\wTerminal.dll');
+         ModuleHandle := LoadLibrary(PChar(ModuleName));
+         result := ModuleHandle <> 0;
+      end;
    end;
 
    function __Load(A: PChar): Pointer;
@@ -4555,13 +4721,6 @@ begin
 
    mfRunIPDaemon.Enabled := True;
    mnu_tray_TCP.Enabled := True;
-
-   mwRemoteMirror.Visible := False;
-
-{$IFDEF REMOTEMIRROR}
-   mwRemoteMirror.Enabled := True;
-   mwRemoteMirror.Visible := True;
-{$ENDIF}
 
    if not (Application.MainForm = nil) then begin
       //  ???
@@ -4846,6 +5005,7 @@ end;
 
 procedure DoneMsgDispatcher;
 begin
+   Application.OnMessage := nil;
    FreeObject(MsgDispatcher);
 end;
 
@@ -4930,7 +5090,7 @@ var
    end;
 
 const
-   PtpTyp: array[TPollType] of Integer = (0, rsMMptpiOutb, rsMMptpiNetm, rsMMptpiCron, rsMMptpiTest, rsMMptpiManual, rsMMptpiImm, rsMMptpiBack, rsMMptpiRCC, rsMMptpiNmIm);
+   PtpTyp: array[TPollType] of Integer = (0, rsMMptpiOutb, rsMMptpiNetm, rsMMptpiCron, rsMMptpiTest, rsMMptpiManual, rsMMptpiImm, rsMMptpiBack, rsMMptpiNmIm);
 
 var
    s: string;
@@ -5219,7 +5379,7 @@ begin
                s2 := '-Unknown sysop-'
             else
                s2 := Node.Sysop;
-            //          Node.Free;
+            FreeObject(Node);
             if osBusy in F.StatusSet then s := FormatLng(rsMMOutNBusy, [Addr2Str(F.Address)]);
             if osBusyEx in F.StatusSet then s := FormatLng(rsMMOutNCusy, [Addr2Str(F.Address)]);
             //          s := Format('%s [%s]',[s,s2]);
@@ -5230,7 +5390,7 @@ begin
                s2 := '-Unknown sysop-'
             else
                s2 := Node.Sysop;
-            //          Node.Free;
+            FreeObject(Node);
             //          s := Format('%s [%s]',[Addr2Str(F.Address),s2]);
             s := Format('%s', [Addr2Str(F.Address)]);
          end;
@@ -5393,6 +5553,7 @@ var
    c: integer;
 begin
    c := 0;
+   if ApplicationDowned then exit;
    while OutMgrThread.HandUpdate do begin
       Application.ProcessMessages;
       Sleep(100);
@@ -5631,7 +5792,7 @@ begin
    PrevColl := nil;
    CurColl := nil;
    Result := nil;
-   PrevAddr.Zone := -1;
+   PrevAddr.Zone := word(-1);
    PrevStat := osNone;
    for i := 0 to CollMax(AC) do begin
       F := AC[i];
@@ -6499,6 +6660,7 @@ end;
 
 procedure TMailerForm.WndProc(var M: TMessage);
 begin
+//   if _Closed then Exit;
    WindCounter := 0;
    if csDesigning in ComponentState then begin
       inherited WndProc(M);
@@ -6987,6 +7149,10 @@ var
    L: TLineRec;
    procedure Ins(P: Pointer); begin C.Insert(P) end;
 begin
+   if (Sender as TMenuItem).Tag = 1 then begin
+      SetupIP(5);
+      exit;
+   end;
    c := TMainCfgColl.Create;
    for i := 0 to 1 do begin
       Ins(TLineColl.Create);
@@ -7003,7 +7169,7 @@ begin
    b := False;
    for i := 0 to CollMax(C.Lines) do begin
       l := C.Lines[i];
-      if ActiveLine.LineId = l.Id then begin
+      if ((ActiveLine <> PanelOwnerDaemon) and (ActiveLine.LineId = word(l.Id))) or (l.Id = -1) then begin
          b := EditMailerLine(1, C.Lines[i], C, b);
          if b then begin
             CfgEnter;
@@ -7024,7 +7190,17 @@ var
   ev: TEventColl;
    i: Integer;
    n: Integer;
+   evListView: TListView;
 begin
+   if ActiveLine = PanelOwnerDaemon then begin
+      evListView := edListView;
+   end else begin
+      if Sender is TListView then begin
+         evListView := Sender as TListView;
+      end else begin
+         evListView := Self.evListView;
+      end;
+   end;
    if evListView.ItemFocused = nil then exit;
    Ev := TEventColl.Create;
    Cfg.Events.AppendTo(Ev);

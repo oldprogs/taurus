@@ -110,10 +110,10 @@ var
 begin
   err := False;
   FreeObject(LC);
-  SC1 := TStringColl.Create('');
-  SC2 := TStringColl.Create('');
-  SC3 := TStringColl.Create('');
-  SC4 := TStringColl.Create('');
+  SC1 := TStringColl.Create;
+  SC2 := TStringColl.Create;
+  SC3 := TStringColl.Create;
+  SC4 := TStringColl.Create;
   gOvr.GetData([SC1, SC2, SC3, SC4]);
   for i := 0 to CollMax(SC1) do begin
     s1 := SC1[i];
@@ -141,11 +141,11 @@ begin
         s := SC[j];
         if Copy(s, 1, 1) = '!' then begin
           TS := Copy(s, 1, 3);
-          if (TS<>'!01') and (TS<>'!02')
-                         and (TS<>'!08')
-                         and (TS<>'!09')
-                         and (TS<>'!18')
-                         and (TS<>'!20') then Delete (s, 1, 1);
+          if (TS <> '!01') and (TS <> '!02')
+                           and (TS <> '!08')
+                           and (TS <> '!09')
+                           and (TS <> '!18')
+                           and (TS <> '!20') then Delete (s, 1, 1);
          end;
         if IdentOvrItem(s, False, True) <> oiFlag then begin
           DisplayError(FormatLng(rsOvEdNotFlag, [s]), Handle);
@@ -180,7 +180,7 @@ begin
         Break;
       end;
       if PosU = -1 then j := SC.Count else j := PosU + Byte(s <> 'CM');
-      if s<>'CM' then SC.AtInsert(j, NewStr(StrAsg(s)));
+      if s <> 'CM' then SC.AtInsert(j, NewStr(StrAsg(s)));
     end;
 
     s2 := SC.LongStringD(',');

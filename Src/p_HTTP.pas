@@ -171,8 +171,8 @@ end;
 procedure THTTP.SendStep;
 var
    i: DWORD;
-   a: integer;
-   e: integer;
+   a: cardinal;
+   e: cardinal;
 begin
    if CanSend then begin
       i := MinD(T.D.BlkLen, T.D.FSize - T.D.FPos);
@@ -795,10 +795,15 @@ begin
       GetWrd(s, z, ' ');
       z := UpperCase(z);
       if (z = 'GET') or (z = 'OPTIONS') or (z = 'HEAD') or (z = 'SEARCH') then begin
+         DbgLog(s);
          fMeth := mGet;
-         fHTML := ExtractWord(1, s, [' ']);
-         replace('+', ' ', fHTML);
-         UnpackRFC1945(fHTML);
+         if z = 'GET' then begin
+            fHTML := ExtractWord(1, s, [' ']);
+            replace('+', ' ', fHTML);
+            UnpackRFC1945(fHTML);
+         end else begin
+            fHTML := '/'
+         end;
          fUser := '';
          fPass := '';
          DbgLog(z + ' ' + fHTML);

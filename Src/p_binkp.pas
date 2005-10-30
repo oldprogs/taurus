@@ -10,6 +10,8 @@ type
   TBinkPState = (
     bdNone,
     bdInit,
+    bdSync,
+    bdInfo,
     bdStartWaitFirstMsg,
     bdWaitFirstMsg,
     bdStartWaitPwd,
@@ -21,6 +23,8 @@ type
     bdSendPwd,
     bdSendOKPwd,
     bdSendBadPwd,
+    bdWaitAnything,
+    bdDoneAnything,
     bdAllAkasBusy,
 
     bdStartTransfer,
@@ -77,7 +81,7 @@ type
 const
   MaxSndBlkSz            = $1000;
 var
-  StartSndBlkSz: integer =  $200;
+  StartSndBlkSz: integer =  $400;
   DuplexBlkSz  : integer =  $400;
   SubBlkSz     : integer =  $400;
 
@@ -86,8 +90,8 @@ type
   TBinkPOutA  = array[0..MaxSndBlkSz - 1] of Char;
 
   TGetCharFunc = function(var C: Byte): Boolean of object;
-  TWriteProc = procedure(const Buf; i: DWORD) of object;
-  TPutCharProc = procedure(C: Byte) of object;
+  TWriteProc = procedure(const Buf; const i: DWORD; const Calc: boolean = False) of object;
+  TPutCharProc = procedure(const C: Byte) of object;
   TCharReadyFunc = function: Boolean of object;
 
   TBinkP = class(TBiDirProtocol)
@@ -130,10 +134,16 @@ type
     M_GET_Coll: TStringColl;
     ReceSyncStr, ReceFileStr: string;
     InMsg: string;
-    aOut: TBinkPOutA;
-    aIn: TBinkPArray;
+     aOut: TBinkPOutA;
+      aIn: TBinkPArray;
     aTmpS: TBinkPArray;
     aTmpR: TBinkPArray;
+    CmpCnt: DWORD;
+    CmpPos: DWORD;
+    CmpOut: TBinkPArray;
+    CmpGet: TBinkPArray;
+    TmpPos: DWORD;
+    CmpTmp: TBinkPArray;
     InHdrHi,
     InHdrLo: Byte;
     InCur, InRep: DWORD;
@@ -141,6 +151,8 @@ type
     InData: Boolean;
     InPZIP: boolean;
     SdPZIP: boolean;
+    InGZIP: boolean;
+    OutGZIP: boolean;
     OldState, OldOldState, OldOldOldState,
     State: TBinkPState;
     tx: TBinkPtx;
@@ -153,10 +165,16 @@ type
     keysin,
     keysout: tkeys;
     LogFName: string;
+    SZIPEnabled: boolean;
+    UTF8Enabled: boolean;
     ChatEnabled: boolean;
     CrypEnabled: boolean;
+    CrypStarted: boolean;
+    ZIPReported: boolean;
     RemoteCanCrypt: boolean;
     RemoteCanTRS: boolean;
+    RemoteCanUTF: boolean;
+    infile: string;
     function MakePwdStr(const AStr: string): string;
     procedure FreeChallenge;
     function RxPktKnown: Boolean;
@@ -164,7 +182,7 @@ type
     procedure SetDesOut;
     procedure SetDesIn;
     function GetRxPktName: string;
-    procedure SendMsg(Id: Byte; const Msg: string);
+    procedure SendMsg(Id: Byte; const Msg: string; const Flush: boolean = True);
     procedure SendId(Id: Byte);
     procedure SendDataHdr(Sz: DWORD);
     function CanSend: boolean;
@@ -180,25 +198,42 @@ type
     procedure ChkPwd;
     procedure GetAdr;
     procedure SetTimeout;
+    procedure LogBuf(var b; const i: integer; const d: string);
     function GetCharPlain(var C: Byte): Boolean;
     function GetCharDES(var C: Byte): Boolean;
     function GetCharCRY(var C: Byte): Boolean;
-    procedure WritePlain(const Buf; i: DWORD);
-    procedure WriteDES(const Buf; i: DWORD);
-    procedure WriteCRY(const Buf; i: DWORD);
-    procedure PutCharPlain(c: Byte);
-    procedure PutCharDES(c: Byte);
-    procedure PutCharCRY(c: Byte);
+    function GetCharCMP(var C: Byte): Boolean;
+    procedure WritePlain(const Buf; const i: DWORD; const Calc: boolean = False);
+    procedure WriteDES(const Buf; const i: DWORD; const Calc: boolean = False);
+    procedure WriteCRY(const Buf; const i: DWORD; const Calc: boolean = False);
+    procedure WriteCMP(const Buf; const i: DWORD; const Calc: boolean = False);
+    procedure PutCharPlain(const c: Byte);
+    procedure PutCharDES(const c: Byte);
+    procedure PutCharCRY(const c: Byte);
+    procedure PutCharCMP(const c: Byte);
     function CharReadyPlain: Boolean;
     function CharReadyDES: Boolean;
     function CharReadyCRY: Boolean;
+    function CharReadyCMP: Boolean;
     procedure GetOctetDES;
     procedure SendDummy;
     function KeySum: Word;
     procedure SetChallengeStr(const AStr: string);
     procedure InitCrypt;
+    procedure InitCompr;
+    function StringToUTF8(const s: string): string;
+    function UTF8ToString(const s: string): string;
   public
     freqprocessed: boolean;
+  end;
+
+  TZIPStream = class(TDOSStream)
+    aOut: TBinkPOutA;
+    aPos: integer;
+    Put_ZStream: z_stream;
+    constructor Create(AHandle: DWORD);
+    function Read(var Buffer; Count: DWORD): DWORD; override;
+    destructor Destroy; override;
   end;
 
 implementation
@@ -214,6 +249,8 @@ const
   BinkPStateMsg : array[TBinkPState] of string = (
      'None',
      'Init',
+     'Sync',
+     'Info',
      'StartWaitFirstMsg',
      'WaitFirstMsg',
      'StartWaitPwd',
@@ -225,8 +262,9 @@ const
      'SendPwd',
      'SendOKPwd',
      'SendBadPwd',
+     'WaitAnything',
+     'DoneAnything',
      'AllAKAsBusy',
-
      'StartTransfer',
      'Transfer',
      'Unrec',
@@ -293,16 +331,46 @@ begin
   if not invalidtime then
     with B.D do
     if NeedOfs then Result := Format('%s %d %d %d', [StrQuote(FName), FSize, FTime, FOfs]) else
-      Result := Format('%s %d %d', [StrQuote(FName), FSize, FTime])
+                    Result := Format('%s %d %d', [StrQuote(FName), FSize, FTime])
   else
     with B.D do
     if NeedOfs then Result := Format('%s %d %s %d', [StrQuote(FName), FSize, InvalidTimeStr, FOfs]) else
-      Result := Format('%s %d %s', [StrQuote(FName), FSize, InvalidTimeStr]);
+                    Result := Format('%s %d %s', [StrQuote(FName), FSize, InvalidTimeStr]);
 end;
 
-function FileStr(B: TBatch; NeedOfs: Boolean): string;
+function FileStr(B: TBatch; NeedOfs, GZip: Boolean): string;
 begin
   result := filestrex(b, needofs, false, '');
+  if GZIP then Result := Result + ' GZ';
+end;
+
+{ TZIPStream }
+
+constructor TZIPStream.Create(AHandle: DWORD);
+begin
+   inherited;
+end;
+
+destructor TZIPStream.Destroy;
+begin
+   inherited;
+end;
+
+function TZIPStream.Read(var Buffer; Count: DWORD): DWORD;
+begin
+   Result := inherited Read(aOut[aPos], Count);
+   Tag := Result;
+   if Tag = 0 then exit;
+   Put_ZStream.next_in := @aOut;
+   Put_ZStream.avail_in := Tag;
+   Put_ZStream.next_out := @Buffer;
+   Put_ZStream.avail_out := Tag + 24;
+   Put_ZStream.total_out := 0;
+   if deflate_(Put_ZStream, 1) < 0 then begin
+      Result := 0;
+      exit;
+   end;
+   Tag := Put_ZStream.total_out;
 end;
 
 procedure TBinkP.SetTimeout;
@@ -326,30 +394,29 @@ end;
 
 procedure TBinkP.SendDummy;
 var
-  s: string;
-  i: DWORD;
+   s: string;
+   i: DWORD;
 begin
-  if not SendDummies then Exit;
-  i := xRandom(4) + 5;
-  s := '| ';
-  while i > 0 do begin s := s + Char(xRandom(126 - 32) + 33); Dec(i) end;
-  SendMsg(M_NUL, s);
+   if not SendDummies then Exit;
+   i := xRandom(4) + 5;
+   s := '| ';
+   while i > 0 do begin s := s + Char(xRandom(126 - 32) + 33); Dec(i) end;
+   OutMsgsColl.Add(FormatBinkPMsg(M_NUL, s));
 end;
 
 procedure TBinkP.LogPortErrors;
 var
-  Coll: TStringColl;
-  i, j: Integer;
+   Coll: TStringColl;
+   i, j: Integer;
 begin
-  Coll := CP.GetErrorStrColl;
-  j := CollMax(Coll);
-  if j < 0 then Exit;
-  for i := 0 to j do
-  begin
-    CustomInfo := Coll[i];
-    FLogFile(Self, lfBinkPNiaE);
-  end;
-  Coll.FreeAll;
+   Coll := CP.GetErrorStrColl;
+   j := CollMax(Coll);
+   if j < 0 then Exit;
+   for i := 0 to j do begin
+      CustomInfo := Coll[i];
+      FLogFile(Self, lfBinkPNiaE);
+   end;
+   Coll.FreeAll;
 end;
 
 function TBinkP.RxPkt: DWORD;
@@ -358,7 +425,7 @@ var
 
   procedure Acc;
   var
-    I: Integer;
+     I: Integer;
     CC: Byte;
   begin
     InMsg := '';
@@ -367,8 +434,12 @@ var
       for i := 1 to InRep - 1 do
       begin
         CC := Byte(aIn[I]);
-        if CC = 0 then Exit;
+        if CC = 0 then Break;
         InMsg := InMsg + Char(CC);
+      end;
+      if RemoteCanUTF then begin
+//         StrDeQuote(InMsg);
+         InMsg := UTF8ToString(InMsg);
       end;
     end;
   end;
@@ -377,8 +448,7 @@ var
   begin
     InCur := 0;
     PktRx := bdprxHdrHi;
-    if InData then Result := pktData else
-    begin
+    if InData then Result := pktData else begin
       Acc;
       Result := DWORD(aIn[0]);
     end;
@@ -386,16 +456,22 @@ var
 
 begin
   Result := CurPkt;
+  if CancelRequested then Result := pktAbort else
+  if TimerExpired(Timeout) then Result := pktTimeout else
+  if CP.DCD <> CP.Carrier then begin
+     CP.Carrier := not CP.Carrier;
+     Result := pktDCD;
+  end;
   if Result <> pktNone then Exit;
+  if (State = bdWaitAnything) then begin
+     if CP.CharReady then begin
+       State := bdDoneAnything;
+     end;
+     exit;
+  end;
   if not CharReadyFunc then begin
-    if CancelRequested then Result := pktAbort else
-    if TimerExpired(Timeout) then Result := pktTimeout else
-    if CP.DCD <> CP.Carrier then begin
-      CP.Carrier := not CP.Carrier;
-      Result := pktDCD;
-    end;
-  end else
-  begin
+    //
+  end else begin
     OnceAgain := True;
     SetTimeout;
     while GetCharFunc(C) do begin
@@ -454,62 +530,65 @@ end;
 
 procedure TBinkP.FlushPkt;
 begin
-  CurPkt := pktNone;
+   CurPkt := pktNone;
 end;
 
 procedure TBinkP.FlushOutMsgs;
 var
-  i,
-  j: Integer;
-  s: string;
+   i: integer;
+   s: string;
 begin
-  if OutMsgsLocked then Exit;
-  for i := 0 to CollMax(OutMsgsColl) do begin
-     s := OutMsgsColl[i];
-     for j := 1 to Length(s) do PutCharProc(Byte(s[j]));
-  end;
-  CP.Flsh;
-  OutMsgsColl.FreeAll;
+   if OutMsgsLocked then Exit;
+   if State = bdWaitOK then Exit;
+   s := '';
+   for i := 0 to CollMax(OutMsgsColl) do begin
+      s := s + OutMsgsColl[i];
+   end;
+   if s <> '' then begin
+      WriteProc(s[1], Length(s));
+      CP.Flsh;
+   end;
+   OutMsgsColl.FreeAll;
 end;
 
 constructor TBinkP.Create(ACP: TPort; const prec: TProtocolRecord);
 begin
-  inherited Create(ACP);
-  FreqProcessed := false;
-  M_GOT_Coll := TStringColl.Create;
-  M_GET_Coll := TStringColl.Create;
-  M_SKIP_Coll := TStringColl.Create;
-  OutMsgsColl := TStringColl.Create;
-  GetCharFunc := GetCharPlain;
-  WriteProc := WritePlain;
-  PutCharProc := PutCharPlain;
-  CharReadyFunc := CharReadyPlain;
-  secondeob := false;
-  secondtime := false;
-  count := 1;
-  FiAddr    := prec.Addr;
-  FiSysop   := prec.Sysop;
-  FiStation := prec.Station;
-  LogFName  := prec.LogFName;
-  ChatEnabled := prec.ChatEnabled;
-  CrypEnabled := prec.CrypEnabled;
+   inherited Create(ACP);
+   FreqProcessed := false;
+   M_GOT_Coll := TStringColl.Create;
+   M_GET_Coll := TStringColl.Create;
+   M_SKIP_Coll := TStringColl.Create;
+   OutMsgsColl := TStringColl.Create;
+   GetCharFunc := GetCharPlain;
+   WriteProc := WritePlain;
+   PutCharProc := PutCharPlain;
+   CharReadyFunc := CharReadyPlain;
+   secondeob := false;
+   secondtime := false;
+   count := 1;
+   FiAddr    := prec.Addr;
+   FiSysop   := prec.Sysop;
+   FiStation := prec.Station;
+   LogFName  := prec.LogFName;
+   ChatEnabled := prec.ChatEnabled;
+   CrypEnabled := prec.CrypEnabled;
 end;
 
 function TBinkP.TimeoutValue: DWORD;
 begin
-  Result := MultiTimeout([Timeout]);
-  if DesKey <> 0 then Result := MinD(Result, 1000); // sleep no more than a second if ecrypted
+   Result := MultiTimeout([Timeout]);
+   if DesKey <> 0 then Result := MinD(Result, 1000); // sleep no more than a second if ecrypted
 end;
 
 procedure TBinkP.Cancel;
 begin
-  FreeObject(CP);
+   FreeObject(CP);
 end;
 
 procedure TBinkP.SetChallengeStr(const AStr: string);
 var
   sl: Integer;
-  d: DWORD;
+   d: DWORD;
 begin
   sl := Length(AStr);
   if (sl = 0) or Odd(sl) then begin
@@ -569,9 +648,17 @@ begin
            RemoteCanList := True;
            ListBuf.Add('LIST');
         end else
+        if k = 'HLZ' then begin
+           RemoteCanHZIP := ZLIBLoaded and SZIPEnabled;
+           if RemoteCanHZIP then begin
+              RemoteCanPZIP := False;
+           end;
+        end else
         if k = 'PLZ' then begin
-           RemoteCanPZIP := ZLIBLoaded;
-           if ZLIBLoaded then FLogFile(self, lfPZIP);
+           if not RemoteCanHZIP then begin
+              RemoteCanPZIP := ZLIBLoaded;
+              if ZLIBLoaded then FLogFile(self, lfPZIP);
+           end;
         end else
         if k = 'MBT' then begin
            RemoteCanDYNA := True;
@@ -590,6 +677,15 @@ begin
         end else
         if k = 'TRS' then begin
            RemoteCanTRS := True;
+        end else
+        if k = 'UTF' then begin
+           RemoteCanUTF := True;
+        end else
+        if k = 'GZ' then begin
+           if not RemoteCanHZIP and ZLIBLoaded then begin
+             RemoteCanGZIP := True;
+             SendMsg(M_NUL, 'OPT EXTCMD');
+           end;  
         end;
      end;
   end;
@@ -611,7 +707,7 @@ begin
            CustomInfo := InMsg;
            StartChat(LogFName, false, ChatBell);
            Chat.AddMsg(s);
-        end;   
+        end;
      end;
   end else
   if UpperCase(copy(InMsg, 1, 3)) = 'TRS' then begin
@@ -709,7 +805,6 @@ procedure TBinkP.ReportTraf(txMail, txFiles: DWORD);
 begin
   if txMail + txFiles > 0 then begin
      SendMsg(M_NUL, Format('TRF %d %d', [txMail, txFiles]));
-     SendDummy;
   end;
 end;
 
@@ -744,21 +839,12 @@ begin
     DoChat;
     ctx := tx;
     DoTx;
-    if State <> bdTransfer then break;
-//    if tx = bdtxReadBlock then break;
-    if tx = bdtxReadNextBlock then break;
-    inc(cnt);
-    if cnt = 50 then break;
-  until (ctx = tx);
-  cnt := 0;
-  repeat
-    DoChat;
     crx := rx;
     DoRx;
     if State <> bdTransfer then break;
     inc(cnt);
     if cnt = 50 then break;
-  until (crx = rx);
+  until (ctx = tx) and (crx = rx);
   if (tx = bdtxDone) and (rx = bdrxDone) then begin
     State := bdStartDrain;
     OutFlow := True;
@@ -767,7 +853,8 @@ end;
 
 function CanZIP: string;
 begin
-   if ZLIBLoaded then Result := ' PLZ'
+   SZIPEnabled := True;
+   if ZLIBLoaded then Result := ' HLZ PLZ GZ'
                  else Result := '';
 end;
 
@@ -781,6 +868,13 @@ function CanLst: string;
 begin
    if IniFile.ibnRequestList then Result := ' LST'
                              else Result := '';
+end;
+
+function CanUTF: string;
+begin
+   UTF8Enabled := True;
+   if UTF8Enabled then Result := ' UTF'
+                  else Result := '';
 end;
 
 function AskCRYPT: string;
@@ -797,9 +891,8 @@ end;
 
 procedure SendAddr;
 begin
-  FLogFile(Self, lfBinkPgAddr);
-  SendMsg(M_ADR, CustomInfo);
-  SendDummy;
+   FLogFile(Self, lfBinkPgAddr);
+   SendMsg(M_ADR, CustomInfo);
 end;
 
 procedure ParseOK_M_ERR;
@@ -848,7 +941,6 @@ begin
   xdes_set_key(DesKey, DesKeySchedule);
   SendDummy;
   SendAddr;
-  SendDummy;
 end;
 
 function GetCramStr: string;
@@ -860,29 +952,48 @@ begin
   case State of
     bdInit:
       begin
-        if not Originator then begin
-           SendMsg(M_NUL, 'OPT' + GetCramStr);
-        end;
-        CustomInfo := CanZIP + CanCHT + CanLST + AskCRYPT + CanTRS;
+        CustomInfo := CanZIP + CanCHT + CanLST + CanTRS + CanUTF + AskCRYPT;
         if CustomInfo <> '' then begin
            SendMsg(M_NUL, 'OPT' + CustomInfo);
         end;
-{        SendMsg(M_NUL, 'OPT ENC-DES-CBC ' + GetCramStr);}
-        SendMsg(M_NUL, 'SYS '  + Station.Station);
-        SendMsg(M_NUL, 'ZYZ '  + Station.Sysop);
-        SendMsg(M_NUL, 'LOC '  + Station.Location);
-        SendMsg(M_NUL, 'PHN '  + Station.Phone);
-        SendMsg(M_NUL, 'NDL '  + Station.Flags);
-        SendMsg(M_NUL, 'TIME ' + RFCDateStr);
-        SendMsg(M_NUL, 'VER '  + ProductName + '/' + ProductVersion + '/' + ProductPlatform + ' binkp/1.1');
+        State := bdSync;
+      end;
+    bdSync:
+      begin
+         case RxPkt of
+           pktNone : ;
+           MinErr..MaxErr : ;
+           Integer(M_ADR) : begin
+                               if AddrGot then State := bdUnrec else begin AddrGot := True; State := bdGetInKey; GetAdr end;
+                            end;
+           Integer(M_ERR) : begin State := bdInfo; ParseOK_M_ERR; FlushPkt end;
+           Integer(M_NUL) : begin State := bdInfo; LogNul; end;
+           Integer(M_BSY) : begin State := bdFinishFail; end;
+           else State := bdInfo;
+         end;
+      end;
+    bdInfo:
+      begin
+        if RemoteCanHZip then InitCompr;
+        if not Originator then begin
+           SendMsg(M_NUL, 'OPT' + GetCramStr, False);
+        end;
+        SendMsg(M_NUL, 'SYS '  + Station.Station, False);
+        SendMsg(M_NUL, 'ZYZ '  + Station.Sysop, False);
+        SendMsg(M_NUL, 'LOC '  + Station.Location, False);
+        SendMsg(M_NUL, 'PHN '  + Station.Phone, False);
+        SendMsg(M_NUL, 'NDL '  + Station.Flags, False);
+        SendMsg(M_NUL, 'TIME ' + RFCDateStr, False);
+        SendMsg(M_NUL, 'VER '  + ProductName + '/' + ProductVersion + '/' + ProductPlatform + ' binkp/1.1', False);
         if Birthday <> '' then begin
-           SendMsg(M_NUL, 'BTH ' + BirthDay);
+           SendMsg(M_NUL, 'BTH ' + BirthDay, False);
         end;
         if Originator then begin
            SendAddr;
            State := bdStartWaitFirstMsg;
         end else begin
            State := bdStartWaitPwd;
+           FlushOutMsgs;
         end;
       end;
     bdStartWaitFirstMsg:
@@ -954,6 +1065,7 @@ begin
       Integer(M_ADR) : if AddrGot then State := bdUnrec else begin AddrGot := True; if Originator then begin State := bdStartWaitOK; GetAdr end else State := bdUnrec end;
       Integer(M_OK)  :
          begin
+            CP.Flsh;
             State := bdWaitDoneOK;
             if InMsg <> 'non-secure' then begin
                if InMsg = '' then begin
@@ -970,6 +1082,7 @@ begin
                   FLogFile(Self, lfLog);
                end;
             end;
+            InitCompr;
          end;
       Integer(M_ERR) : begin ParseOK_M_ERR; FlushPkt  end;
       Integer(M_NUL) : begin LogNul; State := bdStartWaitOK end;
@@ -985,12 +1098,29 @@ begin
         CustomInfo := 'non-secure';
         if (FiPassword <> '') and (FiPassword <> '-') then CustomInfo := 'secure';
         SendMsg(M_OK, CustomInfo);
-        SendDummy;
         State := bdStartTransfer;
         if CustomInfo = 'secure' then begin
+           if RemoteCanHZIP then begin
+              State := bdWaitAnything;
+              tx := bdtxInit;
+              rx := bdrxInit;
+              CP.Flsh;
+              exit;
+           end;
            InitCrypt;
         end;
+        InitCompr;
         sleep(500);
+      end;
+    bdWaitAnything:
+      begin
+        DoTransfer;
+      end;
+    bdDoneAnything:
+      begin
+        InitCrypt;
+        InitCompr;
+        State := bdTransfer;
       end;
     bdAllAkasBusy:
       begin
@@ -1060,6 +1190,7 @@ function TBinkP.CanSend: Boolean;
 begin
    if T.D.BlkLen = 0 then T.D.BlkLen := 1024;
    Result := (CP.OutUsed < T.D.BlkLen * 2);
+   if Result then SetTimeout;
 end;
 
 procedure TBinkP.DoChat;
@@ -1067,9 +1198,9 @@ var
    i: integer;
    s: string;
 begin
+   if State = bdWaitAnything then exit;
    if (ChatBuf <> '') and RemoteCanChat and CanSend then begin
-      SendMsg(M_NUL, 'CHT ' + ChatBuf);
-      SendDummy;
+      SendMsg(M_NUL, 'CHT ' + ChatBuf, False);
       ChatBuf := '';
    end;
    if Chat <> nil then begin
@@ -1082,8 +1213,8 @@ begin
       end;
    end;
    while ListBuf.Count > 0 do begin
-      SendMsg(M_NUL, ListBuf[0]);
       CustomInfo := ListBuf[0];
+      SendMsg(M_NUL, CustomInfo, False);
       FLogFile(Self, lfLog);
       ListBuf.AtFree(0);
    end;
@@ -1093,7 +1224,7 @@ begin
          if WordCount(s, [' ']) = 1 then begin
            CustomInfo := 'Requesting transit to: ' + s;
             FLogFile(Self, lfLog);
-            SendMsg(M_NUL, 'TRS ASK ' + s);
+            SendMsg(M_NUL, 'TRS ASK ' + s, False);
             s := s + ' ASK';
             TRSList[i] := s;
          end else
@@ -1111,6 +1242,7 @@ begin
    end else begin
       TRSList.FreeAll;
    end;
+   FlushOutMsgs;
 end;
 
 procedure TBinkP.DoTx;
@@ -1126,7 +1258,7 @@ begin
   if M_GET_Coll.Count = 0 then Result := False else begin
     Result := True;
     s1 := M_GET_COll[0];
-    s2 := FileStr(T, False);
+    s2 := FileStr(T, False, inGZIP);
     z1 := ''; z2 := '';
     for jd := 0 to 3 do begin
       if UpperCase(z1) <> UpperCase(z2) then begin
@@ -1153,10 +1285,13 @@ begin
        State := bdFinishFail;
        Exit
     end;
+
     M_GET_COll.AtFree(0);
     tx := bdTxGotM_GET;
     if pos('NZ', UpperCase(s1)) > 0 then begin
        RemoteCanPZIP := False;
+       RemoteCanHZIP := False;
+       RemoteCanGZIP := False;
        FLogFile(Self, lfNZIP);
     end;
   end;
@@ -1164,7 +1299,7 @@ end;
 
 procedure Got__(Coll: TStringColl; Action: TTransferFileAction);
 begin
-   if UpperCase(Coll[0]) <> UpperCase(FileStr(T, False)) then
+   if UpperCase(Coll[0]) <> UpperCase(FileStr(T, False, inGZIP)) then
       State := bdFinishFail else begin
       Coll.AtFree(0);
       FFinishSend(Self, Action);
@@ -1176,7 +1311,10 @@ var
   i: DWORD;
   l: longint;
   e: integer;
+//  s: TZIPStream;
+  z: integer;
 begin
+  if State = bdWaitAnything then exit;
   case tx of
     bdtxDone : ;
     bdtxInitX :
@@ -1186,7 +1324,8 @@ begin
         end;
         inc(count);
       end;
-    bdtxInit : tx := bdtxGetNextFile;
+    bdtxInit :
+      tx := bdtxGetNextFile;
     bdtxGetNextFile :
       begin
         if secondtime then secondeob := true;
@@ -1205,27 +1344,39 @@ begin
       end;
     bdtxStartFile:
       begin
-        SendMsg(M_FILE, FileStr(T, True));
-        SendDummy;
-        CP.Flsh;
-        T.D.BlkLen := StartSndBlkSz;
+        SendMsg(M_FILE, FileStr(T, True, RemoteCanGZIP));
+        if RemoteCanGZIP then begin
+           outGZIP := True;
+           deflateend_(Put_ZStream);
+           deflateini_(Put_ZStream, 9, PChar(ZLIB_Version), SizeOf(z_stream));
+{           s := TZIPStream.Create((T.Stream as TDosStream).Handle);
+           s.OwnHandle := (T.Stream as TDosStream).OwnHandle;
+           s.Put_ZStream := Put_ZStream;
+           (T.Stream as TDosStream).OwnHandle := False;
+           FreeObject(T.Stream);
+           T.Stream := s;}
+        end;
         ActuallySent := 0;
         VisuallySent := 0;
         tx := bdtxReadBlock;
-        StartSndBlkSz :=  $200;
-        DuplexBlkSz   :=  $400;
-        SubBlkSz      :=  $400;
+        if RemoteCanHZIP then begin
+           StartSndBlkSz :=  $400;
+           DuplexBlkSz   :=  $400;
+           SubBlkSz      :=  $400;
+        end else begin
+           StartSndBlkSz :=  $400;
+           DuplexBlkSz   :=  $400;
+           SubBlkSz      :=  $400;
+        end;
+        T.D.BlkLen := StartSndBlkSz;
       end;
     bdTxGotM_GET:
       begin
-        if T.D.FOfs = T.D.FSize then
-        begin
+        if T.D.FOfs = T.D.FSize then begin
           FFinishSend(Self, aaRefuse);
           tx := bdtxGetNextFile;
-        end else
-        begin
-          SendMsg(M_FILE, FileStr(T, True));
-          SendDummy;
+        end else begin
+          SendMsg(M_FILE, FileStr(T, True, RemoteCanGZIP));
           if rx = bdrxDone then i := MaxSndBlkSz else i := DuplexBlkSz;
           if i = 0 then i := $400;
           T.D.BlkLen := i;
@@ -1237,14 +1388,13 @@ begin
     bdTxReadNextBlock:
       begin
         if rx = bdrxDone then i := MaxSndBlkSz else i := DuplexBlkSz;
-        T.D.BlkLen := MinD(i, T.D.BlkLen * 2);
+        T.D.BlkLen := MinD(i, MaxD(T.D.BlkLen * 2, bdK32 - 1));
         tx := bdtxReadBlock;
       end;
     bdtxReadBlock:
       if not GotM_GET then
       if M_GOT_Coll.Count > 0 then Got__(M_GOT_Coll, aaRefuse) else
-      if M_SKIP_Coll.Count > 0 then Got__(M_SKIP_Coll, aaAcceptLater) else
-      begin
+      if M_SKIP_Coll.Count > 0 then Got__(M_SKIP_Coll, aaAcceptLater) else begin
         i := MinD(T.D.BlkLen, T.D.FSize - T.D.FPos);
         SetLastError(0);
         if (T.Stream.Read(aOut, i) <> i) or (GetLastError <> 0) then begin
@@ -1275,13 +1425,57 @@ begin
                 ActuallySent := ActuallySent + dword(i);
              end;
              if (VisuallySent > 0) and (ActuallySent > 0) then begin
-                StartSndBlkSz :=  $200 * (VisuallySent div ActuallySent);
-                DuplexBlkSz   :=  $400 * (VisuallySent div ActuallySent);
-                SubBlkSz      :=  $400 * (VisuallySent div ActuallySent);
+                StartSndBlkSz :=  $400 * VisuallySent div ActuallySent;
+                DuplexBlkSz   :=  $400 * VisuallySent div ActuallySent;
+                SubBlkSz      :=  $400 * VisuallySent div ActuallySent;
                 if DuplexBlkSz < $400 then begin
-                   StartSndBlkSz :=  $200;
+                   StartSndBlkSz :=  $400;
                    DuplexBlkSz   :=  $400;
                    SubBlkSz      :=  $400;
+                end;
+             end;
+          end else
+          if outGZIP then begin
+             l := SizeOf(aTmpS);
+             VisuallySent := VisuallySent + dword(i);
+             Put_ZStream.next_in := @aOut;
+             Put_ZStream.avail_in := i;
+             Put_ZStream.next_out := @aTmpS;
+             Put_ZStream.avail_out := SizeOf(aTmpS);
+             Put_ZStream.total_out := 0;
+             z := 1;
+             if T.d.FPos + i = T.d.FSize then z := 4;
+             if deflate_(Put_ZStream, z) < 0 then begin
+                CustomInfo := 'Deflate error: ' + Put_ZStream.msg;
+                SendMsg(M_ERR, CustomInfo);
+                FLogFile(Self, lfDebug);
+                State := bdFinishFail;
+                exit;
+             end;
+             l := Put_ZStream.total_out;
+             TxBlkSize := l;
+             move(aTmpS, aOut, l);
+             ActuallySent := ActuallySent + dword(l);
+             if (VisuallySent > 0) and (ActuallySent > 0) then begin
+                StartSndBlkSz :=  $400 * VisuallySent div ActuallySent;
+                DuplexBlkSz   :=  $400 * VisuallySent div ActuallySent;
+                SubBlkSz      :=  $400 * VisuallySent div ActuallySent;
+                if DuplexBlkSz < $400 then begin
+                   StartSndBlkSz :=  $400;
+                   DuplexBlkSz   :=  $400;
+                   SubBlkSz      :=  $400;
+                end;
+             end;
+          end else
+          if RemoteCanHZIP then begin
+             if (VisuallySent > 0) and (ActuallySent > 0) then begin
+                StartSndBlkSz :=  $800 * VisuallySent div ActuallySent;
+                DuplexBlkSz   :=  $800 * VisuallySent div ActuallySent;
+                SubBlkSz      :=  $800 * VisuallySent div ActuallySent;
+                if DuplexBlkSz < $800 then begin
+                   StartSndBlkSz :=  $800;
+                   DuplexBlkSz   :=  $800;
+                   SubBlkSz      :=  $800;
                 end;
              end;
           end;
@@ -1294,8 +1488,7 @@ begin
           SendDataHdr(TxBlkSize);
         end;
         i := MinD(TxBlkSize - TxBlkPos, SubBlkSz);
-        SetTimeout;
-        WriteProc(aOut[TxBlkPos], i);
+        WriteProc(aOut[TxBlkPos], i, True);
         if TxBlkPos + i = TxBlkSize then begin
            Inc(T.D.FPos, TxBlkRead);
         end;
@@ -1326,7 +1519,6 @@ begin
             OutFlow := False;
             FLogFile(Self, lfBatchSendEnd);
             SendId(M_EOB);
-            SendDummy;
             tx := bdtxDone;
             if RemoteCan2eob then tx := bdtxSendSecondEOB;
           end else
@@ -1335,11 +1527,11 @@ begin
       end;
     bdtxSendSecondEOB:
       begin
+        if TimerExpired(Timeout) then begin
+           ProtocolError := ecTimeout;
+           exit;
+         end;
          if RemoteCanTRS and (CollMax(TRSList) > -1) then begin
-            if TimerExpired(Timeout) then begin
-               ProtocolError := ecTimeout;
-               exit;
-            end;
             FlushPkt;
             if CP.Carrier <> CP.DCD then begin
                TRSList.FreeAll;
@@ -1347,7 +1539,6 @@ begin
          end else
          if rx in [bdrxGot_M_EOB, bdrxWaitEOB, bdrxDone] then begin
             SendId(M_EOB);
-            SendDummy;
             tx := bdtxDone;
          end;
       end;
@@ -1397,6 +1588,13 @@ begin
   i := Vl(s); if i = INVALID_VALUE then Exit;
   R.D.FOfs := i;
   Result := True;
+  InGZIP := False;
+  while AStr <> '' do begin
+     DoGet;
+     if s = 'GZ' then begin
+        inGZIP := True;
+     end;
+  end;
 end;
 
 procedure Add_M_GOT;
@@ -1421,8 +1619,7 @@ function Skip: Boolean;
 
 procedure Snd(C: Byte);
 begin
-  SendMsg(C, FileStr(R, False));
-  SendDummy;
+  SendMsg(C, FileStr(R, False, False));
 end;
 
 begin
@@ -1465,9 +1662,8 @@ begin
     bdrxStartFile:
       if not ParseFileData(InMsg) then begin
          if Extractword(4, InMsg, [' ']) = '-1' then begin
-            ReceSyncStr := FileStr(R, True);
+            ReceSyncStr := FileStr(R, True, inGZIP);
             SendMsg(M_GET, ReceSyncStr);
-            SendDummy;
             FlushPkt;
             rx := bdrxWaitFile;
             exit;
@@ -1481,13 +1677,11 @@ begin
           aaRefuse :
             begin
               SendMsg(M_GOT, ReceFileStr);
-              SendDummy;
               rx := bdrxWaitFile;
             end;
           aaAcceptLater :
             begin
               SendMsg(M_SKIP, ReceFileStr);
-              SendDummy;
               rx := bdrxWaitFile;
             end;
           aaAbort :
@@ -1497,9 +1691,8 @@ begin
       end;
     bdrxStartReceData:
       if R.D.FOfs = 0 then rx := bdrxReceData else begin
-        ReceSyncStr := FileStr(R, True);
+        ReceSyncStr := FileStr(R, True, inGZIP);
         SendMsg(M_GET, ReceSyncStr);
-        SendDummy;
         rx := bdrxStartWaitFileSync;
       end;
     bdrxStartWaitFileSync:
@@ -1543,15 +1736,44 @@ begin
                if (e < 0) or (l = SizeOf(aTmpR)) then begin
                   l := e;
                   R.D.fOfs := R.D.fPos;
-                  ReceSyncStr := FileStr(R, True);
+                  ReceSyncStr := FileStr(R, True, False);
                   SendMsg(M_GET, ReceSyncStr + ' NZ');
-                  SendDummy;
                   rx := bdrxWaitFileSync;
                   exit;
                end;
                VisuallyRece := VisuallyRece + dword(l);
                InRep := l;
                move(aTmpR, aIn, l);
+            end else
+            if InGZIP then begin
+               ActuallyRece := ActuallyRece + InRep;
+               Get_ZStream.avail_in := InRep;
+               InRep := 0;
+               Get_ZStream.total_in := 0;
+               Get_ZStream.next_in := @aIn[Get_ZStream.total_in];
+               Get_ZStream.avail_out := SizeOf(aTmpR);
+               Get_ZStream.next_out := @aTmpR;
+               Get_ZStream.total_out := 0;
+               if inflate_(Get_ZStream, 0) < 0 then begin
+                  CustomInfo := 'Inflate error: ' + Get_ZStream.msg;
+                  SendMsg(M_ERR, CustomInfo);
+                  SendMsg(M_GET, ReceSyncStr + ' NZ');
+                  FLogFile(Self, lfDebug);
+                  State := bdFinishFail;
+                  exit;
+               end;
+               l := Cardinal(Get_ZStream.total_out);
+               VisuallyRece := VisuallyRece + DWORD(l);
+               InRep := InRep + DWORD(l);
+               move(aTmpR, aIn, l);
+               if Get_ZStream.avail_in > 0 then begin
+                  CustomInfo := 'Buffer overflow';
+                  SendMsg(M_ERR, CustomInfo);
+                  SendMsg(M_GET, ReceSyncStr + ' NZ');
+                  FLogFile(Self, lfDebug);
+                  State := bdFinishFail;
+                  exit;
+               end;
             end else
             if RemoteCanPZIP then begin
                ActuallyRece := ActuallyRece + InRep;
@@ -1569,8 +1791,11 @@ begin
               if R.D.FPos = R.D.FSize then begin
                 FFinishRece(Self, aaOK);
                 SendMsg(M_GOT, ReceFileStr);
-                SendDummy;
                 rx := bdrxWaitFile;
+                if inGZIP then begin
+                   inflateend_(Get_ZStream);
+                   inflateini_(Get_ZStream, PChar(ZLIB_Version), SizeOf(z_stream));
+                end;
 //                tx := bdtxInit;
               end;
             end;
@@ -1625,164 +1850,243 @@ end;
 
 function TBinkP.NextStep: boolean;
 begin
-  repeat
-    repeat
-      OnceAgain := False;
-      OldOldOldState := OldOldState;
-      OldOldState := OldState;
-      OldState := State;
-      DoStep;
-    until (OldState = State) and (not OnceAgain);
-    FlushOutMsgs;
-    Result := (ProtocolError <> ecOK) or (State = bdDone);
-    if not Result then
-    case RxPkt of
+   repeat
+      repeat
+         OnceAgain := False;
+         OldOldOldState := OldOldState;
+         OldOldState := OldState;
+         OldState := State;
+         DoStep;
+      until (OldState = State) and (not OnceAgain);
+      FlushOutMsgs;
+      Result := (ProtocolError <> ecOK) or (State = bdDone);
+      if not Result then
+      case RxPkt of
       pktNone: Break;
       pktDCD:
-        begin
-          if (rx <> bdrxDone) or (tx <> bdtxDone) then ProtocolError := ecAbortNoCarrier;
-          Result := True;
-        end;
+         begin
+            if (rx <> bdrxDone) or (tx <> bdtxDone) then ProtocolError := ecAbortNoCarrier;
+            Result := True;
+         end;
       pktAbort:
-        begin
-          ProtocolError := ecAbortByLocal;
-          Result := True;
-        end;
+         begin
+            ProtocolError := ecAbortByLocal;
+            Result := True;
+         end;
       pktTimeout:
-        begin
-          ProtocolError := ecTimeout;
-          Result := True;
-        end;
-    end;
-    if Result then begin
-      if not RxClosed then begin
-        FFinishRece(Self, aaAbort);
+         begin
+            ProtocolError := ecTimeout;
+            Result := True;
+         end;
       end;
-      if not TxClosed then begin
-        FFinishSend(Self, aaAbort);
+      if Result then begin
+         if not RxClosed then begin
+            FFinishRece(Self, aaAbort);
+         end;
+         if not TxClosed then begin
+            FFinishSend(Self, aaAbort);
+         end;
       end;
-    end;
-    Sleep(50);
-  until Result;
-  if (R <> nil) and (rx <> bdrxWaitFileSync) then R.D.Part := InCur else R.D.Part := 0;
+      Sleep(50);
+   until Result;
+   if (R <> nil) and (rx <> bdrxWaitFileSync) then R.D.Part := InCur else R.D.Part := 0;
 end;
 
 procedure TBinkP.Start({RX}AAcceptFile: TAcceptFile; AFinishRece: TFinishRece;
                        {TX}AGetNextFile: TGetNextFile; AFinishSend: TFinishSend;
                        {CH}AChangeOrder: TChangeOrder);
 begin
-  inherited Start(AAcceptFile, AFinishRece, AGetNextFile, AFinishSend, AChangeOrder);
-  State := bdInit;
-  PktRx := bdprxHdrHi;
-  CurPkt := pktNone;
-  InCur := 0;
-  T.D.BlkLen := 0;
-  R.D.BlkLen := 0;
-  M_GOT_Coll.FreeAll;
-  M_GET_Coll.FreeAll;
-  M_SKIP_Coll.FreeAll;
-  OutMsgsColl.FreeAll;
-  OutMsgsLocked := False;
-  SetTimeout;
+   inherited Start(AAcceptFile, AFinishRece, AGetNextFile, AFinishSend, AChangeOrder);
+   State := bdInit;
+   PktRx := bdprxHdrHi;
+   CurPkt := pktNone;
+   InCur := 0;
+   T.D.BlkLen := 0;
+   R.D.BlkLen := 0;
+   M_GOT_Coll.FreeAll;
+   M_GET_Coll.FreeAll;
+   M_SKIP_Coll.FreeAll;
+   OutMsgsColl.FreeAll;
+   OutMsgsLocked := False;
+   SetTimeout;
 end;
 
 procedure TBinkP.SendId(Id: Byte);
 var
-  s: string;
+   s: string;
 begin
-  s := #$80#$01 + Char(Id);
-  OutMsgsColl.Add(s);
-  FlushOutMsgs;
+   s := #$80#$01 + Char(Id);
+   OutMsgsColl.Add(s);
+   SendDummy;
+   FlushOutMsgs;
 end;
 
-procedure TBinkP.SendMsg(Id: Byte; const Msg: string);
+procedure TBinkP.SendMsg(Id: Byte; const Msg: string; const Flush: boolean = True);
 begin
-  OutMsgsColl.Add(FormatBinkPMsg(Id, Msg));
-  FlushOutMsgs;
+   OutMsgsColl.Add(FormatBinkPMsg(Id, StringToUTF8(Msg)));
+   SendDummy;
+   if Flush then FlushOutMsgs;
 end;
 
 procedure TBinkP.SendDataHdr(Sz: DWORD);
 var
-  b: byte;
+   b: byte;
 begin
-  b := Hi(Sz);
-  if SdPZIP then begin
-     b := b or $40;
-  end;
-  PutCharProc(b);
-  PutCharProc(Lo(Sz));
+   b := Hi(Sz);
+   if SdPZIP then begin
+      b := b or $40;
+   end;
+   PutCharProc(b);
+   PutCharProc(Lo(Sz));
 end;
 
 function TBinkP.GetStateStr: string;
 begin
-  Result := Format('%s st=%s/%s/%s/%s tx=%s rx=%s blk=%s', [GetRxPktName, BinkPStateMsg[OldOldOldState], BinkPStateMsg[OldOldState], BinkPStateMsg[OldState], BinkPStateMsg[State], BinkPtxMsg[tx], BinkPrxMsg[rx], BinkPPktRxMsg[PktRx]]);
+   Result := Format('%s st=%s/%s/%s/%s tx=%s rx=%s blk=%s', [GetRxPktName, BinkPStateMsg[OldOldOldState], BinkPStateMsg[OldOldState], BinkPStateMsg[OldState], BinkPStateMsg[State], BinkPtxMsg[tx], BinkPrxMsg[rx], BinkPPktRxMsg[PktRx]]);
 end;
 
 function TBinkP.GetCharPlain(var C: Byte): Boolean;
 begin
-  Result := CP.GetChar(C);
+   Result := CP.GetChar(C);
 end;
 
 procedure TBinkP.GetOctetDES;
 var
-  B: Byte;
-  P: PByteArray;
+   B: Byte;
+   P: PByteArray;
 begin
-  P := @DesInBuf;
-  while (DesInCollectPos < 8) do begin
-    if not CP.GetChar(B) then Break;
-    P^[DesInCollectPos] := B;
-    Inc(DesInCollectPos);
-  end;
-  if DesInCollectPos = 8 then begin
-    xdes_cbc_encrypt(DesInBuf, DesKeySchedule, ivIn, False);
-    DesInCollectPos := 9;
-    DesInGivePos := 0;
-  end;
+   P := @DesInBuf;
+   while (DesInCollectPos < 8) do begin
+      if not CP.GetChar(B) then Break;
+      P^[DesInCollectPos] := B;
+      Inc(DesInCollectPos);
+   end;
+   if DesInCollectPos = 8 then begin
+      xdes_cbc_encrypt(DesInBuf, DesKeySchedule, ivIn, False);
+      DesInCollectPos := 9;
+      DesInGivePos := 0;
+   end;
 end;
 
 function TBinkP.GetCharDES(var C: Byte): Boolean;
 var
-  P: PByteArray;
+   P: PByteArray;
 begin
-  Result := False;
-  GetOctetDES;
-  if DesInCollectPos = 9 then begin
-    Result := True;
-    P := @DesInBuf;
-    C := P^[DesInGivePos];
-    Inc(DesInGivePos);
-    if DesInGivePos = 8 then DesInCollectPos := 0;
-  end;
+   Result := False;
+   GetOctetDES;
+   if DesInCollectPos = 9 then begin
+      Result := True;
+      P := @DesInBuf;
+      C := P^[DesInGivePos];
+      Inc(DesInGivePos);
+      if DesInGivePos = 8 then DesInCollectPos := 0;
+   end;
 end;
 
 function TBinkP.GetCharCRY(var C: Byte): Boolean;
 begin
-  Result := CP.GetChar(C);
-  if Result then decrypt_buf(C, 1, keysin);
+   Result := CP.GetChar(C);
+   if Result then decrypt_buf(C, 1, keysin);
 end;
 
-procedure TBinkP.WritePlain(const Buf; i: DWORD);
-var
-  p: PByteArray;
-  c: DWORD;
+function TBinkP.GetCharCMP(var C: Byte): Boolean;
 begin
-  if i = 0 then Exit;
-  p := @Buf;
-  for c := 0 to i - 1 do CP.PutChar(p^[c]);
+   Result := CmpCnt > 0;
+   if not Result then exit;
+   C := Byte(CmpOut[CmpPos]);
+   Inc(CmpPos);
+   if CmpPos = CmpCnt then begin
+      CmpPos := 0;
+      CmpCnt := 0;
+   end;
 end;
 
-procedure TBinkP.WriteCRY(const Buf; i: DWORD);
+procedure TBinkP.WritePlain(const Buf; const i: DWORD; const Calc: boolean = False);
 var
-  p: PByteArray;
-  c: DWORD;
+   p: PByteArray;
+   c: DWORD;
 begin
-  if i = 0 then Exit;
-  p := @Buf;
-  for c := 0 to i - 1 do PutCharCRY(p^[c]);
+   if i = 0 then Exit;
+   p := @Buf;
+   for c := 0 to i - 1 do CP.PutChar(p^[c]);
 end;
 
-procedure TBinkP.WriteDES(const Buf; i: DWORD);
+procedure TBinkP.WriteCRY(const Buf; const i: DWORD; const Calc: boolean = False);
+var
+   p: PByteArray;
+   c: DWORD;
+begin
+   if i = 0 then Exit;
+   p := @Buf;
+   for c := 0 to i - 1 do PutCharCRY(p^[c]);
+end;
+
+procedure TBinkP.LogBuf;
+var
+   f: file;
+begin
+   if infile = '' then infile := GetUniqStr;
+   assignfile(f, 'e:\' + d + '.' + infile);
+   {$I-}
+   reset(f, 1);
+   seek(f, filesize(f));
+   {$I+}
+   if ioresult <> 0 then rewrite(f, 1);
+   blockwrite(f, b, i);
+   closefile(f);
+end;
+
+procedure TBinkP.WriteCMP(const Buf; const i: DWORD; const Calc: boolean = False);
+var
+   p:^TBinkPArray;
+   o:^TBinkPArray;
+   c: DWORD;
+//   e: integer;
+begin
+   if i + TmpPos = 0 then Exit;
+   GetMem(p, TmpPos + i);
+   GetMem(o, TmpPos + i + 24);
+   if TmpPos > 0 then begin
+      move(CmpTmp, p^, TmpPos);
+   end;
+   move(Buf, p^[TmpPos], i);
+
+//   Put_BStream.next_in := p;
+//   Put_BStream.avail_in := TmpPos + i;
+//   Put_BStream.next_out := o;
+//   Put_BStream.avail_out := TmpPos + i + 12;
+//   e := bzdeflate_(Put_BStream, 1);
+//   if e < 0 then begin
+//      CustomInfo := 'Deflate error: ' + 'bzip(' + IntToStr(e) + ')';
+//      SendMsg(M_ERR, CustomInfo);
+//      FLogFile(Self, lfDebug);
+//      State := bdFinishFail;
+//   end;
+
+   if Calc then VisuallySent := VisuallySent + TmpPos + i;
+   Put_ZStream.next_in := p;
+   Put_ZStream.avail_in := TmpPos + i;
+   Put_ZStream.next_out := o;
+   Put_ZStream.avail_out := TmpPos + i + 24;
+   Put_ZStream.total_out := 0;
+   if deflate_(Put_ZStream, 1) < 0 then begin
+      CustomInfo := 'Deflate error: ' + Put_ZStream.msg;
+      SendMsg(M_ERR, CustomInfo);
+      FLogFile(Self, lfDebug);
+      State := bdFinishFail;
+      exit;
+   end;
+   if Calc then ActuallySent := ActuallySent + Cardinal(Put_ZStream.total_out);
+   for c := 0 to Put_ZStream.total_out - 1 do begin
+      if CrypStarted then PutCharCRY(Byte(o^[c])) else CP.PutChar(Byte(o^[c]));
+   end;
+//   logbuf(o^, Put_ZStream.total_out, 'out');
+   FreeMem(p, TmpPos + i);
+   FreeMem(o, TmpPos + i + 24);
+   TmpPos := 0;
+end;
+
+procedure TBinkP.WriteDES(const Buf; const i: DWORD; const Calc: boolean = False);
 var
    c: Integer;
 begin
@@ -1791,12 +2095,12 @@ begin
    end;
 end;
 
-procedure TBinkP.PutCharPlain(c: Byte);
+procedure TBinkP.PutCharPlain(const c: Byte);
 begin
    CP.PutChar(c);
 end;
 
-procedure TBinkP.PutCharCRY(c: Byte);
+procedure TBinkP.PutCharCRY(const c: Byte);
 var
    b: byte;
 begin
@@ -1805,7 +2109,13 @@ begin
    CP.PutChar(b);
 end;
 
-procedure TBinkP.PutCharDES(c: Byte);
+procedure TBinkP.PutCharCMP(const c: Byte);
+begin
+   CmpTmp[TmpPos] := Char(c);
+   Inc(TmpPos);
+end;
+
+procedure TBinkP.PutCharDES(const c: Byte);
 var
   j: Integer;
   P: PByteArray;
@@ -1833,6 +2143,60 @@ end;
 function TBinkP.CharReadyCRY: Boolean;
 begin
    Result := CP.CharReady;
+end;
+
+function TBinkP.CharReadyCMP: Boolean;
+var
+   C: Byte;
+   i: integer;
+begin
+   Result := CmpCnt > 0;
+   if Result then exit;
+   if Get_ZStream.avail_in > 0 then begin
+      Result := True;
+      Get_ZStream.next_in := @CmpGet[Get_ZStream.total_in];
+      Get_ZStream.avail_out := SizeOf(CmpOut);
+      Get_ZStream.next_out := @CmpOut;
+      Get_ZStream.total_out := 0;
+      if inflate_(Get_ZStream, 1) < 0 then begin
+         Result := False;
+         CustomInfo := 'Inflate error: ' + Get_ZStream.msg;
+         SendMsg(M_ERR, CustomInfo);
+         FLogFile(Self, lfDebug);
+         State := bdFinishFail;
+         exit;
+      end;
+      VisuallyRece := VisuallyRece + Cardinal(Get_ZStream.total_out);
+      CmpCnt := CmpCnt + DWORD(Get_ZStream.total_out);
+      exit;
+   end;
+   Result := CP.CharReady;
+   if Result then begin
+      i := 0;
+      While CP.CharReady and (i < SizeOf(CmpOut) div 2) do begin
+         CP.GetChar(C);
+         if CrypStarted then decrypt_buf(C, 1, keysin);
+         CmpGet[i] := Char(c);
+         inc(i);
+      end;
+//      logbuf(CmpGet, i, 'in');
+      ActuallyRece := ActuallyRece + Cardinal(i);
+      Get_ZStream.next_in := @CmpGet;
+      Get_ZStream.avail_in := i;
+      Get_ZStream.total_in := 0;
+      Get_ZStream.next_out := @CmpOut;
+      Get_ZStream.avail_out := SizeOf(CmpOut);
+      Get_ZStream.total_out := 0;
+      if inflate_(Get_ZStream, 1) < 0 then begin
+         CustomInfo := 'Inflate error: ' + Get_ZStream.msg;
+         SendMsg(M_ERR, CustomInfo);
+         FLogFile(Self, lfDebug);
+         State := bdFinishFail;
+         exit;
+      end;
+      VisuallyRece := VisuallyRece + Cardinal(Get_ZStream.total_out);
+      CmpCnt := CmpCnt + DWORD(Get_ZStream.total_out);
+   end;
 end;
 
 function TBinkP.CharReadyDES: Boolean;
@@ -1933,15 +2297,70 @@ begin
       end;
    end;
    CP.Flsh;
+   CrypStarted := True;
+   if RemoteCanHZIP then exit;
    GetCharFunc := GetCharCRY;
    WriteProc := WriteCRY;
    PutCharProc := PutCharCRY;
    CharReadyFunc := CharReadyCRY;
 end;
 
+procedure TBinkP.InitCompr;
+begin
+   if RemoteCanHZIP then begin
+      if not ZIPReported then begin
+         FLogFile(self, lfSZIP);
+         CP.Flsh;
+      end;
+      GetCharFunc := GetCharCMP;
+      WriteProc := WriteCMP;
+      PutCharProc := PutCharCMP;
+      CharReadyFunc := CharReadyCMP;
+      ZIPReported := True;
+   end;
+end;
+
 function CreateBinkPProtocol(CP: Pointer; const prec: TProtocolRecord): Pointer;
 begin
   Result := TBinkP.Create(CP, Prec);
+end;
+
+function TBinkP.StringToUTF8(const s: string): string;
+var
+   t: PWideChar;
+   i: integer;
+   c: integer;
+begin
+   if RemoteCanUTF then begin
+      GetMem(t, Length(s) * 2 + 2);
+      FillChar(t^, Length(s) * 2 + 2, 0);
+      c := GetACP;
+      MultibyteToWideChar(c, MB_PRECOMPOSED, PChar(s), Length(s), t, Length(s) * 2 + 2);
+      SetLength(Result, Length(s) * 3 + 2);
+      i := WideCharToMultiByte(CP_UTF8, 0, t, -1, PChar(Result), Length(s) * 3 + 2, Nil, Nil);
+      SetLength(Result, i - 1);
+   end else begin
+      Result := s;
+   end;
+end;
+
+function TBinkP.UTF8ToString(const s: string): string;
+var
+   t: PWideChar;
+   i: integer;
+   c: integer;
+begin
+   if RemoteCanUTF then begin
+      GetMem(t, Length(s) * 2 + 2);
+      FillChar(t^, Length(s) * 2 + 2, 0);
+      MultibyteToWideChar(CP_UTF8, 0, PChar(s), Length(s), t, Length(s) * 2 + 2);
+      SetLength(Result, Length(s) * 3 + 2);
+      c := GetACP;
+      i := WideCharToMultiByte(c, 0, t, -1, PChar(Result), Length(s) * 3 + 2, Nil, Nil);
+      SetLength(Result, i - 1);
+   end else begin
+      Result := s;
+   end;
 end;
 
 end.

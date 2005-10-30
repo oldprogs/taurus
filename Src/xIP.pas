@@ -26,14 +26,12 @@ type
     ifcico: TvIntArr;
     Telnet: TvIntArr;
      BinkP: TvIntArr;
-   {$IFDEF EXTREME}
        FTP: TvIntArr;
       HTTP: TvIntArr;
       SMTP: TvIntArr;
       POP3: TvIntArr;
       GATE: TvIntArr;
       NNTP: TvIntArr;
-   {$ENDIF}
     InConns, OutConns: DWORD;
   end;
 
@@ -1389,14 +1387,12 @@ begin
   DoIt(Params.ifcico, ptifcico);
   DoIt(Params.Telnet, ptTelnet);
   DoIt(Params.BinkP, ptBinkP);
-  {$IFDEF EXTREME}
   DoIt(Params.FTP,  ptFTP );
   DoIt(Params.HTTP, ptHTTP);
   DoIt(Params.SMTP, ptSMTP);
   DoIt(Params.POP3, ptPOP3);
   DoIt(Params.GATE, ptGATE);
   DoIt(Params.NNTP, ptNNTP);
-  {$ENDIF}
   ResolveThr.Suspended := False;
   SockMgr.Suspended := False;
   IPMon := TIpMonThread.Create;
@@ -1977,7 +1973,11 @@ begin  // procedure TWSAConnectThread.InvokeExec;
     if ia = INADDR_NONE then TDevicePort(cr.Port).CallerId := ProxyAddr
     else TDevicePort(cr.Port).CallerId := Addr2Inet(ia);
   end;
-  _PostMessage(MainWinHandle, WM_CONNECTRES, 0, Integer(cr));
+  if ExitNow then begin
+     FreeObject(cr);
+  end else begin
+    _PostMessage(MainWinHandle, WM_CONNECTRES, 0, Integer(cr));
+  end;
   Terminated := True;
 end;
 

@@ -49,9 +49,11 @@ implementation uses xBase, LngTools;
 {$R *.DFM}
 
 function Crc: DWORD;
-begin with Cfg.FreqData do begin
+begin
+      with Cfg.FreqData do begin
   Result := Misc.Crc32(pnPaths.Crc32(pnPsw.Crc32(alNames.Crc32(alPaths.Crc32(alPsw.Crc32(CRC32_INIT))))));
-end end;
+end 
+    end;
 
 procedure TFreqCfgForm.FormActivate(Sender: TObject);
 begin

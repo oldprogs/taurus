@@ -78,7 +78,9 @@ type
     StationId,
     TrafShIn,
     TrafShOut,
-    RestrictionId: DWORD;
+    RestrictionId,
+    AccFilSiz,
+    DelFilSiz: DWORD;
     RASHangUp: boolean;
     CmdMap: TColl;
     Bevels: array[0..MaxBevel] of TBevel;
@@ -362,6 +364,20 @@ begin
               sSpin.MinValue := 10;
               sSpin.Value := Retry;
            end;
+        eiAccFilesSiz:
+           begin
+              sSpin.Increment := 96;
+              sSpin.MaxValue := 1048576;
+              sSpin.MinValue := 10;
+              sSpin.Value := AccFilSiz;
+           end;
+        eiDelFilesSiz:
+           begin
+              sSpin.Increment := 96;
+              sSpin.MaxValue := 1048576;
+              sSpin.MinValue := 10;
+              sSpin.Value := DelFilSiz;
+           end;
         else GlobalFail('%s', ['TAtomEditorForm.UpdateNB eptSpin']);
         end;
      end;
@@ -470,6 +486,8 @@ begin
           eiRetry          : d := Retry;
           eiTrafShOut      : d := TrafShOut;
           eiTrafShIn       : d := TrafShIn;
+          eiAccFilesSiz    : d := AccFilSiz;
+          eiDelFilesSiz    : d := DelFilSiz;
           else
             d := // equation to avoid "unitialized" warning
                  GlobalFail('%s', ['TAtomEditorForm.GetAtom eptSpin']);
@@ -632,6 +650,8 @@ begin
     eiRetry          : Retry              := i;
     eiTrafShOut      : TrafShOut          := i;
     eiTrafShIn       : TrafShIn           := i;
+    eiAccFilesSiz    : AccFilSiz          := i;
+    eiDelFilesSiz    : DelFilSiz          := i;
     else GlobalFail('%s', ['TAtomEditorForm.StoreSpinValue']);
   end;
 end;
@@ -700,6 +720,9 @@ end;
 
 procedure TAtomEditorForm.sSpinChange(Sender: TObject);
 begin
+  if ((CurTyp = eiAccFilesSiz) or (CurTyp = eiDelFilesSiz)) and (sSpin.Value = sSpin.MinValue) then begin
+     sSpin.Value := sSpin.MaxValue;
+  end;
   StoreSpinValue(CurTyp, sSpin.Value);
 end;
 

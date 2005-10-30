@@ -5,7 +5,6 @@ interface
 {$I DEFINE.INC}
 
 procedure Come_On;
-procedure _Come_On(P: Pointer);
 
 implementation
 
@@ -18,131 +17,13 @@ uses
   Messages,
   classes, AltRecs, Netmail, NdlUtil, MClasses, RasThrd,
   xTAPI, xBase, xMisc, Recs, RadIni,
-
-{$IFDEF GRAB}
-  Controls, Menus, StdCtrls, ExtCtrls, ComCtrls, MdmCmd,
-  Import, AtomEdit, MlineCfg, FreqCfg, DevCfg, LineBits,
-  ModemCfg, SelDir, PathName, NodelCfg, FidoPwd, DialRest,
-  Attach, DupCfg, StupCfg, Extrnls, xEvents,
-  EvtEdit, TracePl, EncLinks, FidoStat, FileBox, IpCfg,
-  FreqEdit, PwdInput, NodeWiz, OvrExpl, PollCfg, SinglPwd,
-  Setup, CheckLst,
-
-{$ENDIF}
-
   OutBound, Windows, OdbcLog, CmdLn, Wizard, CfgFiles, Plus;
 
 var
   inipath: string;
 
-{$IFDEF GRAB}
-
-{$I Grab.PAS}
-
-procedure GrabForms;
-
-procedure Grab(var Reference; FormClass: TFormClass);
-begin
-  Application.CreateForm(FormClass, Reference);
-  GrabForm(TForm(Reference){, Format('..\LNG\ENG_%.2d.LNG', [AN])});
-end;
-
-var
-   ImportForm          : TImportForm;
-   AtomEditorForm      : TAtomEditorForm;
-   MailerLineCfgForm   : TMailerLineCfgForm;
-   FreqCfgForm         : TFreqCfgForm;
-   DeviceConfig        : TDeviceConfig;
-   FidoAddressInput    : TFidoAddressInput;
-   NodelistCompiler    : TNodelistCompiler;
-   LineBitsEditor      : TLineBitsEditor;
-   ModemEditor         : TModemEditor;
-//   SelectDirDialog     : TSelectDirDialog;
-   PathNamesForm       : TPathNamesForm;
-   NodeListCfgForm     : TNodeListCfgForm;
-   PwdForm             : TPwdForm;
-   RestrictCfgForm     : TRestrictCfgForm;
-   MailerForm          : TMailerForm;
-   AttachStatusForm    : TAttachStatusForm;
-   MainConfigForm      : TMainConfigForm;
-   StartupConfigForm   : TStartupConfigForm;
-//   RegInputForm        : TRegInputForm;
-   ExternalsForm       : TExternalsForm;
-//   UnregForm           : TUnregForm;
-   EventsForm          : TEventsForm;
-   EvtEditForm         : TEvtEditForm;
-   NodelistBrowser     : TNodelistBrowser;
-   DisplayInfoForm     : TDisplayInfoForm;
-   EncryptedLinksForm  : TEncryptedLinksForm;
-   FidoTemplateEditor  : TFidoTemplateEditor;
-   FileBoxesForm       : TFileBoxesForm;
-   FReqDlg             : TFReqDlg;
-   ModemCmdForm        : TModemCmdForm;
-   NewPwdInputForm     : TNewPwdInputForm;
-   NodeWizzardForm     : TNodeWizzardForm;
-   OvrExplainForm      : TOvrExplainForm;
-   PollSetupForm       : TPollSetupForm;
-   SinglePasswordForm  : TSinglePasswordForm;
-   StartWizzardForm    : TStartWizzardForm;
-   IPcfgForm           : TIPcfgForm;
-
-//   Pref                : TPreferences;
-   Setup               : TSetupForm;
-
-begin
-  Grab(ImportForm          , TImportForm                     );
-  Grab(AtomEditorForm      , TAtomEditorForm                 );
-  Grab(MailerLineCfgForm   , TMailerLineCfgForm              );
-  Grab(FreqCfgForm         , TFreqCfgForm                    );
-  Grab(DeviceConfig        , TDeviceConfig                   );
-  Grab(FidoAddressInput    , TFidoAddressInput               );
-  Grab(NodelistCompiler    , TNodelistCompiler               );
-  Grab(LineBitsEditor      , TLineBitsEditor                 );
-  Grab(ModemEditor         , TModemEditor                    );
-//  Grab(SelectDirDialog     , TSelectDirDialog                );
-  Grab(PathNamesForm       , TPathNamesForm                  );
-  Grab(NodeListCfgForm     , TNodeListCfgForm                );
-  Grab(PwdForm             , TPwdForm                        );
-  Grab(RestrictCfgForm     , TRestrictCfgForm                );
-  Grab(MailerForm          , TMailerForm                     );
-  Grab(AttachStatusForm    , TAttachStatusForm               );
-  Grab(MainConfigForm      , TMainConfigForm                 );
-  Grab(StartupConfigForm   , TStartupConfigForm              );
-//  Grab(RegInputForm        , TRegInputForm                   );
-  Grab(ExternalsForm       , TExternalsForm                  );
-//  Grab(UnregForm           , TUnregForm                      );
-  Grab(EventsForm          , TEventsForm                     );
-  Grab(EvtEditForm         , TEvtEditForm                    );
-  Grab(NodelistBrowser     , TNodelistBrowser                );
-  Grab(DisplayInfoForm     , TDisplayInfoForm                );
-  Grab(EncryptedLinksForm  , TEncryptedLinksForm             );
-  Grab(FidoTemplateEditor  , TFidoTemplateEditor             );
-  Grab(FileBoxesForm       , TFileBoxesForm                  );
-  Grab(FReqDlg             , TFReqDlg                        );
-  Grab(ModemCmdForm        , TModemCmdForm                   );
-  Grab(NewPwdInputForm     , TNewPwdInputForm                );
-  Grab(NodeWizzardForm     , TNodeWizzardForm                );
-  Grab(OvrExplainForm      , TOvrExplainForm                 );
-  Grab(PollSetupForm       , TPollSetupForm                  );
-  Grab(SinglePasswordForm  , TSinglePasswordForm             );
-  Grab(StartWizzardForm    , TStartWizzardForm               );
-  Grab(IpCfgForm           , TIpCfgForm                      );
-  Grab(Setup               , TSetupForm                      );
-//  Grab(Pref                , TPreferences                    );
-  StoreGrabbed;
-  ExitProcess(0);
-end;
-
-{$ENDIF}
-
-procedure Stop(const a, b: string);
-begin
-  Windows.MessageBox(0, PChar(A), PChar(B), MB_SETFOREGROUND or MB_TASKMODAL or MB_ICONSTOP or MB_OK);
-end;
-
 procedure AnotherArgus;
 begin
-//  Stop('Another instance is already running', ProductName);
   Halt;
 end;
 
@@ -172,15 +53,6 @@ begin
   end;
 end;
 
-function GetEMSICR: string;
-var
-   s: string;
-begin
-   s := GetRegStringDef('EMSI_CR', '%0D');
-   UnpackRFC1945(s);
-   Result := s;
-end;
-
 function proc_i: string;
 var st,
     st2: string;
@@ -206,31 +78,41 @@ end;
 
 procedure LoadPlugins(const HomeDir: string);
 begin
-{ZLib}
+  ZLibLoaded := False;
   ZLibHandle := 0;
   ZLibHandle := LoadLibrary(PChar(MakeNormName(HomeDir, 'zlib.dll')));
   if ZLibHandle <> 0 then begin
+    @zlibvers_ := GetProcAddress(ZLibHandle, 'zlibVersion');
     @compress_ := GetProcAddress(ZLibHandle, 'compress2');
     @uncompress_ := GetProcAddress(ZLibHandle, 'uncompress');
+    @inflateini_ := GetProcAddress(ZLibHandle, 'inflateInit_');
+    @deflateini_ := GetProcAddress(ZLibHandle, 'deflateInit_');
+    @inflate_ := GetProcAddress(ZLibHandle, 'inflate');
+    @deflate_ := GetProcAddress(ZLibHandle, 'deflate');
+    @inflateend_ := GetProcAddress(ZLibHandle, 'inflateEnd');
+    @deflateend_ := GetProcAddress(ZLibHandle, 'deflateEnd');
     ZLibLoaded := True;
   end;
 
-{BZip}
-//  BZipHandle := 0;
-//  BZipHandle := LoadLibrary(PChar(MakeNormName(HomeDir, 'bzip.dll')));
-//  if BZipHandle <> 0 then begin
-//    @compress_ := GetProcAddress(BZipHandle, 'compress2');
-//    @uncompress_ := GetProcAddress(BZipHandle, 'uncompress');
-//    BZipLoaded := True;
-//  end;
+  BZipLoaded := False;
+  BZipHandle := 0;
+  BZipHandle := LoadLibrary(PChar(MakeNormName(HomeDir, 'bzip.dll')));
+  if BZipHandle <> 0 then begin
+    @bzinflateini_ := GetProcAddress(BZipHandle, '_BZ2_bzDecompressInit');
+    @bzdeflateini_ := GetProcAddress(BZipHandle, '_BZ2_bzCompressInit');
+    @bzinflate_ := GetProcAddress(BZipHandle, '_BZ2_bzDecompress');
+    @bzdeflate_ := GetProcAddress(BZipHandle, '_BZ2_bzCompress');
+    @bzinflateend_ := GetProcAddress(BZipHandle, '_BZ2_bzDecompressEnd');
+    @bzdeflateend_ := GetProcAddress(BZipHandle, '_BZ2_bzCompressEnd');
+    BZipLoaded := True;
+  end;
 
 end;
 
 procedure FreePlugins;
 begin
-{ZLib}
- if ZLibHandle <> 0 then FreeLibrary(ZLibHandle);
-
+  if ZLibHandle <> 0 then FreeLibrary(ZLibHandle);
+  if BZipHandle <> 0 then FreeLibrary(BZipHandle);
 end;
 
 procedure DoComeOn;
@@ -331,10 +213,6 @@ begin
 
   PurgeActiveFlags;
 
-  {$IFDEF GRAB}
-  GrabForms;
-  {$ENDIF}
-
   OpenMailerForm(PanelOwnerPolls, False);
 
   OdbcLogCheckInit(MakeNormName(dLog, 'odbcerr.log'));
@@ -367,14 +245,17 @@ begin
 
   FreePlugins;
 
-  Application.ProcessMessages;
+//  Application.ProcessMessages;
   FreeAllLines;
   FreeAllPolls(pdnShutDown, True);
-  Application.ProcessMessages;
+//  Application.ProcessMessages;
 
   DeInitTickTimer;
 
   DoneMailers;
+
+  DoneMsgDispatcher;
+
   DoneFidoOut;
   FreeNetmailHolder;
   FreeNodeController;
@@ -392,7 +273,6 @@ begin
   OdbcLogDone;
   xBaseDone;
   DoneMClasses;
-  DoneMsgDispatcher;
   LanguageDone;
 
   FreeIni;
@@ -403,61 +283,54 @@ end;
 
 procedure DoGetStartupInfo;
 var
-  S: TStartupInfo;
+   S: TStartupInfo;
 begin
-  Clear(S, SizeOf(S));
-  S.cb := SizeOf(S);
-  GetStartupInfo(S);
-  if S.dwFlags and STARTF_USESHOWWINDOW <> 0 then
-    FStartMinimized := (S.wShowWindow = SW_MINIMIZE) or
-                       (S.wShowWindow = SW_SHOWMINIMIZED) or
-                       (S.wShowWindow = SW_SHOWMINNOACTIVE);
-end;
-
-procedure _Come_On(P: Pointer);
-begin
-  Come_on;
-  exitprocess(0);
+   Clear(S, SizeOf(S));
+   S.cb := SizeOf(S);
+   GetStartupInfo(S);
+   if S.dwFlags and STARTF_USESHOWWINDOW <> 0 then
+     FStartMinimized := (S.wShowWindow = SW_MINIMIZE) or
+                        (S.wShowWindow = SW_SHOWMINIMIZED) or
+                        (S.wShowWindow = SW_SHOWMINNOACTIVE);
 end;
 
 procedure Come_On;
-var st,s: string;
-    b:boolean;
-    sa: TStringArray;
-    i:byte;
+var
+  st,
+   s: string;
+  sa: TStringArray;
+   i: byte;
 begin
-  DoGetStartupInfo;
-  Application.Title := 'Taurus [init]';
-  CurrentProcessHandle := GetCurrentProcess;
-  CurrentThreadHandle := GetCurrentThread;
+   DoGetStartupInfo;
+   Application.Title := 'Taurus [init]';
+   CurrentProcessHandle := GetCurrentProcess;
+   CurrentThreadHandle := GetCurrentThread;
 
-  st := GetParamStr;
-  if paramcount <> 0 then begin
-    st := StrPas(StrPos(StrUpper(PChar(GetParamStr)), 'DELAY'));
-  end;
+   st := GetParamStr;
+   if paramcount <> 0 then begin
+      st := StrPas(StrPos(StrUpper(PChar(GetParamStr)), 'DELAY'));
+   end;
 
-  s := UpperCase(st);
-  s := ExtractWord(1, s, [' ']);
-  b := True;
-  if Copy(s, 1, 5) = 'DELAY' then begin
-    b := False; 
-    delete(s, 1, 5);
-    Sleep(strtointdef(s, 9000));
-  end;
-  st := GetParamStr;
-  scanandchange(st);
-  if paramcount <> 0 then begin
-    st := StrPas(StrPos(StrUpper(PChar(GetParamStr)), '-I'));
-  end;
+   s := UpperCase(st);
+   s := ExtractWord(1, s, [' ']);
+   if Copy(s, 1, 5) = 'DELAY' then begin
+      delete(s, 1, 5);
+      Sleep(strtointdef(s, 9000));
+   end;
+   st := GetParamStr;
+   scanandchange(st);
+   if paramcount <> 0 then begin
+      st := StrPas(StrPos(StrUpper(PChar(GetParamStr)), '-I'));
+   end;
 
-  st := GetParamStr;
-  scanandchange(st);
-  sa := GetSwitches(st);
-  for i := 1 to CountSwitches(st) do begin
-    st := StrPas(StrPos(StrUpper(PChar(GetParamStr)), '-I'));
-  end;
-{  if b then} TestAnotherArgus(proc_i);
-  DoComeOn;
+   st := GetParamStr;
+   scanandchange(st);
+   sa := GetSwitches(st);
+   for i := 1 to CountSwitches(st) do begin
+      st := StrPas(StrPos(StrUpper(PChar(GetParamStr)), '-I'));
+   end;
+   TestAnotherArgus(proc_i);
+   DoComeOn;
 end;
 
 end.

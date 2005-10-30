@@ -1,6 +1,6 @@
 object NodelistBrowser: TNodelistBrowser
-  Left = 4
-  Top = 4
+  Left = 245
+  Top = 147
   Width = 638
   Height = 448
   HelpContext = 1970

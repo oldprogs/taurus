@@ -8,7 +8,7 @@ interface
 uses Windows, Classes, SysUtils, xBase, xFido;
 
 type
-     TPollType = (ptpUnknown, ptpOutb, ptpNetm, ptpCron, ptpTest, ptpManual, ptpImm, ptpBack, ptpRCC, ptpNmIm);
+     TPollType = (ptpUnknown, ptpOutb, ptpNetm, ptpCron, ptpTest, ptpManual, ptpImm, ptpBack, ptpNmIm);
 
      TOutStatusSet = Set of TOutStatus;
      TPollTypeSet = Set of TPollType;
@@ -49,6 +49,7 @@ type
        function ActionString: string; virtual; abstract;
        procedure PrepareNfo; virtual; abstract;
        function AgeString: string;
+       function SizeString(const l: integer = 0): string;
      end;
 
      TOutNode = class(TOutItem)
@@ -229,7 +230,11 @@ end;
 
 function A4sToAddrStr(const a: Ta4s): string;
 begin
-   Result := Format('%s:%s/%s.%s@%s', [a[1], a[2], a[3], a[4], a[5]])
+   if IniFile.D5Out then begin
+      Result := Format('%s:%s/%s.%s@%s', [a[1], a[2], a[3], a[4], a[5]]);
+   end else begin
+      Result := Format('%s:%s/%s.%s', [a[1], a[2], a[3], a[4]]);
+   end;
 end;
 
 function NormalizeAddress(const Address, Template: String): String;
@@ -677,7 +682,7 @@ begin
       S := Files[i]; US := UpperCase(S);
       if FoundFiles.Found(US) then Continue;
       AddNew := True;
-      L.Add(SKillActionA[KillAction]+S);
+      L.Add(SKillActionA[KillAction] + S);
    end;
    FreeObject(FoundFiles);
    if AddNew then begin
@@ -710,11 +715,36 @@ var
    T: TTextReader;
    S: String;
    N: String;
-   Nfo: TFileInfo;
-   ks: TKillAction;
+ Nfo: TFileInfo;
+  ks: TKillAction;
    F: TOutFile;
    e: Integer;
    b: Boolean;
+
+procedure CheckStatus(AStatus: TOutStatus; const APath, AMoveToDir: string; AKillAction: TKillAction);
+var
+  SR: TuFindData;
+   F: TOutFile;
+begin
+   if not uFindFirst(MakeNormName(APath, '*.*'), SR) then Exit;
+   repeat
+      if (SR.FName[1] <> '.') and (SR.Info.Attr and FILE_ATTRIBUTE_DIRECTORY > 0) then begin
+         CheckStatus(AStatus, MakeNormName(APath, SR.FName), AMoveToDir, AKillAction);
+      end else
+      if SR.Info.Attr and FAttachDisallowedAttr = 0 then begin
+         F := TOutFile.Create;
+         F.Name := MakeNormName(APath, SR.FName);
+         F.Nfo := SR.Info;
+         F.KillAction := AKillAction;
+         F.Address := Address;
+         F.FStatus := AStatus;
+         F.MoveTo := StrAsg(AMoveToDir);
+         L.Insert(F);
+      end;
+   until not uFindNext(SR);
+   uFindClose(SR);
+end;
+
 begin
    Result := True;
    S := FName + SAttachExt[Status];
@@ -723,8 +753,6 @@ begin
    if T = nil then begin
       if GetErrorNum = ERROR_FILE_NOT_FOUND then ClearErrorMsg;
       exit;
-//    if GetLastError = ERROR_FILE_NOT_FOUND then ClearErrorMsg;
-//    Exit;
    end;
 
    while not T.EOF do begin
@@ -739,16 +767,20 @@ begin
       end;
       if not b then b := GetFileNfo(S, Nfo, False);
       if b then begin
-         F := TOutFile.Create;
-         F.Error := 0;
-         F.Link := N;
-         F.Name := StrAsg(S);
-         F.Nfo := Nfo;
-         F.KillAction := ks;
-         F.Address := Address;
-         F.FStatus := Status;
-         L.Insert(F);
-         FidoOut.fOutboundSize := FidoOut.fOutboundSize + Nfo.Size;
+         if Nfo.Attr and FILE_ATTRIBUTE_DIRECTORY > 0 then begin
+            CheckStatus(Status, S, '', kaBsoNothingAfter);
+         end else begin
+            F := TOutFile.Create;
+            F.Error := 0;
+            F.Link := N;
+            F.Name := StrAsg(S);
+            F.Nfo := Nfo;
+            F.KillAction := ks;
+            F.Address := Address;
+            F.FStatus := Status;
+            L.Insert(F);
+            FidoOut.fOutboundSize := FidoOut.fOutboundSize + Nfo.Size;
+         end;
       end else begin
          e := GetLastError;
          SetErrorMsg(S);
@@ -1626,8 +1658,8 @@ begin
          else
             TxFile := TxFile - f.Nfo.Size;
          end;
-         FreeObject(f);
          AtPut(i, nil);
+         FreeObject(f);
       end else SC.AtInsert(j, NewStr(f.Name));
    end;
    FreeObject(SC);
@@ -1742,7 +1774,7 @@ begin
       T.Name := Path + '\' + FName;
       T.Nfo.Size := ASize;
       T.Nfo.Time := ATime;
-      GetListedNode(Addr);
+//      GetListedNode(Addr);
       T.FStatus := [A];
       T.FPollType := [PollStatus[A]];
       AOutColl.AtInsert(I, T);
@@ -1931,7 +1963,6 @@ var
 begin
    Result := False;
    if UpperCase(ExtractFileExt(m.Pack)) <> '.MSG' then exit;
-   an := FindNode(a);
    if not OutColl.Search(@a, i) then begin
       n := TOutNode.Create;
       n.Address := a;
@@ -1958,12 +1989,13 @@ begin
       s := osCrashMail;
       b := osCrash;
    end;
-   if (an <> nil) and (s <> osHoldMail) and (m.Attr and FileAttached = 0) then begin
-      n.FStatus := n.FStatus + [s];
-      n.FPollType := n.FPollType + [p];
-      Result := InsertPoll(an, [s], p);
-   end else begin
-      FreeObject(an);
+   if (s <> osHoldMail) and (m.Attr and FileAttached = 0) then begin
+      an := FindNode(a);
+      if an <> nil then begin
+         n.FStatus := n.FStatus + [s];
+         n.FPollType := n.FPollType + [p];
+         Result := InsertPoll(an, [s], p);
+      end;
    end;
    if n.Files = nil then begin
       n.Files := TOutFileColl.Create;
@@ -2060,7 +2092,9 @@ begin
    if uFindFirstEx(fn, SR, FindExSearchLimitToDirectories) then begin
       repeat
          if SR.Info.Attr and FILE_ATTRIBUTE_DIRECTORY <> 0 then begin
-            if SR.FName[1] <> '.' then begin
+            if (SR.FName[1] <> '.') and (WordCount(SR.FName, ['.']) < 3) and
+               (VlH(ExtractWord(1, SR.FName, ['.'])) = INVALID_VALUE) then
+            begin
                Xt := ExtractWord(2, SR.FName, ['.']);
                I := VlH(Xt);
                if (I <> INVALID_VALUE) then begin
@@ -2087,7 +2121,7 @@ begin
       Nfo := PFileInfo(FileInfos[ii])^;
       if ExistFile(s) then begin
          n := TOutNode.Create;
-         n.Address.Zone := -1;
+         n.Address.Zone := word(-1);
          n.Nfo.Size := Nfo.Size;
          n.Nfo.Time := Nfo.Time;
          n.Name := StrAsg(s);
@@ -2537,6 +2571,20 @@ end;
 function TOutItem.AgeString: string;
 begin
    Result := GetAge(Nfo.Time);
+end;
+
+function TOutItem.SizeString;
+var
+   i: integer;
+   s: string;
+begin
+   Result := '';
+   s := IntToStr(nfo.Size);
+   for i := Length(s) downto 1 do begin
+      Result := s[i] + Result;
+      if (Length(s) - i + 1) mod 3 = 0 then Result := ' ' + Result;
+   end;
+   while Length(Result) < l do Result := ' ' + Result;
 end;
 
 function DeleteOutFile;

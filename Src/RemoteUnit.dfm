@@ -1,6 +1,6 @@
 object RemoteForm: TRemoteForm
-  Left = 328
-  Top = 258
+  Left = 198
+  Top = 132
   Width = 696
   Height = 480
   Caption = 'RemoteForm'

@@ -1,18 +1,11 @@
 const
   MainLngBase       = 1000;
   LngEvtBase        = 1000;
-  LngBaseEnglish    = MainLngBase+0;
-  LngBaseEnglishEvt = LngBaseEnglish+LngEvtBase;
+  LngBaseEnglish    = MainLngBase + 0;
+  LngBaseEnglishEvt = LngBaseEnglish + LngEvtBase;
 
-  LngBaseRussian    = MainLngBase+2000;
-  LngBaseRussianEvt = LngBaseRussian+LngEvtBase;
-
-  LngBaseGerman     = MainLngBase+3000;
-  LngBaseGermanEvt  = LngBaseGerman+LngEvtBase;
-
-  LngBaseDanish     = MainLngBase+4000;
-  LngBaseDanishEvt  = LngBaseDanish+LngEvtBase;
-
+  LngBaseRussian    = MainLngBase + 2000;
+  LngBaseRussianEvt = LngBaseRussian + LngEvtBase;
 
 
  eiStart            = 0;
@@ -136,5 +129,7 @@ const
  eiTrafShIn         = 75;
  eiZMHEvent         = 77;
  eiSNDEvent         = 78;
+ eiAccFilesSiz      = 79;
+ eiDelFilesSiz      = 80;
 
- eiStop             = 79;
+ eiStop             = 81;

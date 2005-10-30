@@ -3,8 +3,8 @@ unit RemoteUnit;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, p_RCC, Menus;
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls,
+  Forms, Dialogs, p_RCC, Menus;
 
 type
   TRemoteForm = class(TForm)
@@ -25,7 +25,7 @@ var
 
 implementation
 
-uses Wizard, xBase;
+uses Wizard;
 
 {$R *.dfm}
 
@@ -102,9 +102,7 @@ end;
 
 procedure TRemoteForm.ItemClick(Sender: TObject);
 begin
-   Prot.SList.Enter;
    Prot.SList.Add('push menu MainMenu ' + TMenuItem(Sender).Caption);
-   Prot.SList.Leave;
 end;
 
 end.

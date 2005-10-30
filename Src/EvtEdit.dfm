@@ -207,7 +207,7 @@ object EvtEditForm: TEvtEditForm
     Columns = <
       item
         Caption = 'Type'
-        Width = 140
+        Width = 180
       end
       item
         Caption = 'Parameters'

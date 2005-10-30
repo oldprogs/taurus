@@ -312,12 +312,17 @@ var
    i: integer;
    n: integer;
    l: string;
+   p: PGroup;
 begin
    for i := 0 to fEcho.LstColl.Count - 1 do begin
       l := fEcho.LstColl[i];
-      n := Integer(fEcho.LstColl.Objects[i]);
+      p := Pointer(fEcho.LstColl.Objects[i]);
       if s = '' then begin
-         l := l + ' ' + IntToStr(n) + ' 1 y';
+         if p <> nil then begin
+            l := l + ' ' + IntToStr(p.numb) + ' 1 y';
+         end else begin
+            l := l + ' 0 1 y';
+         end;
       end;
       PutString(l);
    end;
@@ -445,7 +450,7 @@ begin
                               if WordCount(z, [' ']) > 1 then begin
                                  z := ExtractWord(2, z, [' ']);
                               end;
-                              fEcho.LstColl.Add(z);
+                              if fEcho.LstColl.IndexOf(z) = -1 then fEcho.LstColl.Add(z);
                            end;
                            l.Free;
                         end;
@@ -652,6 +657,9 @@ begin
             if z = 'X-NEWSREADER:' then begin
                GetWrd(a, z, ' ');
                fEdit := a;
+            end else
+            if z = 'X-COMMENT-TO:' then begin
+               nDest := s;
             end else
             if z = '' then begin
                fillchar(h, sizeof(h), 0);

@@ -176,6 +176,7 @@ type
     lf1Pwd,
     lfChat,
     lfGZIP,
+    lfSZIP,
     lfPZIP,
     lfDYNA,
     lfNZIP,
@@ -228,7 +229,6 @@ type
   TProtocolType = (
                    piAscii,
                    piBinkP,
-      {$IFDEF EXTREME}
                    piFTP,
                    piHTTP,
                    piPOP3,
@@ -236,7 +236,6 @@ type
                    piGATE,
                    piNNTP,
                    piRCC,
-      {$ENDIF}
                    piBPlus,
                    piFTS1,
                    piHydra,
@@ -277,7 +276,6 @@ const
   ProtocolNames : array[TProtocolType] of string = (
     'Ascii',
     'BinkP',
-    {$IFDEF EXTREME}
     'FTP',
     'HTTP',
     'POP3',
@@ -285,7 +283,6 @@ const
     'GATE',
     'NNTP',
     'RCC',
-    {$ENDIF}
     'B+',
     'FTS-0001',
     'Hydra',
@@ -407,6 +404,61 @@ type
     property Visible: boolean read fWeAreVisible write SetVisible;
   end;
 
+  voidpf = Pointer;
+
+  alloc_func = function(opaque : voidpf;
+                        items : uInt;
+                        size : uInt) : Pointer; stdcall;
+
+  free_func = procedure(opaque : voidpf;
+                       address : voidpf); stdcall;
+
+  internal_state = record end;
+
+  pinternal_state = ^internal_state;
+
+  z_stream = record
+    next_in: Pointer;        // next input byte
+    avail_in: Cardinal;    // number of bytes available at next_in
+    total_in: Longint;     // total nb of input bytes read so far
+
+    next_out: Pointer;       // next output byte should be put there
+    avail_out: Cardinal;   // remaining free space at next_out
+    total_out: Longint;    // total nb of bytes output so far
+
+    msg: PChar;            // last error message, NULL if no error
+    state: pinternal_state; // not visible by applications
+
+    zalloc: alloc_func;    // used to allocate the internal state
+    zfree: free_func;      // used to free the internal state
+    opaque: pointer;       // private data object passed to zalloc and zfree
+
+    data_type: Integer;    // best guess about the data type: ascii or binary
+    adler: Longint;        // adler32 value of the uncompressed data
+    reserved: Longint;     // reserved for future use
+  end;
+
+  TAlloc = function(opaque: Pointer; Items, Size: Integer): Pointer; cdecl;
+  TFree = procedure(opaque, Block: Pointer); cdecl;
+
+  b_stream = packed record
+    next_in: Pointer; // next input byte
+    avail_in: Integer; // number of bytes available at next_in
+    total_in_lo32: Integer; // total nb of input bytes read so far
+    total_in_hi32: Integer;
+
+    next_out: Pointer; // next output byte should be put here
+    avail_out: Integer; // remaining free space at next_out
+    total_out_lo32: Integer; // total nb of bytes output so far
+    total_out_hi32: Integer;
+
+    state: Pointer;
+
+    bzalloc: TAlloc; // used to allocate the internal state
+    bzfree: TFree; // used to free the internal state
+    opaque: Pointer;
+  end;
+
   TBaseProtocol = class
   protected
      CS                  : TRTLCriticalSection;
@@ -416,8 +468,28 @@ type
      FFinishSend         : TFinishSend;
      FChangeOrder        : TChangeOrder;
 
+     Get_ZStream         : z_stream;
+     Put_ZStream         : z_stream;
+     ZLIB_Version        : String;
+
+     Get_BStream         : b_stream;
+     Put_BStream         : b_stream;
+
     _Compress            : function(dest: pointer; var res: longint; src: pointer; len: longint; lev: integer): integer; stdcall;
     _Uncompress          : function(dest: pointer; var res: longint; src: pointer; len: longint              ): integer; stdcall;
+    _InflateIni          : function(var zstr: z_stream; vers: PChar; size: integer): integer; stdcall;
+    _DeflateIni          : function(var zstr: z_stream; levl: integer; vers: PChar; size: integer): integer; stdcall;
+    _Inflate             : function(var zstr: z_stream; flsh: integer): integer; stdcall;
+    _Deflate             : function(var zstr: z_stream; flsh: integer): integer; stdcall;
+    _InflateEnd          : function(var zstr: z_stream): integer; stdcall;
+    _DeflateEnd          : function(var zstr: z_stream): integer; stdcall;
+
+    _bzInflateIni        : function(var bstr: b_stream; verb: Integer; smal: Integer): Integer; cdecl; //stdcall;
+    _bzDeflateIni        : function(var bstr: b_stream;  b100: Integer; verb: Integer; work: Integer): Integer; cdecl; //stdcall;
+    _bzInflate           : function(var bstr: b_stream): integer; cdecl; //stdcall;
+    _bzDeflate           : function(var bstr: b_stream; acti: integer): integer; cdecl; //stdcall;
+    _bzInflateEnd        : function(var bstr: b_stream): integer; stdcall;
+    _bzDeflateEnd        : function(var bstr: b_stream): integer; stdcall;
 
      procedure CalcTimeout(var VTimeout: DWORD; AMax, AMin: DWORD);
      procedure CalcBlockSize(var VMax, VCur: DWORD; AMax, AMin: DWORD);
@@ -467,7 +539,9 @@ type
      FiPassword          : string;
      BirthDay            : string;
      RemoteCanChat,
+     RemoteCanHZIP,
      RemoteCanPZIP,
+     RemoteCanGZIP,
      RemoteCanDyna,
      RemoteCan2eob,
      RemoteCanCram,
@@ -522,8 +596,6 @@ type
      procedure StartBatch; virtual;
   end;
 
-  {$IFDEF EXTREME}
-
    TCoding = (
    cUNK,
    cB64,
@@ -570,7 +642,7 @@ type
      function PreFile(const z, s: string): boolean;
      procedure RecFile(const z, a: string);
      function RecStep: boolean;
-     procedure SendFile; 
+     procedure SendFile;
      procedure AbortRece(const s: string = ''); virtual; abstract;
      procedure FinisRece(const s: string = ''); virtual; abstract;
      procedure FinisSend(const s: string = ''); virtual; abstract;
@@ -579,7 +651,6 @@ type
      procedure SendSEATHd(const CRC: DWORD; MD5: string);
      procedure HandleFile(const f: TxStream; var CRC: DWORD; var Auth: string);
   end;
-  {$ENDIF}
 
   TOneWayProtocol = class(TBaseProtocol)
   protected
@@ -933,8 +1004,21 @@ var
   ZLibLoaded : Boolean;
   BZipHandle : THandle;
   BZipLoaded : Boolean;
+  ZLibVers_  : function: PChar; stdcall;
   Compress_  : function(dest: pointer; var res: longint; src: pointer; len: longint; lev: integer): integer; stdcall;
   Uncompress_: function(dest: pointer; var res: longint; src: pointer; len: longint              ): integer; stdcall;
+  InflateIni_: function(var zstr: z_stream; vers: PChar; size: integer): integer; stdcall;
+  DeflateIni_: function(var zstr: z_stream; levl: integer; vers: PChar; size: integer): integer; stdcall;
+  Inflate_   : function(var zstr: z_stream; flsh: integer): integer; stdcall;
+  Deflate_   : function(var zstr: z_stream; flsh: integer): integer; stdcall;
+  InflateEnd_: function(var zstr: z_stream): integer; stdcall;
+  DeflateEnd_: function(var zstr: z_stream): integer; stdcall;
+  bzInflateIni_: function(var bstr: b_stream; verb: Integer; smal: Integer): Integer; cdecl; //stdcall;
+  bzDeflateIni_: function(var bstr: b_stream; b100: Integer; verb: Integer; work: Integer): Integer; cdecl; //stdcall;
+  bzInflate_   : function(var bstr: b_stream): integer; cdecl; //stdcall;
+  bzDeflate_   : function(var bstr: b_stream; acti: integer): integer; cdecl; //stdcall;
+  bzInflateEnd_: function(var bstr: b_stream): integer; cdecl; //stdcall;
+  bzDeflateEnd_: function(var bstr: b_stream): integer; cdecl; //stdcall;
 
 const
   Z_OK = 0;
@@ -1026,13 +1110,12 @@ begin
 
   Buf := '';
   LineCount := 0;
-  while not EOF(FileID) do
-  begin
+  while not EOF(FileID) do begin
     inc(linecount);
     Readln(FileID, Buf);
     case linecount of
-      1:;//TAG
-      2:;//название
+      1:; //TAG
+      2:; //название
       else begin
         if WordCount(Buf,[' ']) <> 2 then break;
         Freq := StrToIntDef(ExtractWord(1, Buf, [' ']), 0);
@@ -1045,23 +1128,22 @@ begin
   CloseFile(FileID);
 end;
 
-function ChatBellThreadFunc(p:pointer):integer;
+function ChatBellThreadFunc(p: pointer):integer;
 begin
-  result := 0;
-  if string(pchar(p)) = '1' then
-  begin
-    BleepInt.Bleep(bInterrupt);
-    BleepInt.Bleep(bInterrupt);
-    BleepInt.Bleep(bInterrupt);
-    BleepInt.Bleep(bInterrupt);
-    exit;
-  end;
-  case GetMediaType(string(pchar(p))) of
+   result := 0;
+   if string(pchar(p)) = '1' then begin
+      BleepInt.Bleep(bInterrupt);
+      BleepInt.Bleep(bInterrupt);
+      BleepInt.Bleep(bInterrupt);
+      BleepInt.Bleep(bInterrupt);
+      exit;
+   end;
+   case GetMediaType(string(pchar(p))) of
     mtWAV: sndPlaySound(pchar(p), SND_ASYNC);
     mtRaMZ: PlayRaMZ(string(pchar(p)));
-    else;
-  end; {of case}
-End;
+   else;
+   end; {of case}
+end;
 
 { --- In Thread }
 
@@ -1687,7 +1769,7 @@ procedure TDevicePort.PutChar(C: Byte);
 begin
   OutChars[SzOutChars] := C;
   Inc(SzOutChars);
-  Inc(Snd);
+//  Inc(Snd);
   if SzOutChars = PortChrBufSize then Flsh;
 end;
 
@@ -2755,6 +2837,17 @@ begin
   if ZLibLoaded then begin
     _compress := compress_;
     _uncompress := uncompress_;
+    _inflate    := inflate_;
+    _deflate    := deflate_;
+    ZLIB_Version := zlibvers_;
+    inflateini_(Get_ZStream,    PChar(ZLIB_Version), SizeOf(z_stream));
+    deflateini_(Put_ZStream, 9, PChar(ZLIB_Version), SizeOf(z_stream));
+  end;
+  if BZipLoaded then begin
+    _bzinflate  := bzinflate_;
+    _bzdeflate  := bzdeflate_;
+    bzinflateini_(Get_BStream,    0, 0);
+    bzdeflateini_(Put_BStream, 9, 0, 0);
   end;
   ListBuf := TStringColl.Create;
   TRSList := TStringColl.Create;
@@ -2778,6 +2871,14 @@ begin
   if R <> nil then FreeObject(R.Stream);
   Finish;
   PurgeCS(CS);
+  if ZLibLoaded then begin
+     inflateend_(Get_ZStream);
+     deflateend_(Put_ZStream);
+  end;
+  if BZipLoaded then begin
+     bzinflateend_(Get_BStream);
+     bzdeflateend_(Put_BStream);
+  end;   
   inherited Destroy;
 end;
 

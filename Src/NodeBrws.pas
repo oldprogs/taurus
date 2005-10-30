@@ -71,9 +71,32 @@ function SelectNode(var Addr: TFidoAddress): Boolean;
 
 implementation
 
-uses xBase, NdlUtil, CommCtrl, LngTools, Wizard, RadIni;
+uses
+   xBase, NdlUtil, CommCtrl, LngTools, Wizard, RadIni, Recs;
 
 {$R *.DFM}
+
+var
+   NC: TFidoNodeColl;
+
+function GetCachedNode(a: TFidoAddress): TFidoNode;
+var
+   i: integer;
+   n: TFidoNode;
+begin
+   Result := nil;
+   if NC.Search(@a, i) then begin
+      Result := NC[i];
+//      Result := Result.Copy;
+      exit;
+   end;
+   n := GetListedNode(a);
+   if n <> nil then begin
+      Result := n;
+      NC.Insert(n);
+//      Result := n.Copy;
+   end;
+end;
 
 function _SelectNode(var Addr: TFidoAddress; PBaseAddr: PFidoAddress): Boolean;
 var
@@ -103,8 +126,11 @@ end;
 function BrowseAtNode(const Addr: TFidoAddress): Boolean;
 var
   a: TFidoAddress;
+  n: TFidoNode;
 begin
-  Result := GetListedNode(Addr) <> nil;
+  n := GetListedNode(Addr);
+  Result := n <> nil;
+  FreeObject(n);
   if Result then _SelectNode(a, @Addr);
 end;
 
@@ -142,41 +168,35 @@ begin
   end;
   N := Tree.Items.AddChildObject(Carrier, Format('%s%s, %s', [s, Node.Station, Node.Sysop]), Node);
   Node.TreeItem := N.ItemId;
+  NC.Update(Node);
   AddMore(Tree, N, Node);
 end;
 
 procedure AddPoints(Tree: TTreeView; Carrier: TTreeNode; Node: TFidoNode);
 var
-  Idx: Integer;
-  ZC: TZoneContainer;
-  i: Integer;
-  ni: TNetNodeIdx;
   Addr: TFidoAddress;
+  n: TFidoNode;
+  SR: TFidoAddress;
 begin
   EnterNlCs;
-  Idx := NodeController.GetNetIdx(Node.Addr.Zone, Node.Addr.Net, Node.Addr.Domain);
-  ZC := NodeController.SeekNet(Idx, Node.Addr.Zone, Node.Addr.Net, Node.Addr.Domain);
   Addr.Domain := Node.Addr.Domain;
   Addr.Zone := Node.Addr.Zone;
   Addr.Net := Node.Addr.Net;
-  for i := 0 to zc.Count - 1 do
-  begin
-    ni := zc[i];
-    if ni.Addr.Point = 0 then Continue;
-    if ni.Addr.Node <> Node.Addr.Node then Continue;
-    Addr.Node := ni.Addr.Node;
-    Addr.Point := ni.Addr.Point;
-    AddNode(Tree, Carrier, GetListedNode(Addr));
+  SR := Node.Addr;
+  while NodeController.NLHolder.GetNextNode(SR) do begin
+    if SR.Point = 0 then break;
+    if SR.Node <> Node.Addr.Node then break;
+    Addr.Node := SR.Node;
+    Addr.Point := SR.Point;
+    n := GetCachedNode(Addr);
+    AddNode(Tree, Carrier, n);
   end;
   LeaveNlCs;
 end;
 
 procedure AddNodes(Hubs: Boolean; Tree: TTreeView; Carrier: TTreeNode; Node: TFidoNode);
 var
-  Idx: Integer;
-  ZC: TZoneContainer;
-  I: Integer;
-  ni: TNetNodeIdx;
+  SR: TFidoAddress;
 
 procedure Add;
 var
@@ -185,10 +205,11 @@ var
 begin
   a.Zone := Node.Addr.Zone;
   a.Net := Node.Addr.Net;
-  a.Node := ni.Addr.Node;
-  a.Point := ni.Addr.Point;
+  a.Node := SR.Node;
+  a.Point := SR.Point;
   a.Domain := Node.Addr.Domain;
-  N := GetListedNode(a);
+  N := GetCachedNode(a);
+//  AddPoints(Tree, Carrier, N);
   AddNode(Tree, Carrier, N);
 end;
 
@@ -197,100 +218,80 @@ var
 
 begin
   EnterNlCs;
-  {if (not Hubs) and (GetNodeType(Node) = fntHub)then} AddPoints(Tree, Carrier, Node);
-  Idx := NodeController.GetNetIdx(Node.Addr.Zone, Node.Addr.Net, Node.Addr.Domain);
-  ZC := NodeController.SeekNet(Idx, Node.Addr.Zone, Node.Addr.Net, Node.Addr.Domain);
-  for J := 0 to Integer(Hubs) do
-  for I := 0 to zc.Count - 1 do
-  begin
-    ni := zc[i];
-    if ni.Addr.Node = 0 then Continue;
-    if ni.Addr.Point <> 0 then Continue;
-    if (ni.Hub = 0) or (ni.Hub = ni.Addr.Node) then
-    begin
-      if Hubs then
-      begin
-        if (ni.Hub = 0) = (J = 0) then Add;
+  AddPoints(Tree, Carrier, Node);
+  for J := 0 to Integer(Hubs) do begin
+  SR := Node.Addr;
+  if not Hubs and (Node.PrefixFlag = nfHub) then SR.Node := 0; {?}
+  while NodeController.NLHolder.GetNextNode(SR) do begin
+    if (SR.Node = 0)  then Break {?};
+    if (SR.Point <> 0) and (SR.Node <> Node.Addr.Node) then Continue;
+    if (SR.Hubb = 0) or (SR.Hubb = SR.Node) then begin
+      if Hubs then begin
+        if (SR.Hubb = 0) = (J = 0) then Add;
       end;
-    end else
-    begin
-      if (not Hubs) and (Node.Addr.Node = ni.Hub) then Add;
+    end else begin
+      if (not Hubs) and (Node.Addr.Node = SR.Hubb) then Add;
     end;
+  end;
   end;
   LeaveNlCs;
 end;
 
 procedure AddNets(Regions: Boolean; Tree: TTreeView; Carrier: TTreeNode; Node: TFidoNode);
 var
-  NodeAddrNet,i: Integer;
-  Z: TZoneContainer;
-  ZC, RC: TFidoNode;
-  ZCA, RCA: TFidoAddress;
-  ZCS: TColl;
+  NodeAddrNet,
+  i: Integer;
+  ZC: TFidoNode;
+  ZCA,
+  RCA: TFidoAddress;
+  ZCS: TFidoNodeColl;
   b: Boolean;
+  SR: TFidoAddress;
 begin
   EnterNlCs;
-  ZCS := TColl.Create;
+  ZCS := TFidoNodeColl.Create;
   if NodeController <> nil then
   begin
-{    if Regions then
-    begin
-      // ??
-    end else
-    begin}
-      NodeAddrNet := Node.Addr.Net;
-//    end;
-    i := -1;
+    NodeAddrNet := Node.Addr.Net;
     FillChar(ZCA, sizeof(ZCA), #0);
     FillChar(RCA, sizeof(ZCA), #0);
-    while i < NodeController.Table.Count - 1 do
-    begin
-      Inc(i);
-      Z := NodeController.Table[i];
-      if z.ZoneData.Domain <> Node.Addr.Domain then Continue;
-      if Z.ZoneData.Zone <> Node.Addr.Zone then Continue;
-
-      if Regions then
-      begin
-        b := (Z.ZoneData.Net <> Z.ZoneData.Zone) and (Z.ZoneData.Net <> 0);
-        if b then
-        begin
-          if (Z.ZoneData.Net) <> (Z.ZoneData.Region) then
-          begin
-            RCA.Domain := Z.ZoneData.Domain;
-            RCA.Zone := Z.ZoneData.Zone;
-            RCA.Net := Z.ZoneData.Net;
+    SR := Node.Addr;
+    b := False;
+    while NodeController.NLHolder.GetNextNode(SR) do begin
+      if SR.Domain <> Node.Addr.Domain then break;
+      if SR.Zone <> Node.Addr.Zone then break;
+      if Regions then begin
+        if SR.Node <> 0 then continue; {?}
+        b := (SR.Net <> SR.Zone) and (SR.Net <> 0);
+        if b then begin
+          if (SR.Net) <> (SR.Region) then begin
+            RCA.Domain := SR.Domain;
+            RCA.Zone := SR.Zone;
+            RCA.Net := SR.Net;
             RCA.Node := 0;
             RCA.Point := 0;
-            RC := GetListedNode(RCA);
-            b := (RC = nil) or (Z.ZoneData.Region = 0); // to show hosts w/o region
+            b := (SR.Region = 0); // to show hosts w/o region
           end;
         end;
-      end else
-      begin
-         b := (Z.ZoneData.Net <> Z.ZoneData.Region) and (NodeAddrNet = Z.ZoneData.Region);
+      end else begin
+         b := (SR.Net <> SR.Region) and (NodeAddrNet = SR.Region);
       end;
 
-      if b then
-      begin
-        ZCA.Domain := Z.ZoneData.Domain;
-        ZCA.Zone := Z.ZoneData.Zone;
-        ZCA.Net := Z.ZoneData.Net;
-        ZC := GetListedNode(ZCA);
-        if ZC <> nil then ZCS.Insert(ZC);
+      if b then begin
+        ZCA.Domain := SR.Domain;
+        ZCA.Zone := SR.Zone;
+        ZCA.Net := SR.Net;
+        ZC := GetCachedNode(ZCA);
+        if (ZC <> nil) and not (ZCS.Search(@ZC.Addr, i)) then ZCS.Insert(ZC); 
       end;
     end;
   end;
   LeaveNlCs;
-  if NodeController <> nil then
-  begin
+  if NodeController <> nil then begin
     AddPoints(Tree, Carrier, Node);
-    // Add indnodes
     AddNodes(True, Tree, Carrier, Node);
-    for i := 0 to ZCS.Count - 1 do
-    begin
+    for i := 0 to ZCS.Count - 1 do begin
       ZC := ZCS[i];
-//      Application.ProcessMessages;
       AddNode(Tree, Carrier, ZC);
     end;
   end;
@@ -329,33 +330,29 @@ end;
 procedure TNodelistBrowser.FormActivate(Sender: TObject);
 var
   i: Integer;
-  Z: TZoneContainer;
   ZC: TFidoNode;
   ZCA: TFidoAddress;
-  ZCS: TColl;
+  ZCS: TFidoNodeColl;
+  SR: TFidoAddress;
 begin
   if Activated then Exit;
   Activated := True;
   EnterNlCS;
   if NodeController = nil then NodeController := TNodeController.Create;
-  ZCS := TColl.Create('');
+  ZCS := TFidoNodeColl.Create;
   if NodeController <> nil then
   begin
     ZCA.Net := 0; ZCA.Node := 0; ZCA.Point := 0; ZCA.Domain := '';
-    i := -1;
-    while i < NodeController.Table.Count - 1 do
-    begin
-      Inc(i);
-      Z := NodeController.Table[i];
-      if ((Z.ZoneData.Net = Z.ZoneData.Zone) and (Z.ZoneData.Region = 0)) or (Z.ZoneData.Net = 0) then
-      begin
-        ZCA.Domain := Z.ZoneData.Domain;
-        ZCA.Zone := Z.ZoneData.Zone;
-        ZCA.Net := Z.ZoneData.Net;
-        ZC := GetListedNode(ZCA);
-        if ZC <> nil then ZCS.Insert(ZC);
+    SR := NodeController.NLHolder.GetFirstNode;
+    repeat
+      if (((SR.Zone = SR.Net) and ((SR.Domain = 'fidonet') or not IniFile.D5Out) and (SR.Zone in [1..6])) or (SR.Net = 0)) and (SR.Node = 0) then begin
+        ZCA.Domain := SR.Domain;
+        ZCA.Zone := SR.Zone;
+        ZCA.Net := SR.Net;
+        ZC := GetCachedNode(ZCA);
+        if (ZC <> nil) and not (ZCS.Search(@ZC, i)) then ZCS.Insert(ZC);
       end;
-    end;
+    until not NodeController.NLHolder.GetNextNode(SR);
   end;
   LeaveNlCS;
   if (NodeController = nil) or (ZCS.Count = 0) then
@@ -413,43 +410,12 @@ begin
   L.Text := S;
 end;
 
-const Flags = ',ICM,INA,IP,TCP,IBN,BND,BINKP,IFC,ITN,IVM,IFT,ITX,IMI,IEM,ISE,IUC,GUUCP,DOM,DO4,DO3,DO2,DO1';
-
-function DUFlags(const s: string): string;
-var t,
-    f: string;
-begin
-   t := s;
-   Result := '';
-   while t <> '' do begin
-      GetWrd(t, f, ',');
-      if pos(',' + ExtractWord(1, f, [':']), Flags) = 0 then begin
-         Result := Result + ',' + f;
-      end;
-   end;
-   Delete(Result, 1, 1);
-end;
-
-function IPFlags(const s: string): string;
-var t,
-    f: string;
-begin
-   t := s;
-   Result := '';
-   while t <> '' do begin
-      GetWrd(t, f, ',');
-      if pos(',' + ExtractWord(1, f, [':']), Flags) > 0 then begin
-         Result := Result + ',' + f;
-      end;
-   end;
-   Delete(Result, 1, 1);
-end;
-
 procedure TNodelistBrowser.TreeClick(Sender: TObject);
 var
   N: TTreeNode;
   D: TFidoNode;
   s: string;
+  i: string;
 begin
   N := Tree.Selected;
   if N = nil then Exit;
@@ -460,11 +426,21 @@ begin
   SetCap(lLocation, D.Location);
   SetCap(lPhone, D.Phone);
   SetCap(lFlags, DUFlags(D.Flags));
-  SetCap(lFlagsIP, IPFlags(D.Flags));
+  SetCap(lFlagsIP, xFido.IPFlags(D.Flags));
   s := FSC62TimeToStr(NodeFSC62TimeEx(D.Flags, D.Addr, False));
-  SetCap(lWrkTimeUTC, s);
+  if xFido.IPFlags(D.Flags) <> '' then begin
+    i := FSC62TimeToStr(NodeFSC62TimeEx(D.Flags, D.Addr, False, True));
+  end else begin
+    i := 'n/a';
+  end;
+  SetCap(lWrkTimeUTC, s + ' | ' + i);
   s := FSC62TimeToStr(NodeFSC62TimeEx(D.Flags, D.Addr, True));
-  SetCap(lWrkTimeLocal, s);
+  if xFido.IPFlags(D.Flags) <> '' then begin
+     i := FSC62TimeToStr(NodeFSC62TimeEx(D.Flags, D.Addr, True, True));
+  end else begin
+    i := 'n/a';
+  end;
+  SetCap(lWrkTimeLocal, s + ' | ' + i);
   SetCap(lStatus, cNodePrefixFlag[D.PrefixFlag]);
   lSpeed.Text := IntToStr(D.Speed);
 end;
@@ -520,14 +496,12 @@ var
     TmpAddr.Node := Node;
     TmpAddr.Point := Point;
     TmpAddr.Domain := Domain;
-    NN := GetListedNode(TmpAddr);
+    NN := GetCachedNode(TmpAddr);
     if NN <> nil then
     begin
       HI := NN.TreeItem;
       if HI = nil then
       begin
-//        GlobalFail('%s', ['TNodelistBrowser.eAddressChange NN.TreeItem = nil']);
-//        WinDlgT('TNodelistBrowser.eAddressChange NN.TreeItem = nil');
         cls := true;
         exit;
       end;
@@ -574,7 +548,7 @@ begin
     TEdit(Sender).Text := S + '.';
     TEdit(Sender).SelStart := L + 1;
   end else
-  if (S[1]='/') and (L = 1) then
+  if (S[1] = '/') and (L = 1) then
   begin
     S2 := Addr2Str(IniFile.MainAddr);
     k := Pos('/', S2) - 1;
@@ -589,16 +563,8 @@ begin
   if Pos(':', S) = 0 then S := S + ':' + S + '/0.0' else
    if Pos('/', S) = 0 then S := S + '/0.0' else
     if (Pos('.', S) = 0) and (Pos('@', S) = 0) then S := S + '.0';
-(*  REP := GetRegExpr('^\d{1,5}\:\d{1,5}\/\d{1,5}\.?\d{0,5}$');
-  b:=(REP.ErrPtr = 0) and (REP.Match(trim(s)) > 0);
-  REP.Unlock;
-  if not b then exit;
-  Addr.Zone:=StrToInt(ExtractWord(1,Trim(s),[':']));
-  Addr.Net:=StrToInt(ExtractWord(2,Trim(s),[':','/']));
-  Addr.Node:=StrToInt(ExtractWord(3,Trim(s),[':','/','.']));
-  Addr.Point:=StrToIntDef(ExtractWord(4,Trim(s),[':','/','.']),0);*)
   if not ParseAddress(S, Addr) then Exit;
-  N := GetListedNode(Addr);
+  N := GetCachedNode(Addr);
   if N = nil then Exit;
   HI := N.TreeItem;
   R := N.Region;
@@ -639,7 +605,8 @@ begin
           TmpAd.Node := Addr.Node;
           TmpAd.Point := 0;
           TmpAd.Domain := Addr.Domain;
-          if GetListedNode(TmpAd) = nil then
+          N := GetCachedNode(TmpAd);
+          if N = nil then
           begin
             DisplayErrorFmtLng(rsNBBoNotLtd, [Addr2Str(Addr)], handle);
             exit;
@@ -698,10 +665,12 @@ begin
   c := NodeController.Cache.Count - 1;
   for i := 0 to c do Integer(TFidoNode(p^[i]).TreeItem) := 0;
   LeaveNlCS;
+  FreeObject(NC);
 end;
 
 procedure TNodelistBrowser.FormCreate(Sender: TObject);
 begin
+   NC := TFidoNodeColl.Create;
    if ((IniFile.RadNB.Bounds[0] <> 32767) and
        (IniFile.RadNB.Bounds[1] <> 32767) and
        (IniFile.RadNB.Bounds[2] <> 32767) and
@@ -724,7 +693,7 @@ procedure TNodelistBrowser.Export1Click(Sender: TObject);
 var
    a: TFidoAddress;
    n: TFidoNode;
-   c: TFidoNodeColl;
+   c: TFidoAddrColl;
    f: TextFile;
    m: TextFile;
    i: integer;
@@ -735,18 +704,20 @@ begin
       a := n.Addr;
       c := GetScope(a);
       if c <> nil then begin
-         AssignFile(f, 'Segment1.txt');
+         AssignFile(f, MakeFullDir(dLog, 'Segment1.txt'));
          Rewrite(f);
-         AssignFile(m, 'Segment2.txt');
+         AssignFile(m, MakeFullDir(dLog, 'Segment2.txt'));
          Rewrite(m);
          for i := 0 to CollMax(c) do begin
-            n := c[i];
+            a := c[i];
+            n := GetListedNode(a);
             p := '    ';
             if n.PrefixFlag = nfPvt then p := 'Pvt ' else
             if n.PrefixFlag = nfHold then p := 'Hold' else
             if n.PrefixFlag = nfDown then p := 'Down';
             Writeln(f, p, ' ', Addr2Str(n.Addr), ' ', n.Sysop);
             Writeln(m, n.Sysop, ' ', Addr2Str(n.Addr));
+            FreeObject(n);
          end;
          CloseFile(f);
          CloseFile(m);

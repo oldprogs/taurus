@@ -25,7 +25,7 @@ object PathNamesForm: TPathNamesForm
   PixelsPerInch = 96
   TextHeight = 14
   object llDefZone: TLabel
-    Left = 166
+    Left = 172
     Top = 181
     Width = 48
     Height = 14
@@ -116,10 +116,10 @@ object PathNamesForm: TPathNamesForm
   object CB: TCheckBox
     Left = 3
     Top = 181
-    Width = 159
+    Width = 113
     Height = 14
     Anchors = [akRight, akBottom]
-    Caption = '5D outbound support'
+    Caption = '5D outbound'
     TabOrder = 6
   end
 end

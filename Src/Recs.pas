@@ -21,7 +21,7 @@ const
   rvnInterfaceLng  = 'InterfaceLng';
   rvnAppMode       = 'AppMode';
   CfgFName         = 'config.bin';
-//  IniFName         = 'config.ini'; // visual
+  EvtFName         = 'events.bin';
   IntegersFName    = 'config.int';
   HisFName         = 'history.bin';
   BWZLogFName      = 'badwazoo.lst';
@@ -141,14 +141,12 @@ type
     property ifcico        : string index 0 read GetString;
     property Telnet        : string index 1 read GetString;
     property BinkP         : string index 2 read GetString;
-   {$IFDEF EXTREME}
     property FTP           : string index 3 read GetString;
     property HTTP          : string index 4 read GetString;
     property SMTP          : string index 5 read GetString;
     property POP3          : string index 6 read GetString;
     property GATE          : string index 7 read GetString;
     property NNTP          : string index 8 read GetString;
-   {$ENDIF}
   end;
 
   TNamed = class(TElement)
@@ -887,14 +885,11 @@ var
   AuxDialupNodeOverrides: TDialupNodeOvrColl;
   AuxDialupNodeOverridesCS: TRTLCriticalSection;
 
-{$IFDEF WS}
   AuxIPNodeOverrides: TIPNodeOvrColl;
   AuxIPNodeOverridesCS: TRTLCriticalSection;
-{$ENDIF}
 
   BWZColl: TBWZColl;
-  StoreConfigAfter,
-  ExitNow: Boolean;
+  StoreConfigAfter: boolean;
   GlobalEvtUpdateTick: DWORD;
 
   TarifPlan: TList; // visual
@@ -977,6 +972,7 @@ function ValidDialupRestrictionData(AR: TRestrictionData; Handle: DWORD): Boolea
 function ValidRestrictionColl(SC: TStringColl; var AMsgs: TStringColl; AScope: TRestrictionScope): Boolean;
 function ValidAKAGrid(A: Pointer): Boolean;
 function ConfigFName: string;
+function EventsFName: string;
 
 procedure CfgEnter;
 procedure CfgLeave;
@@ -1974,28 +1970,27 @@ end;
 
 function StoreConfig(Handle: DWORD): Boolean;
 var
-  s: TxMemoryStream;
+   s: TxMemoryStream;
 begin
-  StoreConfigAfter := False;
-  repeat
-    s := GetMemoryStream;
-    Cfg.DoStore(s);
-    Result := s.SaveToFile(ConfigFName);
-    FreeObject(s);
-    if Result then Break else
-    begin
-      if WinDlgCap(GetErrorMsg, MB_RETRYCANCEL or MB_ICONERROR, Handle, LngStr(rsRecsCntWrtCfg)) = idCancel then Break;
-    end;
-  until False;
+   StoreConfigAfter := False;
+   repeat
+      s := GetMemoryStream;
+      Cfg.DoStore(s);
+      Result := s.SaveToFile(ConfigFName);
+      FreeObject(s);
+      if Result then Break else begin
+         if WinDlgCap(GetErrorMsg, MB_RETRYCANCEL or MB_ICONERROR, Handle, LngStr(rsRecsCntWrtCfg)) = idCancel then Break;
+      end;
+   until False;
 end;
 
 const
-  iccSOF       = 1;
-  iccEOF       = 2;
-  iccMainFormL = 10;
-  iccMainFormT = 11;
-  iccMainFormW = 12;
-  iccMainFormH = 13;
+  iccSOF          =  1;
+  iccEOF          =  2;
+  iccMainFormL    = 10;
+  iccMainFormT    = 11;
+  iccMainFormW    = 12;
+  iccMainFormH    = 13;
   iccThreadsFormL = 14;
   iccThreadsFormT = 15;
   iccThreadsFormW = 16;
@@ -2003,29 +1998,20 @@ const
 
 procedure LoadIntegers;
 var
-  s: TxStream;
-  i: Integer;
+   s: TxStream;
+   i: Integer;
 begin
-  s := OpenRead(MakeNormName(ConfigDir, IntegersFName));
-  if s = nil then Exit;
-  if s.ReadDword <> iccSOF then begin
-     FreeObject(s);
-     Exit;
-  end;
-  while s.Position < s.Size do
-  begin
-    i := s.ReadInteger;
-    case s.ReadDword of
+   s := OpenRead(MakeNormName(ConfigDir, IntegersFName));
+   if s = nil then Exit;
+   if s.ReadDword <> iccSOF then begin
+      FreeObject(s);
+      Exit;
+   end;
+   while s.Position < s.Size do begin
+      i := s.ReadInteger;
+      case s.ReadDword of
       iccEOF :
         Break;
-{      iccMainFormL:
-        icvMainFormL := i;
-      iccMainFormT:
-        icvMainFormT := i;
-      iccMainFormW:
-        icvMainFormW := i;
-      iccMainFormH:
-        icvMainFormH := i;}
       iccThreadsFormL:
         icvThreadsFormL := i;
       iccThreadsFormT:
@@ -2034,43 +2020,39 @@ begin
         icvThreadsFormW := i;
       iccThreadsFormH:
         icvThreadsFormH := i;
-     end;
-  end;
-  FreeObject(s);
+      end;
+   end;
+   FreeObject(s);
 end;
 
 procedure StoreIntegers;
 var
-  s: TDosStream;
+   s: TDosStream;
 
 procedure WD(a: Integer; b: DWORD);
 begin
-  S.WriteInteger(a); S.WriteDword(b);
+   S.WriteInteger(a); S.WriteDword(b);
 end;
 
 begin
-  s := OpenWrite(MakeNormName(ConfigDir, IntegersFName));
-  if s = nil then Exit;
-  SetEndOfFile(s.Handle);
-  s.WriteDWORD(iccSOF);
-{  WD(icvMainFormL, iccMainFormL);
-  WD(icvMainFormT, iccMainFormT);
-  WD(icvMainFormW, iccMainFormW);
-  WD(icvMainFormH, iccMainFormH);}
-  WD(icvThreadsFormL, iccThreadsFormL);
-  WD(icvThreadsFormT, iccThreadsFormT);
-  WD(icvThreadsFormW, iccThreadsFormW);
-  WD(icvThreadsFormH, iccThreadsFormH);
-  WD(iccEOF, iccEOF);
-  FreeObject(s);
+   s := OpenWrite(MakeNormName(ConfigDir, IntegersFName));
+   if s = nil then Exit;
+   SetEndOfFile(s.Handle);
+   s.WriteDWORD(iccSOF);
+   WD(icvThreadsFormL, iccThreadsFormL);
+   WD(icvThreadsFormT, iccThreadsFormT);
+   WD(icvThreadsFormW, iccThreadsFormW);
+   WD(icvThreadsFormH, iccThreadsFormH);
+   WD(iccEOF, iccEOF);
+   FreeObject(s);
 end;
 
 { TTerminator }
 
 constructor TTerminator.Load(Stream: TxStream);
 begin
-  Stream.GotTerminator := True;
-  Stream.FreeLastLoaded := True;
+   Stream.GotTerminator := True;
+   Stream.FreeLastLoaded := True;
 end;
 
 procedure TTerminator.Store(Stream: TxStream); begin end;
@@ -2089,347 +2071,277 @@ destructor TStarter.Destroy; begin inherited Destroy end;
 
 function DoReadAppMode: Integer;
 var
-  Key: HKey;
+   Key: HKey;
 begin
-  Result := -1;
-  Key := OpenRegKey(RegistryFName);
-  if Key = INVALID_HANDLE_VALUE then Exit;
-  Result := ReadRegInt(Key, rvnAppMode);
-  RegCloseKey(Key);
+   Result := -1;
+   Key := OpenRegKey(RegistryFName);
+   if Key = INVALID_HANDLE_VALUE then Exit;
+   Result := ReadRegInt(Key, rvnAppMode);
+   RegCloseKey(Key);
 end;
 
 function ReadAppMode: Integer;
 begin
-  Result := DoReadAppMode;
-  if Result = -1 then Result := 0;
+   Result := DoReadAppMode;
+   if Result = -1 then Result := 0;
 end;
 
 function WriteAppMode(AMode: Integer): Boolean;
 var
-  Key: HKey;
+   Key: HKey;
 begin
-  Result := False;
-  Key := CreateRegKey(RegistryFName);
-  if Key = INVALID_HANDLE_VALUE then Exit;
-  if not WriteRegInt(Key, rvnAppMode, AMode) then Exit;
-  RegCloseKey(Key);
-  Result := True;
+   Result := False;
+   Key := CreateRegKey(RegistryFName);
+   if Key = INVALID_HANDLE_VALUE then Exit;
+   if not WriteRegInt(Key, rvnAppMode, AMode) then Exit;
+   RegCloseKey(Key);
+   Result := True;
 end;
 
 function SetRegConfigDir(const S: string): Boolean;
-{var
-  Key: HKey;}
 begin
-//  Result := False;
-  IniFile.CfgDir:=s;
-{  Key := CreateRegKey(RegistryFName);
-  if Key = INVALID_HANDLE_VALUE then Exit;
-  if not WriteRegString(Key, rvnConfigPath, S) then Exit;
-  RegCloseKey(Key);}
-  Result := True;
+   IniFile.CfgDir := s;
+   Result := True;
 end;
-
-(*function SetRegHomeDir(const S: string): Boolean;
-{var
-  Key: HKey;}
-begin
-//  Result := False;
-  IniFile.RadHomeDir:=S;
-{  Key := CreateRegKey(RegistryFName);
-  if Key = INVALID_HANDLE_VALUE then Exit;
-  if not WriteRegString(Key, rvnHomePath, S) then Exit;
-  RegCloseKey(Key);}
-  Result := True;
-end;*)
 
 function SetRegBoolean(const AKey: string; AValue: Boolean): Boolean;
 var
-  Key: HKey;
+   Key: HKey;
 begin
-  Result := False;
-  Key := CreateRegKey(RegistryFName);
-  if Key = INVALID_HANDLE_VALUE then Exit;
-  if not WriteRegInt(Key, AKey, Integer(AValue)) then Exit;
-  RegCloseKey(Key);
-  Result := True;
+   Result := False;
+   Key := CreateRegKey(RegistryFName);
+   if Key = INVALID_HANDLE_VALUE then Exit;
+   if not WriteRegInt(Key, AKey, Integer(AValue)) then Exit;
+   RegCloseKey(Key);
+   Result := True;
 end;
 
-
 function GetRegConfigDir: string;
-{var
-  Key: HKEY;}
 begin
-  result:=IniFile.CfgDir;
-{  Result := '';
-  Key := OpenRegKey(RegistryFName);
-  if Key = INVALID_HANDLE_VALUE then Exit;
-  Result := ReadRegString(Key, rvnConfigPath);
-  RegCloseKey(Key);}
+   result := IniFile.CfgDir;
 end;
 
 function GetRegHomeDir: string;
-{var
-  Key: HKEY;}
 begin
-//  Result := '';
-  result:=IniFile.HomeDir;
-{  Key := OpenRegKey(RegistryFName);
-  if Key = INVALID_HANDLE_VALUE then Exit;
-  Result := ReadRegString(Key, rvnHomePath);
-  RegCloseKey(Key);}
+   result := IniFile.HomeDir;
 end;
 
 function GetRegStringDef(const AKeyName, ADefault: string): string;
 var
-  Key: HKEY;
+   Key: HKEY;
 begin
-  Result := '';
-  Key := OpenRegKey(RegistryFName);
-  if Key <> INVALID_HANDLE_VALUE then
-  begin
-    Result := ReadRegString(Key, AKeyName);
-    RegCloseKey(Key);
-  end;
-  if Result = '' then Result := ADefault;
+   Result := '';
+   Key := OpenRegKey(RegistryFName);
+   if Key <> INVALID_HANDLE_VALUE then begin
+      Result := ReadRegString(Key, AKeyName);
+      RegCloseKey(Key);
+   end;
+   if Result = '' then Result := ADefault;
 end;
 
 
 function GetRegIntegerDef(const AKeyName: string; ADefault: Integer): Integer;
 var
-  Key: HKEY;
+   Key: HKEY;
 begin
-  Result := -1;
-  Key := OpenRegKey(RegistryFName);
-  if Key = INVALID_HANDLE_VALUE then Exit;
-  Result := ReadRegInt(Key, AKeyName);
-  RegCloseKey(Key);
-  if Result = -1 then Result := ADefault;
+   Result := -1;
+   Key := OpenRegKey(RegistryFName);
+   if Key = INVALID_HANDLE_VALUE then Exit;
+   Result := ReadRegInt(Key, AKeyName);
+   RegCloseKey(Key);
+   if Result = -1 then Result := ADefault;
 end;
 
 function GetRegBooleanDef(const AKeyName: string; ADefault: Boolean): Boolean;
 begin
-  Result := Boolean(GetRegIntegerDef(AKeyName, Integer(ADefault)));
+   Result := Boolean(GetRegIntegerDef(AKeyName, Integer(ADefault)));
 end;
 
 function SetRegHelpLng(const S: string): Boolean;
-{var
-  Key: HKey;}
 begin
-//  Result := False;
-{  Key := CreateRegKey(RegistryFName);
-  if Key = INVALID_HANDLE_VALUE then Exit;
-  if not WriteRegString(Key, rvnHelpLng, S) then Exit;
-  RegCloseKey(Key);}
-  IniFile.HelpLang:=s;
-  Result := True;
+   IniFile.HelpLang := s;
+   Result := True;
 end;
 
 function GetRegHelpLng: string;
-{var
-  Key: HKey;}
 begin
-  if inifile<> nil then result:=IniFile.helplang;
-{  Result := '';
-  Key := OpenRegKey(RegistryFName);
-  if Key = INVALID_HANDLE_VALUE then Exit;
-  Result := ReadRegString(Key, rvnHelpLng);
-  RegCloseKey(Key);}
+   if inifile <> nil then result := IniFile.helplang;
 end;
 
-
 function SetRegInterfaceLng(I: Integer): Boolean;
-//var
-//  Key: HKey;
 begin
-//  Result := False;
-  IniFile.lang:=I;
-{  Key := CreateRegKey(RegistryFName);
-  if Key = INVALID_HANDLE_VALUE then Exit;
-  if not WriteRegInt(Key, rvnInterfaceLng, I) then Exit;
-  RegCloseKey(Key);}
-  Result := True;
+   IniFile.lang := I;
+   Result := True;
 end;
 
 function GetRegInterfaceLng: Integer;
 var
-//  Key: DWORD;
-  I: Integer;
+   I: Integer;
 begin
-  Result := idlEnglish;
-  I:=IniFile.lang;
-(*  Key := OpenRegKey(RegistryFName);
-  if Key = INVALID_HANDLE_VALUE then Exit;
-  I := ReadRegInt(Key, rvnInterfaceLng);
-  RegCloseKey(Key);*)
-  case I of
-{$IFDEF LNG_SPANISH}     idlSpanish, {$ENDIF}
-{$IFDEF LNG_RUSSIAN}     idlRussian, {$ENDIF}
-{$IFDEF LNG_DUTCH}       idlDutch,   {$ENDIF}
-{$IFDEF LNG_GERMAN}      idlGerman,  {$ENDIF}
-{$IFDEF LNG_DANISH}      idlDanish,  {$ENDIF}
+   Result := idlEnglish;
+   I := IniFile.lang;
+   case I of
+    idlRussian,
     idlEnglish : Result := I;
-  end;
+   end;
 end;
-
-
 
 function SetRegBin(const rvn: string; Bin: Pointer; Sz: Integer): Boolean;
 var
-  Key: HKey;
+   Key: HKey;
 begin
-  Result := False;
-  Key := CreateRegKey(RegistryFName);
-  if Key = INVALID_HANDLE_VALUE then Exit;
-  Result := WriteRegBin(Key, rvn, Bin, Sz);
-  RegCloseKey(Key);
+   Result := False;
+   Key := CreateRegKey(RegistryFName);
+   if Key = INVALID_HANDLE_VALUE then Exit;
+   Result := WriteRegBin(Key, rvn, Bin, Sz);
+   RegCloseKey(Key);
 end;
 
 function GetRegBin(const rvn: string; Bin: Pointer; Sz: Integer): Boolean;
 var
-  Key: HKEY;
+   Key: HKEY;
 begin
-  Result := False;
-  Key := OpenRegKey(RegistryFName);
-  if Key = INVALID_HANDLE_VALUE then Exit;
-  Result := ReadRegBin(Key, rvn, Bin, Sz);
-  RegCloseKey(Key);
+   Result := False;
+   Key := OpenRegKey(RegistryFName);
+   if Key = INVALID_HANDLE_VALUE then Exit;
+   Result := ReadRegBin(Key, rvn, Bin, Sz);
+   RegCloseKey(Key);
 end;
 
 function FullPath(const Dir: string): string;
 begin
-  Result := MakeFullDir(HomeDir, Dir);
+   Result := MakeFullDir(HomeDir, Dir);
 end;
 
 constructor TNamed.Load(Stream: TxStream);
 begin
-  inherited Load(Stream);
-  FName := Stream.ReadStr;
+   inherited Load(Stream);
+   FName := Stream.ReadStr;
 end;
 
 procedure TNamed.Store(Stream: TxStream);
 begin
-  inherited Store(Stream);
-  Stream.WriteStr(FName);
+   inherited Store(Stream);
+   Stream.WriteStr(FName);
 end;
 
 function TNamed.Name: string;
 begin
-  Result := FName;
+   Result := FName;
 end;
 
 constructor TPortRec.Create;
 begin
-  inherited Create;
+   inherited Create;
 end;
 
 
 procedure TPortRec.SetDefault;
 begin
-  with d do
-  begin
-    Port   := 0; {Com1}
-    BPS    := DefBPS;
-    Hflow  := True;
-    Sflow  := False;
-    Data   := 8;
-    Parity := NOPARITY;
-    Stop   := ONESTOPBIT;
-  end;
+   with d do
+   begin
+      Port   := 0; {Com1}
+      BPS    := DefBPS;
+      Hflow  := True;
+      Sflow  := False;
+      Data   := 8;
+      Parity := NOPARITY;
+      Stop   := ONESTOPBIT;
+   end;
 end;
 
 function TPortRec.FlowStr;
 begin
-  Result := '';
-  if d.hFlow then Result := 'CTS/RTS';
-  if d.sFlow then
-  begin
-    if Result <> '' then Result := Result + ', ';
-    Result := Result + 'xOn/xOff';
-  end;
+   Result := '';
+   if d.hFlow then Result := 'CTS/RTS';
+   if d.sFlow then
+   begin
+      if Result <> '' then Result := Result + ', ';
+      Result := Result + 'xOn/xOff';
+   end;
 end;
 
 function TPortRec.Name: string;
 begin
-  {$IFDEF USE_TAPI}
-  if d.Port >= MaxComPorts then begin
-     Result := GetLineName(d.Port - MaxComPorts);
-  end else begin
-  {$ENDIF}
-     Result := Format('COM%d, %d, %s, %s', [d.Port + 1, d.BPS, FlowStr, GetLineBits(d.Data, d.Parity, d.Stop)]);
-  {$IFDEF USE_TAPI}
-  end;
-  {$ENDIF}
+   {$IFDEF USE_TAPI}
+   if d.Port >= MaxComPorts then begin
+      Result := GetLineName(d.Port - MaxComPorts);
+   end else begin
+   {$ENDIF}
+      Result := Format('COM%d, %d, %s, %s', [d.Port + 1, d.BPS, FlowStr, GetLineBits(d.Data, d.Parity, d.Stop)]);
+   {$IFDEF USE_TAPI}
+   end;
+   {$ENDIF}
 end;
 
 constructor TPortRec.Load(Stream: TxStream);
 begin
-  inherited Load(Stream);
-  Stream.Read(d, SizeOf(d));
-  if (Stream as TxMemoryStreamEx).oVersion > 0 then begin
-     n := (Stream as TxMemoryStreamEx).Addition.ReadStr;
-  end;
+   inherited Load(Stream);
+   Stream.Read(d, SizeOf(d));
+   if (Stream as TxMemoryStreamEx).oVersion > 0 then begin
+      n := (Stream as TxMemoryStreamEx).Addition.ReadStr;
+   end;
 end;
 
 procedure TPortRec.Store(Stream: TxStream);
 begin
-  inherited Store(Stream);
-  Stream.Write(d, SizeOf(d));
-  if (Stream as TxMemoryStreamEx).nVersion > 0 then begin
-     (Stream as TxMemoryStreamEx).Addition.WriteStr(n);
-  end;
+   inherited Store(Stream);
+   Stream.Write(d, SizeOf(d));
+   if (Stream as TxMemoryStreamEx).nVersion > 0 then begin
+      (Stream as TxMemoryStreamEx).Addition.WriteStr(n);
+   end;
 end;
 
 function TPortRec.Copy;
 var
-  r: TPortRec;
+   r: TPortRec;
 begin
-  r := TPortRec.Create;
-  r.id := id;
-  r.d := d;
-  r.n := n;
-  Result := r;
+   r := TPortRec.Create;
+   r.id := id;
+   r.d := d;
+   r.n := n;
+   Result := r;
 end;
 
 function TElementColl.Copy;
 var
-  r: TElementColl;
+   r: TElementColl;
 begin
-  r := TElementColl.Create;
-  AppendTo(r);
-  Result := r;
+   r := TElementColl.Create;
+   AppendTo(r);
+   Result := r;
 end;
 
 procedure TElementColl.AppendTo(AColl: TElementColl);
 begin
-  CopyItemsTo(AColl);
-  AColl.DefaultId := DefaultId;
+   CopyItemsTo(AColl);
+   AColl.DefaultId := DefaultId;
 end;
 
 procedure TModemRec.SetDefault;
 const
-  DialPrefixes: array[Boolean] of string = ('ATDP', 'ATDT');
+   DialPrefixes: array[Boolean] of string = ('ATDP', 'ATDT');
 var
-  ToneDial: Boolean;
+   ToneDial: Boolean;
 begin
-  FName := LngStr(rsNewModem);
-  StdResp.Fill(['RING RING_1 RING_2 RING_3 RING_4','CONNECT','OK','BUSY', 'NO_CARRIER NO_ANSWER', 'NO_DIAL_TONE NO_DIALTONE', 'ERROR', 'VOICE', 'RINGING']);
-  if StartWizDialProps <> nil then ToneDial := StartWizDialProps.ToneDial else ToneDial := False;
-  Cmds.Fill(['^`ATZ|','ATA!',DialPrefixes[ToneDial],'!','!`^v~~^`!!`','','+++~~~AT|']);
-  Options := [moSwitchDTE];
+   FName := LngStr(rsNewModem);
+   StdResp.Fill(['RING RING_1 RING_2 RING_3 RING_4','CONNECT','OK','BUSY', 'NO_CARRIER NO_ANSWER', 'NO_DIAL_TONE NO_DIALTONE', 'ERROR', 'VOICE', 'RINGING']);
+   if StartWizDialProps <> nil then ToneDial := StartWizDialProps.ToneDial else ToneDial := False;
+   Cmds.Fill(['^`ATZ|','ATA!',DialPrefixes[ToneDial],'!','!`^v~~^`!!`','','+++~~~AT|']);
+   Options := [moSwitchDTE];
 end;
 
 constructor TModemRec_v3040.Load(Stream: TxStream);
 begin
-  inherited Load(Stream);
-  StdResp := Stream.Get;
-  Cmds := Stream.Get;
-  if Cmds.Count = 7 then
-  begin
-    FaxApp := Cmds[6];
-    Cmds.AtFree(6);
-  end;
-  FlagsA := Stream.Get;
-  FlagsB := Stream.Get;
+   inherited Load(Stream);
+   StdResp := Stream.Get;
+   Cmds := Stream.Get;
+   if Cmds.Count = 7 then begin
+      FaxApp := Cmds[6];
+      Cmds.AtFree(6);
+   end;
+   FlagsA := Stream.Get;
+   FlagsB := Stream.Get;
 end;
 
 function TModemRec_v3040.Upgrade;
@@ -2450,7 +2362,6 @@ begin
   Result := r;
 end;
 
-
 constructor TModemRec.Load(Stream: TxStream);
 begin
   inherited Load(Stream);
@@ -2464,7 +2375,6 @@ begin
   FlagsA := Stream.Get;
   FlagsB := Stream.Get;
 end;
-
 
 procedure TModemRec.Store(Stream: TxStream);
 begin
@@ -2567,7 +2477,6 @@ begin
   GlobalFail('%s', ['TLineRec_v3011.Copy'])
 end;
 
-
 constructor TLineRec_v3011.Load(Stream: TxStream);
 begin
   inherited Load(Stream);
@@ -2584,7 +2493,6 @@ begin
   FaxIn := Stream.ReadStr;
   LoadEvts(Stream, EvtCnt, EvtIds)
 end;
-
 
 procedure TLineRec.Store(Stream: TxStream);
 begin
@@ -2614,7 +2522,6 @@ begin
   Move(EvtIds^, r.EvtIds^, EvtCnt*SizeOf(Integer));
   Result := r;
 end;
-
 
 constructor TLineRec_v3010.Load(Stream: TxStream);
 begin
@@ -2646,13 +2553,10 @@ begin
   Cfg.AddUpgStringLng(rsRecsFaxIn);
 end;
 
-
 procedure TStationRec.SetDefault;
 begin
   FName := LngStr(rsNewStation);
 end;
-
-
 
 constructor TStationRec.Create;
 begin
@@ -2754,7 +2658,6 @@ begin
   Cfg.AddUpgStringLng(rsRecsDSB);
 end;
 
-
 constructor TStationRec_v3021.Load(Stream: TxStream);
 begin
   inherited Load(Stream);
@@ -2771,7 +2674,6 @@ begin
   Cfg.AddUpgStringLng(rsRecsDSB);
 end;
 
-
 constructor TRestrictionRec.Create;
 begin
   inherited Create;
@@ -2784,12 +2686,10 @@ begin
   inherited Destroy;
 end;
 
-
 procedure TRestrictionRec.SetDefault;
 begin
   FName := LngStr(rsNewRestriction);
 end;
-
 
 constructor TRestrictionRec.Load(Stream: TxStream);
 begin
@@ -2907,7 +2807,6 @@ begin
   i := cb.ItemIndex;
   if i = 0 then Result := 0 else Result := TElement(At(i-1)).Id;
 end;
-
 
 procedure TElementColl.FillCombo;
 var
@@ -4507,6 +4406,7 @@ begin
 
    OvrColl := ParseOverride(s, Msg, Item, Dialup);
    if OvrColl = nil then Exit;
+   try
    for i := 0 to OvrColl.Count - 1 do begin
       OvrData := OvrColl[i];
       s := OvrData.PhoneDirect;
@@ -4516,6 +4416,7 @@ begin
             if Dialup then s := dn.Phone else begin
                s := FindIPAddr(dn);
             end;
+            FreeObject(dn);
          end;
       end;
       if s <> '' then begin
@@ -4565,7 +4466,9 @@ begin
          end;
       end;
    end;
-   FreeObject(OvrColl);
+   finally
+      FreeObject(OvrColl);
+   end;   
 end;
 
 procedure PostCloseMessage;
@@ -4850,7 +4753,7 @@ end;
 begin
   if sc.Count < 2 then Exit;
   us := UpperCase(sc[0]);
-  if (ImportMainAddr.Node = -1) and
+  if (ImportMainAddr.Node = word(-1)) and
      (sc.Count=2) and
      (us = 'ADDRESS') and
      (_ValidFidoAddr(sc[1], a)) then ImportMainAddr := a else
@@ -4906,7 +4809,7 @@ var
 begin
   if sc.Count <> 2 then Exit;
   us := UpperCase(sc[0]);
-  if (ImportMainAddr.Node = -1) and
+  if (ImportMainAddr.Node = word(-1)) and
      (sc.Count>=2) and
      (us = 'ADDRESS') and
      (_ValidFidoAddr(sc[1], a)) then ImportMainAddr := a else
@@ -5431,55 +5334,49 @@ end;
 
 procedure ApplyImport(ANewItems, AColl, AGrid: Pointer; APsw, ADialup: Boolean);
 var
-  NewItems: TPasswordColl absolute ANewItems;
-  Grid: TAdvGrid absolute AGrid;
-  Coll: TColl absolute AColl;
-  i: Integer;
-  PswR: TPasswordRec;
-  OvrR: TNodeOvr;
-
+   NewItems: TPasswordColl absolute ANewItems;
+   Grid: TAdvGrid absolute AGrid;
+   Coll: TColl absolute AColl;
+   i: Integer;
+   PswR: TPasswordRec;
+   OvrR: TNodeOvr;
 begin
-  for i := Coll.Count - 1 downto 0 do
-  begin
-    if APsw then
-    begin
-      PswR := Coll[i];
-      OvrR := nil; // to avoid 'uninitialized' warning
-    end else
-    begin
-      PswR := nil; // to avoid 'uninitialized' warning
-      OvrR := Coll[i];
-    end;
-    if APsw then
-    begin
-      if PswR.AddrList.Count = 0 then Coll.AtFree(i);
-    end else
-    begin
-      if OvrR.Addr.Zone = -1 then Coll.AtFree(i);
-    end;
-  end;
-  Coll.Concat(NewItems);
-  FillGridPswOvr(Coll, AGrid, APsw);
+   for i := Coll.Count - 1 downto 0 do begin
+      if APsw then begin
+         PswR := Coll[i];
+         OvrR := nil; // to avoid 'uninitialized' warning
+      end else begin
+         PswR := nil; // to avoid 'uninitialized' warning
+         OvrR := Coll[i];
+      end;
+      if APsw then begin
+         if PswR.AddrList.Count = 0 then Coll.AtFree(i);
+      end else begin
+         if OvrR.Addr.Zone = word(-1) then Coll.AtFree(i);
+      end;
+   end;
+   Coll.Concat(NewItems);
+   FillGridPswOvr(Coll, AGrid, APsw);
 end;
 
 procedure DoImportOp(AColl, AGrid: Pointer; APsw, ADialup: Boolean);
 var
-  c: TColl;
-  Coll: TColl absolute AColl;
-  Imported: Boolean;
-  NewItems: TPasswordColl;
-  nic: Integer;
-  Typ: TAlienCfgType;
-  s: string;
-  OD: TOpenDialog;
-  ii: Integer;
+   c: TColl;
+   Coll: TColl absolute AColl;
+   Imported: Boolean;
+   NewItems: TPasswordColl;
+   nic: Integer;
+   Typ: TAlienCfgType;
+   s: string;
+   OD: TOpenDialog;
+   ii: Integer;
 begin
-  if APsw then s := LngStr(rsRecsIMdPwd) else if ADialup then s := LngStr(rsRecsIMdDN) else s := LngStr(rsRecsIMdTN);
-  Typ := GetImportType(s, APsw);
-  if Typ = actNone then Exit;
-  OD := TOpenDialog.Create(Application);
-  OD.Title := LngStr(rsRecsImpCfg);
-  case Typ of
+   if APsw then s := LngStr(rsRecsIMdPwd) else if ADialup then s := LngStr(rsRecsIMdDN) else s := LngStr(rsRecsIMdTN);
+   Typ := GetImportType(s, APsw);
+   if Typ = actNone then Exit;
+   OD := TOpenDialog.Create(Application);
+   OD.Title := LngStr(rsRecsImpCfg);
+   case Typ of
     actBinkD : ii := rsRecsImpBinkD;
     actBinkPlus : ii := rsRecsImpBinkPls;
     actXenia : ii := rsRecsImpXen;
@@ -5487,26 +5384,26 @@ begin
     actFrontDoor : ii := rsRecsImpFDoor;
     actMainDoor : ii := rsRecsImpMDoor;
     else ii := GlobalFail('%s', ['DoImportOp']); // to avoid unitialized warning
-  end;
+   end;
 
-  OD.Options := [ofHideReadOnly];
-  OD.Filter := LngStr(ii) + '|' + LngStr(rsAllFileMask);
-  Imported := OD.Execute;
-  s := OD.FileName;
-  FreeObject(OD);
-  if not Imported then Exit;
-  ImportMainAddr.Zone := IniFile.MainAddr.Zone;//Cfg.Pathnames.DefaultZone;
-  ImportMainAddr.Node := -1;
-  c := TColl.Create;
-  DoImportAlienCfg(s, c, Typ);
-  NewItems := TPasswordColl.Create;
-  Imported := DoImport(c, NewItems, AColl, AGrid, APsw, ADialup);
-  FreeObject(c);
-  nic := NewItems.Count;
-  if Imported then ApplyImport(NewItems, AColl, AGrid, APsw, ADialup);
-  Coll.FreeAll;
-  FreeObject(NewItems);
-  DisplayInformation(FormatLng(rsRecsNewCfgII, [nic]), TForm(TAdvGrid(AGrid).Owner).Handle);
+   OD.Options := [ofHideReadOnly];
+   OD.Filter := LngStr(ii) + '|' + LngStr(rsAllFileMask);
+   Imported := OD.Execute;
+   s := OD.FileName;
+   FreeObject(OD);
+   if not Imported then Exit;
+   ImportMainAddr.Zone := IniFile.MainAddr.Zone;//Cfg.Pathnames.DefaultZone;
+   ImportMainAddr.Node := word(-1);
+   c := TColl.Create;
+   DoImportAlienCfg(s, c, Typ);
+   NewItems := TPasswordColl.Create;
+   Imported := DoImport(c, NewItems, AColl, AGrid, APsw, ADialup);
+   FreeObject(c);
+   nic := NewItems.Count;
+   if Imported then ApplyImport(NewItems, AColl, AGrid, APsw, ADialup);
+   Coll.FreeAll;
+   FreeObject(NewItems);
+   DisplayInformation(FormatLng(rsRecsNewCfgII, [nic]), TForm(TAdvGrid(AGrid).Owner).Handle);
 end;
 
 function CronGridValid(AG: Pointer): Boolean;
@@ -5742,6 +5639,9 @@ begin
     eiFreqPwdCnt,
     eiFreqPubCnt: Result := FormatLng(rsRecsEcFiles, [d.DwordData]);
 
+    eiAccFilesSiz,
+    eiDelFilesSiz: Result := FormatLng(rsRecsEcKB, [d.DwordData]);
+
     eiDelBSY,
     eiAccNoFreqs,
     eiAccNoNiagara,
@@ -5938,7 +5838,9 @@ begin
     eiFreqPubSz,
     eiTimeDial,
     eiRetry,
-    eiFreqPubCnt        : Result := eptSpin;
+    eiFreqPubCnt,
+    eiAccFilesSiz,
+    eiDelFilesSiz       : Result := eptSpin;
 
     eiRASEvent,
     eiSNDEvent          : Result := eptBool;
@@ -6443,6 +6345,11 @@ end;
 function ConfigFName: string;
 begin
   Result := MakeNormName(ConfigDir, CfgFName);
+end;
+
+function EventsFName: string;
+begin
+  Result := MakeNormName(ConfigDir, EvtFName);
 end;
 
 var

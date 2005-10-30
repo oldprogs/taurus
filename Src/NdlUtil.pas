@@ -9,6 +9,20 @@ uses
   StdCtrls, ExtCtrls, xBase, xFido;
 
 type
+  TNLHolder = class
+  private
+    dList: TStringList;
+  public
+    constructor Create;
+    destructor Destroy; override;
+    procedure Add(const f, d: string; a: TFidoAddress);
+    procedure LoadFromFile(const f: string);
+    procedure SaveToFile(const f: string);
+    function SearchNode(const Addr: TFidoAddress): TFidoNode;
+    function GetFirstNode: TFidoAddress;
+    function GetNextNode(var Addr: TFidoAddress): boolean;
+  end;
+
   TNodelistCompiler = class(TForm)
     bStop: TButton;
     llStatus: TLabel;
@@ -43,49 +57,17 @@ type
    PNodePoint = ^TNodePoint;
    TNodePoint = record Node, Point: Integer end;
 
-   TShortNodeIdx = packed record
-     Len: Byte;
-     Hub, Node, Point: Word;
-   end;
-
-   PShortNodeIdxArr = ^TShortNodeIdxArr;
-   TShortNodeIdxArr = packed array[0..(MaxInt - 3) div SizeOf(TShortNodeIdx)] of TShortNodeIdx;
-
-   TNetNodeIdx = class
-     Ofs: Integer;
-     Hub: word;
-    Addr: TNodePoint;
-   end;
-
-   TZoneContainer = class(TSortedColl)
-     ZoneData: TFidoZoneData;
-     Sz, NumNodes, MemPos: Integer;
-     function Compare(Key1, Key2: Pointer): Integer; override;
-     function KeyOf(Item: Pointer): Pointer; override;
-   end;
-
-   TTableColl = class(TSortedColl)
-     CarePos: Boolean;
-     function Compare(Key1, Key2: Pointer): Integer; override;
-     function KeyOf(Item: Pointer): Pointer; override;
-   end;
-
    TNodeController = class
-     Table: TTableColl;
-     Stream: TDosStream;
      Cache: TFidoNodeColl;
-     ZonesBin: TxMemoryStream;
      Lists: TStringList;
+     NLHolder: TNLHolder;
      constructor Create;
      function SearchNode(const Addr: TFidoAddress): TFidoNode;
      destructor Destroy; override;
-     function SeekNet(Idx, Zone, Net: Integer; const Domain: string): TZoneContainer;
-     function SearchNodeOfNet(ZoneIdx: Integer; const Addr: TFidoAddress): TFidoNode;
-     function GetNetIdx(Zone, Net: Integer; const Domain: string): Integer;
    end;
 
 function FindNode(const Addr: TFidoAddress): TAdvNode;
-function GetScope(const Addr: TFidoAddress): TFidoNodeColl;
+function GetScope(const Addr: TFidoAddress): TFidoAddrColl;
 function GetListedNode(const Addr: TFidoAddress): TFidoNode;
 procedure FreeNodeController;
 procedure EnterNlCS;
@@ -101,7 +83,8 @@ var
 
 implementation
 
-uses Recs, AltRecs, LngTools, RadIni, Wizard, CfgFiles, Plus;
+uses
+   Recs, AltRecs, LngTools, RadIni, Wizard, CfgFiles, Plus, UWrd;
 
 {$R *.DFM}
 
@@ -110,8 +93,6 @@ const
 
 var
    NodeControllerCS: TRTLCriticalSection;
-   NetTablePos: DWORD;
-   FileHandle: DWORD;
 
 procedure EnterNlCS;
 begin
@@ -123,27 +104,8 @@ begin
    LeaveCS(NodeControllerCS);
 end;
 
-function TTableColl.Compare(Key1, Key2: Pointer): Integer;
 var
-   a: PFidoZoneData absolute Key1;
-   b: PFidoZoneData absolute Key2;
-begin
-   if inifile.D5Out then
-   if a^.Domain > b^.Domain then Result :=  1 else
-   if a^.Domain < b^.Domain then Result := -1 else Result := 0
-                            else Result := 0;
-   if Result = 0 then Result := a^.Zone - b^.Zone;
-   if Result = 0 then Result := a^.Net - b^.Net;
-   if CarePos then if Result = 0 then Result := b^.Pos - a^.Pos;
-end;
-
-function TTableColl.KeyOf(Item: Pointer): Pointer;
-begin
-   Result := @TZoneContainer(Item).ZoneData;
-end;
-
-var
-   PhantomNodes: TColl;
+   PhantomNodes: TFidoNodeColl;
 
 procedure FreeNodeController;
 begin
@@ -153,92 +115,24 @@ begin
    LeaveNlCs;
 end;
 
-type
-   TZoneOfsColl = class(TSortedColl)
-     function Compare(Key1, Key2: Pointer): Integer; override;
-     function KeyOf(Item: Pointer): Pointer; override;
-   end;
-
-function TZoneOfsColl.Compare(Key1, Key2: Pointer): Integer;
-begin
-   Result := Integer(Key1^) - Integer(Key2^);
-end;
-
-function TZoneOfsColl.KeyOf(Item: Pointer): Pointer;
-begin
-   Result := @TZoneContainer(Item).ZoneData.Pos;
-end;
-
 constructor TNodeController.Create;
 var
-   ZOC: TZoneOfsColl;
    I: integer;
    J: integer;
    S: string;
    L: TStringList;
 
-function DoCreate: Boolean;
-var
-   Actually: DWORD;
-   I,
-   J,
-   N: Integer;
-  ZC: TZoneContainer;
-begin
-   Result := False;
-   if Stream.Read(i, 4) <> 4 then Exit; // version
-   if i <> - NodelistVersion then Exit;
-   if Stream.Read(NetTablePos, 4) <> 4 then Exit;
-   if (NetTablePos >= DWORD(MaxInt)) or (SetFilePointer(Stream.Handle, NetTablePos, nil, FILE_BEGIN) <> NetTablePos) then Exit;
-   if Stream.Read(N, 4) <> 4 then Exit;
-   if (N < 0) or (N > $FFFF) then Exit;
-   for i := 1 to N do begin
-      ZC := TZoneContainer.Create;
-      ZC.MemPos := -1;
-      if (not ReadFile(Stream.Handle, ZC.ZoneData, SizeOf(TFidoZoneData), Actually, nil)) or (SizeOf(TFidoZoneData) <> Actually) then begin
-         ZC.Free;
-         Exit;
-      end;
-      Table.Insert(ZC);
-      ZOC.Insert(ZC);
-   end;
-   for J := 0 to ZOC.Count - 1 do begin
-      ZC := ZOC[J];
-      if J = ZOC.Count - 1 then N := NetTablePos else N := TZoneContainer(ZOC[J + 1]).ZoneData.Pos;
-      Dec(N, ZC.ZoneData.Pos + 4);
-      ZC.Sz := N;
-   end;
-   ZOC.DeleteAll;
-   Result := True;
-end;
-
 begin
    try
       EnterNlCs;
       inherited Create;
-      ZonesBin := GetMemoryStream;
+      NLHolder := TNLHolder.Create;
+      NLHolder.LoadFromFile(JustPathName(ParamStr(0)) + '\Nodelist.idx');
       Cache := TFidoNodeColl.Create;
-      Table := TTableColl.Create;
-      Table.Duplicates := True;
-      Table.CarePos := True;
-      Stream := OpenRead(NDLPath);
-      if Stream = nil then begin
+      if NLHolder.dList.Count = 0 then begin
          NodelistMissed := True;
          Exit;
       end;
-      ZOC := TZoneOfsColl.Create;
-      if not DoCreate then begin
-         FreeObject(Stream);
-         DeleteFile(PChar(NDLPath));
-         Table.FreeAll;
-      if not NodelistMissed then
-      begin
-            NodelistMissed := True;
-         end;
-      end;
-      ZOC.FreeAll;
-      FreeObject(ZOC);
-      Table.CarePos := False;
       Lists := TStringList.Create;
       if IniFile.AutoNodelist then begin
          s := JustPathName(ParamStr(0)) + '\nodelist.sav';
@@ -261,166 +155,27 @@ begin
    end;
 end;
 
-function TNodeController.SeekNet(Idx, Zone, Net: Integer; const Domain: string): TZoneContainer;
-var
-   zc: TZoneContainer;
-  nia: PShortNodeIdxArr;
-
-procedure Look(Dir: Integer);
-var
-   I,
-   J: Integer;
-   P: Pointer;
- zca: TZoneContainer;
-begin
-   i := idx;
-   repeat
-      Inc(i, dir);
-      if (i < 0) or (i >= Table.Count) then Break;
-      zca := Table[i];
-      if (zc.ZoneData.Zone <> zca.ZoneData.Zone) or
-         (zc.ZoneData.Region <> zca.ZoneData.Region) or
-         (zc.ZoneData.Net <> zca.ZoneData.Net) or
-         (zc.ZoneData.Domain <> zca.ZoneData.Domain) then Break;
-      if zca.MemPos <> -1 then GlobalFail('TNodeController.SeekNet(%d,%d,%d) zca.MemPos(%d) <> -1', [Idx, Zone, Net, zca.MemPos]);
-      Stream.Position := zca.ZoneData.Pos;
-      Stream.Read(J, 4);
-      ReallocMem(nia, (zc.NumNodes + J) * SizeOf(TShortNodeIdx));
-      Stream.Read(nia^[zc.NumNodes], J * SizeOf(TShortNodeIdx));
-      Inc(zc.NumNodes, J);
-      J := zca.Sz - J * SizeOf(TShortNodeIdx);
-      GetMem(P, J);
-      Stream.Read(P^, J);
-      ZonesBin.Write(P^, J);
-      FreeMem(P, J);
-      Table.AtFree(i);
-      Dec(i, dir);
-   until False;
-end;
-
-var
-   I,
-   J,
-   K: Integer;
-  ni: TNetNodeIdx;
-   P: Pointer;
- sni: TShortNodeIdx;
- zca: TZoneContainer;
-
-begin
-//   EnterNlCs;
-   Result := nil;
-   zc := Table[Idx];
-   if zc.MemPos = -1 then begin
-      I := Idx;
-      while I > 0 do begin
-         Dec(i);
-         zca := Table[i];
-         if (zc.ZoneData.Zone <> zca.ZoneData.Zone) or
-            (zc.ZoneData.Region <> zca.ZoneData.Region) or
-            (zc.ZoneData.Net <> zca.ZoneData.Net) or
-            (zc.ZoneData.Domain <> zca.ZoneData.Domain) then Break;
-         zc := zca;
-         if zc.MemPos <> -1 then GlobalFail('TNodeController.SeekNet(%d,%d,%d) zc.MemPos(%d) <> -1', [Idx, Zone, Net, zc.MemPos]);
-         Idx := i;
-      end;
-      zc.MemPos := ZonesBin.Size;
-      ZonesBin.Position := ZonesBin.Size;
-      Stream.Position := zc.ZoneData.Pos;
-      Stream.Read(zc.NumNodes, 4);
-      J := zc.Sz - zc.NumNodes * SizeOf(TShortNodeIdx);
-      if J < 1 then exit;
-      nia := nil;
-      ReallocMem(nia, zc.NumNodes * SizeOf(TShortNodeIdx));
-      Stream.Read(nia^, zc.NumNodes * SizeOf(TShortNodeIdx));
-
-      GetMem(P, J);
-      Stream.Read(P^, J);
-      ZonesBin.Write(P^, J);
-      FreeMem(P, J);
-
-      Look(+1);
-
-      J := zc.MemPos;
-      for I := 0 to zc.NumNodes - 1 do begin
-         sni := nia^[I];
-         ni := TNetNodeIdx.Create;
-         ni.Ofs := J; Inc(J, sni.Len);
-         ni.Hub := sni.Hub;
-         ni.Addr.Node := sni.Node;
-         ni.Addr.Point := sni.Point;
-         if zc.Search(zc.KeyOf(ni), K) then FreeObject(ni) else zc.AtInsert(K, ni);
-      end;
-      ReallocMem(nia, 0);
-    { J - prevnode, K - Hub }
-      J := -1;
-      for I := 0 to zc.Count - 1 do begin
-         ni := zc[I];
-         if ni.Addr.Point = 0 then begin
-            J := ni.Addr.Node;
-            K := ni.Hub;
-         end else begin
-            if ni.Addr.Node = J then ni.Hub := K;
-         end;
-      end;
-   end;
-   Result := zc;
-//   LeaveNlCs;
-end;
-
-function TNodeController.SearchNodeOfNet(ZoneIdx: Integer; const Addr: TFidoAddress): TFidoNode;
-var
-  TN: TFidoNode;
-   I: Integer;
-  zc: TZoneContainer;
-   a: TNodePoint;
-  ni: TNetNodeIdx;
-begin
-   Result := nil;
-   zc := SeekNet(ZoneIdx, Addr.Zone, Addr.Net, Addr.Domain);
-   a.Node := Addr.Node;
-   a.Point := Addr.Point;
-   if zc.Search(@a, I) then begin
-      TN := TFidoNode.Create;
-      ni := zc[I];
-      ZonesBin.Position := ni.Ofs;
-      TN.FillStream(Addr.Zone, Addr.Net, ZonesBin);
-      TN.Hub := ni.Hub;
-      TN.Region := zc.ZoneData.Region;
-      if (TN.Addr.Point = 0) and (zc.Count > I + 1) then begin
-         ni := zc[I + 1];
-         TN.HasPoints := ni.Addr.Node = TN.Addr.Node;
-      end;
-      Result := TN;
-   end;
-end;
-
-function TNodeController.GetNetIdx(Zone, Net: Integer; const Domain: string): Integer;
-var
-   z: TFidoZoneData;
-begin
-   Result := -1;
-   if Table = nil then exit;
-   z.Zone := Zone;
-   z.Net := Net;
-   z.Domain := LowerCase(Domain);
-   Table.Enter;
-   if not Table.Search(@z, Result) then Result := -1;
-   Table.Leave;
-end;
-
 function TNodeController.SearchNode;
 var
    J: Integer;
+   A: TFidoAddress;
 begin
-   Result := nil;
-      if Cache.Search(@Addr, J) then begin
-         Result := Cache[J];
+   Cache.Enter;
+   try
+      A := Addr;
+      if IniFile.D5Out then A.Domain := FindFTNDOM(A) else A.Domain := '';
+      if Cache.Search(@A, J) then begin
+         Result := TFidoNode(Cache[J]).Copy;
          Exit;
       end;
-   J := GetNetIdx(Addr.Zone, Addr.Net, Addr.Domain);
-   if J <> -1 then Result := SearchNodeOfNet(J, Addr);
-   if Result <> nil then Cache.Insert(Result);
+      Result := NLHolder.SearchNode(A);
+      if Result <> nil then begin
+         Cache.Insert(Result);
+         Result := Result.Copy;
+      end;
+   finally
+      Cache.Leave;
+   end;
 end;
 
 destructor TNodeController.Destroy;
@@ -442,13 +197,17 @@ begin
       end;
    end;
    Lists.Free;
-   FreeObject(ZonesBin);
-   FreeObject(Stream);
-   if PhantomNodes = nil then PhantomNodes := TColl.Create;
-   PhantomNodes.Concat(Cache);
+   if PhantomNodes = nil then PhantomNodes := TFidoNodeColl.Create;
+   PhantomNodes.Enter;
+   Cache.Enter;
+   try
+      PhantomNodes.Concat(Cache);
+   finally
+      Cache.Leave;
+   end;
+   PhantomNodes.Leave;
    FreeObject(Cache);
-   Table.FreeAll;
-   FreeObject(Table);
+   FreeObject(NLHolder);
    NodeController := nil;
    inherited Destroy;
 end;
@@ -547,15 +306,7 @@ procedure TCompileThread.InvokeExec;
 var
    S: ShortString;
    SL: Byte absolute S;
-  PCCount: Integer;
-   CurHub, CurRegion,
-   OldZone, OldNet,
-   OldRegion: word;
-   OldDomain: string[8];
-   ST: DWORD;
-   Zones: TColl;
-   PC: TFidoNet;
-   MS: TxMemoryStream;
+   CurHub, CurRegion: word;
    Point: Boolean;
 
    procedure SetZC(Zone: Integer; const Domain: string);
@@ -574,238 +325,68 @@ var
       end;
    end;
 
-  procedure NewNet;
-  var
-     P: TFidoZone;
-     T: TFidoZone;
-     I,
-     K: Integer;
-     J,
-     D: DWORD;
-    TN: TFidoNode;
-    SI: TShortNodeIdx;
-    Actually: DWORD;
+  procedure AddNode(const SSR: string);
   begin
-     if PCCount > 0 then begin
-        SetZC(OldZone, OldDomain);
-        P := TFidoZone.Create;
-        P.d.Region := OldRegion;
-        P.d.Zone := OldZone;
-        P.d.Domain := OldDomain;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        if OldNet = 0 then
-        begin
-          if (OldDomain = 'fidonet') or
-            ((OldDomain = '') and (OldZone in [1..7])) then
-          OldNet := OldZone;
-          P.d.Region := 0;
-        end;
-        if OldNet = 0 then
-          P.d.Region := 0
-        else
-          P.d.Region := OldRegion;
-        P.d.Net := OldNet;
-        P.d.Pos := SetFilePointer(ST, 0, nil, FILE_CURRENT);
-        P.d.First := 0;
-        for k := 0 to Zones.Count - 1 do begin
-           T := Zones[k];
-           if CompareZones(T, P) = 0 then begin
-              T := Zones[k];
-              T.d.Region := P.d.Region;
-              Zones[k] := T;
-           end;
-        end;
-        Zones.Add(P);
-        D := PCCount;
-        TN := PC[0];
-        P.d.First := TN.Addr.Node;
-        MS.Position := 0;
-        MS.Write(D, 4);
-        if MS.Capacity < SizeOf(TShortNodeIdx) * D * 2 then MS.Capacity := SizeOf(TShortNodeIdx) * D * 4;
-        MS.Position := 4 + SizeOf(TShortNodeIdx) * D;
-        for I := 0 to PCCount - 1 do begin
-           TN := PC[I];
-           J := MS.Position;
-           TN._Store(MS);
-           DWORD(TN.TreeItem) := MS.Position - J;
-        end;
-        I := MS.Position;
-        MS.Position := 4;
-        for K := 0 to PCCount - 1 do begin
-           TN := PC[K];
-           SI.Len := Integer(TN.TreeItem);
-           SI.Hub := TN.Hub;
-           SI.Node := TN.Addr.Node;
-           SI.Point := TN.Addr.Point;
-           MS.Write(SI, SizeOf(SI));
-        end;
-        WriteFile(ST, MS.Memory^, I, Actually, nil);
-        Inc(CompiledNets);
-        PCCount := 0;
-     end;
-     OldZone := Addr.Zone;
-     OldRegion := CurRegion;
-     OldNet := Addr.Net;
-     OldDomain := Addr.Domain;
-  end;
-
-  function Add(var X: Integer; Flag: TNodePrefixFlag): TFidoNode;
-  var
-     I,
-     J: Integer;
-     P: TFidoNode;
-     C: Char;
-  begin
-     Result := nil;
-     I := 0;
-     J := 1;
-     while J < SL do begin
-        C := S[J];
-        if C = ',' then Break;
-        I := (I * 10) + Ord(C) - Ord('0');
-        if (I = 0) or (I > 65535) then Exit;
-        Inc(J);
-     end;
-     X := I;
-     if (OldDomain <> Addr.Domain) or (OldZone <> Addr.Zone) or (OldNet <> Addr.Net) then NewNet;
-     if PCCount < PC.Count then P := PC[PCCount] else P := TFidoNode.Create;
-     P.FillNodelist(Addr, Copy(S, J + 1, 255), Flag);
-     P.Hub := CurHub;
-     if p.Addr.net = 0 then
-        P.Region := 0
-     else
-        P.Region := CurRegion;
-     if Flag = nfPoint then Inc(CompiledPoints) else Inc(CompiledNodes);
-     if PCCount < PC.Count then PC.AtPut(PCCount, P) else PC.AtInsert(PCCount, P);
-     Inc(PCCount);
-     Result := P;
-  end;
-
-  function AddPoint(var X: Integer): TFidoNode;
-  begin
-     Result := Add(X, nfPoint);
-  end;
-
-  procedure AddNode(Flag: TNodePrefixFlag);
-  begin
+     Addr.Node := StrToInt(wordn(SSR, ',', 2));
+     if ((Addr.Domain = 'fidonet') or not IniFile.D5Out) and (Addr.Net = 0) then Addr.Net := Addr.Zone;
      Addr.Point := 0;
      if (IniFile.MainReg = 0) and (CompareAddrs(Addr, IniFile.MainAddr) = 0) then begin
         IniFile.MainReg := CurRegion;
         IniFile.StoreCfg;
      end;
-     Add(Addr.Node, Flag);
      if TimerExpired(SleepTimer) then begin
         Sleep(50);
         NewTimer(SleepTimer, 10);
      end;
+     Inc(CompiledNodes);
   end;
 
-  procedure AddHub;
-  var
-     N: TFidoNode;
+  procedure AddHub(const SSR: string);
   begin
+     Addr.Node := StrToInt(wordn(SSR, ',', 2));
      Addr.Point := 0;
-     N := Add(Addr.Node, nfHub);
-     if N <> nil then begin
-        CurHub := Addr.Node;
-        N.Hub := CurHub;
-     end;
+     CurHub := Addr.Node;
+     Inc(CompiledNodes);
   end;
 
   procedure SetBoss(const Domain: string);
-  var
-     i:integer;
   begin
      FillChar(Addr, SizeOf(Addr), 0);
      ParseAddress(ExtractWord(1, S, [',']), Addr);
      Addr.Domain := LowerCase(Domain);
      CurRegion := 0;
      CurHub := 0;
-     for i := 0 to Zones.Count - 1 do begin
-        if (TFidoZone(Zones.At(i)).d.Domain = Addr.Domain) and
-           (TFidoZone(Zones.At(i)).d.Zone = Addr.Zone) and
-           (TFidoZone(Zones.At(i)).d.Net = Addr.Net) then CurRegion := TFidoZone(Zones.At(i)).d.Region;
-     end;
      Point := True;
   end;
 
-  procedure SetNet;
+  procedure SetNet(const SSR: string);
   begin
+     Addr.Net := StrToInt(wordn(SSR, ',', 2));
      Addr.Node := 0; Addr.Point := 0; CurHub := 0;
-     Add(Addr.Net, nfNet);
+     inc(CompiledNets);
   end;
 
-  procedure SetRegion;
+  procedure SetRegion(const SSR: string);
   begin
-     OldRegion := CurRegion;
-     Addr.Node := 0; Addr.Point := 0; CurHub := 0; CurRegion := 0;
-     Add(Addr.Net, nfRegion);
-     CurRegion := Addr.Net;
+     Addr.Net := StrToInt(wordn(SSR, ',', 2));
+     Addr.Node := 0; Addr.Point := 0; CurHub := 0; CurRegion := Addr.Net;
   end;
 
-  procedure SetZone;
-  var
-     I: Integer;
-    ZS: TZoneRt;
-    ZR: TZoneRoot;
+  procedure SetZone(const SSR: string);
   begin
-     Addr.Net := 0; Addr.Node := 0; Addr.Point := 0; CurHub := 0; CurRegion:=0;
-     Add(Addr.Zone, nfZone);
-     SetZC(Addr.Zone, Addr.Domain);
-     ZS.Zone := Addr.Zone;
-     ZS.Domain := Addr.Domain;
-     if not ZCs.Search(@ZS, I) then GlobalFail('%s', ['TCompileThread.ThreadExec | SetZone']);
-     ZR := ZCs[i];
-     ZR.FoundZC := True;
+     Addr.Zone := StrToInt(wordn(SSR, ',', 2));
+     Addr.Net := 0; Addr.Node := 0; Addr.Point := 0; CurHub := 0; CurRegion := 0;
+     if ((Addr.Domain = 'fidonet') or not IniFile.D5Out) and (Addr.Zone in [1..6]) then Addr.Net := Addr.Zone;
   end;
+
+  procedure AddPoint(const SSR: string);
+  begin
+     Addr.Point := StrToInt(wordn(SSR, ',', 2));
+     Inc(CompiledPoints);
+  end;
+
+var
+   NL: TNLHolder;
 
   function CompileFile(FName: String; const Domain: String; PointList: boolean): boolean;
   var
@@ -822,11 +403,14 @@ var
      zmet,
      rmet,
      IsRegEx: Boolean;
+     a: TFidoAddress;
 
   begin
      result := false;
      zmet := false;
      rmet := false;
+     CurFile := FName;
+     CurRegion := 0;
      FillChar(Addr, SizeOf(Addr), 0);
      Addr.Domain := LowerCase(Domain);
 
@@ -837,7 +421,7 @@ var
      I := SysUtils.FindFirst(FName, faAnyFile, SR);
      FName := ''; DT := 0;
      while I = 0 do begin
-        if _MatchMask(SR.Name, Mask, True ) and (Abs(DT) < SR.Time) and (SR.Attr and faDirectory = 0) then begin
+        if _MatchMask(SR.Name, Mask, True) and (Abs(DT) < SR.Time) and (SR.Attr and faDirectory = 0) then begin
            FName := S + SR.Name;
            DT := SR.Time
         end;
@@ -855,187 +439,197 @@ var
      CurFile := FName;
      F := CreateTextReader(FName);
      if F = nil then Exit;
-     while (not F.EOF) and (not Terminated) do begin
-        SSR := F.GetStr;
-        if (SSR <> '') and (SSR[1] <> ';') and (Length(SSR) < 250) then begin
-           S := SSR;
-           I := 1;
-           C := #0;
-           while I <= SL do begin
-              C := S[I];
-              if C = ',' then Break;
-              S1[I] := UpCase(C);
-              Inc(I);
-           end;
-           if C <> ',' then Continue;
-           S1L := I - 1;
-           Move(S[I + 1], S[1], SL - I);
-           Dec(SL, I);
-           if (S1 = '') then begin
-              if Point then AddPoint(Addr.Point) else AddNode(nfNormal)
-           end else
-           if (S1 = 'POINT') then AddPoint(Addr.Point) else
-           if (S1 <> 'BOSS') and
-              (S1 <> 'ZONE') and
-              (S1 <> 'REGION') and
-              (S1 <> 'HOST') and
-              (S1 <> 'HUB') and Point then AddPoint(Addr.Point) else
-           begin
-              Point := False;
-              if ((S1 = 'HUB') or
-                  (S1 = 'HOST') or (S1 = 'REGION') or
-                  (S1 = 'ZONE') or (S1 = 'PVT') or
-                 (S1 = 'HOLD') or (S1 = 'DOWN')) and pointlist then
-              begin
-                 F.OwesStream := true;
-                 FreeObject(F);
-                 exit;
-              end;
-              if S1 = 'HUB' then AddHub else
-              if S1 = 'BOSS' then SetBoss(Domain) else
-              if S1 = 'HOST' then begin
-                 if not zmet then begin
-                    Addr.Zone := IniFile.MainAddr.Zone;
-                    if Domain = '' then begin
-                       Addr.Domain := LowerCase(IniFile.MainAddr.Domain);
-                    end;
-                    if not rmet then begin
-                       curregion := IniFile.MainReg;
-                    end;
-                 end else begin
-                    if not rmet then begin
-                       curregion := 0;
-                    end;
-                 end;
-                 SetNet;
-              end else
-              if S1 = 'REGION' then begin
-                 if not zmet then begin
-                    Addr.Zone := IniFile.MainAddr.Zone;
-                    if Domain = '' then begin
-                       Addr.Domain := LowerCase(IniFile.MainAddr.Domain);
-                    end;
-                    ZS.Zone := Addr.Zone;
-                    ZS.Domain := Addr.Domain;
-                    if not ZCs.Search(@ZS, I) then begin
-                       S1 := S;
-                       S := IntToStr(Addr.Zone) + ',';
-                       SetZone;
-                       S := S1;
-                    end;
-                 end;
-                 rmet := true;
-                 SetRegion;
-              end else
-              if S1 = 'ZONE' then begin zmet := true; SetZone end else
-              if S1 = 'PVT' then AddNode(nfPvt) else
-              if S1 = 'HOLD' then AddNode(nfHold) else
-              if S1 = 'DOWN' then AddNode(nfDown) else AddNode(nfUrec);
-           end;
-        end;
+     try
+       while (not F.EOF) and (not Terminated) do begin
+          SSR := F.GetStr;
+          if (SSR <> '') and (SSR[1] <> ';') and (Length(SSR) < 250) then begin
+             S := SSR;
+             I := 1;
+             C := #0;
+             while I <= SL do begin
+                C := S[I];
+                if C = ',' then Break;
+                S1[I] := UpCase(C);
+                Inc(I);
+             end;
+             if C <> ',' then Continue;
+             S1L := I - 1;
+             Move(S[I + 1], S[1], SL - I);
+             Dec(SL, I);
+             if (S1 = '') then begin
+                if Point then AddPoint(SSR) else AddNode(SSR)
+             end else
+             if (S1 = 'POINT') then AddPoint(SSR) else
+             if (S1 <> 'BOSS') and
+                (S1 <> 'ZONE') and
+                (S1 <> 'REGION') and
+                (S1 <> 'HOST') and
+                (S1 <> 'HUB') and Point then AddPoint(SSR) else
+             begin
+                Point := False;
+                if ((S1 = 'HUB') or
+                    (S1 = 'HOST') or (S1 = 'REGION') or
+                    (S1 = 'ZONE') or (S1 = 'PVT') or
+                   (S1 = 'HOLD') or (S1 = 'DOWN')) and pointlist then
+                begin
+                   F.OwesStream := true;
+                   FreeObject(F);
+                   exit;
+                end;
+                if S1 = 'HUB' then AddHub(SSR) else
+                if S1 = 'BOSS' then SetBoss(Domain) else
+                if S1 = 'HOST' then begin
+                   if not zmet then begin
+                      Addr.Zone := IniFile.MainAddr.Zone;
+                      if Domain = '' then begin
+                         Addr.Domain := LowerCase(IniFile.MainAddr.Domain);
+                      end;
+                      if not rmet then begin
+                         curregion := IniFile.MainReg;
+                      end;
+                   end else begin
+                      if not rmet then begin
+                         curregion := 0;
+                      end;
+                   end;
+                   SetNet(SSR);
+                end else
+                if S1 = 'REGION' then begin
+                   if not zmet then begin
+                      Addr.Zone := IniFile.MainAddr.Zone;
+                      if Domain = '' then begin
+                         Addr.Domain := LowerCase(IniFile.MainAddr.Domain);
+                      end;
+                      ZS.Zone := Addr.Zone;
+                      ZS.Domain := Addr.Domain;
+                      if not ZCs.Search(@ZS, I) then begin
+                         S1 := S;
+                         S := IntToStr(Addr.Zone) + ',';
+                         SetZone(SSR);
+                         S := S1;
+                      end;
+                   end;
+                   rmet := true;
+                   SetRegion(SSR);
+                end else
+                if S1 = 'ZONE' then begin zmet := true; SetZone(SSR) end else
+                if S1 = 'PVT' then AddNode(SSR) else
+                if S1 = 'HOLD' then AddNode(SSR) else
+                if S1 = 'DOWN' then AddNode(SSR) else AddNode(SSR);
+             end;
+             if not Point or (Point and (Addr.Point <> 0)) then begin
+                a := Addr;
+                a.ofs := F.Position;
+                a.reg := CurRegion;
+                a.hub := CurHub;
+                NL.Add(FName, Domain, a);
+             end;
+          end;
+       end;
+     finally
      end;
      F.OwesStream := true;
      FreeObject(F);
      result := true;
   end;
 
-procedure FlushZCs;
-var
-   Z,
-   I: Integer;
-  ZR: TZoneRoot;
-begin
-   for I := 0 to ZCs.Count - 1 do begin
-      ZR := ZCs[I];
-      if ZR.FoundZC then Continue;
-      Z := ZR.Zone;
-      S := Format('%d,%s,%s,%s,%s,%d,%s', [Z, '...', '...', '...', '-Unpublished-', 300, 'XA']);
-      SetZone;
-   end;
-end;
+  function BestChoice(const f: string): string;
+  var
+     st: TStrings;
+     sr: TSearchRec;
+     ss: string;
+     OK: boolean;
+     ii: integer;
+  begin
+     Result := f;
+     ss := f;
+     Replace('%', '?', ss);
+     st := TStringList.Create;
+     try
+        if FindFirst(ss, 0, SR) = 0 then begin
+           repeat
+              if _MatchMask(SR.Name, ExtractFileName(f), True) then begin
+                 st.AddObject(ExtractFilePath(ss) + SR.Name, Pointer(SR.Time));
+              end;   
+           until FindNext(SR) <> 0;
+           FindClose(SR);
+           OK := True;
+           while OK do begin
+              OK := False;
+              for ii := 0 to st.Count - 2 do begin
+                 if DWORD(st.Objects[ii]) < DWORD(st.Objects[ii + 1]) then begin
+                    OK := True;
+                    st.Exchange(ii, ii + 1);
+                    break;
+                 end;
+              end;
+           end;
+           Result := st[0];
+        end;
+     finally
+        st.Free;
+     end;
+  end;
 
 var
    I: Integer;
-   Actually: DWORD;
-  _domain,
-   ndls: string;
+  _domain: string;
+   ndls: TStringList;
+   OK: boolean;
+   st: string;
 begin
    EnterNlCS;
    if NodeController = nil then NodeController := TNodeController.Create;
-   Zones := nil;
-   PC := nil; PCCount := 0;
-   MS := TxMemoryStream.Create;
-   St := _CreateFile(NDLPath, [cTruncate]);
-   if St = INVALID_HANDLE_VALUE then Error := SysErrorMessage(GetLastError) else begin
-      SetEndOfFile(ST);
-
-      I := - NodelistVersion; // version
-      WriteFile(ST, I, 4, Actually, nil);
-
-      I := -3; // reserve space
-      WriteFile(ST, I, 4, Actually, nil);
-      Zones := TColl.Create;
-
-      OldZone := DefaultZone;
-      OldDomain := DefaultDomain;
 
       CurRegion := 0;
-      OldRegion := 0;
-      OldNet := 0;
+      CurHub := 0;
+      CompiledNets := 0;
+      CompiledNodes := 0;
+      CompiledPoints := 0;
 
-      PC := TFidoNet.Create;
-      ndls := '';
       If NodeController.Lists = nil then begin
-//         ZeroHandle(ST);
-//         Terminated := True;
-//         LeaveNlCs;
-//         exit;
          NodeController.Lists := TStringList.Create;
       end;
       NodeController.Lists.Clear;
-      for I := 0 to Cfg.Nodelist.Files.Count - 1 do begin
-      //дифференцировать: сначала пойнтлисты, потом нодлист.
-        if (Cfg.Nodelist.Files.Count = AltCfg.NodelistDataDomain.Count) and
-           (inifile.D5Out) then _domain := AltCfg.NodelistDataDomain[I]
-        else _domain := '';
-        if not CompileFile(Cfg.Nodelist.Files[I], _domain, true) then begin
-           ndls := ndls + char(I);
-        end;
+      NL := TNLHolder.Create;
+      ndls := TStringList.Create;
+      try
+         for I := 0 to Cfg.Nodelist.Files.Count - 1 do begin
+            //дифференцировать: сначала пойнтлисты, потом нодлист.
+            if (Cfg.Nodelist.Files.Count = AltCfg.NodelistDataDomain.Count) and
+               (inifile.D5Out) then _domain := AltCfg.NodelistDataDomain[I]
+            else _domain := '';
+            st := bestchoice(Cfg.Nodelist.Files[I]);
+            if not CompileFile(st, _domain, true) then begin
+               ndls.AddObject(st + ',' + _domain, Pointer(Plus.GetFileTime(st)));
+            end;
+         end;
+         OK := True;
+         while OK do begin
+            OK := False;
+            for i := 0 to ndls.Count - 2 do begin
+               if DWORD(ndls.Objects[i]) > DWORD(ndls.Objects[i + 1]) then begin
+                  ndls.Exchange(i, i + 1);
+                  OK := True;
+                  break;
+               end;
+            end;
+         end;
+         while ndls.Count > 0 do begin
+            CompileFile(wordn(ndls[0], ',', 1), wordn(ndls[0], ',', 2), false);
+            ndls.Delete(0);
+         end;
+      finally
+         ndls.Free;
       end;
-      if ndls <> '' then
-      while length(ndls) > 0 do begin
-         if (Cfg.Nodelist.Files.Count = AltCfg.NodelistDataDomain.Count) and
-            (inifile.D5Out) then _domain := AltCfg.NodelistDataDomain[integer(ndls[1])]
-                            else _domain := '';
-         CompileFile(Cfg.Nodelist.Files[integer(ndls[1])], _domain, false);
-         delete(ndls, 1, 1);
-      end;
-      NewNet;
-      FlushZCs;
-      NewNet;
-      if not Terminated then begin
-         I := SetFilePointer(ST, 0, nil, FILE_CURRENT);
-         SetFilePointer(ST, 4, nil, FILE_BEGIN);
-         WriteFile(ST, I, 4, Actually, nil);
-         SetFilePointer(ST, I, nil, FILE_BEGIN);
-         Zones.Sort(CompareZones);
-         I := Zones.Count;
-         MS.Position := 0;
-         MS.Write(I, 4);
-         for I := 0 to Zones.Count - 1 do
-             MS.Write(TFidoZone(Zones[I]).d, SizeOf(TFidoZoneData));
-         WriteFile(ST, MS.Memory^, MS.Position, Actually, nil);
-         Zones.FreeAll;
-      end;
-   end;
+      NL.SaveToFile(JustPathName(ParamStr(0)) + '\Nodelist.idx');
+      FreeObject(NodeController.NLHolder);
+      NodeController.Cache := TFidoNodeColl.Create;
+      NodeController.NLHolder := NL;
    repeat
      _PostMessage(D.Handle, WM_SETOK, 0, 0);
       Sleep(100);
    until D.OK;
-   ZeroHandle(ST);
-   FreeObject(MS);
-   FreeObject(Zones);
-   FreeObject(PC);
    Terminated := True;
    LeaveNlCs;
 end;
@@ -1055,7 +649,6 @@ procedure TNodelistCompiler.FormDestroy(Sender: TObject);
 begin
    C.WaitFor;
    FreeObject(C);
-   CloseHandle(filehandle);
    EnterNlCS;
    FreeObject(NodeController);
    LeaveNlCS;
@@ -1123,7 +716,7 @@ begin
          if u and (IsTxyEx(z, Local, false) or IsTxyEx(z, Local, true)) then continue;
          s := s + ',' + z;
       end;
-      if pos(',CM,', s + ',') = 0 then s := ',CM' + s;
+//      if pos(',CM,', s + ',') = 0 then s := ',CM' + s;
    end;
    delete(s, 1, 1);
    z := copy(s, length(s) - 1, 2);
@@ -1193,7 +786,6 @@ end;
 
 function GetListedNode(const Addr: TFidoAddress): TFidoNode;
 begin
-//   EnterNlCS;
    try
       if NodeController = nil then NodeController := TNodeController.Create;
    except
@@ -1204,7 +796,6 @@ begin
    end else begin
       Result := NodeController.SearchNode(Addr);
    end;
-//   LeaveNlCS;
 end;
 
 function FindDom(const Addr: TFidoAddress; const Flags: string; const CM: boolean): TColl;
@@ -1322,32 +913,49 @@ begin
    i := pos(',DO', Flags);
    if (ga = '') and (i = 0) and (FTN <> '') then begin
       a := Addr;
-      a.Node := 0;
       n := GetListedNode(a);
+      i := 0;
       if n <> nil then begin
-         i := pos(',DO', n.Flags);
-         if i = 0 then begin
-            a.Net := n.Region;
-            n := GetListedNode(a);
-            if n <> nil then begin
-               i := pos(',DO', n.Flags);
-               if i = 0 then begin
-                  if Addr.Domain = 'fidonet' then begin
-                     a.Net := a.Zone;
-                  end else begin
-                     a.Net := 0;
-                  end;
-                  n := GetListedNode(a);
-                  if n <> nil then begin
-                     i := pos(',DO', n.Flags);
-                     if i = 0 then begin
-
-                     end else fs := n.Flags;
-                  end;
-               end else fs := n.Flags;
-            end;
-         end else fs := n.Flags;
+         a.Node := n.Hub;
+         a.Point := 0;
+         FreeObject(n);
+         n := GetListedNode(a);
+         if n <> nil then begin
+            i := pos(',DO', n.Flags);
+         end;
       end;
+      if i = 0 then begin
+         a.Node := 0;
+         FreeObject(n);
+         n := GetListedNode(a);
+         if n <> nil then begin
+            i := pos(',DO', n.Flags);
+            if i = 0 then begin
+               a.Net := n.Region;
+               FreeObject(n);
+               n := GetListedNode(a);
+               if n <> nil then begin
+                  i := pos(',DO', n.Flags);
+                  if i = 0 then begin
+                     if ((Addr.Domain = 'fidonet') or not IniFile.D5Out) and (Addr.Zone in [1..6]) then begin
+                        a.Net := a.Zone;
+                     end else begin
+                        a.Net := 0;
+                     end;
+                     FreeObject(n);
+                     n := GetListedNode(a);
+                     if n <> nil then begin
+                        i := pos(',DO', n.Flags);
+                        if i = 0 then begin
+
+                        end else fs := n.Flags;
+                     end;
+                  end else fs := n.Flags;
+               end;
+            end else fs := n.Flags;
+         end;
+      end else fs := n.Flags;
+      FreeObject(n);
    end else fs := Flags;
 
    if (i > 0) and (FTN <> '') then begin
@@ -1481,7 +1089,6 @@ function FindAdvNode(const Addr: TFidoAddress): TAdvNode;
 var
    Nodes: array[Boolean] of TFidoNode;
    Base: Boolean;
-   o,
    n: TFidoNode;
    DialupData,
    IPData,
@@ -1496,17 +1103,18 @@ begin
    if Dialup then begin
       if (n.Phone = '-Unpublished-') then exit;
       if (Pos('000-', n.Phone) > 0) then exit;
+      if (Pos('00-0', n.Phone) > 0) then exit;
    end;
    an := TAdvNodeData.Create;
    if Dialup then an.Phone := StrAsg(n.Phone) else an.IPAddr := StrAsg(n.Phone);
-   an.Flags := StrAsg(n.Flags);
+   an.Flags := StrAsg(DUFlags(n.Flags));
    InsUA(Result, an);
 end;
 
 var
    f: TNodePrefixFlag;
    Local,
-   u,
+//   u,
    overip,
    over: Boolean;
    s1,
@@ -1520,11 +1128,7 @@ begin
    f := nfOver;
    Base := False;
    Clear(Nodes, SizeOf(Nodes));
-   o := GetListedNode(Addr);
-   n := o;
-   if o <> nil then begin
-      n := o.Copy;
-   end;
+   n := GetListedNode(Addr);
    if (n <> nil) and (n.Addr.Point = 0) then begin
       s1 := n.Phone;
       case IdentOvrItem(s1, False, False) of
@@ -1533,9 +1137,10 @@ begin
       oiIpNum: begin Base := True; Nodes[False] := n; end;
       else
          begin
-            if s1 = '-Unpublished-' then
-//            n := nil
-            else begin
+            if s1 = '-Unpublished-' then begin
+//               FreeObject(n);
+//               n := nil
+            end else begin
                Base := True;
                Nodes[False] := n
             end;
@@ -1555,13 +1160,13 @@ begin
 
       if overip then begin
          overip := false;
-         u := false;
+//         u := false;
          an := IpData[0];
          s1 := an.Flags;
          while s1 <> '' do begin
             GetWrd(s1, s2, ',');
-            u := u or (UpperCase(s2) = 'U');
-            if u and IsTxyEx(s2, Local, false) then begin
+//            u := u or (UpperCase(s2) = 'U');
+            if {u and} IsTxyEx(s2, Local, false) then begin
                overip := true;
                break;
             end;
@@ -1668,86 +1273,56 @@ begin
    end;
 end;
 
-function _GetScope(const Addr: TFidoAddress): TFidoNodeColl;
-
-function fit(n: TfidoNode; r: word; a: TFidoAddress): boolean;
-begin
-   Result := False;
-   if n.Addr.Point <> 0 then exit;
-   Result := True;
-   if n.Hub = a.Node then exit;
-   if (a.Node = 0) and (a.Point = 0) then exit;
-   Result := False;
-end;
-
+function _GetScope(const Addr: TFidoAddress): TFidoAddrColl;
 var
-   i: integer;
-   j: integer;
-   r: word;
-   z: TZoneContainer;
-   n: TNetNodeIdx;
-   o: TFidoNode;
-   a: TFidoAddress;
-   c: TFidoNodeColl;
-   t: TFidoAddress;
+  SR: TFidoAddress;
+  hh: boolean;
 begin
    Result := nil;
-   t := Addr;
-   if t.Point = -1 then t.Point := 0;
-   o := GetListedNode(t);
-   if o = nil then exit;
-   a := t;
-   r := o.Region;
-   if r = o.Addr.Net then begin
-      if (t.Domain = 'fidonet') or
-        ((t.Domain = '') and (t.Zone in [1..7])) then begin
-         a.Net := t.Zone;
-      end else begin
-         a.Net := 0;
-      end;
-   end;
-   i := NodeController.GetNetIdx(a.Zone, a.Net, a.Domain);
-   z := NodeController.SeekNet(i, a.Zone, a.Net, a.Domain);
-   if i > -1 then begin
-      Result := TFidoNodeColl.Create;
-      for i := 0 to z.Count - 1 do begin
-         n := z[i];
-         a.Domain := t.Domain;
-         a.Zone   := t.Zone;
-         a.Net    := t.Net;
-         a.Node   := n.Addr.Node;
-         a.Point  := n.Addr.Point;
-         o := GetListedNode(a);
-         if fit(o, r, Addr) then begin
-            Result.Add(o);
+   try
+   if Addr.Node <> 0 then begin
+      SR := Addr;
+      SR.Node := 0;
+      if SR.Point = word(-1) then SR.Point := 0;
+      Result := TFidoAddrColl.Create;
+      while NodeController.NLHolder.GetNextNode(SR) do begin
+         if SR.Point <> 0 then continue;
+         if SR.Net <> Addr.Net then exit;
+         if SR.Hubb = Addr.Node then begin
+            Result.Add(SR);
          end;
       end;
+      exit;
    end;
-   if t.Node <> 0 then exit;
-   for i := 0 to NodeController.Table.Count - 1 do begin
-      if i >= NodeController.Table.Count then break;
-      z := NodeController.Table[i];
-      if (z.ZoneData.Domain = t.Domain) and
-         (z.ZoneData.Zone = t.Zone) and
-         (z.ZoneData.Region = t.Net) then
-      begin
-         a.Domain := t.Domain;
-         a.Zone := t.Zone;
-         a.Net := z.ZoneData.Net;
-         a.Node := 0;
-         a.Point := 0;
-         c := _GetScope(a);
-         for j := 0 to CollMax(c) do begin
-            o := c[j];
-            Result.Add(o);
-         end;
-         c.DeleteAll;
-         FreeObject(c);
+   SR := Addr;
+   SR.Node := 0;
+   hh := False;
+   if SR.Point = word(-1) then begin
+      hh := True;
+      SR.Point := 0;
+   end else begin
+      if ((SR.Domain = 'fidonet') or not IniFile.D5Out) and (SR.Zone in [1..6]) then SR.Net := SR.Zone;
+   end;
+   if Result = nil then Result := TFidoAddrColl.Create;
+   if Nodecontroller = nil then exit;
+   if Nodecontroller.NLHolder = nil then exit;
+   while NodeController.NLHolder.GetNextNode(SR) do begin
+      if SR.Point <> 0 then continue;
+      if SR.Zone <> Addr.Zone then exit;
+      if hh and (SR.Net <> Addr.Net) then exit;
+      if hh and (SR.Hubb = 0) then begin
+         Result.Add(SR);
+      end else
+      if SR.Region = Addr.Net then begin
+         Result.Add(SR);
       end;
+   end;
+   finally
+      if (Result <> nil) and (Result.Count = 0) then FreeObject(Result);
    end;
 end;
 
-function GetScope(const Addr: TFidoAddress): TFidoNodeColl;
+function GetScope(const Addr: TFidoAddress): TFidoAddrColl;
 begin
    EnterNlCS;
    Result := _GetScope(Addr);
@@ -1758,20 +1333,6 @@ destructor TCompileThread.Destroy;
 begin
    FreeObject(ZCs);
    inherited Destroy;
-end;
-
-function TZoneContainer.Compare(Key1, Key2: Pointer): Integer;
-var
-   a: PNodePoint absolute Key1;
-   b: PNodePoint absolute Key2;
-begin
-   Result := a^.Node - b^.Node;
-   if Result = 0 then Result := a^.Point - b^.Point;
-end;
-
-function TZoneContainer.KeyOf(Item: Pointer): Pointer;
-begin
-   Result := @TNetNodeIdx(Item).Addr;
 end;
 
 procedure InitNdlUtil;
@@ -1793,6 +1354,7 @@ begin
       an := GetListedNode(IniFile.MainAddr);
       if an = nil then exit;
       Inifile.MainReg := an.Region;
+      FreeObject(an);
    end;
 end;
 
@@ -1825,5 +1387,163 @@ begin
    Result := TZoneRoot(Item);
 end;
 
+{ TNLHolder }
+
+constructor TNLHolder.Create;
+begin
+   inherited;
+   dList := TStringList.Create;
+end;
+
+destructor TNLHolder.Destroy;
+var
+   i: integer;
+begin
+   for i := 0 to dList.Count - 1 do begin
+      TFidoNLColl(dList.Objects[i]).Free;
+   end;
+   dList.Free;
+   inherited;
+end;
+
+procedure TNLHolder.Add(const f, d: string; a: TFidoAddress);
+var
+   i: integer;
+begin
+   i := dList.IndexOf(d);
+   if i = -1 then begin
+      i := dList.Add(d);
+      dList.Objects[i] := TFidoNLColl.Create;
+      TFidoNLColl(dList.Objects[i]).Domain := d;
+   end;
+   TFidoNLColl(dList.Objects[i]).Ins(a, f);
+end;
+
+procedure TNLHolder.LoadFromFile(const f: string);
+var
+   i: integer;
+   j: integer;
+   s: TDOSStream;
+   b: byte;
+   w: word;
+   o: dword;
+   n: string;
+   d: string;
+   c: TFidoNLColl;
+   l: TStringList;
+   a: TFidoAddress;
+  OK: boolean;
+begin
+   OK := False;
+   s := CreateDOSStream(f, [cRead]);
+   if s <> nil then begin
+      l := nil;
+      try
+         l := TStringList.Create;
+         l.Duplicates := dupIgnore;
+         while s.Position < s.Size do begin
+            c := TFidoNLColl.Create;
+            s.Read(w, 2);
+            for i := 0 to w - 1 do begin
+               s.Read(b, 1);
+               SetLength(n, b);
+               s.Read(n[1], b);
+               if FileExists(n) then begin
+                  c.Nodelist.Add(n);
+               end else begin
+                  dList.Clear;
+                  exit;
+               end;
+            end;
+            s.Read(b, 1);
+            SetLength(d, b);
+            s.Read(d[1], b);
+            s.Read(o, 4);
+            c.Domain := d;
+            j := l.Add(d);
+            l.Objects[j] := c;
+            for i := 1 to o do begin
+               s.Read(a, 18);
+               TFidoNLColl(l.Objects[j]).Add(a, c.Nodelist[a.fil]);
+            end;
+         end;
+         OK := True;
+         EnterNlCS;
+         try
+            for i := 0 to dList.Count - 1 do begin
+               TFidoNLColl(dList.Objects[i]).Free;
+            end;
+            dList.Free;
+            dList := l;
+         finally
+            LeaveNLCs;
+         end;
+      finally
+         s.Free;
+         if not OK then begin
+            DeleteFile(f);
+            for i := 0 to l.Count - 1 do begin
+               TFidoNLColl(l.Objects[i]).Free;
+            end;
+            l.Free;
+         end;
+      end;
+   end;
+end;
+
+procedure TNLHolder.SaveToFile(const f: string);
+var
+   i: integer;
+   s: TDOSStream;
+begin
+   s := CreateDOSStream(f, [cTruncate]);
+   if s <> nil then begin
+      s.Free;
+      for i := 0 to dList.Count - 1 do begin
+         TFidoNLColl(dList.Objects[i]).SaveToFile(f);
+      end;
+   end;
+end;
+
+function TNLHolder.SearchNode(const Addr: TFidoAddress): TFidoNode;
+var
+   i: integer;
+begin
+   Result := nil;
+   i := dList.IndexOf(Addr.Domain);
+   if i = -1 then exit;
+   Result := TFidoNLColl(dList.Objects[i]).SearchNode(Addr);
+end;
+
+function TNLHolder.GetNextNode(var Addr: TFidoAddress): boolean;
+var
+   i: integer;
+begin
+   Result := False;
+   i := dList.IndexOf(Addr.Domain);
+   if i > -1 then begin
+      Result := TFidoNLColl(dList.Objects[i]).GetNextNode(Addr);
+      if not Result then begin
+         inc(i);
+         if i < dList.Count then begin
+            Result := TFidoNLColl(dList.Objects[i]).GetNextNode(Addr);
+         end;
+      end;
+   end;
+end;
+
+function TNLHolder.GetFirstNode: TFidoAddress;
+begin
+   Result.Domain := '';
+   Result.Zone := 0;
+   Result.Net := 0;
+   Result.Node := 0;
+   Result.Point := 0;
+   if dList.Count > 0 then begin
+      Result := TFidoNLColl(dList.Objects[0]).GetFirstNode;
+   end;
+end;
+
 end.
+
 

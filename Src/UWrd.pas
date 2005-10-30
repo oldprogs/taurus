@@ -23,14 +23,14 @@ begin
    j       := 0;
    for i := 1 to length(tempstr) do begin
       if ins then
-         if tempstr[i] =d then ins:=false
+         if tempstr[i] = d then ins := false
                           else begin end
              else
-      if tempstr[i]<>d then begin
-         inc(j);ins:=true;
+      if tempstr[i] <> d then begin
+         inc(j); ins := true;
       end;
    end;
-   words:=j;
+   words := j;
 end;
 {
 function  wordnn;

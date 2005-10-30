@@ -2,15 +2,18 @@ unit RCCUnit;
 
 interface
 
-uses Forms, p_RCC;
+uses
+   Forms, p_RCC;
 
 procedure TreatForm(Form: TForm);
 
-var pRCC: TRCC;
+var
+   pRCC: TRCC;
 
 implementation
 
-uses Controls, Classes, TypInfo, SysUtils;
+uses
+   Controls, Classes, TypInfo, SysUtils;
 
 procedure GetPublishedProperties(AObject: TObject; AStrings: TStrings);
 var

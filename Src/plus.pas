@@ -13,8 +13,6 @@ function  FileNameWin2Dos(const FileName: string; convert: boolean): string;
 function  ShortFileName(const LongName: string):string;
 procedure UnPrepareVariables;
 
-function FreeSpace(const s: string): int64;
-
 function GetFileSize(const FileName: string): Int64;
 function GetFileTime(const FileName: string): DWORD;
 function GetDirSize(const FileName: string): Int64;
@@ -50,7 +48,7 @@ end;
 
 function GetFileTime;
 var
-   SR: tuFindData;
+   SR: TuFindData;
 begin
    SR.Info.Time := 0;
    if uFindFirst(FileName, SR) then begin
@@ -94,14 +92,6 @@ begin
     end;
   end;
   Result := -1;
-end;
-
-function FreeSpace;
-var
-  lpFreeBytesAvailableToCaller, lpTotalNumberOfBytes, lpTotalNumberOfFreeBytes: int64;
-begin
-  GetDiskFreeSpaceEx(PChar(s), lpFreeBytesAvailableToCaller, lpTotalNumberOfBytes, plargeinteger(@lpTotalNumberOfFreeBytes));
-  Result := lpFreeBytesAvailableToCaller;
 end;
 
 procedure PrepareVariables;
@@ -181,26 +171,6 @@ begin
 
   for i := 1 to length(result) do
      if (result[i] <= ' ') then result[i] := '_';
-end;
-
-function GetPriority(PriorityName: string): integer;
-begin
-  PriorityName := UpperCase(PriorityName);
-  result := NORMAL_PRIORITY_CLASS;
-  if PriorityName = 'IDLE'   then result := IDLE_PRIORITY_CLASS   else
-  if PriorityName = 'NORMAL' then result := NORMAL_PRIORITY_CLASS else
-  if PriorityName = 'HIGH'   then result := HIGH_PRIORITY_CLASS   else
-  if PriorityName = 'REAL'   then result := REALTIME_PRIORITY_CLASS;
-end;
-
-function GetThreadPriority(PriorityName: string): TThreadPriority;
-begin
-  PriorityName := UpperCase(PriorityName);
-  result := tpNormal;
-  if PriorityName = 'IDLE'   then result := tpIdle    else
-  if PriorityName = 'NORMAL' then result := tpNormal  else
-  if PriorityName = 'HIGH'   then result := tpHighest else
-  if PriorityName = 'REAL'   then result := tpTimeCritical;
 end;
 
 function  GetFileList(const dir, nam: string): TStringColl;

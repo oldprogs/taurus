@@ -460,6 +460,8 @@ LANGUAGE LANG_RUSSIAN,0
   LngBaseRussianEvt+eiAccFilesRqd     "Допуск Файлов Требуемые|Список масок"
   LngBaseRussianEvt+eiAccFilesFrb     "Допуск Файлов Отложенные|Список масок"
   LngBaseRussianEvt+eiAccFilesFrK     "Допуск Файлов Запрещенные отказ|Список масок"
+  LngBaseRussianEvt+eiAccFilesSiz     "Отложить Прием (Размер)|Размер(Kb)"
+  LngBaseRussianEvt+eiDelFilesSiz     "Запретить Прием (Размер)|Размер(Kb)"
 
   LngBaseRussianEvt+eiAccNodesRqd     "Допуск Узлов Требуемые|Узлы"
   LngBaseRussianEvt+eiAccNodesFrb     "Допуск Узлов Запрещенные|Узлы"

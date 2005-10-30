@@ -500,7 +500,8 @@ begin
 end;
 
 constructor TIntegerBinaryTree._Create(const Address: Cardinal);
-begin	//We do not call inherited Create for optimization
+begin
+     	//We do not call inherited Create for optimization
 	fValue := Address
 end;
 
