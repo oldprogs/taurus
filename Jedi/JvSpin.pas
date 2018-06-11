@@ -23,12 +23,12 @@ Contributor(s):
   Niels v/d Spek
 
 You may retrieve the latest version of this file at the Project JEDI's JVCL home page,
-located at http://jvcl.sourceforge.net
+located at http://jvcl.delphi-jedi.org
 
 Known Issues:
 
 -----------------------------------------------------------------------------}
-// $Id: JvSpin.pas 12071 2008-12-10 21:38:08Z ahuser $
+// $Id: JvSpin.pas 12831 2010-09-05 12:51:00Z obones $
 
 unit JvSpin;
 
@@ -42,7 +42,7 @@ uses
   {$ENDIF UNITVERSIONING}
   SysUtils, Classes,
   Windows, Messages, CommCtrl, ComCtrls, Controls, ExtCtrls, Graphics, Forms,
-  JvEdit, JvExMask, JvMaskEdit, JvComponent, JvDataSourceIntf, JvVCL5Utils;
+  JvEdit, JvExMask, JvMaskEdit, JvComponent, JvDataSourceIntf;
 
 const
   DefaultInitRepeatPause = 400; { pause before repeat timer (ms) }
@@ -238,6 +238,9 @@ type
     procedure KeyPress(var Key: Char); override;
     procedure UpClick(Sender: TObject); virtual;
     property ButtonWidth: Integer read GetButtonWidth;
+
+    procedure DoTopClick;
+    procedure DoBottomClick;
   public
     procedure Loaded; override;
     constructor Create(AOwner: TComponent); override;
@@ -342,12 +345,10 @@ type
     property OnMouseWheelDown;
     property OnMouseWheelUp;
     property HideSelection;
-    {$IFDEF COMPILER6_UP}
     property BevelEdges;
     property BevelInner;
     property BevelKind default bkNone;
     property BevelOuter;
-    {$ENDIF COMPILER6_UP}
     property ClipboardCommands;
   end;
 
@@ -460,12 +461,10 @@ type
     property OnMouseWheelDown;
     property OnMouseWheelUp;
     property HideSelection;
-    {$IFDEF COMPILER6_UP}
     property BevelEdges;
     property BevelInner;
     property BevelKind default bkNone;
     property BevelOuter;
-    {$ENDIF COMPILER6_UP}
     property ClipboardCommands;
   end;
 
@@ -473,9 +472,9 @@ type
 {$IFDEF UNITVERSIONING}
 const
   UnitVersioning: TUnitVersionInfo = (
-    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_36_PREPARATION/run/JvSpin.pas $';
-    Revision: '$Revision: 12071 $';
-    Date: '$Date: 2008-12-10 22:38:08 +0100 (mer., 10 déc. 2008) $';
+    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_40_PREPARATION/run/JvSpin.pas $';
+    Revision: '$Revision: 12831 $';
+    Date: '$Date: 2010-09-05 14:51:00 +0200 (dim., 05 sept. 2010) $';
     LogPath: 'JVCL\run'
   );
 {$ENDIF UNITVERSIONING}
@@ -632,8 +631,8 @@ end;
 
 function RemoveThousands(const AValue: string): string;
 begin
-  if DecimalSeparator <> ThousandSeparator then
-    Result := DelChars(AValue, ThousandSeparator)
+  if {$IFDEF RTL220_UP}FormatSettings.{$ENDIF RTL220_UP}DecimalSeparator <> {$IFDEF RTL220_UP}FormatSettings.{$ENDIF RTL220_UP}ThousandSeparator then
+    Result := DelChars(AValue, {$IFDEF RTL220_UP}FormatSettings.{$ENDIF RTL220_UP}ThousandSeparator)
   else
     Result := AValue;
 end;
@@ -712,8 +711,8 @@ begin
     // (outchy) only shift SelStart by the difference in number of ThousandSeparator BEFORE SelStart
     // do not shift if SelStart was clamped (new text length is shorter than OldSelText)
     if Thousands and (SelStart = OldSelStart) then
-      SelStart := SelStart + StrCharCount(Copy(Text, 1, SelStart), ThousandSeparator) -
-        StrCharCount(Copy(OldText, 1, SelStart), ThousandSeparator);
+      SelStart := SelStart + StrCharCount(Copy(Text, 1, SelStart), {$IFDEF RTL220_UP}FormatSettings.{$ENDIF RTL220_UP}ThousandSeparator) -
+        StrCharCount(Copy(OldText, 1, SelStart), {$IFDEF RTL220_UP}FormatSettings.{$ENDIF RTL220_UP}ThousandSeparator);
 
     inherited Change;
     FOldValue := Value;
@@ -838,6 +837,12 @@ begin
     inherited;
 end;
 
+procedure TJvCustomSpinEdit.DoBottomClick;
+begin
+  if Assigned(FOnBottomClick) then
+    FOnBottomClick(Self);
+end;
+
 procedure TJvCustomSpinEdit.DoEnter;
 begin
   SetFocused(True);
@@ -881,6 +886,12 @@ begin
   Result := True;
 end;
 
+procedure TJvCustomSpinEdit.DoTopClick;
+begin
+  if Assigned(FOnTopClick) then
+    FOnTopClick(Self);
+end;
+
 procedure TJvCustomSpinEdit.DownClick(Sender: TObject);
 var
   OldText: string;
@@ -901,8 +912,7 @@ begin
       Modified := True;
       Change;
     end;
-    if Assigned(FOnBottomClick) then
-      FOnBottomClick(Self);
+    DoBottomClick;
   end;
 end;
 
@@ -955,14 +965,7 @@ end;
 
 function TJvCustomSpinEdit.GetButtonKind: TSpinButtonKind;
 begin
-  if NewStyleControls then
-    Result := FButtonKind
-  else
-  begin
-    Result := bkDiagonal;
-    if Assigned(FButton) and (FButton.ButtonStyle = sbsClassic) then
-      Result := bkClassic;
-  end;
+  Result := FButtonKind;
 end;
 
 function TJvCustomSpinEdit.GetButtonWidth: Integer;
@@ -1034,12 +1037,12 @@ begin
   ValidChars := DigitChars + ['+', '-'];
   if ValueType = vtFloat then
   begin
-    if Pos(DecimalSeparator, Text) = 0 then
+    if Pos({$IFDEF RTL220_UP}FormatSettings.{$ENDIF RTL220_UP}DecimalSeparator, Text) = 0 then
     begin
-      if not Thousands or (ThousandSeparator <> '.') then
-        ValidChars := ValidChars + [DecimalSeparator, '.']
+      if not Thousands or ({$IFDEF RTL220_UP}FormatSettings.{$ENDIF RTL220_UP}ThousandSeparator <> '.') then
+        ValidChars := ValidChars + [{$IFDEF RTL220_UP}FormatSettings.{$ENDIF RTL220_UP}DecimalSeparator, '.']
       else
-        ValidChars := ValidChars + [DecimalSeparator];
+        ValidChars := ValidChars + [{$IFDEF RTL220_UP}FormatSettings.{$ENDIF RTL220_UP}DecimalSeparator];
     end;
     if Pos('E', AnsiUpperCase(Text)) = 0 then
       ValidChars := ValidChars + ['e', 'E'];
@@ -1074,9 +1077,9 @@ begin
   end;
   // do not delete the decimal separator while typing
   // all decimal digits were moved to the integer part and new decimals were added at the end
-  if (Key = VK_DELETE) and (SelStart < Length(Text)) and (Text[SelStart + 1] = DecimalSeparator) then
+  if (Key = VK_DELETE) and (SelStart < Length(Text)) and (Text[SelStart + 1] = {$IFDEF RTL220_UP}FormatSettings.{$ENDIF RTL220_UP}DecimalSeparator) then
     Key := VK_RIGHT;
-  if (Key = VK_BACK) and (SelStart > 0) and (Text[SelStart] = DecimalSeparator) then
+  if (Key = VK_BACK) and (SelStart > 0) and (Text[SelStart] = {$IFDEF RTL220_UP}FormatSettings.{$ENDIF RTL220_UP}DecimalSeparator) then
     Key := VK_LEFT;
 end;
 
@@ -1085,13 +1088,13 @@ var
   I: Integer;
 begin
   // (outchy) moved at the beginning, hitting '.' now behaves like hitting the decimal separator
-  if (Key = '.') and (not Thousands or (ThousandSeparator <> '.')) then
-    Key := DecimalSeparator;
+  if (Key = '.') and (not Thousands or ({$IFDEF RTL220_UP}FormatSettings.{$ENDIF RTL220_UP}ThousandSeparator <> '.')) then
+    Key := {$IFDEF RTL220_UP}FormatSettings.{$ENDIF RTL220_UP}DecimalSeparator;
 
-  if (Key = DecimalSeparator) and (ValueType = vtFloat) then
+  if (Key = {$IFDEF RTL220_UP}FormatSettings.{$ENDIF RTL220_UP}DecimalSeparator) and (ValueType = vtFloat) then
   begin
     { If the key is the decimal separator move the caret behind it. }
-    I := Pos(DecimalSeparator, Text);
+    I := Pos({$IFDEF RTL220_UP}FormatSettings.{$ENDIF RTL220_UP}DecimalSeparator, Text);
     if I <> 0 then
     begin
       Key := #0;
@@ -1190,7 +1193,7 @@ begin
   else
   if FButton <> nil then
   begin { bkDiagonal }
-    if NewStyleControls and  Ctl3D and  (BorderStyle = bsSingle) then
+    if Ctl3D and (BorderStyle = bsSingle) then
       if FButtonKind = bkClassic then
         R := Bounds(Width - DefBtnWidth - 4, -1, DefBtnWidth, Height - 3)
       else
@@ -1202,7 +1205,7 @@ begin
       R := Bounds(Width - Height, 0, Height, Height);
     if BiDiMode = bdRightToLeft then
     begin
-      if NewStyleControls and  Ctl3D and  (BorderStyle = bsSingle) then
+      if Ctl3D and (BorderStyle = bsSingle) then
       begin
         R.Left := -1;
         R.Right := Height - 4;
@@ -1316,7 +1319,7 @@ begin
     SetRect(Loc, 0, 0, ClientWidth - GetButtonWidth - 2, ClientHeight + 1);
     SendMessage(Handle, EM_SETMARGINS, EC_RIGHTMARGIN, MakeLong(0, GetButtonWidth));
   end;
-  SendMessage(Handle, EM_SETRECTNP, 0, Longint(@Loc));
+  SendMessage(Handle, EM_SETRECTNP, 0, LPARAM(@Loc));
 end;
 
 procedure TJvCustomSpinEdit.SetFocused(Value: Boolean);
@@ -1422,8 +1425,7 @@ begin
       Modified := True;
       Change;
     end;
-    if Assigned(FOnTopClick) then
-      FOnTopClick(Self);
+    DoTopClick;
   end;
 end;
 
@@ -1745,9 +1747,7 @@ end;
 
 procedure TJvSpinButton.SetFocusControl(Value: TWinControl);
 begin
-  FFocusControl := Value;
-  if Value <> nil then
-    Value.FreeNotification(Self);
+  ReplaceComponentReference(Self, Value, TComponent(FFocusControl));
 end;
 
 procedure TJvSpinButton.SetUpGlyph(Value: TBitmap);
@@ -2861,7 +2861,7 @@ begin
   end
 
   else
-  if SelStart >= 3 then
+  if (SelStart >= 3) and (SelStart <= 5) then
   begin
     if (SelStart <= 5) then
       Offset := 4
@@ -2925,7 +2925,13 @@ end;
 
 procedure TJvCustomTimeEdit.UpClick(Sender: TObject);
 begin
-  UpdateTimeDigits(True);
+  if ReadOnly then
+    DoBeepOnError
+  else
+  begin
+    UpdateTimeDigits(True);
+    DoTopClick;
+  end;
 end;
 
 destructor TJvCustomTimeEdit.Destroy;
@@ -2948,7 +2954,13 @@ end;
 
 procedure TJvCustomTimeEdit.DownClick(Sender: TObject);
 begin
-  UpdateTimeDigits(False);
+  if ReadOnly then
+    DoBeepOnError
+  else
+  begin
+    UpdateTimeDigits(False);
+    DoBottomClick;
+  end;
 end;
 
 procedure TJvCustomTimeEdit.KeyDown(var Key: Word; Shift: TShiftState);
@@ -2999,11 +3011,12 @@ end;
 
 function TJvCustomTimeEdit.GetValue: Extended;
 begin
-  Result := 0.0;
+  Result := Time;
 end;
 
 procedure TJvCustomTimeEdit.SetValue(NewValue: Extended);
 begin
+  Time := NewValue;
 end;
 
 //=== { TJvCustomTimeEditDataConnector } ====================================

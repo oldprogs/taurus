@@ -21,11 +21,11 @@ Contributor(s): Michael Beck [mbeck att bigfoot dott com].
                 dejoy
 
 You may retrieve the latest version of this file at the Project JEDI's JVCL home page,
-located at http://jvcl.sourceforge.net
+located at http://jvcl.delphi-jedi.org
 
 Known Issues:
 -----------------------------------------------------------------------------}
-// $Id: JvTypes.pas 11993 2008-10-26 12:56:38Z ahuser $
+// $Id: JvTypes.pas 12461 2009-08-14 17:21:33Z obones $
 
 unit JvTypes;
 
@@ -37,14 +37,8 @@ uses
   {$IFDEF UNITVERSIONING}
   JclUnitVersioning,
   {$ENDIF UNITVERSIONING}
-  {$IFDEF CLR}
-  System.Runtime.InteropServices,
-  {$ENDIF CLR}
   SysUtils, Classes, Consts,
   Windows, Messages, Controls, Forms, Graphics,
-  {$IFDEF COMPILER5}
-  JvWin32,
-  {$ENDIF COMPILER5}
   JvConsts, JvResources;
 
 const
@@ -57,14 +51,9 @@ const
 {$HPPEMIT '#endif'}
 {$ENDIF !COMPILER12_UP}
 
-{$IFDEF CLR}
-type
-  TJvBytes = TBytes;
-{$ELSE}
 type
   TJvBytes = Pointer;
   IntPtr = Pointer;
-{$ENDIF CLR}
 
 type
   {$IFNDEF COMPILER9_UP}
@@ -97,9 +86,6 @@ type
   TInputKey = (ikAll, ikArrows, ikChars, ikButton, ikTabs, ikEdit, ikNative{, ikNav, ikEsc});
   TInputKeys = set of TInputKey;
 
-  {$IFDEF CLR}
-  [StructLayout(LayoutKind.Sequential)]
-  {$ENDIF CLR}
   TJvRGBTriple = packed record
     rgbBlue: Byte;
     rgbGreen: Byte;
@@ -114,60 +100,20 @@ type
   TTimerProc = procedure(hwnd: THandle; Msg: Cardinal; idEvent: Cardinal; dwTime: Cardinal);
 
 type
-  {$IFNDEF COMPILER6_UP}
-  EOSError = class(EWin32Error);
-  IInterface = IUnknown;
-  IDesignerHook = IDesigner;
-  {$M+}
-  IInvokable = interface(IInterface)
-  end;
-  {$M-}
-  {$ENDIF COMPILER6_UP}
-  {$IFDEF CLR}
-  IUnknown = IInterface;
-  {$ENDIF CLR}
-
-  {$IFNDEF COMPILER6_UP}
-  TInterfacedPersistent = class(TPersistent, IInterface)
-  private
-    FOwnerInterface: IUnknown;
-  protected
-    { IInterface }
-    function _AddRef: Integer; stdcall;
-    function _Release: Integer; stdcall;
-  public
-    function QueryInterface(const IID: TGUID; out Obj): HResult; virtual; stdcall;
-    procedure AfterConstruction; override;
-  end;
-  {$ENDIF COMPILER6_UP}
-
-
   // Base class for persistent properties that can show events.
   // By default, Delphi and BCB don't show the events of a class
   // derived from TPersistent unless it also derives from
-  // TComponent. However, up until version 5, you couldn't have
-  // a Component as a Sub Component of another one, thus preventing
-  // from having events for a sub property.
+  // TComponent. 
   // The design time editor associated with TJvPersistent will display
   // the events, thus mimicking a Sub Component.
-  {$IFDEF COMPILER6_UP}
   TJvPersistent = class(TComponent)
-  {$ELSE}
-  TJvPersistent = class(TInterfacedPersistent)
-  private
-    FName: TComponentName;
-  protected
-    procedure SetName(const NewName: TComponentName); virtual;
-  public
-    property Name: TComponentName read FName write SetName stored False;
-  {$ENDIF COMPILER6_UP}
   private
     FOwner: TPersistent;
     function _GetOwner: TPersistent;
   protected
     function GetOwner: TPersistent; override;
   public
-    constructor Create(AOwner: TPersistent); {$IFDEF COMPILER6_UP}reintroduce;{$ENDIF} virtual;
+    constructor Create(AOwner: TPersistent); reintroduce; virtual;
 
     function GetNamePath: string; override;
     property Owner: TPersistent read _GetOwner;
@@ -265,33 +211,6 @@ type
 
   //  TOnOpened = procedure(Sender: TObject; Value: string) of object; // archive
   //  TOnOpenCanceled = procedure(Sender: TObject) of object; // archive
-
-  {$IFNDEF COMPILER6_UP}
-
-  { TStream seek origins }
-//  TSeekOrigin = (soFromBeginning, soFromCurrent, soFromEnd);
-// (outchy)
-// TStream.Seek can not be used with TSeekOrigin
-// soFromBeginning, soFromCurrent and soFromEnd are defined in Classes.pas
-
-  TWMNCPaint = packed record
-    Msg: Cardinal;
-    RGN: HRGN;
-    Unused: Longint;
-    Result: Longint;
-  end;
-
-// (outchy) defined in Windows.pas
-//  PInteger = ^Integer;
-//  PDouble = ^Double;
-  PBoolean = ^Boolean;
-  PWordBool = ^WordBool;
-  PCardinal = ^Cardinal;
-//  PByte = ^Byte;
-
-  TVarType = Word;
-
- {$ENDIF COMPILER6_UP}
 
   TJvGradientStyle = (grFilled, grEllipse, grHorizontal, grVertical, grPyramid, grMount);
   //  TOnDelete = procedure(Sender: TObject; Path: string) of object;
@@ -452,14 +371,6 @@ const
   ColCount = 20;
   StandardColCount = 40;
   SysColCount = 30;
-  {$IFDEF COMPILER5}
-  clSystemColor = TColor($80000000);
-  clHotLight = TColor(clSystemColor or COLOR_HOTLIGHT);
-  clGradientActiveCaption = TColor(clSystemColor or COLOR_GRADIENTACTIVECAPTION);
-  clGradientInactiveCaption = TColor(clSystemColor or COLOR_GRADIENTINACTIVECAPTION);
-  clMenuHighlight = TColor(clSystemColor or COLOR_MENUHILIGHT);
-  clMenuBar = TColor(clSystemColor or COLOR_MENUBAR);
-  {$ENDIF COMPILER5}
   {$IFDEF COMPILER6}
    {$IF not declared(clHotLight)}
     {$MESSAGE ERROR 'You do not have installed Delphi 6 Runtime Library Update 2. Please install this before installing the JVCL. http://downloads.codegear.com/default.aspx?productid=300'}
@@ -579,7 +490,6 @@ type
     Height: Integer;
   end;
 
-{$IFNDEF CLR}
   TJvMessage = packed record
     Msg: Integer;
     case Integer of
@@ -723,65 +633,27 @@ type
       Button: TControl;
      );
   end;
-{$ENDIF !CLR}
 
 {$IFDEF UNITVERSIONING}
 const
   UnitVersioning: TUnitVersionInfo = (
-    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_36_PREPARATION/run/JvTypes.pas $';
-    Revision: '$Revision: 11993 $';
-    Date: '$Date: 2008-10-26 13:56:38 +0100 (dim., 26 oct. 2008) $';
+    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_40_PREPARATION/run/JvTypes.pas $';
+    Revision: '$Revision: 12461 $';
+    Date: '$Date: 2009-08-14 19:21:33 +0200 (ven., 14 août 2009) $';
     LogPath: 'JVCL\run'
   );
 {$ENDIF UNITVERSIONING}
 
 implementation
 
-{$IFNDEF COMPILER6_UP}
-{ TInterfacedPersistent }
-procedure TInterfacedPersistent.AfterConstruction;
-begin
-  inherited AfterConstruction;
-  if GetOwner <> nil then
-    GetOwner.GetInterface(IInterface, FOwnerInterface);
-end;
-
-function TInterfacedPersistent._AddRef: Integer;
-begin
-  if FOwnerInterface <> nil then
-    Result := FOwnerInterface._AddRef else
-    Result := -1;
-end;
-
-function TInterfacedPersistent._Release: Integer;
-begin
-  if FOwnerInterface <> nil then
-    Result := FOwnerInterface._Release else
-    Result := -1;
-end;
-
-function TInterfacedPersistent.QueryInterface(const IID: TGUID;
-  out Obj): HResult;
-const
-  E_NOINTERFACE = HResult($80004002);
-begin
-  if GetInterface(IID, Obj) then Result := 0 else Result := E_NOINTERFACE;
-end;
-{$ENDIF COMPILER6_UP}
-
-
 { TJvPersistent }
 constructor TJvPersistent.Create(AOwner: TPersistent);
 begin
-{$IFDEF COMPILER6_UP}
   if AOwner is TComponent then
     inherited Create(AOwner as TComponent)
   else
     inherited Create(nil);
   SetSubComponent(True);
-{$ELSE}
-  inherited Create;
-{$ENDIF COMPILER6_UP}
 
   FOwner := AOwner;
 end;
@@ -795,7 +667,6 @@ var
   lOwner: TPersistent;
 begin
   Result := inherited GetNamePath;
-{$IFDEF COMPILER6_UP}
   lOwner := GetOwner;   //Resturn Nested NamePath
   if (lOwner <> nil)
     and ( (csSubComponent in TComponent(lOwner).ComponentStyle)
@@ -807,19 +678,6 @@ begin
     if S <> '' then
       Result := S + '.' + Result;
   end;
-{$ELSE}
-  if Name <> '' then
-    Result := Name;
-  lOwner := GetOwner;   //Resturn Nested NamePath
-  if (lOwner <> nil)
-    and ( TPersistentAccessProtected(lOwner).GetOwner <> nil)
-   then
-  begin
-    S := lOwner.GetNamePath;
-    if S <> '' then
-      Result := S + '.' + Result;
-  end;
-{$ENDIF COMPILER6_UP}
 end;
 
 function TJvPersistent.GetOwner: TPersistent;
@@ -831,21 +689,6 @@ function TJvPersistent._GetOwner: TPersistent;
 begin
   Result := GetOwner;
 end;
-
-{$IFNDEF COMPILER6_UP}
-procedure TJvPersistent.SetName(const NewName: TComponentName);
-begin
-  if FName <> NewName then
-  begin
-    if (NewName <> '') and not IsValidIdent(NewName) then
-      raise EComponentError.CreateResFmt(@SInvalidName, [NewName]);
-//    if FOwner <> nil then
-//      FOwner.ValidateRename(Self, FName, NewName) else
-//      ValidateRename(nil, FName, NewName);
-    FName := NewName;
-  end;
-end;
-{$ENDIF COMPILER6_UP}
 
 { TJvPersistentProperty }
 
@@ -904,5 +747,4 @@ finalization
 {$ENDIF UNITVERSIONING}
 
 end.
-
 

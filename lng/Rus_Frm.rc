@@ -606,6 +606,7 @@ LANGUAGE LANG_RUSSIAN,0
         "cbUseNodelistData|Использ. инфо из нодлиста\n"\
         "cbCompileNodelist|Автокомпиляция ноделистов\n"\
         "cbVersionTransmit|Передавать версию на BinkP\n"\
+        "cbUptime1251|Писать аптайм в 1251\n"\
         "cbDelOld|Удалять устаревшие бандлы\n"\
         "cbWinsockVersion||Winsock auto|Winsock v1|Winsock v2\n"\
         "cbDisableWinsockTraps|Игнор. ошибки Winsock\n"\

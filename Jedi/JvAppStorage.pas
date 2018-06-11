@@ -20,7 +20,7 @@ Contributor(s):
   Olivier Sannier
 
 You may retrieve the latest version of this file at the Project JEDI's JVCL home page,
-located at http://jvcl.sourceforge.net
+located at http://jvcl.delphi-jedi.org
 
 Description:
   General storage unit - provides with a basic storage backend component to store application
@@ -74,7 +74,7 @@ Description:
 
 Known Issues:
 -----------------------------------------------------------------------------}
-// $Id: JvAppStorage.pas 12098 2008-12-22 18:39:35Z obones $
+// $Id: JvAppStorage.pas 12831 2010-09-05 12:51:00Z obones $
 
 unit JvAppStorage;
 
@@ -86,21 +86,17 @@ uses
   {$IFDEF UNITVERSIONING}
   JclUnitVersioning,
   {$ENDIF UNITVERSIONING}
-  {$IFDEF CLR}
-  System.IO,
-  Variants, // necessary for automatic string<-variant typecast
-  {$ELSE}
-  {$IFDEF COMPILER9_UP}
   Windows,
-  {$ENDIF COMPILER9_UP}
-  {$ENDIF CLR}
   JclStrings, // must be included before WideStrings
   {$IFDEF COMPILER10_UP}
   WideStrings,
   {$ENDIF COMPILER10_UP}
-  SysUtils, Classes, TypInfo,
+  SysUtils, Classes, TypInfo, Variants,
   JclBase,
-  JvVCL5Utils, JvComponentBase, JvTypes, JvTranslateString;
+  {$IFNDEF COMPILER12_UP}
+  JvJCLUtils,
+  {$ENDIF ~COMPILER12_UP}
+  JvComponentBase, JvTypes, JvTranslateString;
 
 const
   // (rom) this name is shared in several units and should be made global
@@ -169,6 +165,7 @@ type
 
   TJvCustomAppStorage = class(TJvComponent)
   private
+    CachedFormatSettings: TFormatSettings;
     FRoot: string;
     FCurPath: string;
     FStorageOptions: TJvCustomAppStorageOptions;
@@ -188,6 +185,7 @@ type
     FSynchronizeFlushReload: Boolean;
     function GetActiveTranslateStringEngine: TJvTranslateString;
     function GetUpdating: Boolean;
+    procedure SetTranslateStringEngine(const Value: TJvTranslateString);
   protected
     FFlushOnDestroy: Boolean;
 
@@ -347,6 +345,14 @@ type
     function DoReadString(const Path: string; const Default: string): string; virtual; abstract;
     { Stores an string value. }
     procedure DoWriteString(const Path: string; const Value: string); virtual; abstract;
+
+    { Retrieves the specified widestring value. If the value is not found, the Default will be
+      returned. If the value is not a string (or can't be converted to a string an EConvertError
+      exception will be raised. }
+    function DoReadWideString(const Path: string; const Default: Widestring): Widestring; virtual;
+    { Stores an widestring value. }
+    procedure DoWriteWideString(const Path: string; const Value: Widestring); virtual;
+
     { Retrieves the specified value into a buffer. The result holds the number of bytes actually
       retrieved. }
     function DoReadBinary(const Path: string; Buf: TJvBytes; BufSize: Integer): Integer; virtual; abstract;
@@ -420,15 +426,25 @@ type
     function GetPhysicalReadOnly: Boolean; virtual;
 
     property SubStorages: TJvAppSubStorages read FSubStorages write SetSubStorages;
+    function DecodeStrToDateTime(Value: string): TDateTime; virtual;
+    function EncodeDateTimeToStr(Value: TDateTime): string; virtual;
     procedure Loaded; override;
     procedure DoError(const msg: string);
+    function GetFormatSettings: TFormatSettings;
     function ReadListItemCount(const Path: string; const ItemName: string = cItem):
         Integer; virtual;
     procedure WriteListItemCount(const Path: string; const ItemCount: Integer;
         const ItemName: string = cItem); virtual;
+    // Change the ReadOnly CurrentInstanceCreateEvent Event
+    procedure SetCurrentInstanceCreateEvent(const Value:
+        TJvAppStorageObjectListItemCreateEvent);
     property CurrentInstanceCreateEvent: TJvAppStorageObjectListItemCreateEvent
         read FCurrentInstanceCreateEvent;
   public
+    {$IFDEF SUPPORTS_CLASS_CTORDTORS}
+    class destructor Destroy;
+    {$ENDIF SUPPORTS_CLASS_CTORDTORS}
+
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
     // (p3) moved Flush, Reload and AutoFlush to the base storage because users
@@ -440,12 +456,20 @@ type
     // Do a Reload if the function ReloadNeeded returns true
     procedure ReloadIfNeeded;
     function ReloadNeeded: Boolean; virtual;
+    //1 Do a Flush if the function FlushNeeded returns true
     procedure FlushIfNeeded;
     function FlushNeeded: Boolean; virtual;
+    //1 Disables all AutoFlush/AutoReload activities
     procedure BeginUpdate;
+    //1 Reanables all AutoFlush/AutoReload activities
     procedure EndUpdate;
+    //1 Property to show whether the storage is in a beginupdate/endupdate block or not
     property IsUpdating: Boolean read GetUpdating;
+    // Property to define that after every change in the data this
+    // changes should automaticly stored
     property AutoFlush: Boolean read FAutoFlush write FAutoFlush default False;
+    // Property to define that before any data is read from the storage
+    // the contents should be reread
     property AutoReload: Boolean read FAutoReload write FAutoReload default False;
     { This procedure gives the possibility to delete a tree out of the Appstorage
       depending on a stored value named "Version".
@@ -639,11 +663,9 @@ type
     function IsPropertyValueCryptEnabled: Boolean;
     function ItemNameIndexPath(const ItemName: string; const Index: Integer):
         string; virtual;
-    {$IFDEF COMPILER6_UP}
     function ReadWideString(const Path: string; const Default: WideString = ''):
         WideString;
     procedure WriteWideString(const Path: string; const Value: WideString);
-    {$ENDIF}
     { Root of any values to be read/written. This value is combined with the path given in one of
       the Read*/Write* methods to determine the actual key used. It's always relative to the value
       of Root (which is an absolute path) }
@@ -663,8 +685,7 @@ type
         GetActiveTranslateStringEngine;
     property StorageOptions: TJvCustomAppStorageOptions read FStorageOptions write SetStorageOptions;
     //1 This engine gives you the possibility to translate Strings with %-Replacements
-    property TranslateStringEngine: TJvTranslateString read FTranslateStringEngine
-      write FTranslateStringEngine;
+    property TranslateStringEngine: TJvTranslateString read FTranslateStringEngine write SetTranslateStringEngine;
     property OnTranslatePropertyName: TJvAppStoragePropTranslateEvent read FOnTranslatePropertyName
       write FOnTranslatePropertyName;
     property OnEncryptPropertyValue: TJvAppStorageCryptEvent read FOnEncryptPropertyValue
@@ -737,6 +758,7 @@ type
     FStoreDefaultValues: Boolean;
     FStoreStringListAsSingleString: Boolean;
     FUseOldItemNameFormat: Boolean;
+    FUseTranslateStringEngineDateTimeFormats: Boolean;
   protected
     procedure SetBooleanAsString(Value: Boolean); virtual;
     procedure SetBooleanStringTrueValues(Value: string); virtual;
@@ -787,6 +809,10 @@ type
     /// removed.
     property UseOldItemNameFormat: Boolean read FUseOldItemNameFormat write
         SetUseOldItemNameFormat default True;
+    //1 Property to define that the TranslateEngine DateFormat and TimeFormat Property Values will be used to read/write DateTime values
+    property UseTranslateStringEngineDateTimeFormats: Boolean read
+        FUseTranslateStringEngineDateTimeFormats write
+        FUseTranslateStringEngineDateTimeFormats default False;
   end;
 
   TJvAppStorageOptions = class(TJvCustomAppStorageOptions)
@@ -803,6 +829,7 @@ type
     property DefaultIfValueNotExists;
     property StoreDefaultValues;
     property UseOldItemNameFormat;
+    property UseTranslateStringEngineDateTimeFormats;
   end;
 
   TJvAppSubStorages = class(TOwnedCollection)
@@ -932,9 +959,9 @@ const
 {$IFDEF UNITVERSIONING}
 const
   UnitVersioning: TUnitVersionInfo = (
-    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_36_PREPARATION/run/JvAppStorage.pas $';
-    Revision: '$Revision: 12098 $';
-    Date: '$Date: 2008-12-22 19:39:35 +0100 (lun., 22 déc. 2008) $';
+    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_40_PREPARATION/run/JvAppStorage.pas $';
+    Revision: '$Revision: 12831 $';
+    Date: '$Date: 2010-09-05 14:51:00 +0200 (dim., 05 sept. 2010) $';
     LogPath: 'JVCL\run'
     );
 {$ENDIF UNITVERSIONING}
@@ -942,14 +969,9 @@ const
 implementation
 
 uses
-  {$IFDEF HAS_UNIT_STRUTILS}
   StrUtils,
-  {$ENDIF HAS_UNIT_STRUTILS}
   JclFileUtils, JclSysInfo, JclRTTI, JclMime,
-  {$IFNDEF COMPILER12_UP}
-  JvJCLUtils,
-  {$ENDIF ~COMPILER12_UP}
-  JvPropertyStore, JvConsts, JvResources, JvStrings, JclSynch;
+  JvPropertyStore, JvConsts, JvResources, JvStrings, JclSynch, JvJVCLUtils;
 
 type
   TJvAppStoragePropertyEngineList = class(TList)
@@ -965,7 +987,37 @@ type
   end;
 
 var
-  RegisteredAppStoragePropertyEngineList: TJvAppStoragePropertyEngineList;
+  GlobalRegisteredAppStoragePropertyEngineList: TJvAppStoragePropertyEngineList;
+  GlobalRegisteredAppStoragePropertyEngineListDestroyed: Boolean;
+
+function RegisteredAppStoragePropertyEngineList: TJvAppStoragePropertyEngineList;
+begin
+  if (GlobalRegisteredAppStoragePropertyEngineList = nil) and
+     not GlobalRegisteredAppStoragePropertyEngineListDestroyed then
+    GlobalRegisteredAppStoragePropertyEngineList := TJvAppStoragePropertyEngineList.Create;
+  Result := GlobalRegisteredAppStoragePropertyEngineList;
+end;
+
+//=== Global Engine Handling =================================================
+
+procedure RegisterAppStoragePropertyEngine(AEngineClass: TJvAppStoragePropertyBaseEngineClass);
+begin
+  if RegisteredAppStoragePropertyEngineList <> nil then
+    RegisteredAppStoragePropertyEngineList.RegisterEngine(AEngineClass);
+end;
+
+procedure UnregisterAppStoragePropertyEngine(AEngineClass: TJvAppStoragePropertyBaseEngineClass);
+begin
+  if RegisteredAppStoragePropertyEngineList <> nil then
+    RegisteredAppStoragePropertyEngineList.UnregisterEngine(AEngineClass);
+end;
+
+procedure DestroyAppStoragePropertyEngineList;
+begin
+  GlobalRegisteredAppStoragePropertyEngineListDestroyed := True;
+  GlobalRegisteredAppStoragePropertyEngineList.Free;
+  GlobalRegisteredAppStoragePropertyEngineList := nil;
+end;
 
 const
   // (rom) this name is shared in several units and should be made global
@@ -1074,21 +1126,12 @@ end;
 procedure CopyEnumValue(const Source; var Target; const Kind: TOrdType);
 begin
   case Kind of
-    {$IFDEF CLR}
-    otSByte, otUByte:
-      Target := Byte(Source);
-    otSWord, otUWord:
-      Target := Word(Source);
-    otSLong, otULong:
-      Target := Longword(Source);
-    {$ELSE}
     otSByte, otUByte:
       Byte(Target) := Byte(Source);
     otSWord, otUWord:
       Word(Target) := Word(Source);
     otSLong, otULong:
       Longword(Target) := Longword(Source);
-    {$ENDIF CLR}
   end;
 end;
 
@@ -1127,6 +1170,7 @@ begin
   StoreDefaultValues := True;
   StoreStringListAsSingleString := False;
   UseOldItemNameFormat := True;
+  FUseTranslateStringEngineDateTimeFormats := False;
 end;
 
 procedure TJvCustomAppStorageOptions.Assign(Source: TPersistent);
@@ -1147,6 +1191,7 @@ begin
     StoreDefaultValues := TJvCustomAppStorageOptions(Source).StoreDefaultValues;
     StoreStringListAsSingleString := TJvCustomAppStorageOptions(Source).StoreStringListAsSingleString;
     UseOldItemNameFormat := TJvCustomAppStorageOptions(Source).UseOldItemNameFormat;
+    UseTranslateStringEngineDateTimeFormats := TJvCustomAppStorageOptions(Source).UseTranslateStringEngineDateTimeFormats;
   end
   else
     inherited assign(Source);
@@ -1267,6 +1312,13 @@ end;
 
 //=== { TJvCustomAppStorage } ================================================
 
+{$IFDEF SUPPORTS_CLASS_CTORDTORS}
+class destructor TJvCustomAppStorage.Destroy;
+begin
+  DestroyAppStoragePropertyEngineList;
+end;
+{$ENDIF SUPPORTS_CLASS_CTORDTORS}
+
 constructor TJvCustomAppStorage.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
@@ -1326,12 +1378,11 @@ end;
 procedure TJvCustomAppStorage.Notification(AComponent: TComponent; Operation: TOperation);
 begin
   inherited Notification(AComponent, Operation);
-  if (AComponent is TJvCustomAppStorage) and (Operation = opRemove) and
-    Assigned(SubStorages) then
-    SubStorages.Delete(AComponent as TJvCustomAppStorage);
-  if (Operation = opRemove) and
-    (AComponent = FTranslateStringEngine) then
-    FTranslateStringEngine := nil;
+  if (Operation = opRemove) then
+    if (AComponent is TJvCustomAppStorage) and Assigned(SubStorages) then
+      SubStorages.Delete(AComponent as TJvCustomAppStorage)
+    else if (AComponent = FTranslateStringEngine) then
+      FTranslateStringEngine := nil;
 end;
 
 procedure TJvCustomAppStorage.SetFlushOnDestroy(Value: Boolean);
@@ -1351,16 +1402,9 @@ function TJvCustomAppStorage.GetPropName(Instance: TPersistent; Index: Integer):
 var
   PropList: PPropList;
   PropInfo: PPropInfo;
-  {$IFNDEF CLR}
   Data: PTypeData;
-  {$ENDIF ~CLR}
 begin
   Result := '';
-  {$IFDEF CLR}
-  PropList := GetPropInfos(Instance.ClassInfo);
-  PropInfo := PropList[Index];
-  Result := PropInfo.Name;
-  {$ELSE}
   Data := GetTypeData(Instance.ClassInfo);
   GetMem(PropList, Data^.PropCount * SizeOf(PPropInfo));
   try
@@ -1370,7 +1414,6 @@ begin
   finally
     FreeMem(PropList);
   end;
-  {$ENDIF CLR}
 end;
 
 class function TJvCustomAppStorage.GetStorageOptionsClass: TJvAppStorageOptionsClass;
@@ -1471,13 +1514,7 @@ var
   NewClassName: string;
 begin
   NewClassName := Sender.ReadString(ConcatPaths([Path, cClassName]));
-  {$IFDEF CLR}
-  { As long as the Win32 code is suspicious we use the System.Activator. }
-  Result := Activator.CreateInstance(GetClass(NewClassName).ClassInfo) as TPersistent;
-  {$ELSE}
-  { TODO : Suspicious code: TPeristent has no virtual contructor }
   Result := GetClass(NewClassName).Create;
-  {$ENDIF CLR}
 end;
 
 procedure TJvCustomAppStorage.ReadObjectListItem(Sender: TJvCustomAppStorage;
@@ -1727,9 +1764,25 @@ begin
   Result := DoReadFloat(Path, Default);
 end;
 
+function TJvCustomAppStorage.DoReadWideString(const Path: string;
+  const Default: Widestring): Widestring;
+begin
+  {$IFDEF COMPILER12_UP}
+  Result := UTF8ToWideString(RawByteString(ReadString(Path, string(UTF8Encode(Default)))));
+  {$ELSE}
+  Result := UTF8Decode(ReadString(Path, UTF8Encode(Default)));
+  {$ENDIF COMPILER12_UP}
+end;
+
 procedure TJvCustomAppStorage.DoWriteDateTime(const Path: string; Value: TDateTime);
 begin
   DoWriteFloat(Path, Value);
+end;
+
+procedure TJvCustomAppStorage.DoWriteWideString(const Path: string;
+  const Value: Widestring);
+begin
+  DoWriteString(Path,string(UTF8Encode(Value)));
 end;
 
 procedure TJvCustomAppStorage.DoError(const msg: string);
@@ -1845,7 +1898,7 @@ begin
   try
     if StorageOptions.DateTimeAsString then
     try
-      Result := StrToDateTime(DecryptPropertyValue(DoReadString(Path, EncryptPropertyValue(DateTimeToStr(Default)))));
+      Result := DecodeStrToDateTime(DecryptPropertyValue(DoReadString(Path, EncryptPropertyValue(EncodeDateTimeToStr(Default)))));
     except
       on E: EConvertError do
         Result := DoReadDateTime(Path, Default);
@@ -1855,8 +1908,8 @@ begin
       Result := DoReadDateTime(Path, Default);
     except
       on E: EConvertError do
-        Result := StrToDateTime(DecryptPropertyValue(DoReadString(Path,
-          EncryptPropertyValue(DateTimeToStr(Default)))));
+        Result := DecodeStrToDateTime(DecryptPropertyValue(DoReadString(Path,
+          EncryptPropertyValue(EncodeDateTimeToStr(Default)))));
     end
   except
     on E: EConvertError do
@@ -1870,7 +1923,7 @@ end;
 procedure TJvCustomAppStorage.WriteDateTimeInt(const Path: string; Value: TDateTime);
 begin
   if StorageOptions.DateTimeAsString then
-    DoWriteString(Path, EncryptPropertyValue(DateTimeToStr(Value)))
+    DoWriteString(Path, EncryptPropertyValue(EncodeDateTimeToStr(Value)))
   else
     DoWriteFloat(Path, Value);
 end;
@@ -1923,18 +1976,6 @@ begin
 end;
 
 class function TJvCustomAppStorage.NameIsListItem(const Name: string): Boolean;
-{$IFDEF CLR}
-var
-  NameStart: Integer;
-begin
-  NameStart := Name.LastIndexOf(PathDelim);
-  if NameStart >= 0 then
-    Result := StartsText(Name, cItem) and (Length(Name) > 4) and (Name[5] in DigitSymbols)
-  else
-    Result := StartsText(Name.Substring(NameStart), cItem) and
-      (Length(Name) - NameStart > 4) and (Name[5] in DigitSymbols);
-end;
-{$ELSE}
 var
   NameStart: PChar;
 begin
@@ -1943,7 +1984,6 @@ begin
     NameStart := PChar(Name);
   Result := (AnsiStrLIComp(NameStart, cItem, 4) = 0) and CharInSet(NameStart[4], DigitSymbols);
 end;
-{$ENDIF CLR}
 
 class function TJvCustomAppStorage.ConcatPaths(const Paths: array of string): string;
 begin
@@ -1964,11 +2004,7 @@ begin
     Delete(TargetPath, 1, Length(SubStorageItem.RootPath) + 1);
     TargetPath := PathDelim + OptimizePaths([TargetPath]);
     if TargetPath = PathDelim then
-      {$IFDEF CLR}
-      raise EJVCLAppStorageError.Create(RsEInvalidPath);
-      {$ELSE}
       raise EJVCLAppStorageError.CreateRes(@RsEInvalidPath);
-      {$ENDIF CLR}
   end;
 end;
 
@@ -2198,12 +2234,12 @@ begin
     if ClearFirst then
       List.Clear;
     ResolvePath(Path + cSubStorePath, TargetStore, TargetPath); // Only needed for assigning the event
-    FOldInstanceCreateEvent := TargetStore.FCurrentInstanceCreateEvent;
+    FOldInstanceCreateEvent := TargetStore.CurrentInstanceCreateEvent;
     try
-      TargetStore.FCurrentInstanceCreateEvent := ItemCreator;
+      TargetStore.SetCurrentInstanceCreateEvent(ItemCreator);
       Result := ReadList(Path, List, ReadObjectListItem, ItemName);
     finally
-      TargetStore.FCurrentInstanceCreateEvent := FOldInstanceCreateEvent;
+      TargetStore.SetCurrentInstanceCreateEvent(FOldInstanceCreateEvent);
     end;
   end;
 end;
@@ -2317,6 +2353,7 @@ function TJvCustomAppStorage.ReadStringObjectList(const Path: string;
 var
   TargetStore: TJvCustomAppStorage;
   TargetPath: string;
+  FOldInstanceCreateEvent: TJvAppStorageObjectListItemCreateEvent;
 begin
   if not ListStoredInt(Path, ItemName) and StorageOptions.DefaultIfValueNotExists then
     Result := SL.Count
@@ -2329,7 +2366,13 @@ begin
       if ClearFirst then
         SL.Clear;
       ReadPersistent(Path,SL,True,False);
-      Result := TargetStore.ReadList(TargetPath, SL, TargetStore.ReadStringObjectListItem, ItemName);
+      FOldInstanceCreateEvent := TargetStore.CurrentInstanceCreateEvent;
+      try
+        TargetStore.SetCurrentInstanceCreateEvent(ItemCreator);
+        Result := TargetStore.ReadList(TargetPath, SL, TargetStore.ReadStringObjectListItem, ItemName);
+      finally
+        TargetStore.SetCurrentInstanceCreateEvent(FOldInstanceCreateEvent);
+      end;
     finally
       SL.EndUpdate;
     end;
@@ -2363,13 +2406,8 @@ begin
   begin
     OrdValue := 0;
     CopyEnumValue(Default, OrdValue, GetTypeData(TypeInfo).OrdType);
-    {$IFDEF CLR}
-    if (TypeInfo = Borland.Delphi.System.TypeInfo(Boolean)) or ((TypeInfo.Kind = tkEnumeration) and
-      (GetTypeData(GetTypeData(TypeInfo).ParentInfo).MinValue < 0)) then
-    {$ELSE}
     if (TypeInfo = System.TypeInfo(Boolean)) or ((TypeInfo.Kind = tkEnumeration) and
       (GetTypeData(GetTypeData(TypeInfo).BaseType^).MinValue < 0)) then
-    {$ENDIF CLR}
       OrdValue := Ord(ReadBooleanInt(Path, OrdValue <> 0))
     else
     begin
@@ -2410,11 +2448,7 @@ begin
               end;
             end
             else
-              {$IFDEF CLR}
-              raise EJVCLAppStorageError.Create(RsEInvalidType);
-              {$ELSE}
               raise EJVCLAppStorageError.CreateRes(@RsEInvalidType);
-              {$ENDIF CLR}
       except
         on E: EConvertError do
           if StorageOptions.DefaultIfReadConvertError then
@@ -2433,21 +2467,12 @@ var
   Conv: TIntToIdent;
   S: string;
 begin
-  {$IFDEF CLR}
-  if TypeInfo = Borland.Delphi.System.TypeInfo(Boolean) then
-    WriteBooleanInt(Path, Boolean(Value))
-  else
-    if (TypeInfo.Kind = tkEnumeration) and
-      (GetTypeData(GetTypeData(TypeInfo).ParentInfo).MinValue < 0) then
-      WriteBooleanInt(Path, OrdOfEnum(Value, GetTypeData(TypeInfo).OrdType) <> 0)
-  {$ELSE}
   if TypeInfo = System.TypeInfo(Boolean) then
     WriteBooleanInt(Path, Boolean(Value))
   else
     if (TypeInfo.Kind = tkEnumeration) and
       (GetTypeData(GetTypeData(TypeInfo).BaseType^).MinValue < 0) then
       WriteBooleanInt(Path, OrdOfEnum(Value, GetTypeData(TypeInfo).OrdType) <> 0)
-  {$ENDIF CLR}
     else
       if TypeInfo.Kind in [tkChar, tkWChar] then
         WriteIntegerInt(Path, OrdOfEnum(Value, GetTypeData(TypeInfo).OrdType))
@@ -2474,11 +2499,7 @@ begin
               WriteIntegerInt(Path, OrdOfEnum(Value, GetTypeData(TypeInfo).OrdType));
           end
           else
-            {$IFDEF CLR}
-            raise EJVCLAppStorageError.Create(RsEInvalidType);
-            {$ELSE}
             raise EJVCLAppStorageError.CreateRes(@RsEInvalidType);
-            {$ENDIF CLR}
 end;
 
 procedure TJvCustomAppStorage.ReadEnumeration(const Path: string;
@@ -2529,11 +2550,7 @@ begin
             JclStrToSet(ATypeInfo, Value, ''); // empty out value
             for I := JclOrdinalRangeTypeInfo.GetMinValue to JclOrdinalRangeTypeInfo.GetMaxValue do
               if ReadBooleanInt(ConcatPaths([Path, GetCharName(Chr(I))]), False) then
-                {$IFDEF CLR}
-                Value := TIntegerSet(Value) + [I];
-                {$ELSE}
                 Include(TIntegerSet(Value), I);
-                {$ENDIF CLR}
           end;
         tkInteger:
           begin
@@ -2543,11 +2560,7 @@ begin
             (JclTypeInfo(ATypeInfo) as IJclSetTypeInfo).SetAsList(Value, Lst);
           end;
       else
-        {$IFDEF CLR}
-        raise EJVCLAppStorageError.Create(RsEUnknownBaseType);
-        {$ELSE}
         raise EJVCLAppStorageError.CreateRes(@RsEUnknownBaseType);
-        {$ENDIF CLR}
       end;
     finally
       FreeAndNil(Lst);
@@ -2595,11 +2608,7 @@ begin
                   Lst.IndexOf(IntToStr(I)) > -1);
             end;
         else
-          {$IFDEF CLR}
-          raise EJVCLAppStorageError.Create(RsEUnknownBaseType);
-          {$ELSE}
           raise EJVCLAppStorageError.CreateRes(@RsEUnknownBaseType);
-          {$ENDIF CLR}
         end;
       end;
     finally
@@ -2642,29 +2651,25 @@ begin
     tkLString, tkString:
       SetStrProp(PersObj, PropName, ReadString(Path, GetStrProp(PersObj, PropName)));
     tkWString:
-      {$IFDEF COMPILER6_UP}
       SetWideStrProp(PersObj, PropName, ReadWideString(Path, GetWideStrProp(PersObj, PropName)));
-      {$ELSE}
-      SetStrProp(PersObj, PropName, ReadString(Path, GetStrProp(PersObj, PropName)));
-      {$ENDIF COMPILER6_UP}
     tkEnumeration:
       begin
         TmpValue := GetOrdProp(PersObj, PropName);
-        ReadEnumeration(Path, GetPropInfo(PersObj, PropName).PropType{$IFNDEF CLR}^{$ENDIF}, TmpValue, TmpValue);
+        ReadEnumeration(Path, GetPropInfo(PersObj, PropName).PropType^, TmpValue, TmpValue);
         SetOrdProp(PersObj, PropName, TmpValue);
       end;
     tkVariant:
-      SetStrProp(PersObj, PropName, ReadString(Path, GetVariantProp(PersObj, PropName)));
+      SetVariantProp(PersObj, PropName, ReadString(Path, VarToStr(GetVariantProp(PersObj, PropName))));
     tkSet:
       begin
         TmpValue := GetOrdProp(PersObj, PropName);
-        ReadSet(Path, GetPropInfo(PersObj, PropName).PropType{$IFNDEF CLR}^{$ENDIF}, TmpValue, TmpValue);
+        ReadSet(Path, GetPropInfo(PersObj, PropName).PropType^, TmpValue, TmpValue);
         SetOrdProp(PersObj, PropName, TmpValue);
       end;
     tkChar, tkWChar, tkInteger:
       begin
         TmpValue := GetOrdProp(PersObj, PropName);
-        ReadEnumeration(Path, GetPropInfo(PersObj, PropName).PropType{$IFNDEF CLR}^{$ENDIF}, TmpValue, TmpValue);
+        ReadEnumeration(Path, GetPropInfo(PersObj, PropName).PropType^, TmpValue, TmpValue);
         SetOrdProp(PersObj, PropName, TmpValue);
       end;
     tkInt64:
@@ -2673,7 +2678,7 @@ begin
     tkFloat:
       begin
         P := GetPropInfo(PersObj, PropName, tkAny);
-        if (P <> nil) and (P.PropType <> nil) and (P.PropType{$IFNDEF CLR}^{$ENDIF} = TypeInfo(TDateTime)) then
+        if (P <> nil) and (P.PropType <> nil) and (P.PropType^ = TypeInfo(TDateTime)) then
           SetFloatProp(PersObj, PropName, ReadDateTime(Path, GetFloatProp(PersObj, PropName)))
         else
           SetFloatProp(PersObj, PropName, ReadFloat(Path, GetFloatProp(PersObj, PropName)));
@@ -2681,7 +2686,7 @@ begin
     tkClass:
       begin
         SubObj := GetObjectProp(PersObj, PropName);
-        if Assigned(RegisteredAppStoragePropertyEngineList) and
+        if (RegisteredAppStoragePropertyEngineList <> nil) and
           Recursive and
           RegisteredAppStoragePropertyEngineList.ReadProperty(Self, Path, PersObj, SubObj, Recursive, ClearFirst) then
           // Do nothing else, the handling is done in the ReadProperty procedure
@@ -2718,11 +2723,7 @@ var
     Default: LongInt;
   begin
     Value := GetOrdProp(PersObj, PropInfo);
-    {$IFDEF CLR}
-    Default := GetOrdPropDefault(PropInfo);
-    {$ELSE}
     Default := PPropInfo(PropInfo)^.Default;
-    {$ENDIF CLR}
     Result := (Default <> LongInt($80000000)) and (Value = Default);
   end;
 
@@ -2730,11 +2731,7 @@ var
   var
     Value: WideString;
   begin
-    {$IFDEF COMPILER6_UP}
     Value := GetWideStrProp(PersObj, PropInfo);
-    {$ELSE}
-    Value := GetStrProp(PersObj, PropInfo);
-    {$ENDIF COMPILER6_UP}
     Result := Value = '';
   end;
 
@@ -2766,11 +2763,7 @@ begin
   // return True for any sub component which is not desirable as we want to
   // always store sub classes whether they are components or not.
   if not StorageOptions.StoreDefaultValues and (
-    {$IFDEF CLR}
-    not CanRead(P) or not CanWrite(P) or
-    {$ELSE}
     not Assigned(P.GetProc) or not Assigned(P.SetProc) or
-    {$ENDIF CLR}
     not IsStoredProp(PersObj, P)) then
     Exit;
 
@@ -2781,20 +2774,16 @@ begin
         WriteString(Path, GetStrProp(PersObj, PropName));
     tkWString:
       if StorageOptions.StoreDefaultValues or not IsDefaultStrProp(P) then
-        {$IFDEF COMPILER6_UP}
         WriteWideString(Path, GetWideStrProp(PersObj, PropName));
-        {$ELSE}
-        WriteString(Path, GetStrProp(PersObj, PropName));
-        {$ENDIF COMPILER6_UP}
     tkVariant:
       if StorageOptions.StoreDefaultValues or not IsDefaultStrProp(P) then
-        WriteString(Path, GetVariantProp(PersObj, PropName));
+        WriteString(Path, VarToStr(GetVariantProp(PersObj, PropName)));
     tkEnumeration:
       begin
         if StorageOptions.StoreDefaultValues or not IsDefaultOrdProp(P) then
         begin
           TmpValue := GetOrdProp(PersObj, PropName);
-          WriteEnumeration(Path, P.PropType{$IFNDEF CLR}^{$ENDIF}, TmpValue);
+          WriteEnumeration(Path, P.PropType^, TmpValue);
         end;
       end;
     tkSet:
@@ -2802,7 +2791,7 @@ begin
         if StorageOptions.StoreDefaultValues or not IsDefaultOrdProp(P) then
         begin
           TmpValue := GetOrdProp(PersObj, PropName);
-          WriteSet(Path, P.PropType{$IFNDEF CLR}^{$ENDIF}, TmpValue);
+          WriteSet(Path, P.PropType^, TmpValue);
         end;
       end;
     tkChar, tkWChar, tkInteger:
@@ -2812,7 +2801,7 @@ begin
           if StorageOptions.TypedIntegerAsString then
           begin
             TmpValue := GetOrdProp(PersObj, PropName);
-            WriteEnumeration(Path, P.PropType{$IFNDEF CLR}^{$ENDIF}, TmpValue);
+            WriteEnumeration(Path, P.PropType^, TmpValue);
           end
           else
           begin
@@ -2827,7 +2816,7 @@ begin
       begin
         if StorageOptions.StoreDefaultValues or not IsDefaultFloatProp(P) then
         begin
-          if (P <> nil) and (P.PropType <> nil) and (P.PropType{$IFNDEF CLR}^{$ENDIF} = TypeInfo(TDateTime)) then
+          if (P <> nil) and (P.PropType <> nil) and (P.PropType^ = TypeInfo(TDateTime)) then
             WriteDateTime(Path, GetFloatProp(PersObj, PropName))
           else
             WriteFloat(Path, GetFloatProp(PersObj, PropName));
@@ -2836,7 +2825,7 @@ begin
     tkClass:
       begin
         SubObj := GetObjectProp(PersObj, PropName);
-        if Assigned(RegisteredAppStoragePropertyEngineList) and
+        if (RegisteredAppStoragePropertyEngineList <> nil) and
           Recursive and
           RegisteredAppStoragePropertyEngineList.WriteProperty(Self, Path, PersObj, SubObj, Recursive) then
         begin
@@ -3056,6 +3045,7 @@ end;
 procedure TJvCustomAppStorage.BeginUpdate;
 var i : Integer;
 begin
+  GetFormatSettings;
   ReloadIfNeeded;
   Inc(FUpdateCount);
   for i  := 0 to SubStorages.Count - 1 do
@@ -3090,6 +3080,27 @@ begin
   end;
 end;
 
+function TJvCustomAppStorage.DecodeStrToDateTime(Value: string): TDateTime;
+begin
+  if StorageOptions.UseTranslateStringEngineDateTimeFormats then
+    try
+      Result := StrToDateTime(Value{$IFDEF COMPILER7_UP}, GetFormatSettings{$ENDIF COMPILER7_UP});
+    except
+      on E: EConvertError do
+        Result := StrToDateTime(Value);
+    end
+  else
+    Result := StrToDateTime(Value);
+end;
+
+function TJvCustomAppStorage.EncodeDateTimeToStr(Value: TDateTime): string;
+begin
+  if StorageOptions.UseTranslateStringEngineDateTimeFormats then
+    Result := DateTimeToStr(Value{$IFDEF COMPILER7_UP}, GetFormatSettings{$ENDIF COMPILER7_UP})
+  else
+    Result := DateTimeToStr(Value);
+end;
+
 procedure TJvCustomAppStorage.EndUpdate;
 var i : Integer;
 begin
@@ -3108,6 +3119,34 @@ begin
     Result := TranslateStringEngine
   else
     Result := FInternalTranslateStringEngine;
+end;
+
+function TJvCustomAppStorage.GetFormatSettings: TFormatSettings;
+begin
+  {$IFDEF COMPILER7_UP}
+  if Not IsUpdating then
+  begin
+    {$IFDEF RTL220_UP}
+    CachedFormatSettings := TFormatSettings.Create;
+    {$ELSE ~RTL220_UP}
+    GetLocaleFormatSettings(LOCALE_SYSTEM_DEFAULT, CachedFormatSettings);
+    {$ENDIF ~RTL220_UP}
+    if Assigned(ActiveTranslateStringEngine) then
+    begin
+      if (ActiveTranslateStringEngine.DateFormat <> '') then
+      begin
+        CachedFormatSettings.ShortDateFormat := Self.ActiveTranslateStringEngine.DateFormat;
+        CachedFormatSettings.LongDateFormat := Self.ActiveTranslateStringEngine.DateFormat;
+      end;
+      if (ActiveTranslateStringEngine.TimeFormat <> '') then
+      begin
+        CachedFormatSettings.ShortTimeFormat := Self.ActiveTranslateStringEngine.TimeFormat;
+        CachedFormatSettings.LongTimeFormat := Self.ActiveTranslateStringEngine.TimeFormat;
+      end;
+    end;
+  end;
+  {$ENDIF COMPILER7_UP}
+  Result := CachedFormatSettings;
 end;
 
 function TJvCustomAppStorage.GetUpdating: Boolean;
@@ -3138,7 +3177,7 @@ begin
         JclMutex.Release;
       end
       else
-        raise Exception.CreateResFmt({$IFNDEF CLR}@{$ENDIF}RsJvAppStorageSynchronizeTimeout, [RsJvAppStorageSynchronizeProcedureName+AIdentifier]);
+        raise Exception.CreateResFmt(@RsJvAppStorageSynchronizeTimeout, [RsJvAppStorageSynchronizeProcedureName+AIdentifier]);
     finally
       FreeAndNil(JclMutex);
     end;
@@ -3151,214 +3190,134 @@ begin
   WriteInteger(ConcatPaths([Path, cCount]), ItemCount);
 end;
 
+procedure TJvCustomAppStorage.SetTranslateStringEngine(const Value: TJvTranslateString);
+begin
+  ReplaceComponentReference(Self, Value, TComponent(FTranslateStringEngine));
+end;
 
-{$IFDEF COMPILER6_UP}
 function TJvCustomAppStorage.ReadWideString(const Path: string;
   const Default: WideString = ''): WideString;
 begin
-  {$IFDEF COMPILER12_UP}
-  Result := UTF8ToWideString(RawByteString(ReadString(Path, string(UTF8Encode(Default)))));
-  {$ELSE}
-  Result := UTF8Decode(ReadString(Path, UTF8Encode(Default)));
-  {$ENDIF COMPILER12_UP}
+  Result := DoReadWideString(Path,Default);
+end;
+
+procedure TJvCustomAppStorage.SetCurrentInstanceCreateEvent(const Value:
+    TJvAppStorageObjectListItemCreateEvent);
+begin
+  FCurrentInstanceCreateEvent := Value;
 end;
 
 procedure TJvCustomAppStorage.WriteWideString(const Path: string;
   const Value: WideString);
 begin
-  WriteString(Path, string(UTF8Encode(Value)));
+  DoWriteWideString(Path,Value);
 end;
-{$ENDIF COMPILER6_UP}
 
 //=== { TJvAppStorage } ======================================================
 
 function TJvAppStorage.IsFolderInt(const Path: string; ListIsValue: Boolean): Boolean;
 begin
-  {$IFDEF CLR}
-  raise EJVCLAppStorageError.Create(RsEInvalidPath);
-  {$ELSE}
   raise EJVCLAppStorageError.CreateRes(@RsEInvalidPath);
-  {$ENDIF CLR}
 end;
 
 function TJvAppStorage.PathExistsInt(const Path: string): Boolean;
 begin
-  {$IFDEF CLR}
-  raise EJVCLAppStorageError.Create(RsEInvalidPath);
-  {$ELSE}
   raise EJVCLAppStorageError.CreateRes(@RsEInvalidPath);
-  {$ENDIF CLR}
 end;
 
 function TJvAppStorage.ValueStoredInt(const Path: string): Boolean;
 begin
-  {$IFDEF CLR}
-  raise EJVCLAppStorageError.Create(RsEInvalidPath);
-  {$ELSE}
   raise EJVCLAppStorageError.CreateRes(@RsEInvalidPath);
-  {$ENDIF CLR}
 end;
 
 procedure TJvAppStorage.DeleteValueInt(const Path: string);
 begin
-  {$IFDEF CLR}
-  raise EJVCLAppStorageError.Create(RsEInvalidPath);
-  {$ELSE}
   raise EJVCLAppStorageError.CreateRes(@RsEInvalidPath);
-  {$ENDIF CLR}
 end;
 
 procedure TJvAppStorage.DeleteSubTreeInt(const Path: string);
 begin
-  {$IFDEF CLR}
-  raise EJVCLAppStorageError.Create(RsEInvalidPath);
-  {$ELSE}
   raise EJVCLAppStorageError.CreateRes(@RsEInvalidPath);
-  {$ENDIF CLR}
 end;
 
 function TJvAppStorage.ReadIntegerInt(const Path: string; Default: Integer): Integer;
 begin
-  {$IFDEF CLR}
-  raise EJVCLAppStorageError.Create(RsEInvalidPath);
-  {$ELSE}
   raise EJVCLAppStorageError.CreateRes(@RsEInvalidPath);
-  {$ENDIF CLR}
 end;
 
 procedure TJvAppStorage.WriteIntegerInt(const Path: string; Value: Integer);
 begin
-  {$IFDEF CLR}
-  raise EJVCLAppStorageError.Create(RsEInvalidPath);
-  {$ELSE}
   raise EJVCLAppStorageError.CreateRes(@RsEInvalidPath);
-  {$ENDIF CLR}
 end;
 
 function TJvAppStorage.ReadFloatInt(const Path: string; Default: Extended): Extended;
 begin
-  {$IFDEF CLR}
-  raise EJVCLAppStorageError.Create(RsEInvalidPath);
-  {$ELSE}
   raise EJVCLAppStorageError.CreateRes(@RsEInvalidPath);
-  {$ENDIF CLR}
 end;
 
 procedure TJvAppStorage.WriteFloatInt(const Path: string; Value: Extended);
 begin
-  {$IFDEF CLR}
-  raise EJVCLAppStorageError.Create(RsEInvalidPath);
-  {$ELSE}
   raise EJVCLAppStorageError.CreateRes(@RsEInvalidPath);
-  {$ENDIF CLR}
 end;
 
 function TJvAppStorage.ReadStringInt(const Path: string; const Default: string): string;
 begin
-  {$IFDEF CLR}
-  raise EJVCLAppStorageError.Create(RsEInvalidPath);
-  {$ELSE}
   raise EJVCLAppStorageError.CreateRes(@RsEInvalidPath);
-  {$ENDIF CLR}
 end;
 
 procedure TJvAppStorage.WriteStringInt(const Path: string; const Value: string);
 begin
-  {$IFDEF CLR}
-  raise EJVCLAppStorageError.Create(RsEInvalidPath);
-  {$ELSE}
   raise EJVCLAppStorageError.CreateRes(@RsEInvalidPath);
-  {$ENDIF CLR}
 end;
 
 function TJvAppStorage.ReadBinaryInt(const Path: string; Buf: TJvBytes; BufSize: Integer): Integer;
 begin
-  {$IFDEF CLR}
-  raise EJVCLAppStorageError.Create(RsEInvalidPath);
-  {$ELSE}
   raise EJVCLAppStorageError.CreateRes(@RsEInvalidPath);
-  {$ENDIF CLR}
 end;
 
 procedure TJvAppStorage.WriteBinaryInt(const Path: string; const Buf: TJvBytes; BufSize: Integer);
 begin
-  {$IFDEF CLR}
-  raise EJVCLAppStorageError.Create(RsEInvalidPath);
-  {$ELSE}
   raise EJVCLAppStorageError.CreateRes(@RsEInvalidPath);
-  {$ENDIF CLR}
 end;
 
 function TJvAppStorage.ReadDateTimeInt(const Path: string; Default: TDateTime): TDateTime;
 begin
-  {$IFDEF CLR}
-  raise EJVCLAppStorageError.Create(RsEInvalidPath);
-  {$ELSE}
   raise EJVCLAppStorageError.CreateRes(@RsEInvalidPath);
-  {$ENDIF CLR}
 end;
 
 procedure TJvAppStorage.WriteDateTimeInt(const Path: string; Value: TDateTime);
 begin
-  {$IFDEF CLR}
-  raise EJVCLAppStorageError.Create(RsEInvalidPath);
-  {$ELSE}
   raise EJVCLAppStorageError.CreateRes(@RsEInvalidPath);
-  {$ENDIF CLR}
 end;
 
 function TJvAppStorage.ReadBooleanInt(const Path: string; Default: Boolean): Boolean;
 begin
-  {$IFDEF CLR}
-  raise EJVCLAppStorageError.Create(RsEInvalidPath);
-  {$ELSE}
   raise EJVCLAppStorageError.CreateRes(@RsEInvalidPath);
-  {$ENDIF CLR}
 end;
 
 procedure TJvAppStorage.WriteBooleanInt(const Path: string; Value: Boolean);
 begin
-  {$IFDEF CLR}
-  raise EJVCLAppStorageError.Create(RsEInvalidPath);
-  {$ELSE}
   raise EJVCLAppStorageError.CreateRes(@RsEInvalidPath);
-  {$ENDIF CLR}
 end;
 
 procedure TJvAppStorage.ReadEnumerationInt(const Path: string; TypeInfo: PTypeInfo; const Default; out Value);
 begin
-  {$IFDEF CLR}
-  raise EJVCLAppStorageError.Create(RsEInvalidPath);
-  {$ELSE}
   raise EJVCLAppStorageError.CreateRes(@RsEInvalidPath);
-  {$ENDIF CLR}
 end;
 
 procedure TJvAppStorage.WriteEnumerationInt(const Path: string; TypeInfo: PTypeInfo; const Value);
 begin
-  {$IFDEF CLR}
-  raise EJVCLAppStorageError.Create(RsEInvalidPath);
-  {$ELSE}
   raise EJVCLAppStorageError.CreateRes(@RsEInvalidPath);
-  {$ENDIF CLR}
 end;
 
 procedure TJvAppStorage.ReadSetInt(const Path: string; ATypeInfo: PTypeInfo; const Default; out Value);
 begin
-  {$IFDEF CLR}
-  raise EJVCLAppStorageError.Create(RsEInvalidPath);
-  {$ELSE}
   raise EJVCLAppStorageError.CreateRes(@RsEInvalidPath);
-  {$ENDIF CLR}
 end;
 
 procedure TJvAppStorage.WriteSetInt(const Path: string; ATypeInfo: PTypeInfo; const Value);
 begin
-  {$IFDEF CLR}
-  raise EJVCLAppStorageError.Create(RsEInvalidPath);
-  {$ELSE}
   raise EJVCLAppStorageError.CreateRes(@RsEInvalidPath);
-  {$ENDIF CLR}
 end;
 
 //=== { TJvAppSubStorages } ==================================================
@@ -3401,11 +3360,7 @@ begin
   // APath is now a valid path, stripped from it's leading/trailing backslashes
   for I := 0 to Count - 1 do
     if I <> IgnoreIndex then
-      {$IFDEF CLR}
-      if StartsText(Items[I].RootPath, APath) then
-      {$ELSE}
       if AnsiStartsText(Items[I].RootPath, APath) then
-      {$ENDIF CLR}
         // Possible match. Check if next char is a \
         if APath[Length(Items[I].RootPath) + 1] = PathDelim then
           { Next char in APath is a backslash, so we have a valid match. Check with any previous
@@ -3445,13 +3400,8 @@ begin
     I := Count - 1;
     while I >= 0 do
     begin
-      {$IFDEF CLR}
-      if SameText(RootPath, Items[I].RootPath) or
-        (IncludeSubPaths and (StartsText(SubPath, Items[I].RootPath))) then
-      {$ELSE}
       if AnsiSameText(RootPath, Items[I].RootPath) or
         (IncludeSubPaths and (AnsiStartsText(SubPath, Items[I].RootPath))) then
-      {$ENDIF CLR}
         Delete(I);
       Dec(I);
     end;
@@ -3493,11 +3443,7 @@ begin
     if TJvAppSubStorages(Collection).CheckUniqueBase(Value, Index) then
       FRootPath := Value
     else
-      {$IFDEF CLR}
-      raise EJVCLAppStorageError.CreateFmt(RsENotAUniqueRootPath, [Value]);
-      {$ELSE}
       raise EJVCLAppStorageError.CreateResFmt(@RsENotAUniqueRootPath, [Value]);
-      {$ENDIF CLR}
 end;
 
 procedure TJvAppSubStorage.SetAppStorage(Value: TJvCustomAppStorage);
@@ -3505,16 +3451,8 @@ begin
   if Value <> AppStorage then
   begin
     if (Value <> nil) and (Value.HasSubStorage(OwnerStore) or (Value = OwnerStore)) then
-      {$IFDEF CLR}
-      raise EJVCLAppStorageError.Create(RsECircularReferenceOfStorages);
-      {$ELSE}
       raise EJVCLAppStorageError.CreateRes(@RsECircularReferenceOfStorages);
-      {$ENDIF CLR}
-    if AppStorage <> nil then
-      AppStorage.RemoveFreeNotification(OwnerStore);
-    FAppStorage := Value;
-    if AppStorage <> nil then
-      AppStorage.FreeNotification(OwnerStore);
+    ReplaceComponentReference(OwnerStore, Value, TComponent(FAppstorage));
   end;
 end;
 
@@ -3617,17 +3555,13 @@ begin
       flTemp:
         FFullFileName := PathAddSeparator(GetWindowsTempFolder) + NameOnly;
       flWindows:
-        {$IFDEF CLR}
-        FFullFileName := '';
-        {$ELSE}
         FFullFileName := PathAddSeparator(GetWindowsFolder) + NameOnly;
-        {$ENDIF ~CLR}
       flUserFolder:
         FFullFileName := PathAddSeparator(GetAppdataFolder) + RelPathName;
       {$ENDIF MSWINDOWS}
       {$IFDEF UNIX}
       flTemp:
-        FFullFileName := PathAddSeparator(GetTempDir) + NameOnly;
+        FFullFileName := PathAddSeparator(PathGetTempPath) + NameOnly;
       flUserFolder:
         FFullFileName := PathAddSeparator(GetEnvironmentVariable('HOME')) + RelPathName;
       {$ENDIF UNIX}
@@ -3808,42 +3742,18 @@ begin
     Engine.WriteProperty(AStorage, APath, AObject, AProperty, Recursive);
 end;
 
-//=== Global Engine Handling =================================================
-
-procedure RegisterAppStoragePropertyEngine(AEngineClass: TJvAppStoragePropertyBaseEngineClass);
-begin
-  if Assigned(RegisteredAppStoragePropertyEngineList) then
-    RegisteredAppStoragePropertyEngineList.RegisterEngine(AEngineClass);
-end;
-
-procedure UnregisterAppStoragePropertyEngine(AEngineClass: TJvAppStoragePropertyBaseEngineClass);
-begin
-  if Assigned(RegisteredAppStoragePropertyEngineList) then
-    RegisteredAppStoragePropertyEngineList.UnregisterEngine(AEngineClass);
-end;
-
-procedure CreateAppStoragePropertyEngineList;
-begin
-  RegisteredAppStoragePropertyEngineList := TJvAppStoragePropertyEngineList.Create;
-end;
-
-procedure DestroyAppStoragePropertyEngineList;
-begin
-  RegisteredAppStoragePropertyEngineList.Free;
-  RegisteredAppStoragePropertyEngineList := nil;
-end;
-
 initialization
   {$IFDEF UNITVERSIONING}
   RegisterUnitVersion(HInstance, UnitVersioning);
   {$ENDIF UNITVERSIONING}
-  CreateAppStoragePropertyEngineList;
 
 finalization
+  {$IFNDEF SUPPORTS_CLASS_CTORDTORS}
   DestroyAppStoragePropertyEngineList;
+  {$ENDIF ~SUPPORTS_CLASS_CTORDTORS}
+
   {$IFDEF UNITVERSIONING}
   UnregisterUnitVersion(HInstance);
   {$ENDIF UNITVERSIONING}
 
 end.
-

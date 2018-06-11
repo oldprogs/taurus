@@ -997,7 +997,8 @@ begin
         SendMsg(M_NUL, 'PHN '  + Station.Phone, False);
         SendMsg(M_NUL, 'NDL '  + Station.Flags, False);
         SendMsg(M_NUL, 'TIME ' + RFCDateStr, False);
-        SendMsg(M_NUL, 'VER '  + ProductName + '/' + ProductVersion + '/' + ProductPlatform + ' binkp/1.1', False);
+        if IniFile.ReadBool('Main', 'VersionTransmit', True) then
+           SendMsg(M_NUL, 'VER '  + ProductName + '/' + ProductVersion + '/' + ProductPlatform + ' binkp/1.1', False);
         if Birthday <> '' then begin
            SendMsg(M_NUL, 'BTH ' + BirthDay, False);
         end;

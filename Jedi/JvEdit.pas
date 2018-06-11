@@ -32,11 +32,11 @@ Contributor(s):
   André Snepvangers [asn att xs4all dott nl] ( clx compatible version )
 
 You may retrieve the latest version of this file at the Project JEDI's JVCL home page,
-located at http://jvcl.sourceforge.net
+located at http://jvcl.delphi-jedi.org
 
 Known Issues:
 -----------------------------------------------------------------------------}
-// $Id: JvEdit.pas 12043 2008-11-11 17:54:45Z ahuser $
+// $Id: JvEdit.pas 12701 2010-03-08 14:30:19Z obones $
 
 unit JvEdit;
 
@@ -49,9 +49,6 @@ uses
   JclUnitVersioning,
   {$ENDIF UNITVERSIONING}
   Windows, Messages,
-  {$IFDEF CLR}
-  Types,
-  {$ENDIF CLR}
   Classes, Graphics, Controls, Menus,
   JvCaret, JvMaxPixel, JvTypes, JvExStdCtrls, JvDataSourceIntf;
 
@@ -136,7 +133,7 @@ type
     function GetPopupMenu: TPopupMenu; override;
 
     function GetText: TCaption; virtual;
-    procedure SetText(const Value: TCaption); {$IFDEF CLR} reintroduce; {$ENDIF} virtual;
+    procedure SetText(const Value: TCaption); virtual;
     procedure CreateHandle; override;
     procedure DestroyWnd; override;
     procedure DoEnter; override;
@@ -186,12 +183,10 @@ type
 
   TJvEdit = class(TJvCustomEdit)
   published
-    {$IFDEF COMPILER6_UP}
     property BevelEdges;
     property BevelInner;
     property BevelKind default bkNone;
     property BevelOuter;
-    {$ENDIF COMPILER6_UP}
     property BiDiMode;
     property DragCursor;
     property DragKind;
@@ -269,9 +264,9 @@ type
 {$IFDEF UNITVERSIONING}
 const
   UnitVersioning: TUnitVersionInfo = (
-    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_36_PREPARATION/run/JvEdit.pas $';
-    Revision: '$Revision: 12043 $';
-    Date: '$Date: 2008-11-11 18:54:45 +0100 (mar., 11 nov. 2008) $';
+    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_40_PREPARATION/run/JvEdit.pas $';
+    Revision: '$Revision: 12701 $';
+    Date: '$Date: 2010-03-08 15:30:19 +0100 (lun., 08 mars 2010) $';
     LogPath: 'JVCL\run'
   );
 {$ENDIF UNITVERSIONING}
@@ -295,11 +290,7 @@ begin
   try
     C.Control := Control;
     Result :=
-      {$IFDEF CLR}
-      not GetTextExtentPoint32(C.Handle, Text, Length(Text), Size) or
-      {$ELSE}
       not GetTextExtentPoint32(C.Handle, PChar(Text), Length(Text), Size) or
-      {$ENDIF CLR}
       { (rb) ClientWidth is too big, should be EM_GETRECT }
       (Control.ClientWidth > Size.cx);
   finally
@@ -399,28 +390,14 @@ end;
 
 
 procedure TJvCustomEdit.CMHintShow(var Msg: TMessage);
-{$IFDEF CLR}
-var
-  Info: THintInfo;
-{$ENDIF CLR}
 begin
-  if AutoHint and not TextFitsInCtrl(Self, Self.Text) then
-    {$IFDEF CLR}
-    with TCMHintShow.Create(Msg) do
-    begin
-      Info := HintInfo;
-      Info.HintPos := Self.ClientToScreen(Point(-2, Height - 2));
-      Info.HintStr := Self.Text;
-      HintInfo := Info;
-    end
-    {$ELSE}
+  if AutoHint and not TextFitsInCtrl(Self, Self.Text) and (PasswordChar = #0) then
     with TCMHintShow(Msg) do
     begin
       HintInfo.HintPos := Self.ClientToScreen(Point(-2, Height - 2));
       HintInfo.HintStr := Self.Text;
       Result := 0;
     end
-    {$ENDIF CLR}
   else
     inherited;
 end;
@@ -614,11 +591,7 @@ end;
 function TJvCustomEdit.GetPasswordChar: Char;
 begin
   if HandleAllocated then
-    {$IFDEF CLR}
-    Result := Convert.ToChar(SendMessage(Handle, EM_GETPASSWORDCHAR, 0, 0))
-    {$ELSE}
     Result := Char(SendMessage(Handle, EM_GETPASSWORDCHAR, 0, 0))
-    {$ENDIF CLR}
   else
     Result := inherited PasswordChar;
 end;
@@ -651,7 +624,7 @@ function TJvCustomEdit.GetThemedFontHandle: HFONT;
 var
   AFont: TLogFont;
 begin
-  GetObject(GetStockObject(DEFAULT_GUI_FONT), SizeOf(AFont), {$IFNDEF CLR}@{$ENDIF}AFont);
+  GetObject(GetStockObject(DEFAULT_GUI_FONT), SizeOf(AFont), @AFont);
   AFont.lfHeight := Self.Font.Height;
   Result := CreateFontIndirect(AFont);
 end;
@@ -757,7 +730,6 @@ begin
     begin
       I := SelStart;
       J := SelLength;
-      Flat := False;
       SelStart := I;
       SelLength := J;
     end;
@@ -776,7 +748,6 @@ begin
     begin
       I := SelStart;
       J := SelLength;
-      Flat := True;
       SelStart := I;
       SelLength := J;
     end;
@@ -865,11 +836,7 @@ begin
   try
     ProtectPassword := False;
     if HandleAllocated then
-      {$IFDEF CLR}
-      inherited PasswordChar := Convert.ToChar(SendMessage(Handle, EM_GETPASSWORDCHAR, 0, 0));
-      {$ELSE}
       inherited PasswordChar := Char(SendMessage(Handle, EM_GETPASSWORDCHAR, 0, 0));
-      {$ENDIF CLR}
     inherited PasswordChar := Value;
   finally
     ProtectPassword := Tmp;
@@ -996,4 +963,3 @@ finalization
 {$ENDIF UNITVERSIONING}
 
 end.
-

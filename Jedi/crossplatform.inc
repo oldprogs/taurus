@@ -1,29 +1,25 @@
-{**************************************************************************************************}
-{                                                                                                  }
-{  The contents of this file are subject to the Mozilla Public License Version 1.1 (the "License");}
-{  you may not use this file except in compliance with the License. You may obtain a copy of the   }
-{  License at http://www.mozilla.org/MPL/                                                          }
-{                                                                                                  }
-{  Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF  }
-{  ANY KIND, either express or implied. See the License for the specific language governing rights }
-{  and limitations under the License.                                                              }
-{                                                                                                  }
-{  The Original Code is: crossplatform.inc, released on 2004-05-16.                                }
-{                                                                                                  }
-{  You may retrieve the latest version of this file at the JCL home page,                          }
-{  located at http://jcl.sourceforge.net/                                                          }
-{                                                                                                  }
-{**************************************************************************************************}
-{                                                                                                  }
-{ Last modified: $Date:: 2008-08-16 13:55:02 +0200 (sam., 16 août 2008)                         $ }
-{ Revision:      $Rev:: 2423                                                                     $ }
-{ Author:        $Author:: outchy                                                                $ }
-{                                                                                                  }
-{**************************************************************************************************}
+{-----------------------------------------------------------------------------
+The contents of this file are subject to the Mozilla Public License
+Version 1.1 (the "License"); you may not use this file except in compliance
+with the License. You may obtain a copy of the License at
+http://www.mozilla.org/MPL/MPL-1.1.html
+
+Software distributed under the License is distributed on an "AS IS" basis,
+WITHOUT WARRANTY OF ANY KIND, either expressed or implied. See the License for
+the specific language governing rights and limitations under the License.
+
+The Original Code is: crossplatform.inc, released on 2004-05-16.
+
+You may retrieve the latest version of this file at the Project JEDI's JVCL home page,
+located at http://jvcl.delphi-jedi.org
+
+Known Issues:
+-----------------------------------------------------------------------------}
+// $Id: crossplatform.inc 12461 2009-08-14 17:21:33Z obones $
 
 // This inc file depends on jedi.inc which has to
 // be included first (usually indirectly through
-// the inclusion of jcl.inc).
+// the inclusion of jvcl.inc).
 
 // Suppress platform warnings which are irrelevant
 // because the including unit inherently has to handle

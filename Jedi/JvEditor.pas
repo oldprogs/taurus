@@ -21,7 +21,7 @@ Peter Thörnqvist
 Remko Bonte
 
 You may retrieve the latest version of this file at the Project JEDI's JVCL home page,
-located at http://jvcl.sourceforge.net
+located at http://jvcl.delphi-jedi.org
 
 component   : TJvEditor
 description : 'Delphi IDE'-like Editor
@@ -30,7 +30,7 @@ Known Issues:
   Some russian comments were translated to english; these comments are marked
   with [translated]
 -----------------------------------------------------------------------------}
-// $Id: JvEditor.pas 12097 2008-12-22 16:24:31Z ahuser $
+// $Id: JvEditor.pas 12762 2010-05-11 21:58:42Z ahuser $
 
 unit JvEditor;
 
@@ -90,7 +90,6 @@ type
     FOnGetLineAttr: TJvGetLineAttrEvent;
     FOnCompletionApply: TOnCompletionApply;
 
-    procedure WMGetText(var Msg: TWMGetText); message WM_GETTEXT;
     { get/set for properties }
     function GetLines: TStrings;
     procedure SetLines(ALines: TStrings);
@@ -142,6 +141,7 @@ type
     procedure SetSelText(const AValue: string);
     function GetWordOnCaret: string;
     procedure SelectWordOnCaret; override;
+    function GetText: string; override;
 
     procedure InsertText(const Text: string);
     procedure InsertColumnText(X, Y: Integer; const Text: string);
@@ -181,6 +181,7 @@ type
     property AutoIndent;
     property KeepTrailingBlanks;
     property CursorBeyondEOF;
+    property CursorBeyondEOL;
     property BracketHighlighting;
     property SelForeColor;
     property SelBackColor;
@@ -194,6 +195,7 @@ type
     property OnKeyPress;
     property OnKeyUp;
     property OnChange;
+    property OnCaretChanged;
     property OnSelectionChange;
     property OnMouseDown;
     property OnMouseMove;
@@ -237,7 +239,7 @@ type
     property AutoSize;
     property BiDiMode;
     property Constraints;
-    property UseDockManager default True;
+    property UseDockManager;
     property DockSite;
     property ParentBiDiMode;
     property OnCanResize;
@@ -277,7 +279,7 @@ type
   published
     property Identifiers: TStrings index 0 read GetStrings write SetStrings;
     property Templates: TStrings index 1 read GetStrings write SetStrings;
-    property CaretChar: Char read FCaretChar write FCaretChar;
+    property CaretChar: Char read FCaretChar write FCaretChar default '|';
     property CRLF: string read FCRLF write FCRLF;
     property Separator: string read FSeparator write FSeparator;
   end;
@@ -384,9 +386,9 @@ type
 {$IFDEF UNITVERSIONING}
 const
   UnitVersioning: TUnitVersionInfo = (
-    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_36_PREPARATION/run/JvEditor.pas $';
-    Revision: '$Revision: 12097 $';
-    Date: '$Date: 2008-12-22 17:24:31 +0100 (lun., 22 dÃ©c. 2008) $';
+    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_40_PREPARATION/run/JvEditor.pas $';
+    Revision: '$Revision: 12762 $';
+    Date: '$Date: 2010-05-11 23:58:42 +0200 (mar., 11 mai 2010) $';
     LogPath: 'JVCL\run'
   );
 {$ENDIF UNITVERSIONING}
@@ -394,11 +396,7 @@ const
 implementation
 
 uses
-  Consts,
-  {$IFDEF HAS_UNIT_RTLCONSTS}
-  RTLConsts,
-  {$ENDIF HAS_UNIT_RTLCONSTS}
-  SysUtils, Math, Graphics, Clipbrd,
+  Consts, RTLConsts, SysUtils, Math, Graphics, Clipbrd,
   JvUnicodeCanvas, JvJCLUtils, JvThemes, JvConsts, JvResources;
 
 type
@@ -1380,7 +1378,10 @@ begin
             Invalidate;
             Changed;
           end;
-        end;
+        end
+        else
+        if not PersistentBlocks and FSelection.IsSelected then
+          DoCommand(ecDelete, X, Y, CaretUndo);
     ecDelete:
       if not ReadOnly then
       begin
@@ -1618,6 +1619,11 @@ begin
     EndCompound;
     EndUpdate;
   end;
+end;
+
+function TJvCustomEditor.GetText: string;
+begin
+  Result := FLines.Text;
 end;
 
 procedure TJvCustomEditor.ClipboardCopy;
@@ -2228,21 +2234,6 @@ begin
   end;
 end;
 
-procedure TJvCustomEditor.WMGetText(var Msg: TWMGetText);
-var
-  S: AnsiString;
-begin
-  if Msg.Text = nil then
-    Msg.Result := 0
-  else
-  begin
-    S := AnsiString(FLines.Text);   // losing data here, but with an ansi editor, what can we do?
-    Msg.Result := Min(Length(S) + 1, Msg.TextMax);
-    if Msg.Result > 0 then
-      Move(S[1], Msg.Text^, Msg.Result);
-  end;
-end;
-
 //=== { TJvInsertUndo } ======================================================
 
 constructor TJvInsertUndo.Create(AJvEditor: TJvCustomEditor;
@@ -2635,7 +2626,7 @@ begin
       try
         BeginCompound;
         try
-          ClearSelection;
+          Deselect;
           ReLine;
 
           if Length(W) = 0 then
@@ -2810,4 +2801,3 @@ finalization
 {$ENDIF UNITVERSIONING}
 
 end.
-

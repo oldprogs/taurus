@@ -18,11 +18,11 @@ Contributor(s):
   Marcel Bestebroer
 
 You may retrieve the latest version of this file at the Project JEDI's JVCL home page,
-located at http://jvcl.sourceforge.net
+located at http://jvcl.delphi-jedi.org
 
 Known Issues:
 -----------------------------------------------------------------------------}
-// $Id: JvPropertyStore.pas 12073 2008-12-12 23:46:18Z jfudickar $
+// $Id: JvPropertyStore.pas 12741 2010-04-02 10:43:13Z ahuser $
 
 unit JvPropertyStore;
 
@@ -71,8 +71,6 @@ type
     procedure SetIgnoreProperties(Value: TJvIgnorePropertiesStringList);
     function GetLastSaveTime: TDateTime;
     function GetPropCount(Instance: TPersistent): Integer;
-    function GetPropertyCount: Integer;
-    function GetPropertyName(Index: Integer): string;
     function GetPropName(Instance: TPersistent; Index: Integer): string;
   protected
     procedure CloneClassProperties(Src, Dest: TPersistent); virtual;
@@ -86,6 +84,11 @@ type
     procedure Notification(AComponent: TComponent; Operation: TOperation);
       override;
     function GetCombinedIgnoreProperties: TStringList;
+    function GetPropertyCount: Integer;
+    function GetPropertyName(Index: Integer): string;
+    //1 Returns the given property as TJvCustomPropertyStore or returns nil
+    function GetPropertyJvCustomPropertyStore(PropName: string):
+        TJvCustomPropertyStore;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -141,7 +144,7 @@ type
     property Tag;
 
     //1 Creates a new instance of the same objecttype and assigns the property contents to the new instance
-    function Clone(AOwner: TComponent): TJvCustomPropertyStore;
+    function Clone(AOwner: TComponent): TJvCustomPropertyStore; virtual;
     //IJvPropertyEditorHandler = interface
     function EditIntf_GetVisibleObjectName: string; virtual;
     function EditIntf_TranslatePropertyName(const PropertyName: string): string;
@@ -152,6 +155,7 @@ type
       virtual;
     function EditIntf_IsPropertySimple(const PropertyName: string): Boolean;
       virtual;
+    function ValidateData: Boolean; virtual;
   end;
 
   TJvCustomPropertyListStore = class(TJvCustomPropertyStore,
@@ -163,6 +167,14 @@ type
     FItemName: string;
     FItemsObjectName: string;
     function GetItems: TStringList;
+    //IJvPropertyListEditorHandler = interface
+    function ListEditIntf_ObjectCount: integer;
+    function ListEditIntf_GetObject(Index: integer): TPersistent;
+    procedure ListEditIntf_MoveObjectPosition(CurIndex, NewIndex: Integer);
+    procedure ListEditIntf_SortObjects(iAscending : Boolean);
+    function ListEditIntf_CloneNewObject(Index: integer): TPersistent;
+    procedure ListEditIntf_DeleteObject(Index: integer);
+    function ListEditIntf_IndexOfObject(AObject : TPersistent): Integer;
   protected
     function GetString(Index: Integer): string;
     function GetObject(Index: Integer): TObject;
@@ -180,6 +192,7 @@ type
     function GetSorted: Boolean;
     procedure SetSorted(Value: Boolean);
     function GetDuplicates: TDuplicates;
+    function ListEditIntf_CreateNewObject: TPersistent; virtual;
     procedure SetDuplicates(Value: TDuplicates);
     procedure StoreData; override;
     procedure LoadData; override;
@@ -211,22 +224,16 @@ type
     property ItemsObjectName: string read FItemsObjectName write FItemsObjectName;
     property Sorted: Boolean read GetSorted write SetSorted;
     function CreateAddObject(const aObjectName: String): TPersistent;
-    //IJvPropertyListEditorHandler = interface
-    function ListEditIntf_ObjectCount: integer;
-    function ListEditIntf_GetObject(Index: integer): TPersistent;
-    procedure ListEditIntf_MoveObjectPosition(CurIndex, NewIndex: Integer);
-    function ListEditIntf_CreateNewObject: TPersistent;
-    function ListEditIntf_CloneNewObject(Index: integer): TPersistent;
-    procedure ListEditIntf_DeleteObject(Index: integer);
+    function ValidateData: Boolean; override;
   end;
 
 {$IFDEF UNITVERSIONING}
 const
   UnitVersioning: TUnitVersionInfo = (
     RCSfile:
-      '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_36_PREPARATION/run/JvPropertyStore.pas $';
-    Revision: '$Revision: 12073 $';
-    Date: '$Date: 2008-12-13 00:46:18 +0100 (sam., 13 déc. 2008) $';
+      '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_40_PREPARATION/run/JvPropertyStore.pas $';
+    Revision: '$Revision: 12741 $';
+    Date: '$Date: 2010-04-02 12:43:13 +0200 (ven., 02 avr. 2010) $';
     LogPath: 'JVCL\run'
     );
 {$ENDIF UNITVERSIONING}
@@ -234,15 +241,12 @@ const
 implementation
 
 uses
-{$IFDEF HAS_UNIT_RTLCONSTS}
-  RTLConsts,
-{$ENDIF HAS_UNIT_RTLCONSTS}
-  Consts, SysUtils, TypInfo,
+  RTLConsts, Consts, SysUtils, TypInfo,
   JclSynch,
-  JvStrings, JvResources;
+  JvStrings, JvResources, JvJVCLUtils;
 
 const
-  cLastSaveTime = 'Last Save Time';
+  cLastSaveTime = 'LastSaveTime';
   cObject = 'Object';
   cItem = 'Item';
 
@@ -470,11 +474,6 @@ var
 begin
   Result := '';
   Data := GetTypeData(Instance.ClassInfo);
-{$IFDEF CLR}
-  PropList := GetPropInfos(Instance.ClassInfo);
-  PropInfo := PropList[Index];
-  Result := PropInfo.Name;
-{$ELSE}
   GetMem(PropList, Data^.PropCount * SizeOf(PPropInfo));
   try
     GetPropInfos(Instance.ClassInfo, PropList);
@@ -483,7 +482,6 @@ begin
   finally
     FreeMem(PropList, Data^.PropCount * SizeOf(PPropInfo));
   end;
-{$ENDIF CLR}
 end;
 
 procedure TJvCustomPropertyStore.CloneClassProperties(Src, Dest: TPersistent);
@@ -494,11 +492,7 @@ var
 
   function GetPropKind(PropInfo: PPropInfo): TTypeKind;
   begin
-{$IFDEF CLR}
-    Result := PropInfo.TypeKind;
-{$ELSE}
     Result := PropInfo.PropType^.Kind;
-{$ENDIF CLR}
   end;
 
 begin
@@ -577,16 +571,17 @@ procedure TJvCustomPropertyStore.DisableAutoLoadDown;
 var
   Index: Integer;
   PropName: string;
+  PropertyStore: TJvCustomPropertyStore;
 begin
   for Index := 0 to GetPropCount(Self) - 1 do
   begin
     PropName := GetPropName(Self, Index);
     if not IgnoreProperty(PropName) then
-      if PropType(Self, GetPropName(Self, Index)) = tkClass then
-        if (TPersistent(GetObjectProp(Self, PropName)) is TJvCustomPropertyStore)
-          then
-          TJvCustomPropertyStore(TPersistent(GetObjectProp(Self,
-            PropName))).AutoLoad := False;
+    begin
+      PropertyStore := GetPropertyJvCustomPropertyStore(PropName);
+      if Assigned(PropertyStore) then
+        PropertyStore.AutoLoad := False;
+    end;
   end;
 end;
 
@@ -616,6 +611,7 @@ function TJvCustomPropertyStore.EditIntf_IsPropertySimple(const PropertyName:
   string): Boolean;
 var
   I: Integer;
+  PropertyStore :TJvCustomPropertyStore;
 begin
   if PropertyName = '' then
   begin
@@ -628,16 +624,17 @@ begin
           Exit;
       end;
   end
-  else if IsPublishedProp(Self, PropertyName) and (PropType(Self, PropertyName) = tkClass) then
-    if (TPersistent(GetObjectProp(Self, PropertyName)) is
-      TJvCustomPropertyListStore) then
-      Result := False
-    else if (TPersistent(GetObjectProp(Self, PropertyName)) is
-      TJvCustomPropertyStore) then
-      Result := TJvCustomPropertyStore(GetObjectProp(Self,
-        PropertyName)).EditIntf_IsPropertySimple('')
+  else if IsPublishedProp(Self, PropertyName) then
+  begin
+    PropertyStore := GetPropertyJvCustomPropertyStore(PropertyName);
+    if Assigned(PropertyStore) then
+      if PropertyStore is TJvCustomPropertyListStore then
+        Result := False
+      else
+        Result := PropertyStore.EditIntf_IsPropertySimple('')
     else
       Result := True
+  end
   else
     Result := True;
 end;
@@ -649,29 +646,39 @@ var
   I: Integer;
   c: string;
   lastLower: Boolean;
+  LastBlank: Boolean;
 begin
   s := '';
   LastLower := False;
+  LastBlank := False;
   for I := 1 to Length(PropertyName) do
   begin
     c := Copy(PropertyName, i, 1);
-    if (c = Uppercase(c)) then
-    begin
-      if LastLower then
-        s := s + ' ' + c
-      else
-        s := s + c;
-      LastLower := False;
-    end
-    else if (c = '_') or (c = '.') then
+    if (c = '_') or (c = '.') or (c = ' ') then
     begin
       s := s + ' ';
+      LastBlank := True;
+      LastLower := False;
+    end
+    else if (c = Uppercase(c)) then
+    begin
+      if LastLower and not LastBlank then
+      begin
+        s := s + ' ' + c;
+        LastBlank := True;
+      end
+      else
+      begin
+        s := s + c;
+        LastBlank := False;
+      end;
       LastLower := False;
     end
     else
     begin
       s := s + c;
       LastLower := true;
+      LastBlank := False;
     end
   end;
   Result := s;
@@ -691,20 +698,16 @@ begin
     for Index := 0 to GetPropCount(Self) - 1 do
     begin
       PropName := GetPropName(Self, Index);
-      if PropType(Self, PropName) = tkClass then
-        if (TPersistent(GetObjectProp(Self, PropName)) is
-          TJvCustomPropertyStore) then
-          if not IgnoreProperty(PropName) then
-          begin
-            VisPropName := AppStorage.TranslatePropertyName(Self, PropName, False);
-            PropertyStore :=
-              TJvCustomPropertyStore(TPersistent(GetObjectProp(Self, PropName)));
-            if (PropertyStore.AppStoragePath = AppStorage.ConcatPaths([OldPath,
-              VisPropName])) or
-              (PropertyStore.AppStoragePath = '') then
-              PropertyStore.AppStoragePath :=
-                AppStorage.ConcatPaths([AppStoragePath, VisPropName]);
-          end;
+      PropertyStore := GetPropertyJvCustomPropertyStore (PropName);
+      if Assigned(PropertyStore) and not IgnoreProperty(PropName) then
+      begin
+        VisPropName := AppStorage.TranslatePropertyName(Self, PropName, False);
+        if (PropertyStore.AppStoragePath = AppStorage.ConcatPaths([OldPath,
+          VisPropName])) or
+          (PropertyStore.AppStoragePath = '') then
+          PropertyStore.AppStoragePath :=
+            AppStorage.ConcatPaths([AppStoragePath, VisPropName]);
+      end;
     end;
   end;
 end;
@@ -723,20 +726,20 @@ procedure TJvCustomPropertyStore.SetAppStorage(Value: TJvCustomAppStorage);
 var
   Index: Integer;
   PropName: string;
+  PropertyStore: TJvCustomPropertyStore;
 begin
-  if Value <> FAppStorage then
+  if ReplaceComponentReference(Self, Value, tComponent(FAppStorage)) then
   begin
     for Index := 0 to GetPropCount(Self) - 1 do
     begin
       PropName := GetPropName(Self, Index);
       if not IgnoreProperty(PropName) then
-        if PropType(Self, PropName) = tkClass then
-          if (TPersistent(GetObjectProp(Self, PropName)) is
-            TJvCustomPropertyStore) then
-            TJvCustomPropertyStore(TPersistent(GetObjectProp(Self,
-              PropName))).AppStorage := Value;
+      begin
+        PropertyStore := GetPropertyJvCustomPropertyStore(PropName);
+        if Assigned(PropertyStore) then
+          PropertyStore.AppStorage := Value;
+      end;
     end;
-    FAppStorage := Value;
     UpdateChildPaths;
   end;
 end;
@@ -773,6 +776,16 @@ end;
 function TJvCustomPropertyStore.GetPropertyCount: Integer;
 begin
   Result := GetPropCount(self);
+end;
+
+function TJvCustomPropertyStore.GetPropertyJvCustomPropertyStore(PropName:
+    string): TJvCustomPropertyStore;
+begin
+  if (PropType(Self, PropName) = tkClass) and
+     (TPersistent(GetObjectProp(Self, PropName)) is TJvCustomPropertyStore) then
+        Result := TJvCustomPropertyStore(TPersistent(GetObjectProp(Self, PropName)))
+  else
+    Result := nil;
 end;
 
 function TJvCustomPropertyStore.GetPropertyName(Index: Integer): string;
@@ -836,7 +849,7 @@ begin
         end
       else
         raise
-          Exception.CreateResFmt({$IFNDEF CLR}@{$ENDIF}RsJvPropertyStoreEnterMutexTimeout, [RsJvPropertyStoreMutexStorePropertiesProcedureName]);
+          Exception.CreateResFmt(@RsJvPropertyStoreEnterMutexTimeout, [RsJvPropertyStoreMutexStorePropertiesProcedureName]);
     finally
       FreeAndNil(Mutex);
     end;
@@ -908,7 +921,7 @@ begin
         end
       else
         raise
-          Exception.CreateResFmt({$IFNDEF CLR}@{$ENDIF}RsJvPropertyStoreEnterMutexTimeout, [RsJvPropertyStoreMutexStorePropertiesProcedureName]);
+          Exception.CreateResFmt(@RsJvPropertyStoreEnterMutexTimeout, [RsJvPropertyStoreMutexStorePropertiesProcedureName]);
     finally
       FreeAndNil(Mutex);
     end;
@@ -930,6 +943,25 @@ begin
   Result := True;
 end;
 
+function TJvCustomPropertyStore.ValidateData: Boolean;
+var
+  PropName: string;
+  PropertyStore: TJvCustomPropertyStore;
+  Index: Integer;
+begin
+  Result := True;
+  for Index := 0 to GetPropertyCount - 1 do
+  begin
+    PropName := GetPropertyName(Index);
+    if not IgnoreProperty(PropName) then
+    begin
+      PropertyStore := GetPropertyJvCustomPropertyStore(PropName);
+      if Assigned(PropertyStore) and (PropertyStore is TJvCustomPropertyStore) then
+        Result := Result and TJvCustomPropertyStore(PropertyStore).ValidateData;
+    end;
+  end;
+end;
+
 //=== { TJvCustomPropertyListStore } =========================================
 
 constructor TJvCustomPropertyListStore.Create(AOwner: TComponent);
@@ -941,7 +973,8 @@ begin
   FItemName := cItem;
   FIntIgnoreProperties.Add('ItemName');
   FIntIgnoreProperties.Add('FreeObjects');
-  FIntIgnoreProperties.Add('CreateListEntries')
+  FIntIgnoreProperties.Add('CreateListEntries');
+  FItemsObjectName := 'ItemName';
 end;
 
 destructor TJvCustomPropertyListStore.Destroy;
@@ -1199,15 +1232,18 @@ begin
 end;
 
 procedure TJvCustomPropertyListStore.ListEditIntf_DeleteObject(Index: integer);
+var obj : TObject;
 begin
   if (Index >= 0) and (Index < Count) then
   begin
     if Assigned(Objects[Index]) then
-      Objects[Index].Free // The item will be deleted automaticly
-    else
-      Items.Delete(Index);
+    begin
+      obj := Objects[Index];
+      Items.Objects[Index] := nil;
+      obj.Free;
+    end;
+    Items.Delete(Index);
   end;
-
 end;
 
 function TJvCustomPropertyListStore.ListEditIntf_GetObject(Index: integer):
@@ -1225,6 +1261,40 @@ begin
   Result := Count;
 end;
 
+function StringListSortCompareDesc(List: TStringList; Index1, Index2: Integer): Integer;
+begin
+  if List[Index1] = List[Index2] then
+    Result := 0
+  else if List[Index1] < List[Index2] then
+    Result := 1
+  else
+    Result := -1;
+end;
+
+function TJvCustomPropertyListStore.ListEditIntf_IndexOfObject(AObject : TPersistent): Integer;
+begin
+  Result := Items.IndexOfObject(AObject);
+end;
+
+procedure TJvCustomPropertyListStore.ListEditIntf_SortObjects(iAscending :
+    Boolean);
+begin
+  if iAscending then
+    FItems.Sort
+  else
+    FItems.CustomSort(StringListSortCompareDesc);
+end;
+
+function TJvCustomPropertyListStore.ValidateData: Boolean;
+var
+  Index: Integer;
+begin
+  Result := True;
+  for Index := 0 to Count - 1 do
+    if Assigned(Objects[Index]) and (Objects[Index] is TJvCustomPropertyStore) then
+      Result := Result and TJvCustomPropertyStore(Objects[Index]).ValidateData;
+end;
+
 {$IFDEF UNITVERSIONING}
 initialization
   RegisterUnitVersion(HInstance, UnitVersioning);
@@ -1234,4 +1304,3 @@ finalization
 {$ENDIF UNITVERSIONING}
 
 end.
-

@@ -18,11 +18,11 @@ All Rights Reserved.
 Contributor(s): ______________________________________.
 
 You may retrieve the latest version of this file at the Project JEDI's JVCL home page,
-located at http://jvcl.sourceforge.net
+located at http://jvcl.delphi-jedi.org
 
 Known Issues:
 -----------------------------------------------------------------------------}
-// $Id: JvCaret.pas 12129 2009-01-06 16:57:19Z ahuser $
+// $Id: JvCaret.pas 12461 2009-08-14 17:21:33Z obones $
 
 unit JvCaret;
 
@@ -93,9 +93,9 @@ type
 {$IFDEF UNITVERSIONING}
 const
   UnitVersioning: TUnitVersionInfo = (
-    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_36_PREPARATION/run/JvCaret.pas $';
-    Revision: '$Revision: 12129 $';
-    Date: '$Date: 2009-01-06 17:57:19 +0100 (mar., 06 janv. 2009) $';
+    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_40_PREPARATION/run/JvCaret.pas $';
+    Revision: '$Revision: 12461 $';
+    Date: '$Date: 2009-08-14 19:21:33 +0200 (ven., 14 août 2009) $';
     LogPath: 'JVCL\run'
   );
 {$ENDIF UNITVERSIONING}
@@ -109,11 +109,7 @@ constructor TJvCaret.Create(Owner: TWinControl);
 begin
   inherited Create;
   if not Assigned(Owner) then
-    {$IFDEF CLR}
-    raise EJVCLException.CreateFmt(RsEInvalidCaretOwner, [ClassName]);
-    {$ELSE}
     raise EJVCLException.CreateResFmt(@RsEInvalidCaretOwner, [ClassName]);
-    {$ENDIF CLR}
   FCaretOwner := Owner;
   FCaretBitmap := TBitmap.Create;
 end;

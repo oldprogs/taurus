@@ -19,7 +19,7 @@ Steve Magruder
 Remko Bonte
 
 You may retrieve the latest version of this file at the Project JEDI's JVCL home page,
-located at http://jvcl.sourceforge.net
+located at http://jvcl.delphi-jedi.org
 
 Description:
   A unit that can be used to replace the default system popup menu for edit controls. The problem with
@@ -74,7 +74,7 @@ History:
     - introduced IFixedPopupIntf
     - speed optimation in THiddenPopupObject.GetPopupMenu
 -----------------------------------------------------------------------------}
-// $Id: JvFixedEditPopUp.pas 11573 2007-11-15 12:45:12Z ahuser $
+// $Id: JvFixedEditPopUp.pas 12741 2010-04-02 10:43:13Z ahuser $
 
 unit JvFixedEditPopUp;
 
@@ -86,9 +86,6 @@ uses
   {$IFDEF UNITVERSIONING}
   JclUnitVersioning,
   {$ENDIF UNITVERSIONING}
-  {$IFDEF CLR}
-  System.Text, System.Security, System.Runtime.InteropServices, System.Reflection,
-  {$ENDIF CLR}
   Windows, Messages, SysUtils, Classes, Controls, Menus, StdCtrls, TypInfo,
   JvTypes;
 
@@ -129,9 +126,9 @@ procedure FixedDefaultEditPopupUpdate(AEdit: TWinControl);
 {$IFDEF UNITVERSIONING}
 const
   UnitVersioning: TUnitVersionInfo = (
-    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_36_PREPARATION/run/JvFixedEditPopUp.pas $';
-    Revision: '$Revision: 11573 $';
-    Date: '$Date: 2007-11-15 13:45:12 +0100 (jeu., 15 nov. 2007) $';
+    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_40_PREPARATION/run/JvFixedEditPopUp.pas $';
+    Revision: '$Revision: 12741 $';
+    Date: '$Date: 2010-04-02 12:43:13 +0200 (ven., 02 avr. 2010) $';
     LogPath: 'JVCL\run'
   );
 {$ENDIF UNITVERSIONING}
@@ -139,10 +136,7 @@ const
 implementation
 
 uses
-  {$IFDEF CLR}
-  JclBase,
-  {$ENDIF CLR}
-  JvVCL5Utils, JvJclUtils, JvResources;
+  JvJclUtils, JvResources, JvJVCLUtils;
 
 type
   THiddenPopupObject = class(TComponent)
@@ -273,11 +267,9 @@ begin
       PopupIntf.Undo
     else
     begin
-      {$IFDEF COMPILER6_UP} // Delphi 5 is not supported
       if Edit is TCustomCombo then
         SendMessage(EditHandle, WM_UNDO, 0, 0)
       else
-      {$ENDIF COMPILER6_UP}
         Edit.Perform(WM_UNDO, 0, 0);
     end;
   end;
@@ -306,31 +298,17 @@ begin
     Result := [caCopy, caCut, caPaste, caUndo];
 end;
 
-{$IFDEF CLR}
-[SuppressUnmanagedCodeSecurity, DllImport(user32, CharSet = CharSet.Auto, SetLastError = True, EntryPoint = 'LoadMenu')]
-function LoadMenu(hInstance: HINST; lpMenuId: Integer): HMENU; overload; external;
-{$ENDIF CLR}
-
-
 procedure THiddenPopupObject.GetDefaultMenuCaptions;
 const
   BufLen = 255;
 var
   H: HMODULE;
   hMenu, hSubMenu: THandle;
-  {$IFDEF CLR}
-  Buf: StringBuilder;
-  {$ELSE}
   Buf: array [0..BufLen] of Char;
-  {$ENDIF CLR}
 begin
   // get the translated captions from Windows' own default popup:
   H := GetModuleHandle('user32.dll');
-  {$IFDEF CLR}
-  hMenu := LoadMenu(H, 1);
-  {$ELSE}
   hMenu := LoadMenu(H, MakeIntResource(1));
-  {$ENDIF CLR}
   if hMenu = 0 then
     Exit;
   try
@@ -338,21 +316,18 @@ begin
     if hSubMenu = 0 then
       Exit;
 
-    {$IFDEF CLR}
-    Buf := StringBuilder.Create(BufLen);
-    {$ENDIF CLR}
     if GetMenuString(hSubMenu, WM_UNDO, Buf, BufLen, MF_BYCOMMAND) <> 0 then
-      FPopupMenu.Items[0].Caption := Buf{$IFDEF CLR}.ToString{$ENDIF};
+      FPopupMenu.Items[0].Caption := Buf;
     if GetMenuString(hSubMenu, WM_CUT, Buf, BufLen, MF_BYCOMMAND) <> 0 then
-      FPopupMenu.Items[2].Caption := Buf{$IFDEF CLR}.ToString{$ENDIF};
+      FPopupMenu.Items[2].Caption := Buf;
     if GetMenuString(hSubMenu, WM_COPY, Buf, BufLen, MF_BYCOMMAND) <> 0 then
-      FPopupMenu.Items[3].Caption := Buf{$IFDEF CLR}.ToString{$ENDIF};
+      FPopupMenu.Items[3].Caption := Buf;
     if GetMenuString(hSubMenu, WM_PASTE, Buf, BufLen, MF_BYCOMMAND) <> 0 then
-      FPopupMenu.Items[4].Caption := Buf{$IFDEF CLR}.ToString{$ENDIF};
+      FPopupMenu.Items[4].Caption := Buf;
     if GetMenuString(hSubMenu, WM_CLEAR, Buf, BufLen, MF_BYCOMMAND) <> 0 then
-      FPopupMenu.Items[5].Caption := Buf{$IFDEF CLR}.ToString{$ENDIF};
+      FPopupMenu.Items[5].Caption := Buf;
     if GetMenuString(hSubMenu, EM_SETSEL, Buf, BufLen, MF_BYCOMMAND) <> 0 then
-      FPopupMenu.Items[7].Caption := Buf{$IFDEF CLR}.ToString{$ENDIF};
+      FPopupMenu.Items[7].Caption := Buf;
   finally
     DestroyMenu(hMenu);
   end;
@@ -479,24 +454,16 @@ begin
 end;
 
 
-{$IFDEF COMPILER6_UP} // Delphi 5 is not supported
 type
   TOpenCustomCombo = class(TCustomCombo);
-{$ENDIF COMPILER6_UP}
 
 function THiddenPopupObject.GetEditHandle: THandle;
 begin
   Result := Edit.Handle;
-  {$IFDEF COMPILER6_UP} // Delphi 5 is not supported
   if Edit is TCustomCombo then
   begin
-    {$IFDEF CLR}
-    Result := THandle(GetNonPublicField(Edit, 'FEditHandle'));
-    {$ELSE}
     Result := TOpenCustomCombo(Edit).FEditHandle;
-    {$ENDIF CLR}
   end;
-  {$ENDIF COMPILER6_UP}
 end;
 
 function THiddenPopupObject.GetTextLen: Integer;
@@ -519,51 +486,22 @@ function THiddenPopupObject.SelLength: Integer;
 var
   StartPos, EndPos: Longint;
   MsgResult: Longint;
-  {$IFDEF CLR}
-  p1, p2: IntPtr;
-  {$ENDIF CLR}
 begin
   Result := 0;
   if (Edit <> nil) and Edit.HandleAllocated then
   begin
     StartPos := 0;
     EndPos := 0;
-    {$IFDEF CLR}
-    p1 := Marshal.AllocHGlobal(SizeOf(StartPos));
-    p2 := Marshal.AllocHGlobal(SizeOf(EndPos));
-    try
-      Marshal.StructureToPtr(TObject(StartPos), p1, True);
-      Marshal.StructureToPtr(TObject(EndPos), p2, True);
-      MsgResult := SendMessage(EditHandle, EM_GETSEL, Longint(p1), Longint(p2));
-      StartPos := Marshal.ReadInt32(p1);
-      EndPos := Marshal.ReadInt32(p2);
-    finally
-      Marshal.FreeHGlobal(p1);
-      Marshal.FreeHGlobal(p2);
-    end;
-    {$ELSE}
-    MsgResult := SendMessage(EditHandle, EM_GETSEL, Longint(@StartPos), Longint(@EndPos));
-    {$ENDIF CLR}
+    MsgResult := SendMessage(EditHandle, EM_GETSEL, WPARAM(@StartPos), LPARAM(@EndPos));
     Result := EndPos - StartPos;
     if (Result <= 0) and (MsgResult > 0) then
-      {$IFDEF CLR}
-      Result := (MsgResult shr 16) - MsgResult and $0000FFFF;
-      {$ELSE}
       Result := LongRec(MsgResult).Hi - LongRec(MsgResult).Lo;
-      {$ENDIF CLR}
   end;
 end;
 
 procedure THiddenPopupObject.SetEdit(const Value: TWinControl);
 begin
-  if FEdit <> Value then
-  begin
-    if FEdit <> nil then
-      FEdit.RemoveFreeNotification(Self);
-    FEdit := Value;
-    if FEdit <> nil then
-      FEdit.FreeNotification(Self);
-  end;
+  ReplaceComponentReference(Self, Value, TComponent(FEdit));
 end;
 
 procedure THiddenPopupObject.Notification(AComponent: TComponent;
@@ -586,12 +524,9 @@ initialization
   {$ENDIF UNITVERSIONING}
 
 finalization
-  {$IFNDEF CLR}
   FreeAndNil(GlobalHiddenPopup);
-  {$ENDIF !CLR}
   {$IFDEF UNITVERSIONING}
   UnregisterUnitVersion(HInstance);
   {$ENDIF UNITVERSIONING}
 
 end.
-

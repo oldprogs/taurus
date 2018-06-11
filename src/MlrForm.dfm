@@ -30,7 +30,7 @@ object MailerForm: TMailerForm
     Left = 0
     Top = 0
     Width = 845
-    Height = 554
+    Height = 546
     Align = alClient
     HotTrack = True
     TabOrder = 0
@@ -41,11 +41,11 @@ object MailerForm: TMailerForm
     OnChange = MainTabControlChange
     DesignSize = (
       845
-      554)
+      546)
     object lTime0: TLabel
-      Left = 592
+      Left = 593
       Top = 5
-      Width = 90
+      Width = 89
       Height = 16
       Alignment = taRightJustify
       Anchors = []
@@ -72,7 +72,7 @@ object MailerForm: TMailerForm
       Left = 4
       Top = 27
       Width = 837
-      Height = 523
+      Height = 515
       Align = alClient
       BevelOuter = bvNone
       BorderStyle = bsSingle
@@ -83,7 +83,7 @@ object MailerForm: TMailerForm
         Left = 0
         Top = 329
         Width = 833
-        Height = 150
+        Height = 142
         Cursor = crHandPoint
         Align = alClient
         Color = clBtnFace
@@ -102,7 +102,7 @@ object MailerForm: TMailerForm
         Left = 0
         Top = 329
         Width = 833
-        Height = 150
+        Height = 142
         Align = alClient
         BevelOuter = bvNone
         FullRepaint = False
@@ -117,7 +117,7 @@ object MailerForm: TMailerForm
         OnResize = ChatPanResize
         object Panel13: TPanel
           Left = 0
-          Top = 119
+          Top = 111
           Width = 833
           Height = 31
           Align = alBottom
@@ -241,7 +241,7 @@ object MailerForm: TMailerForm
           Left = 0
           Top = 23
           Width = 833
-          Height = 96
+          Height = 88
           Align = alClient
           BevelOuter = bvNone
           ParentColor = True
@@ -276,7 +276,7 @@ object MailerForm: TMailerForm
       end
       object BottomPanel: TPanel
         Left = 0
-        Top = 479
+        Top = 471
         Width = 833
         Height = 40
         Align = alBottom
@@ -1024,7 +1024,7 @@ object MailerForm: TMailerForm
             object llAvaibleAtInbound: TLabel
               Left = 0
               Top = 0
-              Width = 151
+              Width = 150
               Height = 34
               Align = alLeft
               Alignment = taRightJustify
@@ -1057,7 +1057,7 @@ object MailerForm: TMailerForm
               Layout = tlCenter
             end
             object lAvaibleAtInbound: TLabel
-              Left = 151
+              Left = 150
               Top = 0
               Width = 30
               Height = 34
@@ -1879,7 +1879,7 @@ object MailerForm: TMailerForm
               object llTotalSndTime: TLabel
                 Left = 167
                 Top = 92
-                Width = 61
+                Width = 60
                 Height = 16
                 Anchors = [akTop, akRight]
                 Caption = 'Total time:'
@@ -2031,7 +2031,7 @@ object MailerForm: TMailerForm
               object llTotalRcvTime: TLabel
                 Left = 167
                 Top = 91
-                Width = 61
+                Width = 60
                 Height = 16
                 Anchors = [akTop, akRight]
                 Caption = 'Total time:'
@@ -2078,9 +2078,9 @@ object MailerForm: TMailerForm
                 364
                 59)
               object llSessionTime: TLabel
-                Left = 20
+                Left = 21
                 Top = 26
-                Width = 110
+                Width = 109
                 Height = 16
                 Alignment = taRightJustify
                 Caption = 'Total elapsed time:'

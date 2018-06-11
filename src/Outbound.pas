@@ -112,10 +112,10 @@ type
      TOutbound = class
        private
          FFileBoxes: Pointer;
-         fOutboundSize: DWORD;
+         fOutboundSize: Int64;
          function _GetOutColl: TOutNodeColl;
          function _GetOutCollP(const Single, AFull, Scan: Boolean; const Addr: TFidoAddress): TOutNodeColl;
-         function  GetOutboundSize: longint;
+         function  GetOutboundSize: Int64;
        public
          CacheCS: TRTLCriticalSection;
          BusyFlags: TColl;
@@ -140,7 +140,7 @@ type
          function GetOutColl(AFull, Scan: Boolean): TOutNodeColl;
          function GetOutNode(const Addr: TFidoAddress; Scan: boolean): TOutNode;
          procedure AddOutbound(const Addr: TFidoAddress; const Name: string; const Stat: TOutstatus; Kill: TKillAction);
-         property OutboundSize: longint read GetOutboundSize;
+         property OutboundSize: Int64 read GetOutboundSize;
      end;
 
 function FtnToStr(Zone, Net, Node, Point: Integer; Domain: string): String;
@@ -1768,7 +1768,7 @@ begin
    CopyItemsTo(TOutNodeColl(Result));
 end;
 
-procedure AddAddrOutNode(const Addr: TFidoAddress; A: TOutStatus; AOutColl: TOutNodeColl; ASize, ATime: DWORD; Path, FName: string);
+procedure AddAddrOutNode(const Addr: TFidoAddress; A: TOutStatus; AOutColl: TOutNodeColl; ASize: Int64; ATime: DWORD; Path, FName: string);
 var
    I: Integer;
    T: TOutNode;
@@ -1792,7 +1792,7 @@ begin
    end;
 end;
 
-procedure DoAddOutNode(const Path, FName: string; S: TOutStatus; Zone, Net, Node: Integer; Point: Boolean; OutColl: TOutNodeColl; AErase: Boolean; ASize, ATime: DWORD);
+procedure DoAddOutNode(const Path, FName: string; S: TOutStatus; Zone, Net, Node: Integer; Point: Boolean; OutColl: TOutNodeColl; AErase: Boolean; ASize:Int64; ATime: DWORD);
 var
    I: DWORD;
    D: string;
@@ -2507,8 +2507,8 @@ end;
 procedure TOutNode.PrepareNfo;
 var
    i: Integer;
-   Time,
-   Size: DWORD;
+   Time: DWORD;
+   Size: Int64;
    f: TOutFile;
    s: TOutStatusSet;
    os: TOutStatus;

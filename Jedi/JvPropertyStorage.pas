@@ -16,11 +16,11 @@ Copyright (c) 2001,2002 SGB Software
 All Rights Reserved.
 
 You may retrieve the latest version of this file at the Project JEDI's JVCL home page,
-located at http://jvcl.sourceforge.net
+located at http://jvcl.delphi-jedi.org
 
 Known Issues:
 -----------------------------------------------------------------------------}
-// $Id: JvPropertyStorage.pas 11893 2008-09-09 20:45:14Z obones $
+// $Id: JvPropertyStorage.pas 12636 2010-01-03 16:44:34Z jfudickar $
 
 unit JvPropertyStorage;
 
@@ -46,9 +46,7 @@ type
     function Get(Index: Integer): PPropInfo;
   public
     constructor Create(AObject: TObject; Filter: TTypeKinds);
-    {$IFNDEF CLR}
     destructor Destroy; override;
-    {$ENDIF !CLR}
     function Contains(P: PPropInfo): Boolean;
     function Find(const AName: {$IFDEF RTL200_UP}ShortString{$ELSE}string{$ENDIF RTL200_UP}): PPropInfo;
     procedure Delete(Index: Integer);
@@ -95,15 +93,15 @@ procedure UpdateStoredList(AComponent: TComponent; AStoredList: TStrings; FromFo
 function CreateStoredItem(const CompName, PropName: string): string;
 function ParseStoredItem(const Item: string; var CompName, PropName: string): Boolean;
 
-const
+var
   sPropNameDelimiter: string = '_';
 
 {$IFDEF UNITVERSIONING}
 const
   UnitVersioning: TUnitVersionInfo = (
-    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_36_PREPARATION/run/JvPropertyStorage.pas $';
-    Revision: '$Revision: 11893 $';
-    Date: '$Date: 2008-09-09 22:45:14 +0200 (mar., 09 sept. 2008) $';
+    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_40_PREPARATION/run/JvPropertyStorage.pas $';
+    Revision: '$Revision: 12636 $';
+    Date: '$Date: 2010-01-03 17:44:34 +0100 (dim., 03 janv. 2010) $';
     LogPath: 'JVCL\run'
   );
 {$ENDIF UNITVERSIONING}
@@ -123,16 +121,10 @@ begin
   inherited Create;
   if AObject <> nil then
   begin
-    {$IFDEF CLR}
-    FList := GetPropList(AObject.ClassInfo, Filter);
-    FCount := Length(FList);
-    FSize := FCount * SizeOf(IntPtr);
-    {$ELSE}
     FCount := GetPropList(AObject.ClassInfo, Filter, nil);
     FSize := FCount * SizeOf(Pointer);
     GetMem(FList, FSize);
     GetPropList(AObject.ClassInfo, Filter, FList);
-    {$ENDIF CLR}
   end
   else
   begin
@@ -141,21 +133,19 @@ begin
   end;
 end;
 
-{$IFNDEF CLR}
 destructor TJvPropInfoList.Destroy;
 begin
   if FList <> nil then
     FreeMem(FList, FSize);
   inherited Destroy;
 end;
-{$ENDIF !CLR}
 
 function TJvPropInfoList.Contains(P: PPropInfo): Boolean;
 var
   I: Integer;
 begin
   for I := 0 to FCount - 1 do
-    with FList[I]{$IFNDEF CLR}^{$ENDIF} do
+    with FList[I]^ do
       if (PropType = P.PropType) and ({$IFDEF RTL200_UP}AnsiStrings.{$ENDIF RTL200_UP}CompareText(Name, P.Name) = 0) then
       begin
         Result := True;
@@ -169,7 +159,7 @@ var
   I: Integer;
 begin
   for I := 0 to FCount - 1 do
-    with FList[I]{$IFNDEF CLR}^{$ENDIF} do
+    with FList[I]^ do
       if {$IFDEF RTL200_UP}AnsiStrings.{$ENDIF RTL200_UP}CompareText(Name, AName) = 0 then
       begin
         Result := FList[I];
@@ -179,19 +169,10 @@ begin
 end;
 
 procedure TJvPropInfoList.Delete(Index: Integer);
-{$IFDEF CLR}
-var
-  I: Integer;
-{$ENDIF CLR}
 begin
   Dec(FCount);
   if Index < FCount then
-    {$IFDEF CLR}
-    for I := 0 to (FCount - Index) - 1 do
-      FList[Index + I] := FList[Index + 1 + I];
-    {$ELSE}
     Move(FList[Index + 1], FList[Index], (FCount - Index) * SizeOf(Pointer));
-    {$ENDIF CLR}
 end;
 
 function TJvPropInfoList.Get(Index: Integer): PPropInfo;
@@ -462,19 +443,43 @@ end;
 procedure TJvPropertyStorage.ReadProperty(const APath, AStorageName: string; const PersObj: TPersistent; const PropName: {$IFDEF RTL200_UP}ShortString{$ELSE}string{$ENDIF RTL200_UP});
 var
   NPath: string;
+  SearchCompName : string;
+  SearchOwner : TComponent;
+  i : Integer;
 begin
   if Assigned(AppStorage) then
   begin
-    NPath := AppStorage.ConcatPaths([APath, AppStorage.TranslatePropertyName(PersObj, AStorageName, True)]);
-    if AppStorage.ValueStored(NPath) or AppStorage.IsFolder(NPath, False) then
-      AppStorage.ReadProperty(NPath, PersObj, string(PropName), True, True);
+    if (PropType(PersObj, string(PropName)) = tkClass) and (GetObjectProp(PersObj, string(PropName)) is TComponent) then
+    begin
+      SearchCompName := AppStorage.ReadString(AppStorage.ConcatPaths([APath, AppStorage.TranslatePropertyName(PersObj, AStorageName, False)]));
+      SearchOwner := fOwner;
+      while Assigned(SearchOwner)  do
+      begin
+        for I := 0 to SearchOwner.ComponentCount - 1 do
+          if SearchOwner.Components[i].Name = SearchCompName then
+          begin
+            SetObjectProp(PersObj, string(PropName), SearchOwner.Components[i]);
+            Exit;
+          end;
+        SearchOwner := SearchOwner.Owner;
+      end;
+    end
+    else
+    begin
+      NPath := AppStorage.ConcatPaths([APath, AppStorage.TranslatePropertyName(PersObj, AStorageName, True)]);
+      if AppStorage.ValueStored(NPath) or AppStorage.IsFolder(NPath, False) then
+        AppStorage.ReadProperty(NPath, PersObj, string(PropName), True, True);
+    end;
   end;
 end;
 
 procedure TJvPropertyStorage.WriteProperty(const APath, AStorageName: string; const PersObj: TPersistent; const PropName: {$IFDEF RTL200_UP}ShortString{$ELSE}string{$ENDIF RTL200_UP});
 begin
   if Assigned(AppStorage) then
-    AppStorage.WriteProperty(AppStorage.ConcatPaths([APath, AppStorage.TranslatePropertyName(PersObj, AStorageName, False)]), PersObj, string(PropName), True);
+    if (PropType(PersObj, string(PropName)) = tkClass) and (GetObjectProp(PersObj, string(PropName)) is TComponent) then
+      AppStorage.WriteString(AppStorage.ConcatPaths([APath, AppStorage.TranslatePropertyName(PersObj, AStorageName, False)]), TComponent(GetObjectProp(PersObj, string(PropName))).Name)
+    else
+      AppStorage.WriteProperty(AppStorage.ConcatPaths([APath, AppStorage.TranslatePropertyName(PersObj, AStorageName, False)]), PersObj, string(PropName), True);
 end;
 
 {$IFDEF UNITVERSIONING}
@@ -486,4 +491,3 @@ finalization
 {$ENDIF UNITVERSIONING}
 
 end.
-

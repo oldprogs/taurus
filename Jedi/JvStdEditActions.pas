@@ -17,9 +17,9 @@ All Rights Reserved.
 Contributor(s):
 
 You may retrieve the latest version of this file at the Project JEDI's JVCL home page,
-located at http://jvcl.sourceforge.net
+located at http://jvcl.delphi-jedi.org
 -----------------------------------------------------------------------------}
-// $Id$
+// $Id: JvStdEditActions.pas 12699 2010-02-24 17:31:44Z ahuser $
 
 unit JvStdEditActions;
 
@@ -47,9 +47,8 @@ type
     procedure Cut;
     procedure Copy;
     procedure Paste;
-    procedure Delete;
+    procedure ClearSelection; // deletes the selected text
     procedure SelectAll;
-    procedure ClearSelection;
   end;
 
   { Standard Editor actions }
@@ -110,10 +109,8 @@ type
 
 implementation
 
-{$IFDEF COMPILER5}
 uses
-  JvVCL5Utils;
-{$ENDIF COMPILER5}
+  JvJVCLUtils;
 
 //=== { TJvEditAction } ==========================================================
 
@@ -156,12 +153,7 @@ begin
   begin
     if not SupportsControl(Value) then
       Value := nil;
-
-    if FControl <> nil then
-      FControl.RemoveFreeNotification(Self);
-    FControl := Value;
-    if Value <> nil then
-      Value.FreeNotification(Self);
+    ReplaceComponentReference(Self, Value, TComponent(FControl));
   end;
 end;
 
@@ -233,15 +225,7 @@ begin
   if Supports(Target, IStandardEditActions, Intf) then
     Enabled :=  Intf.CanPaste
   else if Target is TCustomEdit then
-  begin
-    {$IFDEF CLR}
-    Enabled := (IsClipboardFormatAvailable(CF_TEXT) or
-               IsClipboardFormatAvailable(CF_UNICODETEXT)) and
-               not GetEditControl(Target).ReadOnly;
-    {$ELSE}
     Enabled := Clipboard.HasFormat(CF_TEXT) and not TOpenCustomEdit(GetEditControl(Target)).ReadOnly;
-    {$ENDIF CLR}
-  end;
 end;
 
 //=== { TJvEditSelectAll } ==========================================================

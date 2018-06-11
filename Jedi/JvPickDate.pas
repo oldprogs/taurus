@@ -19,11 +19,11 @@ Contributor(s):
   Polaris Software
 
 You may retrieve the latest version of this file at the Project JEDI's JVCL home page,
-located at http://jvcl.sourceforge.net
+located at http://jvcl.delphi-jedi.org
 
 Known Issues:
 -----------------------------------------------------------------------------}
-// $Id: JvPickDate.pas 11986 2008-10-25 15:34:10Z ahuser $
+// $Id: JvPickDate.pas 12831 2010-09-05 12:51:00Z obones $
 
 unit JvPickDate;
 
@@ -35,13 +35,7 @@ uses
   {$IFDEF UNITVERSIONING}
   JclUnitVersioning,
   {$ENDIF UNITVERSIONING}
-  {$IFDEF CLR}
-  Types, System.Reflection, System.Security, System.Runtime.InteropServices,
-  {$ENDIF CLR}
-  {$IFDEF HAS_UNIT_VARIANTS}
-  Variants,
-  {$ENDIF HAS_UNIT_VARIANTS}
-  Windows, Messages,
+  Variants, Windows, Messages,
   Controls, Graphics, Forms, Buttons, StdCtrls, Grids, ExtCtrls,
   SysUtils, Classes,
   JclBase,
@@ -94,11 +88,6 @@ type
     procedure KeyPress(var Key: Char); override;
     function SelectCell(ACol, ARow: Longint): Boolean; override;
     procedure BoundsChanged; override;
-    {$IFDEF CLR}
-    // this is required to allow "protected reference over assembly borders
-    property Options;
-    property ParentFont;
-    {$ENDIF CLR}
   public
     constructor Create(AOwner: TComponent); override;
     procedure NextMonth;
@@ -152,9 +141,9 @@ const
 {$IFDEF UNITVERSIONING}
 const
   UnitVersioning: TUnitVersionInfo = (
-    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_36_PREPARATION/run/JvPickDate.pas $';
-    Revision: '$Revision: 11986 $';
-    Date: '$Date: 2008-10-25 17:34:10 +0200 (sam., 25 oct. 2008) $';
+    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_40_PREPARATION/run/JvPickDate.pas $';
+    Revision: '$Revision: 12831 $';
+    Date: '$Date: 2010-09-05 14:51:00 +0200 (dim., 05 sept. 2010) $';
     LogPath: 'JVCL\run'
   );
 {$ENDIF UNITVERSIONING}
@@ -172,8 +161,12 @@ var
   NonClientMetrics: TNonClientMetrics;
 
 begin
+  {$IFDEF RTL210_UP}
+  NonClientMetrics.cbSize := TNonClientMetrics.SizeOf;
+  {$ELSE}
   NonClientMetrics.cbSize := SizeOf(NonClientMetrics);
-  if SystemParametersInfo(SPI_GETNONCLIENTMETRICS, 0, {$IFNDEF CLR}@{$ENDIF}NonClientMetrics, 0) then
+  {$ENDIF RTL210_UP}
+  if SystemParametersInfo(SPI_GETNONCLIENTMETRICS, NonClientMetrics.cbSize, @NonClientMetrics, 0) then
     AFont.Handle := CreateFontIndirect(NonClientMetrics.lfMessageFont)
   else
     with AFont do
@@ -377,7 +370,7 @@ var
   DayNum: Integer;
 begin
   if ARow = 0 then { day names at tops of columns }
-    Result := ShortDayNames[(Ord(StartOfWeek) + ACol) mod 7 + 1]
+    Result := {$IFDEF RTL220_UP}FormatSettings.{$ENDIF RTL220_UP}ShortDayNames[(Ord(StartOfWeek) + ACol) mod 7 + 1]
   else
   begin
     DayNum := FMonthOffset + ACol + (ARow - 1) * 7;
@@ -1224,7 +1217,7 @@ begin
   if not (csDesigning in ComponentState) then
   begin
     try
-      if (Trim(ReplaceStr(VarToStr(Value), DateSeparator, '')) = '') or
+      if (Trim(ReplaceStr(VarToStr(Value), {$IFDEF RTL220_UP}FormatSettings.{$ENDIF RTL220_UP}DateSeparator, '')) = '') or
         VarIsNull(Value) or VarIsEmpty(Value) then
         FCalendar.CalendarDate := VarToDateTime(SysUtils.Date)
       else
@@ -1710,7 +1703,7 @@ begin
   if StrDate <> '' then
   begin
     try
-      DateValue := StrToDateFmt(ShortDateFormat, StrDate);
+      DateValue := StrToDateFmt({$IFDEF RTL220_UP}FormatSettings.{$ENDIF RTL220_UP}ShortDateFormat, StrDate);
     except
       DateValue := Date;
     end;
@@ -1720,7 +1713,7 @@ begin
   Result := SelectDate(Sender, DateValue, DlgCaption, AStartOfWeek, AWeekends,
     AWeekendColor, BtnHints, MinDate, MaxDate); // Polaris
   if Result then
-    StrDate := FormatDateTime(ShortDateFormat, DateValue);
+    StrDate := FormatDateTime({$IFDEF RTL220_UP}FormatSettings.{$ENDIF RTL220_UP}ShortDateFormat, DateValue);
 end;
 
 {$IFDEF UNITVERSIONING}
@@ -1732,4 +1725,3 @@ finalization
 {$ENDIF UNITVERSIONING}
 
 end.
-

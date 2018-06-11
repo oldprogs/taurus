@@ -30,11 +30,11 @@ Changes:
   * fixed bug: memory leak in TJvCustomSpeedButton.Paint;
 
 You may retrieve the latest version of this file at the Project JEDI's JVCL home page,
-located at http://jvcl.sourceforge.net
+located at http://jvcl.delphi-jedi.org
 
 Known Issues:
 -----------------------------------------------------------------------------}
-// $Id: JvSpeedButton.pas 12106 2008-12-24 10:42:34Z ahuser $
+// $Id: JvSpeedButton.pas 12741 2010-04-02 10:43:13Z ahuser $
 
 unit JvSpeedButton;
 
@@ -46,13 +46,8 @@ uses
   {$IFDEF UNITVERSIONING}
   JclUnitVersioning,
   {$ENDIF UNITVERSIONING}
-  CommCtrl,
-  {$IFDEF COMPILER6_UP}
-  Types,
-  {$ENDIF COMPILER6_UP}
-  SysUtils, Classes, Windows, Messages,
+  CommCtrl, Types, SysUtils, Classes, Windows, Messages,
   Controls, Graphics, Forms, ExtCtrls, Buttons, Menus, ImgList, ActnList,
-  JvVCL5Utils,
   JvExControls, JvComponent, JvButton, JvConsts, JvTypes, JvHotTrackPersistent,
   JvThemes;
 
@@ -210,10 +205,8 @@ type
     FClient: TJvImageSpeedButton;
     procedure AssignClient(AClient: TObject); override;
     function IsCheckedLinked: Boolean; override;
-    {$IFDEF COMPILER6_UP}
     function IsGroupIndexLinked: Boolean; override;
     procedure SetGroupIndex(Value: Integer); override;
-    {$ENDIF COMPILER6_UP}
     function IsImageIndexLinked: Boolean; override;
     procedure SetChecked(Value: Boolean); override;
     procedure SetImageIndex(Value: Integer); override;
@@ -224,10 +217,8 @@ type
     FClient: TJvSpeedButton;
     procedure AssignClient(AClient: TObject); override;
     function IsCheckedLinked: Boolean; override;
-    {$IFDEF COMPILER6_UP}
     function IsGroupIndexLinked: Boolean; override;
     procedure SetGroupIndex(Value: Integer); override;
-    {$ENDIF COMPILER6_UP}
     procedure SetChecked(Value: Boolean); override;
   end;
 
@@ -499,9 +490,9 @@ function DrawButtonFrame(Canvas: TCanvas; const Client: TRect;
 {$IFDEF UNITVERSIONING}
 const
   UnitVersioning: TUnitVersionInfo = (
-    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_36_PREPARATION/run/JvSpeedButton.pas $';
-    Revision: '$Revision: 12106 $';
-    Date: '$Date: 2008-12-24 11:42:34 +0100 (mer., 24 déc. 2008) $';
+    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_40_PREPARATION/run/JvSpeedButton.pas $';
+    Revision: '$Revision: 12741 $';
+    Date: '$Date: 2010-04-02 12:43:13 +0200 (ven., 02 avr. 2010) $';
     LogPath: 'JVCL\run'
   );
 {$ENDIF UNITVERSIONING}
@@ -584,7 +575,7 @@ var
 
 begin
   Result := Client;
-  NewStyle := (Style = bsNew) or (NewStyleControls and (Style = bsAutoDetect));
+  NewStyle := (Style = bsNew) or (Style = bsAutoDetect);
   ShadowColor := GetShadowColor(AColor);     // Honeymic
   HighlightColor := GetHighlightColor(AColor);  // Honeymic
 
@@ -946,13 +937,7 @@ begin
       {$ENDIF JVCLThemesEnabled}
       FHotTrack or (FFlat and Enabled and (DragMode <> dmAutomatic) and (GetCapture = NullHandle));
 
-    NeedRepaint := NeedRepaint
-      {$IFDEF COMPILER6_UP}
-      and not Mouse.IsDragging
-      {$ELSE}
-      and not KeyPressed(VK_LBUTTON)
-      {$ENDIF COMPILER6_UP}
-      ;
+    NeedRepaint := NeedRepaint and not Mouse.IsDragging;
 
     inherited MouseEnter(Control); // set MouseOver
     { Windows XP introduced hot states also for non-flat buttons. }
@@ -974,13 +959,7 @@ begin
       {$ENDIF JVCLThemesEnabled}
       HotTrack or (FFlat and Enabled and not FDragging and (GetCapture = NullHandle));
 
-    NeedRepaint := NeedRepaint
-      {$IFDEF COMPILER6_UP}
-      and not Mouse.IsDragging
-      {$ELSE}
-      and not KeyPressed(VK_LBUTTON)
-      {$ENDIF COMPILER6_UP}
-      ;
+    NeedRepaint := NeedRepaint and not Mouse.IsDragging;
 
     inherited MouseLeave(Control); // set MouseOver
     if NeedRepaint then
@@ -1466,9 +1445,7 @@ end;
 
 procedure TJvCustomSpeedButton.SetDropdownMenu(Value: TPopupMenu);
 begin
-  FDropDownMenu := Value;
-  if Value <> nil then
-    Value.FreeNotification(Self);
+  ReplaceComponentReference(Self, Value, TComponent(FDropDownMenu));
   if FMarkDropDown then
     Invalidate;
 end;
@@ -1912,15 +1889,8 @@ end;
 
 procedure TJvImageSpeedButton.SetImages(const Value: TCustomImageList);
 begin
-  if FImages <> nil then
-    FImages.UnRegisterChanges(FImageChangeLink);
-  FImages := Value;
-  if FImages <> nil then
-  begin
-    FImages.RegisterChanges(FImageChangeLink);
-    FImages.FreeNotification(Self);
-  end
-  else
+  ReplaceImageListReference(Self, Value, FImages, FImageChangeLink);
+  if FImages = nil then
     SetImageIndex(-1);
   InvalidateImage;
 end;
@@ -1939,9 +1909,6 @@ begin
     FClient.AllowAllUp and (FClient.Down = (Action as TCustomAction).Checked);
 end;
 
-{$IFDEF COMPILER6_UP}
-
-
 function TJvImageSpeedButtonActionLink.IsGroupIndexLinked: Boolean;
 begin
   { (rb) This will fail in D7 due to a bug in TCustomAction.SetGroupIndex }
@@ -1954,8 +1921,6 @@ begin
   if IsGroupIndexLinked then
     FClient.GroupIndex := Value;
 end;
-
-{$ENDIF COMPILER6_UP}
 
 function TJvImageSpeedButtonActionLink.IsImageIndexLinked: Boolean;
 begin
@@ -2127,8 +2092,6 @@ begin
     FClient.AllowAllUp and (FClient.Down = (Action as TCustomAction).Checked);
 end;
 
-{$IFDEF COMPILER6_UP}
-
 function TJvSpeedButtonActionLink.IsGroupIndexLinked: Boolean;
 begin
   Result := (FClient is TJvSpeedButton) and
@@ -2140,8 +2103,6 @@ begin
   if IsGroupIndexLinked then
     TJvSpeedButton(FClient).GroupIndex := Value;
 end;
-
-{$ENDIF COMPILER6_UP}
 
 procedure TJvSpeedButtonActionLink.SetChecked(Value: Boolean);
 begin
@@ -2725,7 +2686,12 @@ begin
         TJvGlyphList(FGlyphList).Delete(FIndexs[I]);
     FIndexs[I] := -1;
   end;
-  GlyphCache.ReturnList(TJvGlyphList(FGlyphList));
+
+  { Fix for Mantis #4864: JvSpeedButton AV }
+  if GlyphCache <> nil then
+    GlyphCache.ReturnList(TJvGlyphList(FGlyphList))
+  else
+    FGlyphList.Free;
   FGlyphList := nil;
 end;
 
@@ -2800,5 +2766,4 @@ finalization
   FreeAndNil(TempBrushBitmap);
 
 end.
-
 

@@ -21,9 +21,9 @@ Peter Thörnqvist
 Remko Bonte
 
 You may retrieve the latest version of this file at the Project JEDI's JVCL home page,
-located at http://jvcl.sourceforge.net
+located at http://jvcl.delphi-jedi.org
 -----------------------------------------------------------------------------}
-// $Id: JvEditorCommon.pas 12121 2009-01-03 18:47:21Z ahuser $
+// $Id: JvEditorCommon.pas 12817 2010-07-01 13:22:30Z ahuser $
 
 { history
  (JVCL Library versions) :
@@ -263,9 +263,14 @@ type
   TOnGutterClick = procedure(Sender: TObject; Line: Integer) of object;
 
   TJvLineChangeEvent = procedure(Sender: TObject; Line: Integer) of object;
+  TJvCaretChangedEvent = procedure(Sender: TObject; LastCaretX, LastCaretY: Integer) of object;
 
-  TEditCommand = Word;
-  TMacro = AnsiString; { used as buffer (array of char) }
+  {$IFDEF UNICODE}
+  TEditCommand = type LongWord;
+  {$ELSE}
+  TEditCommand = type Word;
+  {$ENDIF UNICODE}
+  TMacro = string; { used as buffer (array of char) }
 
   TJvEditKey = class(TObject)
   public
@@ -274,15 +279,15 @@ type
     Shift1: TShiftState;
     Shift2: TShiftState;
     Command: TEditCommand;
-    constructor Create(const ACommand: TEditCommand; const AKey1: Word;
-      const AShift1: TShiftState);
-    constructor Create2(const ACommand: TEditCommand; const AKey1: Word;
-      const AShift1: TShiftState; const AKey2: Word;
-      const AShift2: TShiftState);
+    constructor Create(const ACommand: TEditCommand;
+      const AKey1: Word; const AShift1: TShiftState);
+    constructor Create2(const ACommand: TEditCommand;
+      const AKey1: Word; const AShift1: TShiftState;
+      const AKey2: Word; const AShift2: TShiftState);
   end;
 
   TCommand2Event = procedure(Sender: TObject; const Key1: Word; const Shift1: TShiftState;
-      const Key2: Word; const Shift2: TShiftState; var Command: TEditCommand) of object;
+    const Key2: Word; const Shift2: TShiftState; var Command: TEditCommand) of object;
 
   TJvKeyboard = class(TPersistent)
   private
@@ -292,13 +297,13 @@ type
     constructor Create;
     destructor Destroy; override;
     procedure Assign(Source: TPersistent); override;
-    procedure Add(const ACommand: TEditCommand; const AKey1: Word;
-      const AShift1: TShiftState);
-    procedure Add2(const ACommand: TEditCommand; const AKey1: Word;
-      const AShift1: TShiftState; const AKey2: Word;
-      const AShift2: TShiftState);
-    procedure Add2Ctrl(const ACommand: TEditCommand; const AKey1: Word;
-      const AShift1: TShiftState; const AKey2: Word);
+    procedure Add(const ACommand: TEditCommand;
+      const AKey1: Word; const AShift1: TShiftState);
+    procedure Add2(const ACommand: TEditCommand;
+      const AKey1: Word; const AShift1: TShiftState;
+      const AKey2: Word; const AShift2: TShiftState);
+    procedure Add2Ctrl(const ACommand: TEditCommand;
+      const AKey1: Word; const AShift1: TShiftState; const AKey2: Word);
     procedure Remove(const AKey1: Word; const AShift1: TShiftState);
     procedure Remove2(const AKey1: Word; const AShift1: TShiftState;
       const AKey2: Word; const AShift2: TShiftState);
@@ -378,8 +383,8 @@ type
   public
     constructor Create(AJvEditor: TJvCustomEditorBase);
     destructor Destroy; override;
-    procedure Undo; {$IFDEF COMPILER12_UP}virtual; {$ELSE}dynamic;{$ENDIF COMPILER12_UP} abstract;
-    procedure Redo; dynamic; {abstract;}
+    procedure Undo; virtual; abstract;
+    procedure Redo; virtual; {abstract;}
     procedure SaveSelection;
     procedure RestoreSelection;
   end;
@@ -423,7 +428,7 @@ type
     FOnScroll: TScrollEvent;
     procedure SetParam(Index, Value: Integer);
   protected
-    procedure Scroll(ScrollCode: TScrollCode; var ScrollPos: Integer); dynamic;
+    procedure Scroll(ScrollCode: TScrollCode; var ScrollPos: Integer); virtual;
   public
     constructor Create;
     procedure SetParams(AMin, AMax, APosition, APage: Integer);
@@ -726,6 +731,7 @@ type
     FAutoIndent: Boolean;
     FKeepTrailingBlanks: Boolean;
     FCursorBeyondEOF: Boolean;
+    FCursorBeyondEOL: Boolean;
     FBlockOverwrite: Boolean;
     FPersistentBlocks: Boolean;
     FHideCaret: Boolean;
@@ -756,6 +762,9 @@ type
 
     FOnLineInserted: TJvLineChangeEvent;
     FOnLineDeleted: TJvLineChangeEvent;
+    FOnCaretChanged: TJvCaretChangedEvent;
+
+    function GetKeepTrailingBlanks: Boolean;
 
     { internal message processing }
     procedure WMEditCommand(var Msg: TMessage); message WM_EDITCOMMAND;
@@ -775,6 +784,7 @@ type
     procedure EMSetSelection(var Msg: TMessage); message EM_SETSEL;
     procedure EMGetSelection(var Msg: TMessage); message EM_GETSEL;
     procedure EMCanUndo(var Msg: TMessage); message EM_CANUNDO;
+    procedure WMGetText(var Msg: TWMGetText); message WM_GETTEXT;
     procedure WMGetTextLength(var Msg: TMessage); message WM_GETTEXTLENGTH;
   protected
     FMyDi: TDynIntArray; //array [0..Max_X] of Integer;
@@ -810,18 +820,18 @@ type
     procedure TextAllChangedInternal(Unselect: Boolean); virtual;
 
     { triggers for descendants }
-    procedure Changed; dynamic;
-    procedure TextAllChanged; dynamic;
-    procedure StatusChanged; dynamic;
-    procedure SelectionChanged; dynamic;
+    procedure Changed; virtual;
+    procedure TextAllChanged; virtual;
+    procedure StatusChanged; virtual;
+    procedure SelectionChanged; virtual;
     procedure GetAttr(Line, ColBeg, ColEnd: Integer); virtual;
     procedure ChangeAttr(Line, ColBeg, ColEnd: Integer); virtual;
-    procedure GutterPaint(Canvas: TCanvas); dynamic;
-    procedure GutterClick(Line: Integer); dynamic;
-    procedure GutterDblClick(Line: Integer); dynamic;
-    procedure BookmarkChanged(Bookmark: Integer); dynamic;
-    procedure CompletionIdentifier(var Cancel: Boolean); dynamic;
-    procedure CompletionTemplate(var Cancel: Boolean); dynamic;
+    procedure GutterPaint(Canvas: TCanvas); virtual;
+    procedure GutterClick(Line: Integer); virtual;
+    procedure GutterDblClick(Line: Integer); virtual;
+    procedure BookmarkChanged(Bookmark: Integer); virtual;
+    procedure CompletionIdentifier(var Cancel: Boolean); virtual;
+    procedure CompletionTemplate(var Cancel: Boolean); virtual;
     procedure DoCompletionIdentifier(var Cancel: Boolean);
     procedure DoCompletionTemplate(var Cancel: Boolean);
   protected
@@ -831,7 +841,7 @@ type
     procedure Loaded; override;
     procedure ScrollBarScroll(Sender: TObject; ScrollCode: TScrollCode; var
       ScrollPos: Integer);
-    procedure Scroll(Vert: Boolean; ScrollPos: Integer); dynamic;
+    procedure Scroll(Vert: Boolean; ScrollPos: Integer); virtual;
     procedure KeyDown(var Key: Word; Shift: TShiftState); override;
     procedure KeyPress(var Key: Char); override;
 
@@ -844,9 +854,9 @@ type
     procedure GetDlgCode(var Code: TDlgCodes); override;
     procedure FocusSet(PrevWnd: THandle); override;
     procedure FocusKilled(NextWnd: THandle); override;
-    procedure DoPaste; dynamic;
-    procedure DoCopy; dynamic;
-    procedure DoCut; dynamic;
+    procedure DoPaste; virtual;
+    procedure DoCopy; virtual;
+    procedure DoCut; virtual;
     procedure CursorChanged; override;
     procedure FontChanged; override;
     function DoEraseBackground(Canvas: TCanvas; Param: Integer): Boolean; override;
@@ -861,7 +871,7 @@ type
     procedure IStandardEditActions.Cut = ClipboardCut;
     procedure IStandardEditActions.Copy = ClipboardCopy;
     procedure IStandardEditActions.Paste = ClipboardPaste;
-    procedure IStandardEditActions.Delete = DeleteSelected;
+    procedure IStandardEditActions.ClearSelection = DeleteSelected;
   protected
     { get/set methods for properties }
     procedure SetGutterWidth(AWidth: Integer);
@@ -929,6 +939,7 @@ type
 
     procedure DrawRightMargin;
     procedure SetCaretInternal(X, Y: Integer);
+    procedure CheckBeyondEOL(var CX: Integer; CY: Integer);
 
     procedure NotUndoable;
     procedure NotRedoable;
@@ -964,14 +975,16 @@ type
     procedure SelectAll; { IFixedPopupIntf }
     function HasSelection: Boolean; { IFixedPopupIntf }
 
-    procedure ClipboardCopy; dynamic; abstract;
-    procedure ClipboardPaste; dynamic; abstract;
-    procedure ClipboardCut; dynamic;
-    procedure DeleteSelected; dynamic; abstract;
-    procedure ClearSelection; dynamic;
+    procedure ClipboardCopy; virtual; abstract;
+    procedure ClipboardPaste; virtual; abstract;
+    procedure ClipboardCut; virtual;
+    procedure DeleteSelected; virtual; abstract;
+    procedure Deselect; virtual;
 
     procedure Undo;
     procedure Redo; // not implemented yet
+
+    procedure CaretChanged(LastCaretX, LastCaretY: Integer); virtual;
 
     procedure SelectRange(BegX, BegY, EndX, EndY: Integer);
     function CalcCellRect(X, Y: Integer): TRect;
@@ -987,6 +1000,7 @@ type
 
     procedure PaintCaret(bShow: Boolean);
     function GetTextLen: Integer;
+    function GetText: string; virtual; abstract;
     procedure SelectWordOnCaret; virtual; abstract;
 
     procedure BeginUpdate;
@@ -1033,17 +1047,20 @@ type
     property LineInformations: TJvLineInformationList read FLineInformations;
   public
     { published in descendants }
-    property BeepOnError: Boolean read FBeepOnError write FBeepOnError default True;
+    property BeepOnError: Boolean read FBeepOnError write FBeepOnError default False;
     property BorderStyle: TBorderStyle read FBorderStyle write SetBorderStyle default bsSingle;
     property ScrollBars: TScrollStyle read FScrollBars write SetScrollBars default ssBoth;
     property Cursor default crIBeam;
     property Color default clWindow;
+    property TabStop default True;
+    property ParentFont default False;
+    property ParentColor default False;
 
-    property GutterWidth: Integer read FGutterWidth write SetGutterWidth;
+    property GutterWidth: Integer read FGutterWidth write SetGutterWidth default 0;
     property GutterColor: TColor read FGutterColor write SetGutterColor default clBtnFace;
     property RightMarginVisible: Boolean read FRightMarginVisible write SetRightMarginVisible default True;
     property RightMargin: Integer read FRightMargin write SetRightMargin default 80;
-    property RightMarginColor: TColor read FRightMarginColor write SetRightMarginColor default clBtnFace;
+    property RightMarginColor: TColor read FRightMarginColor write SetRightMarginColor default clSilver;
     property InsertMode: Boolean index 0 read FInsertMode write SetMode default True;
     property ReadOnly: Boolean index 1 read FReadOnly write SetMode default False;
     property DoubleClickLine: Boolean read FDoubleClickLine write FDoubleClickLine default False;
@@ -1051,13 +1068,14 @@ type
     property SmartTab: Boolean read FSmartTab write FSmartTab default True;
     property BackSpaceUnindents: Boolean read FBackSpaceUnindents write FBackSpaceUnindents default True;
     property AutoIndent: Boolean read FAutoIndent write FAutoIndent default True;
-    property KeepTrailingBlanks: Boolean read FKeepTrailingBlanks write FKeepTrailingBlanks default False;
+    property KeepTrailingBlanks: Boolean read GetKeepTrailingBlanks write FKeepTrailingBlanks default False;
     property CursorBeyondEOF: Boolean read FCursorBeyondEOF write FCursorBeyondEOF default False;
+    property CursorBeyondEOL: Boolean read FCursorBeyondEOL write FCursorBeyondEOL default True;
     property BlockOverwrite: Boolean read FBlockOverwrite write FBlockOverwrite default True;
     property PersistentBlocks: Boolean read FPersistentBlocks write FPersistentBlocks default False;
     property BracketHighlighting: TJvBracketHighlighting read FBracketHighlighting write SetBracketHighlighting;
-    property SelForeColor: TColor read FSelForeColor write SetSelForeColor;
-    property SelBackColor: TColor read FSelBackColor write SetSelBackColor;
+    property SelForeColor: TColor read FSelForeColor write SetSelForeColor default clHighlightText;
+    property SelBackColor: TColor read FSelBackColor write SetSelBackColor default clHighlight;
     property HideCaret: Boolean read FHideCaret write FHideCaret default False;
     property CurrentLineHighlight: TColor read FCurrentLineHighlight write SetCurrentLineHighlight default clNone;
     property ErrorHighlighting: TJvErrorHighlighting read FErrorHighlighting;
@@ -1077,6 +1095,7 @@ type
     property OnPaintGutter: TOnPaintGutter read FOnPaintGutter write FOnPaintGutter;
     property OnGutterClick: TOnGutterClick read FOnGutterClick write FOnGutterClick;
     property OnGutterDblClick: TOnGutterClick read FOnGutterDblClick write FOnGutterDblClick;
+    property OnCaretChanged: TJvCaretChangedEvent read FOnCaretChanged write FOnCaretChanged;
 
     property OnCompletionIdentifier: TOnCompletion read FOnCompletionIdentifier write FOnCompletionIdentifier;
     property OnCompletionTemplate: TOnCompletion read FOnCompletionTemplate write FOnCompletionTemplate;
@@ -1142,8 +1161,8 @@ type
     property DropDownWidth: Integer read FDropDownWidth write FDropDownWidth default 300;
     property Enabled: Boolean read FEnabled write FEnabled default False;
     property ItemHeight: Integer read FItemHeight write FItemHeight;
-    property Interval: Cardinal read GetInterval write SetInterval;
-    property ListBoxStyle: TListBoxStyle read FListBoxStyle write FListBoxStyle;
+    property Interval: Cardinal read GetInterval write SetInterval default 800;
+    property ListBoxStyle: TListBoxStyle read FListBoxStyle write FListBoxStyle default lbStandard;
   end;
 
 //=== Highligther Editor =====================================================
@@ -1245,10 +1264,17 @@ const
   { Editor commands }
   { When add new commands, please add them into JvInterpreter_JvEditor.pas unit also ! }
   ecCharFirst = $00;
+  {$IFDEF UNICODE}
+  ecCharLast = $FFFF;
+  ecCommandFirst = $10000;
+  ecIntern = $400000; { use on internal updates }
+  ecUser = $800000; { use this for descendants }
+  {$ELSE}
   ecCharLast = $FF;
   ecCommandFirst = $100;
   ecIntern = $1000; { use on internal updates }
   ecUser = $8000; { use this for descendants }
+  {$ENDIF UNICODE}
 
   {Cursor}
   ecLeft = ecCommandFirst + 1;
@@ -1357,16 +1383,16 @@ const
   ecBeginRecord = ecRecordMacro + 2;
   ecEndRecord = ecRecordMacro + 3;
 
-  twoKeyCommand = High(Word);
+  twoKeyCommand = High(TEditCommand);
 
 function KeyPressed(VK: Integer): Boolean;
 
 {$IFDEF UNITVERSIONING}
 const
   UnitVersioning: TUnitVersionInfo = (
-    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_36_PREPARATION/run/JvEditorCommon.pas $';
-    Revision: '$Revision: 12121 $';
-    Date: '$Date: 2009-01-03 19:47:21 +0100 (sam., 03 janv. 2009) $';
+    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_40_PREPARATION/run/JvEditorCommon.pas $';
+    Revision: '$Revision: 12817 $';
+    Date: '$Date: 2010-07-01 15:22:30 +0200 (jeu., 01 juil. 2010) $';
     LogPath: 'JVCL\run'
   );
 {$ENDIF UNITVERSIONING}
@@ -1378,10 +1404,7 @@ uses
   {$IFDEF SUPPORTS_INLINE}
   Types,
   {$ENDIF SUPPORTS_INLINE}
-  {$IFDEF HAS_UNIT_RTLCONSTS}
-  RTLConsts,
-  {$ENDIF HAS_UNIT_RTLCONSTS}
-  Math, Clipbrd,
+  RTLConsts, Math, Clipbrd,
   JvJCLUtils, JvThemes, JvResources;
 
 type
@@ -2556,9 +2579,10 @@ begin
   FAutoIndent := True;
   FKeepTrailingBlanks := False;
   FCursorBeyondEOF := False;
+  FCursorBeyondEOL := True;
   FBlockOverwrite := True;
   FPersistentBlocks := False;
-  FBeepOnError := True;
+  FBeepOnError := False;
 
   FScrollBars := ssBoth;
   FScrollBarHorz := TJvControlScrollBar95.Create;
@@ -2645,6 +2669,7 @@ begin
       FAutoIndent := Src.AutoIndent;
       FKeepTrailingBlanks := Src.KeepTrailingBlanks;
       FCursorBeyondEOF := Src.CursorBeyondEOF;
+      FCursorBeyondEOL := Src.CursorBeyondEOL;
       FBlockOverwrite := Src.BlockOverwrite;
       FPersistentBlocks := Src.PersistentBlocks;}
     finally
@@ -2773,6 +2798,21 @@ end;
 procedure TJvCustomEditorBase.EMCanUndo(var Msg: TMessage);
 begin
   Msg.Result := Ord(UndoBuffer.CanUndo);
+end;
+
+procedure TJvCustomEditorBase.WMGetText(var Msg: TWMGetText);
+var
+  S: string;
+begin
+  if Msg.Text = nil then
+    Msg.Result := 0
+  else
+  begin
+    S := GetText;
+    Msg.Result := Min(Length(S), Msg.TextMax);
+    if Msg.Result > 0 then
+      Move(S[1], Msg.Text^, Msg.Result * SizeOf(Char));
+  end;
 end;
 
 procedure TJvCustomEditorBase.WMGetTextLength(var Msg: TMessage);
@@ -3187,7 +3227,7 @@ begin
   with Params do
   begin
     Style := Style or BorderStyles[FBorderStyle] or ScrollStyles[FScrollBars];
-    if NewStyleControls and Ctl3D and (FBorderStyle = bsSingle) then
+    if Ctl3D and (FBorderStyle = bsSingle) then
     begin
       Style := Style and not WS_BORDER;
       ExStyle := ExStyle or WS_EX_CLIENTEDGE;
@@ -3315,7 +3355,7 @@ end;
 
 procedure TJvCustomEditorBase.KeyDown(var Key: Word; Shift: TShiftState);
 var
-  Com: Word;
+  Com: TEditCommand;
 begin
   PaintCaret(False);
   try
@@ -3365,7 +3405,7 @@ begin
       begin
         { Setting the capture control to the editor prevents the VM_MENU key to
           activate the mainmenu. }
-        PostMessage(Handle, CM_RESETCAPTURECONTROL, 0, Integer(GetCaptureControl));
+        PostMessage(Handle, CM_RESETCAPTURECONTROL, 0, LPARAM(GetCaptureControl));
         SetCaptureControl(Self);
       end;
       Key := 0;
@@ -3658,6 +3698,11 @@ begin
     FBorderStyle := Value;
     RecreateWnd;
   end;
+end;
+
+function TJvCustomEditorBase.GetKeepTrailingBlanks: Boolean;
+begin
+  Result := FKeepTrailingBlanks or not FCursorBeyondEOL;
 end;
 
 function TJvCustomEditorBase.GetSelStart: Integer;
@@ -4325,7 +4370,7 @@ var
   ECR: TRect;
   BX, EX, BY, EY: Integer;
 begin
-  if UpdateLock > 0 then
+  if (UpdateLock > 0) or (CellRect.Width <= 1) or (CellRect.Height <= 1) then
     Exit;
   PaintCaret(False);
 
@@ -4822,6 +4867,20 @@ begin
     end;
 end;
 
+procedure TJvCustomEditorBase.CheckBeyondEOL(var CX: Integer; CY: Integer);
+begin
+  if not CursorBeyondEOL then
+  begin
+    if (CY >= 0) and (CY < LineCount) then
+    begin
+      if CX >= GetLineLength(CY) then
+        CX := GetLineLength(CY);
+    end
+    else
+      CX := 0;
+  end;
+end;
+
 procedure TJvCustomEditorBase.Mouse2Cell(X, Y: Integer; var CX, CY: Integer);
 begin
   CX := Round((X - FEditorClient.Left) / CellRect.Width);
@@ -4841,6 +4900,7 @@ begin
     CX := FLastVisibleCol;
   if (CY > LineCount - 1) and not CursorBeyondEOF then
     CY := LineCount - 1;
+  CheckBeyondEOL(CX, CY);
 end;
 
 procedure TJvCustomEditorBase.MousePosToCell(X, Y: Integer; var CX, CY: Integer);
@@ -4857,6 +4917,12 @@ begin
     CX := FLastVisibleCol;
   if CY > LineCount - 1 then // difference to Mouse2Caret
     CY := LineCount - 1;
+end;
+
+procedure TJvCustomEditorBase.CaretChanged(LastCaretX, LastCaretY: Integer);
+begin
+  if Assigned(FOnCaretChanged) then
+    FOnCaretChanged(Self, LastCaretX, LastCaretY);
 end;
 
 procedure TJvCustomEditorBase.CaretCoord(X, Y: Integer; var CX, CY: Integer);
@@ -4885,16 +4951,18 @@ end;
 procedure TJvCustomEditorBase.SetCaretInternal(X, Y: Integer);
 var
   R: TRect;
-  LastCaretY: Integer;
+  LastCaretX, LastCaretY: Integer;
 begin
   if (X = FCaretX) and (Y = FCaretY) then
     Exit;
-  // To scroll the image [translated]
+  // To scroll the image
   if not FCursorBeyondEOF then
     Y := Min(Y, LineCount - 1);
   Y := Max(Y, 0);
   X := Min(X, Max_X);
   X := Max(X, 0);
+  CheckBeyondEOL(X, Y);
+
   if Y < FTopRow then
     SetLeftTop(FLeftCol, Y)
   else
@@ -4916,6 +4984,7 @@ begin
 
   if (FCaretX <> X) or (FCaretY <> Y) then
   begin
+    LastCaretX := FCaretX;
     LastCaretY := FCaretY;
     FCaretX := X;
     FCaretY := Y;
@@ -4925,6 +4994,7 @@ begin
       PaintLine(FCaretY);
     end;
     StatusChanged;
+    CaretChanged(LastCaretX, LastCaretY);
   end;
 end;
 
@@ -5007,7 +5077,11 @@ begin
     I := 1;
     while I < Length(AMacro) do
     begin
+      {$IFDEF UNICODE}
+      Command(Word(AMacro[I]) + Word(AMacro[I + 1]) shl 16);
+      {$ELSE}
       Command(Byte(AMacro[I]) + Byte(AMacro[I + 1]) shl 8);
+      {$ENDIF UNICODE}
       Inc(I, 2);
     end;
   finally
@@ -5100,7 +5174,7 @@ begin
   DeleteSelected;
 end;
 
-procedure TJvCustomEditorBase.ClearSelection;
+procedure TJvCustomEditorBase.Deselect;
 begin
   SetUnSelected;
 end;
@@ -5250,7 +5324,6 @@ begin
   Result := 0;
   for I := 0 to LineCount - 1 do
     Inc(Result, LineLength[I] + sLineBreakLen);
-  Dec(Result, sLineBreakLen);
 end;
 
 procedure TJvCustomEditorBase.BeginUpdate;
@@ -5319,6 +5392,30 @@ type
     CaretUndo := False;
   end;
 
+  procedure IncCaretX(var X, Y: Integer; XOffset: Integer);
+  begin
+    Inc(X, XOffset);
+    if not CursorBeyondEOL then
+    begin
+      if X < 0 then
+      begin
+        if (Y > 0) and (Y <= LineCount) then
+        begin
+          Dec(Y);
+          X := LineLength[Y];
+        end;
+      end
+      else if (Y >= 0) and (Y < LineCount) and (X > LineLength[Y]) then
+      begin
+        if not CursorBeyondEOF and (Y < LineCount - 1) then
+        begin
+          Inc(Y);
+          X := 0;
+        end;
+      end;
+    end;
+  end;
+
 begin
   X := CaretX;
   Y := CaretY;
@@ -5326,7 +5423,13 @@ begin
   // LockUpdate;
   { macro recording }
   if Recording and not Com([ecRecordMacro, ecBeginCompound]) and (Compound = 0) then
+  begin
+    {$IFDEF UNICODE}
+    FMacro := FMacro + Char(LoWord(ACommand)) + Char(HiWord(ACommand));
+    {$ELSE}
     FMacro := FMacro + AnsiChar(Lo(ACommand)) + AnsiChar(Hi(ACommand));
+    {$ENDIF UNICODE}
+  end;
 
   PaintCaret(False);
   try
@@ -5337,9 +5440,9 @@ begin
           if Com([ecSelLeft, ecSelRight]) and IsNewSelection then
             SetSel1(X, Y);
           if Com([ecLeft, ecSelLeft]) then
-            Dec(X)
+            IncCaretX(X, Y, -1)
           else
-            Inc(X);
+            IncCaretX(X, Y, +1);
           if Com([ecSelLeft, ecSelRight]) then
             SetSel1(X, Y)
           else
@@ -6253,7 +6356,7 @@ begin
     FPopupList.ItemHeight := FItemHeight;
     FVisible := True;
     SetItemIndex(FItemIndex);
-    if FListBoxStyle in [lbStandard] then
+    if (FListBoxStyle in [lbStandard]) and Assigned(FJvEditor.OnCompletionDrawItem) then
       FPopupList.Style := lbOwnerDrawFixed
     else
       FPopupList.Style := FListBoxStyle;

@@ -37,8 +37,8 @@
 {                                                                                                  }
 {**************************************************************************************************}
 {                                                                                                  }
-{ Last modified: $Date:: 2008-09-09 21:32:17 +0200 (mar., 09 sept. 2008)                        $ }
-{ Revision:      $Rev:: 2461                                                                     $ }
+{ Last modified: $Date:: 2010-02-05 13:18:47 +0100 (ven. 05 févr. 2010)                         $ }
+{ Revision:      $Rev:: 3179                                                                     $ }
 { Author:        $Author:: outchy                                                                $ }
 {                                                                                                  }
 {**************************************************************************************************}
@@ -55,7 +55,7 @@ uses
   {$ENDIF UNITVERSIONING}
   Windows, SysUtils,
   ShlObj,
-  JclWin32, JclSysUtils;
+  JclBase, JclWin32, JclSysUtils;
 
 // Files and Folders
 type
@@ -146,8 +146,8 @@ type
   end;
 
 procedure ShellLinkFree(var Link: TShellLink);
-function ShellLinkResolve(const FileName: string; var Link: TShellLink): HRESULT; overload;
-function ShellLinkResolve(const FileName: string; var Link: TShellLink;
+function ShellLinkResolve(const FileName: string; out Link: TShellLink): HRESULT; overload;
+function ShellLinkResolve(const FileName: string; out Link: TShellLink;
   const ResolveFlags: Cardinal): HRESULT; overload;
 function ShellLinkCreate(const Link: TShellLink; const FileName: string): HRESULT;
 function ShellLinkCreateSystem(const Link: TShellLink; const Folder: Integer; const FileName: string): HRESULT;
@@ -187,14 +187,8 @@ type
   INSTALLSTATE = Longint;
 const
   MSILIB = 'msi.dll';
-  {$IFDEF SUPPORTS_UNICODE}
-  GetShortcutTargetName = 'MsiGetShortcutTargetW';
-  GetComponentPathName = 'MsiGetComponentPathW';
-  {$ELSE ~SUPPORTS_UNICODE}
-  GetShortcutTargetName = 'MsiGetShortcutTargetA';
-  GetComponentPathName = 'MsiGetComponentPathA';
-  {$ENDIF ~SUPPORTS_UNICODE}
-
+  GetShortcutTargetName = 'MsiGetShortcutTarget' + AWSuffix;
+  GetComponentPathName = 'MsiGetComponentPath' + AWSuffix;
 var
   // MSI.DLL functions can''t be converted to Unicode due to an internal compiler bug (F2084 Internal Error: URW1021)
   RtdlMsiLibHandle: TModuleHandle = INVALID_MODULEHANDLE_VALUE;
@@ -207,10 +201,12 @@ var
 {$IFDEF UNITVERSIONING}
 const
   UnitVersioning: TUnitVersionInfo = (
-    RCSfile: '$URL: https://jcl.svn.sourceforge.net/svnroot/jcl/tags/JCL-1.104-Build3248/jcl/source/windows/JclShell.pas $';
-    Revision: '$Revision: 2461 $';
-    Date: '$Date: 2008-09-09 21:32:17 +0200 (mar., 09 sept. 2008) $';
-    LogPath: 'JCL\source\windows'
+    RCSfile: '$URL: https://jcl.svn.sourceforge.net:443/svnroot/jcl/tags/JCL-2.2-Build3845/jcl/source/windows/JclShell.pas $';
+    Revision: '$Revision: 3179 $';
+    Date: '$Date: 2010-02-05 13:18:47 +0100 (ven. 05 févr. 2010) $';
+    LogPath: 'JCL\source\windows';
+    Extra: '';
+    Data: nil
     );
 {$ENDIF UNITVERSIONING}
 
@@ -259,7 +255,7 @@ var
   FileOp: TSHFileOpStruct;
   Source: string;
 begin
-  FillChar(FileOp, SizeOf(FileOp), #0);
+  ResetMemory(FileOp, SizeOf(FileOp));
   with FileOp do
   begin
     Wnd := Parent;
@@ -277,7 +273,7 @@ begin
   Exclude(Options, doFilesOnly);
   Result := SHDeleteFiles(Parent, PathAddSeparator(Folder) + '*.*', Options);
   if Result then
-    SHDeleteFiles(Parent, Folder, Options);
+    Result := SHDeleteFiles(Parent, PathRemoveSeparator(Folder), Options);
 end;
 
 // Helper function to map a TSHRenameOptions set to a cardinal
@@ -296,7 +292,7 @@ var
   FileOp: TSHFileOpStruct;
   Source, Destination: string;
 begin
-  FillChar(FileOp, SizeOf(FileOp), #0);
+  ResetMemory(FileOp, SizeOf(FileOp));
   with FileOp do
   begin
     Wnd := GetDesktopWindow;
@@ -328,7 +324,7 @@ var
   FileOp: TSHFileOpStruct;
   Source, Destination: string;
 begin
-  FillChar(FileOp,SizeOf(FileOp),0);
+  ResetMemory(FileOp, SizeOf(FileOp));
   FileOp.Wnd := Parent;
   FileOp.wFunc := FO_COPY;
   Source := Src + #0#0;
@@ -357,7 +353,7 @@ var
   FileOp: TSHFileOpStruct;
   Source, Destination: string;
 begin
-  FillChar(FileOp,SizeOf(FileOp),0);
+  ResetMemory(FileOp, SizeOf(FileOp));
   FileOp.Wnd := Parent;
   FileOp.wFunc := FO_MOVE;
   Source := Src + #0#0;
@@ -418,8 +414,10 @@ begin
   ClearEnumFolderRec(F, True, False);
   if (F.EnumIdList = nil) or (F.Folder = nil) then
     Exit;
+  ItemsFetched := 0;
   if F.EnumIdList.Next(1, F.Item, ItemsFetched) = NO_ERROR then
   begin
+    DisplayNameRet.utype := 0;
     F.Folder.GetDisplayNameOf(F.Item, SHGDN_INFOLDER, DisplayNameRet);
     F.DisplayName := StrRetToString(F.Item, DisplayNameRet, True);
     F.Attributes := Attr;
@@ -432,6 +430,7 @@ begin
     
     if Assigned(ExtractIcon) then
     begin
+      IconIndex := 0;
       ExtractIcon.GetIconLocation(0, @IconFile, MAX_PATH, IconIndex, Flags);
       if (IconIndex < 0) and ((Flags and GIL_NOTFILENAME) = GIL_NOTFILENAME) then
         ExtractIconEx(@IconFile, IconIndex, F.IconLarge, F.IconSmall, 1)
@@ -451,22 +450,31 @@ var
   FolderPidl: PItemIdList;
 begin
   ClearEnumFolderRec(F, False, False);
-  SHGetDesktopFolder(DesktopFolder);
-  if SpecialFolder = CSIDL_DESKTOP then
-    F.Folder := DesktopFolder
-  else
+  Result := Succeeded(SHGetDesktopFolder(DesktopFolder));
+  if Result then
   begin
-    SHGetSpecialFolderLocation(0, SpecialFolder, FolderPidl);
-    try
-      DesktopFolder.BindToObject(FolderPidl, nil, IID_IShellFolder, Pointer(F.Folder));
-    finally
-      PidlFree(FolderPidl);
+    if SpecialFolder = CSIDL_DESKTOP then
+      F.Folder := DesktopFolder
+    else
+    begin
+      Result := Succeeded(SHGetSpecialFolderLocation(0, SpecialFolder, FolderPidl));
+      if Result then
+      begin
+        try
+          Result := Succeeded(DesktopFolder.BindToObject(FolderPidl, nil, IID_IShellFolder, Pointer(F.Folder)));
+        finally
+          CoTaskMemFree(FolderPidl);
+        end;
+      end;
     end;
   end;
-  F.Folder.EnumObjects(0, EnumFolderFlagsToCardinal(Flags), F.EnumIdList);
-  Result := SHEnumFolderNext(F);
-  if not Result then
-    SHEnumFolderClose(F);
+  if Result then
+  begin
+    F.Folder.EnumObjects(0, EnumFolderFlagsToCardinal(Flags), F.EnumIdList);
+    Result := SHEnumFolderNext(F);
+    if not Result then
+      SHEnumFolderClose(F);
+  end;
 end;
 
 function SHEnumFolderFirst(const Folder: string; Flags: TEnumFolderFlags;
@@ -496,7 +504,7 @@ begin
   if Succeeded(SHGetSpecialFolderLocation(0, FolderID, FolderPidl)) then
   begin
     Result := PidlToPath(FolderPidl);
-    PidlFree(FolderPidl);
+    CoTaskMemFree(FolderPidl);
   end
   else
     Result := '';
@@ -506,7 +514,7 @@ function DisplayPropDialog(const Handle: THandle; const FileName: string): Boole
 var
   Info: TShellExecuteInfo;
 begin
-  FillChar(Info, SizeOf(Info), #0);
+  ResetMemory(Info, SizeOf(Info));
   with Info do
   begin
     cbSize := SizeOf(Info);
@@ -516,16 +524,18 @@ begin
     Wnd := Handle;
     lpVerb := cVerbProperties;
   end;
-  {$T+}  // need this because ShellExecuteEx is overloaded in FPC -A -W
+  {$TYPEDADDRESS ON}  // need this because ShellExecuteEx is overloaded in FPC -A -W
   Result := ShellExecuteEx(@Info);
-  {$T-}
+  {$IFNDEF TYPEDADDRESS_ON}
+  {$TYPEDADDRESS OFF}
+  {$ENDIF ~TYPEDADDRESS_ON}
 end;
 
 function DisplayPropDialog(const Handle: THandle; Item: PItemIdList): Boolean;
 var
   Info: TShellExecuteInfo;
 begin
-  FillChar(Info, SizeOf(Info), #0);
+  ResetMemory(Info, SizeOf(Info));
   with Info do
   begin
     cbSize := SizeOf(Info);
@@ -535,9 +545,11 @@ begin
     Wnd := Handle;
     lpVerb := cVerbProperties;
   end;
-  {$T+}
+  {$TYPEDADDRESS ON}
   Result := ShellExecuteEx(@Info);
-  {$T-}
+  {$IFNDEF TYPEDADDRESS_ON}
+  {$TYPEDADDRESS OFF}
+  {$ENDIF ~TYPEDADDRESS_ON}
 end;
 
 // Window procedure for the callback window created by DisplayContextMenu.
@@ -582,7 +594,7 @@ const
 var
   WndClass: TWndClass;
 begin
-  FillChar(WndClass, SizeOf(WndClass), #0);
+  ResetMemory(WndClass, SizeOf(WndClass));
   WndClass.lpszClassName := PChar(IcmCallbackWnd);
   WndClass.lpfnWndProc := @MenuCallback;
   WndClass.hInstance := HInstance;
@@ -623,7 +635,7 @@ begin
           TPM_RIGHTBUTTON or TPM_RETURNCMD, Pos.X, Pos.Y, 0, CallbackWindow, nil));
         if Cmd <> 0 then
         begin
-          FillChar(CommandInfo, SizeOf(CommandInfo), #0);
+          ResetMemory(CommandInfo, SizeOf(CommandInfo));
           CommandInfo.cbSize := SizeOf(TCMInvokeCommandInfo);
           CommandInfo.hwnd := Handle;
           CommandInfo.lpVerb := MakeIntResourceA(Cmd - 1);
@@ -660,7 +672,7 @@ begin
   Result := False;
   if IsDirectory(Path) then
   begin
-    FillChar(Sei, SizeOf(Sei), #0);
+    ResetMemory(Sei, SizeOf(Sei));
     with Sei do
     begin
       cbSize := SizeOf(Sei);
@@ -672,23 +684,23 @@ begin
       lpFile := PChar(Path);
       nShow := SW_SHOWNORMAL;
     end;
-    {$T+}
+    {$TYPEDADDRESS ON}
     Result := ShellExecuteEx(@Sei);
-    {$T-}
+    {$IFNDEF TYPEDADDRESS_ON}
+    {$TYPEDADDRESS OFF}
+    {$ENDIF ~TYPEDADDRESS_ON}
   end;
 end;
 
 function OpenSpecialFolder(FolderID: Integer; Parent: THandle; Explore: Boolean): Boolean;
 var
-  Malloc: IMalloc;
   Pidl: PItemIDList;
   Sei: TShellExecuteInfo;
 begin
   Result := False;
-  if Succeeded(SHGetMalloc(Malloc)) and
-    Succeeded(SHGetSpecialFolderLocation(Parent, FolderID, Pidl)) then
+  if Succeeded(SHGetSpecialFolderLocation(Parent, FolderID, Pidl)) then
   begin
-    FillChar(Sei, SizeOf(Sei), #0);
+    ResetMemory(Sei, SizeOf(Sei));
     with Sei do
     begin
       cbSize := SizeOf(Sei);
@@ -708,10 +720,12 @@ begin
       else
         lpFile := PChar(PidlToPath(Pidl));
     end;
-    {$T+}
+    {$TYPEDADDRESS ON}
     Result := ShellExecuteEx(@Sei);
-    {$T-}
-    Malloc.Free(Pidl);
+    {$IFNDEF TYPEDADDRESS_ON}
+    {$TYPEDADDRESS OFF}
+    {$ENDIF ~TYPEDADDRESS_ON}
+    CoTaskMemFree(Pidl);
   end;
 end;
 
@@ -728,7 +742,7 @@ begin
     P := Malloc.Alloc(Count);
     if P <> nil then
     begin
-      FillChar(P^, Count, #0);
+      ResetMemory(P^, Count);
       Result := True;
     end;
   end;
@@ -800,6 +814,7 @@ begin
         {$ELSE ~SUPPORTS_UNICODE}
         MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, PAnsiChar(PathAddSeparator(DriveName)), -1, Path, MAX_PATH);
         {$ENDIF ~SUPPORTS_UNICODE}
+        Attr := 0;
         if Failed(Folder.ParseDisplayName(0, nil, Path, Eaten, Result, Attr)) then
         begin
           Folder := nil;
@@ -808,7 +823,7 @@ begin
         end;
       end;
     end;
-    PidlFree(Drives);
+    CoTaskMemFree(Drives);
   end;
 end;
 
@@ -824,6 +839,7 @@ begin
   {$ELSE ~SUPPORTS_UNICODE}
   MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, PAnsiChar(Path), -1, WidePath, MAX_PATH);
   {$ENDIF ~SUPPORTS_UNICODE}
+  Attr := 0;
   if Folder <> nil then
     Folder.ParseDisplayName(0, nil, WidePath, CharsParsed, Result, Attr)
   else
@@ -841,13 +857,14 @@ begin
   Result := nil;
   {$IFDEF SUPPORTS_UNICODE}
   Path := PChar(ExtractFilePath(FileName));
-  ItemName := Path;
+  ItemName := PChar(ExtractFileName(FileName));
   {$ELSE ~SUPPORTS_UNICODE}
   MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, PAnsiChar(ExtractFilePath(FileName)), -1, Path, MAX_PATH);
   MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, PAnsiChar(ExtractFileName(FileName)), -1, ItemName, MAX_PATH);
   {$ENDIF ~SUPPORTS_UNICODE}
   if Succeeded(SHGetDesktopFolder(DesktopFolder)) then
   begin
+    Attr := 0;
     if Succeeded(DesktopFolder.ParseDisplayName(0, nil, Path, Eaten, PathIdList,
       Attr)) then
     begin
@@ -915,6 +932,7 @@ begin
     Result := True
   else
   begin
+    Malloc := nil;
     if Succeeded(SHGetMalloc(Malloc)) and (Malloc.DidAlloc(IdList) > 0) then
     begin
       Malloc.Free(IdList);
@@ -1019,8 +1037,13 @@ begin
 end;
 
 const
+  {$IFDEF SUPPORTS_UNICODE}
+  IID_IShellLink: TGUID = { IID_IShellLinkW }
+    (D1:$000214F9; D2:$0000; D3:$0000; D4:($C0,$00,$00,$00,$00,$00,$00,$46));
+  {$ELSE ~SUPPORTS_UNICODE}
   IID_IShellLink: TGUID = { IID_IShellLinkA }
     (D1:$000214EE; D2:$0000; D3:$0000; D4:($C0,$00,$00,$00,$00,$00,$00,$46));
+  {$ENDIF ~SUPPORTS_UNICODE}
 
 function ShellLinkCreateSystem(const Link: TShellLink; const Folder: Integer;
   const FileName: string): HRESULT;
@@ -1032,11 +1055,15 @@ begin
   SetLength(Path, MAX_PATH);
   if Succeeded(SHGetSpecialFolderLocation(0, Folder, Pidl)) then
   begin
-    Path := PidltoPath(Pidl);
-    if Path <> '' then
-    begin
-      StrResetLength(Path);
-      Result := ShellLinkCreate(Link, PathAddSeparator(Path) + FileName);
+    try
+      Path := PidltoPath(Pidl);
+      if Path <> '' then
+      begin
+        StrResetLength(Path);
+        Result := ShellLinkCreate(Link, PathAddSeparator(Path) + FileName);
+      end;
+    finally
+      CoTaskMemFree(Pidl);
     end;
   end;
 end;
@@ -1084,12 +1111,12 @@ begin
   end;
 end;
 
-function ShellLinkResolve(const FileName: string; var Link: TShellLink): HRESULT;
+function ShellLinkResolve(const FileName: string; out Link: TShellLink): HRESULT;
 begin
   Result := ShellLinkResolve(FileName, Link, SLR_ANY_MATCH);
 end;
 
-function ShellLinkResolve(const FileName: string; var Link: TShellLink;
+function ShellLinkResolve(const FileName: string; out Link: TShellLink;
   const ResolveFlags: Cardinal): HRESULT;
 const
   MAX_FEATURE_CHARS = 38;   // maximum chars in MSI feature name
@@ -1118,10 +1145,10 @@ begin
     // the feature was set to "Install on first use"
     if RtdlLoadMsiFuncs then
     begin
-      FillChar(ProductGuid, SizeOf(ProductGuid), #0);
-      FillChar(FeatureID, SizeOf(FeatureID), #0);
-      FillChar(ComponentGuid, SizeOf(ComponentGuid), #0);
-      FillChar(TargetFile, SizeOf(TargetFile), #0);
+      ResetMemory(ProductGuid, SizeOf(ProductGuid));
+      ResetMemory(FeatureID, SizeOf(FeatureID));
+      ResetMemory(ComponentGuid, SizeOf(ComponentGuid));
+      ResetMemory(TargetFile, SizeOf(TargetFile));
 
       if RtdlMsiGetShortcutTarget(PChar(FileName), ProductGuid, FeatureID, ComponentGuid) = ERROR_SUCCESS then
       begin
@@ -1156,6 +1183,7 @@ begin
 
         if not TargetResolved then
         begin
+          Win32FindData.dwFileAttributes := 0;
           ShellLink.GetPath(PChar(Buffer), MAX_PATH, Win32FindData, SLGP_SHORTPATH);
           Link.Target := PChar(Buffer);
         end;
@@ -1205,7 +1233,7 @@ begin
   begin
     if Link.IdList <> nil then
     begin
-      FillChar(Info, SizeOf(Info), 0);
+      ResetMemory(Info, SizeOf(Info));
       if SHGetFileInfo(PChar(Link.IdList), 0, Info, SizeOf(Info), SHGFI_PIDL or SHGFI_ICON) <> 0 then
         Result := Info.hIcon;
     end;
@@ -1238,6 +1266,7 @@ begin
   if Succeeded(Folder.GetUIObjectOf(0, 1, Item, IQueryInfo, nil,
     Pointer(QueryInfo))) then
   begin
+    InfoTip := nil;
     if Succeeded(QueryInfo.GetInfoTip(0, InfoTip)) then
     begin
       Result := WideCharToString(InfoTip);
@@ -1308,6 +1337,8 @@ var
   OvlLarge, OvlSmall: HICON;
 begin
   Result := False;
+  OvlLarge := 0;
+  OvlSmall := 0;
   if ExtractIconEx(PChar('shell32.dll'), 29, OvlLarge, OvlSmall, 1) = 2 then
   begin
     OverlayIcon(Large, OvlLarge, True);
@@ -1320,6 +1351,8 @@ var
   OvlLarge, OvlSmall: HICON;
 begin
   Result := False;
+  OvlLarge := 0;
+  OvlSmall := 0;
   if ExtractIconEx(PChar('shell32.dll'), 28, OvlLarge, OvlSmall, 1) = 2 then
   begin
     OverlayIcon(Large, OvlLarge, True);
@@ -1332,7 +1365,7 @@ var
   FileInfo: TSHFileInfo;
   ImageList: HIMAGELIST;
 begin
-  FillChar(FileInfo, SizeOf(FileInfo), #0);
+  ResetMemory(FileInfo, SizeOf(FileInfo));
   if Flags = 0 then
     Flags := SHGFI_SHELLICONSIZE;
   ImageList := SHGetFileInfo('', 0, FileInfo, SizeOf(FileInfo),
@@ -1345,16 +1378,18 @@ function ShellExecEx(const FileName: string; const Parameters: string;
 var
   Sei: TShellExecuteInfo;
 begin
-  FillChar(Sei, SizeOf(Sei), #0);
+  ResetMemory(Sei, SizeOf(Sei));
   Sei.cbSize := SizeOf(Sei);
   Sei.fMask := SEE_MASK_DOENVSUBST or SEE_MASK_FLAG_NO_UI;
   Sei.lpFile := PChar(FileName);
   Sei.lpParameters := PCharOrNil(Parameters);
   Sei.lpVerb := PCharOrNil(Verb);
   Sei.nShow := CmdShow;
-  {$T+}
+  {$TYPEDADDRESS ON}
   Result := ShellExecuteEx(@Sei);
-  {$T-}
+  {$IFNDEF TYPEDADDRESS_ON}
+  {$TYPEDADDRESS OFF}
+  {$ENDIF ~TYPEDADDRESS_ON}
 end;
 
 { TODO -cHelp : author Jean-Fabien Connault note, ShellExecEx() above used to be ShellExec()... }
@@ -1372,7 +1407,7 @@ var
   Res: LongBool;
   Msg: tagMSG;
 begin
-  FillChar(Sei, SizeOf(Sei), #0);
+  ResetMemory(Sei, SizeOf(Sei));
   Sei.cbSize := SizeOf(Sei);
   Sei.fMask := SEE_MASK_DOENVSUBST  or SEE_MASK_FLAG_NO_UI  or SEE_MASK_NOCLOSEPROCESS or
     SEE_MASK_FLAG_DDEWAIT;
@@ -1381,14 +1416,17 @@ begin
   Sei.lpVerb := PCharOrNil(Verb);
   Sei.nShow := CmdShow;
   Sei.lpDirectory := PCharOrNil(Directory);
-  {$T+}
+  {$TYPEDADDRESS ON}
   Result := ShellExecuteEx(@Sei);
-  {$T-}
+  {$IFNDEF TYPEDADDRESS_ON}
+  {$TYPEDADDRESS OFF}
+  {$ENDIF ~TYPEDADDRESS_ON}
   if Result then
   begin
     WaitForInputIdle(Sei.hProcess, INFINITE);
     while WaitForSingleObject(Sei.hProcess, 10) = WAIT_TIMEOUT do
       repeat
+        Msg.hwnd := 0;
         Res := PeekMessage(Msg, Sei.Wnd, 0, 0, PM_REMOVE);
         if Res then
         begin
@@ -1406,15 +1444,8 @@ begin
 end;
 
 { TODO: Dynamic linking - move TRasDialDlgA to JclWin32}
-
 type
-  TRasDialDlgFuncA = function(lpszPhonebook, lpszEntry, lpszPhoneNumber: PAnsiChar; lpInfo: PRasDialDlg): BOOL; stdcall;
-  TRasDialDlgFuncW = function(lpszPhonebook, lpszEntry, lpszPhoneNumber: PWideChar; lpInfo: PRasDialDlg): BOOL; stdcall;
-  {$IFDEF SUPPORTS_UNICODE}
-  TRasDialDlgFunc = TRasDialDlgFuncW;
-  {$ELSE ~SUPPORTS_UNICODE}
-  TRasDialDlgFunc = TRasDialDlgFuncA;
-  {$ENDIF ~SUPPORTS_UNICODE}
+  TRasDialDlgFunc = function(lpszPhonebook, lpszEntry, lpszPhoneNumber: PChar; lpInfo: PRasDialDlg): BOOL; stdcall;
 
 function ShellRasDial(const EntryName: string): Boolean;
 var
@@ -1431,7 +1462,7 @@ begin
        @RasDialDlg := GetProcAddress(RasDlg, PChar('RasDialDlg' + AWSuffix));
        if @RasDialDlg <> nil then
        begin
-         FillChar(Info, SizeOf(Info), 0);
+         ResetMemory(Info, SizeOf(Info));
          Info.dwSize := SizeOf(Info);
          Result := RasDialDlg(nil, PChar(EntryName), nil, @Info);
        end;
@@ -1477,6 +1508,7 @@ var
   FileInfo: TSHFileInfo;
   R: DWORD;
 begin
+  FileInfo.dwAttributes := 0;
   R := SHGetFileInfo(PChar(FileName), 0, FileInfo, SizeOf(FileInfo), SHGFI_EXETYPE);
   case LoWord(R) of
     IMAGE_DOS_SIGNATURE:
@@ -1499,7 +1531,7 @@ var
   Buffer: array [0..MAX_PATH-1] of Char;
   I: Integer;
 begin
-  FillChar(Buffer, SizeOf(Buffer), #0);
+  ResetMemory(Buffer, SizeOf(Buffer));
   Res := FindExecutable(PChar(FileName), PCharOrNil(DefaultDir), Buffer);
   if Res > 32 then
   begin
@@ -1519,7 +1551,7 @@ var
   FileInfo: TSHFileInfo;
   ImageList: HIMAGELIST;
 begin
-  FillChar(FileInfo, SizeOf(FileInfo), #0);
+  ResetMemory(FileInfo, SizeOf(FileInfo));
   if Flags = 0 then
     Flags := SHGFI_SHELLICONSIZE;
   ImageList := SHGetFileInfo(PChar(FileName), 0, FileInfo, SizeOf(FileInfo),

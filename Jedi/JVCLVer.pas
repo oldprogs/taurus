@@ -15,28 +15,69 @@ Portions created by Joe Doe are Copyright (C) 1999 Joe Doe.
 Portions created by XXXX Corp. are Copyright (C) 1998, 1999 XXXX Corp.
 All Rights Reserved.
 
-Contributor(s): Michael Beck [mbeck@bigfoot.com].
+Contributor(s):
+  Michael Beck [mbeck att bigfoot dott com].
+  Hofi
 
-Last Modified: 2000-02-28
+Last Modified: 2004-10-19
+
+Changes:
+2004-10-10:
+  * Added by Hofi
+      JVCL_VERSION
+        Helps conditional compiling in BCB.
 
 You may retrieve the latest version of this file at the Project JEDI's JVCL home page,
-located at http://jvcl.sourceforge.net
+located at http://jvcl.delphi-jedi.org
 
 Known Issues:
 -----------------------------------------------------------------------------}
-
-{$I JVCL.INC}
+// $Id: JVCLVer.pas 12601 2009-11-05 21:39:03Z obones $
 
 unit JVCLVer;
 
+{$I jvcl.inc}
+
 interface
 
+{$IFDEF UNITVERSIONING}
+uses
+  JclUnitVersioning;
+{$ENDIF UNITVERSIONING}
+
 const
-  JVCL_VERSIONSTRING = '2.10';
+  sJVCLVersion = '3.40';
+  JVCLVersionMajor   = 3;    // 0=pre-release|beta/1, 2, ...=final
+  JVCLVersionMinor   = 40;   // minor release
+  JVCLVersionRelease = 0;    // 0: pre-release|beta/>=1: release
+  JVCLVersionBuild   = 0;    // build number, days since march 1, 2006
+
+  JVCLVersion = (JVCLVersionMajor shl 24) or (JVCLVersionMinor shl 16) or
+                (JVCLVersionRelease shl 15) or (JVCLVersionBuild shl 0);
+  JVCL_VERSION = JVCLVersionMajor * 100 + JVCLVersionMinor;
+  JVCL_VERSIONSTRING = sJVCLVersion;
 
 type
   TJVCLAboutInfo = (JVCLAbout);
 
+{$IFDEF UNITVERSIONING}
+const
+  UnitVersioning: TUnitVersionInfo = (
+    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_40_PREPARATION/run/JVCLVer.pas $';
+    Revision: '$Revision: 12601 $';
+    Date: '$Date: 2009-11-05 22:39:03 +0100 (jeu., 05 nov. 2009) $';
+    LogPath: 'JVCL\run'
+  );
+{$ENDIF UNITVERSIONING}
+
 implementation
+
+{$IFDEF UNITVERSIONING}
+initialization
+  RegisterUnitVersion(HInstance, UnitVersioning);
+
+finalization
+  UnregisterUnitVersion(HInstance);
+{$ENDIF UNITVERSIONING}
 
 end.

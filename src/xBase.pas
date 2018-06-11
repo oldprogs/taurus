@@ -228,8 +228,8 @@ type
   PFileInfo = ^TFileInfo;
   TFileInfo = record
     Attr,
-      Size,
       Time: DWORD;
+    Size: Int64;
   end;
 
   TuFindData = record
@@ -1119,7 +1119,9 @@ uses
   RadIni,
   wizard,
   Registry,
-  DateUtils
+  DateUtils,
+  JVCLVer,
+  JclBase
 {$IFDEF FullDebugMode}
   ,
   JCLDebug
@@ -1462,7 +1464,8 @@ begin
   FindData.Info.Attr := wf.dwFileAttributes;
   FindData.Info.Time := uCvtGetFileTime(wf.ftLastWriteTime.dwLowDateTime,
     wf.ftLastWriteTime.dwHighDateTime);
-  FindData.Info.Size := wf.nFileSizeLow;
+  Int64Rec(FindData.Info.Size).Lo := wf.nFileSizeLow;
+  Int64Rec(FindData.Info.Size).Hi := wf.nFileSizeHigh;
   FindData.FName := wf.cFileName;
 end;
 
@@ -2613,7 +2616,8 @@ begin
     if not Result then
       Exit;
     Info.Attr := D.dwFileAttributes;
-    Info.Size := D.nFileSizeLow;
+    Int64Rec(Info.Size).Lo := D.nFileSizeLow;
+    Int64Rec(Info.Size).Hi := D.nFileSizeHigh;
     Info.Time := uCvtGetFileTime(D.ftLastWriteTime.dwLowDateTime,
       D.ftLastWriteTime.dwHighDateTime);
     Result := True;
@@ -6750,17 +6754,29 @@ initialization
       9..11: CReleaseSpec := 'Autumn';
     end;
 
-    CProductDate := FormatDateTime('mmm d, yyyy; hh:nn', date);
+    CProductDate := FormatDateTime('mmm d, yyyy; hh:nn', Date);
     CProductVersionForAbout := GetJustFileVersion + ' (' + CReleaseSpec + ')';
 //    CProductVersion := Format('%s/%s/%s', [CProductVersionA,
 //      FormatDateTime('dd.mm.yyyy, hh:nn', date), CReleaseSpec]);
     CProductVersionForAbout := CProductVersionForAbout + Format(#10'Compiled: %s', [FormatDateTime('dd-mmm-yyyy, hh:nn:ss', Date)]);
+
+    CProductVersionForAbout := CProductVersionForAbout + #10'JVCL: ' + IntToStr(JVCLVersionMajor) + '.' + IntToStr(JVCLVersionMinor) + '.' + IntToStr(JVCLVersionRelease) + '.' + IntToStr(JVCLVersionBuild);    // build number, days since march 1, 2006
+{$IFDEF FullDebugMode}
+    CProductVersionForAbout := CProductVersionForAbout + #9#9'FastMM: ' + FastMMVersion;
+{$ENDIF}
+    CProductVersionForAbout := CProductVersionForAbout + #10'JCL: ' + IntToStr(JclVersionMajor) + '.' + IntToStr(JclVersionMinor) + '.' + IntToStr(JclVersionRelease) + '.' + IntToStr(JclVersionBuild); // build number, days since march 1, 2000
+{$IFDEF FullDebugMode}
+    CProductVersionForAbout := CProductVersionForAbout + #9#9'DEBUG: enabled';
+{$ENDIF}
+
+(*
 {$IFDEF FullDebugMode}
     CProductVersionForAbout := CProductVersionForAbout + #10'FastMM: ' + FastMMVersion;
 {$ENDIF}
 {$IFDEF FullDebugMode}
     CProductVersionForAbout := CProductVersionForAbout + #10'DEBUG: enabled';
 {$ENDIF}
+*)
 
     CProductVersion := GetJustFileVersion + '/' + CReleaseSpec;
 //    CProductVersion := Format('%s/%s/%s', [CProductVersionA,

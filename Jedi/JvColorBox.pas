@@ -17,7 +17,7 @@ All Rights Reserved.
 Contributor(s):
 
 You may retrieve the latest version of this file at the Project JEDI's JVCL home page,
-located at http://jvcl.sourceforge.net
+located at http://jvcl.delphi-jedi.org
 
 Description:
   TJvColorBox:
@@ -40,7 +40,7 @@ Description:
 
 Known Issues:
 -----------------------------------------------------------------------------}
-// $Id: JvColorBox.pas 12066 2008-12-02 19:25:24Z ahuser $
+// $Id: JvColorBox.pas 12461 2009-08-14 17:21:33Z obones $
 
 unit JvColorBox;
 
@@ -52,10 +52,7 @@ uses
   {$IFDEF UNITVERSIONING}
   JclUnitVersioning,
   {$ENDIF UNITVERSIONING}
-  Windows, Messages, Classes, Graphics, Controls, Forms, Menus,
-  {$IFDEF HAS_UNIT_TYPES}
-  Types,
-  {$ENDIF HAS_UNIT_TYPES}
+  Windows, Messages, Classes, Graphics, Controls, Forms, Menus, Types,
   JvComponent;
 
 type
@@ -162,9 +159,9 @@ type
 {$IFDEF UNITVERSIONING}
 const
   UnitVersioning: TUnitVersionInfo = (
-    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_36_PREPARATION/run/JvColorBox.pas $';
-    Revision: '$Revision: 12066 $';
-    Date: '$Date: 2008-12-02 20:25:24 +0100 (mar., 02 déc. 2008) $';
+    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_40_PREPARATION/run/JvColorBox.pas $';
+    Revision: '$Revision: 12461 $';
+    Date: '$Date: 2009-08-14 19:21:33 +0200 (ven., 14 août 2009) $';
     LogPath: 'JVCL\run'
   );
 {$ENDIF UNITVERSIONING}
@@ -492,4 +489,3 @@ finalization
 {$ENDIF UNITVERSIONING}
 
 end.
-

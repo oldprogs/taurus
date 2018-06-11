@@ -18,11 +18,11 @@ All Rights Reserved.
 Contributor(s): -
 
 You may retrieve the latest version of this file at the Project JEDI's JVCL home page,
-located at http://jvcl.sourceforge.net
+located at http://jvcl.delphi-jedi.org
 
 Known Issues:
 -----------------------------------------------------------------------------}
-// $Id: JvComponent.pas 11567 2007-11-14 23:24:35Z ahuser $
+// $Id: JvComponent.pas 12633 2009-12-31 09:54:44Z obones $
 
 unit JvComponent;
 
@@ -51,9 +51,10 @@ type
   TJvForm = class(TJvExForm)
   private
     FIsFocusable: Boolean;
+    {$IFNDEF DELPHI2009_UP}
     procedure CMShowingChanged(var Message: TMessage); message CM_SHOWINGCHANGED;
+    {$ENDIF ~DELPHI2009_UP}
     procedure WMMouseActivate(var Msg: TMessage); message WM_MOUSEACTIVATE;
-  protected
   public
     constructor Create(AOwner: TComponent); override;
     constructor CreateNew(AOwner: TComponent; Dummy: Integer = 0); override;
@@ -84,22 +85,17 @@ type
 {$IFDEF UNITVERSIONING}
 const
   UnitVersioning: TUnitVersionInfo = (
-    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_36_PREPARATION/run/JvComponent.pas $';
-    Revision: '$Revision: 11567 $';
-    Date: '$Date: 2007-11-15 00:24:35 +0100 (jeu., 15 nov. 2007) $';
+    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_40_PREPARATION/run/JvComponent.pas $';
+    Revision: '$Revision: 12633 $';
+    Date: '$Date: 2009-12-31 10:54:44 +0100 (jeu., 31 déc. 2009) $';
     LogPath: 'JVCL\run'
   );
 {$ENDIF UNITVERSIONING}
 
 implementation
 
-{$IFDEF COMPILER6_UP}
 uses
   RTLConsts;
-{$ELSE}
-uses
-  Consts;
-{$ENDIF COMPILER6_UP}
 
 {$IFDEF USE_DXGETTEXT}
 const
@@ -112,22 +108,14 @@ constructor TJvForm.Create(AOwner: TComponent);
 begin
 //  inherited Create(AOwner);
   CreateNew(AOwner, 0);
-  {$IFDEF CLR}
-  GlobalNameSpace.AcquireWriterLock(MaxInt);
-  {$ELSE}
   GlobalNameSpace.BeginWrite;
-  {$ENDIF CLR}
   try
     if (ClassType <> TJvForm) and not (csDesigning in ComponentState) then
     begin
       Include(FFormState, fsCreating);
       try
         if not InitInheritedComponent(Self, TJvForm) then
-          {$IFDEF CLR}
-          raise EResNotFound.CreateFmt(SResNotFound, [ClassName]);
-          {$ELSE}
           raise EResNotFound.CreateResFmt(@SResNotFound, [ClassName]);
-         {$ENDIF CLR}
 
         {$IFDEF USE_DXGETTEXT}
         TranslateComponent(Self, cDomainName);
@@ -135,17 +123,11 @@ begin
       finally
         Exclude(FFormState, fsCreating);
       end;
-      {$IFNDEF CLR}
       if OldCreateOrder then
-      {$ENDIF !CLR}
         DoCreate;
     end;
   finally
-    {$IFDEF CLR}
-    GlobalNameSpace.ReleaseWriterLock;
-    {$ELSE}
     GlobalNameSpace.EndWrite;
-    {$ENDIF CLR}
   end;
 end;
 
@@ -164,6 +146,7 @@ end;
 
 {$ENDIF USE_DXGETTEXT}
 
+{$IFNDEF DELPHI2009_UP}
 procedure TJvForm.CMShowingChanged(var Message: TMessage);
 var
   NewParent: HWND;
@@ -200,6 +183,7 @@ begin
   end;
   inherited;
 end;
+{$ENDIF ~DELPHI2009_UP}
 
 function TJvForm.ShowModal: Integer;
 var
@@ -264,11 +248,7 @@ begin
         FSearchTickCount := TickCount;
         if Length(FSearchText) < 32 then
           FSearchText := FSearchText + Key;
-        {$IFNDEF CLR}
-        SendMessage(Handle, LB_SELECTSTRING, WPARAM(-1), LPARAM(PChar(FSearchText)));
-        {$ELSE}
-        SendTextMessage(Handle, LB_SELECTSTRING, WPARAM(-1), FSearchText);
-        {$ENDIF !CLR}
+        SendMessage(Handle, LB_SELECTSTRING, -1, LPARAM(PChar(FSearchText)));
         Key := #0;
       end;
   end;

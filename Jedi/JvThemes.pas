@@ -16,11 +16,11 @@ All Rights Reserved.
 Contributors:
 
 You may retrieve the latest version of this file at the Project JEDI's JVCL home page,
-located at http://jvcl.sourceforge.net
+located at http://jvcl.delphi-jedi.org
 
 Known Issues:
 -----------------------------------------------------------------------------}
-// $Id: JvThemes.pas 12049 2008-11-17 23:32:53Z ahuser $
+// $Id: JvThemes.pas 12579 2009-10-26 19:59:53Z ahuser $
 
 unit JvThemes;
 
@@ -90,9 +90,7 @@ type
   TThemedWindow = {$IFDEF COMPILER7_UP}Themes{$ELSE}ThemeSrv{$ENDIF}.TThemedWindow; {$EXTERNALSYM TThemedWindow}
   TThemeData = {$IFDEF COMPILER7_UP}Themes{$ELSE}ThemeSrv{$ENDIF}.TThemeData; {$EXTERNALSYM TThemeData}
 
-  {$IFNDEF CLR}
   PThemedElementDetails = {$IFDEF COMPILER7_UP}Themes{$ELSE}ThemeSrv{$ENDIF}.PThemedElementDetails; {$EXTERNALSYM PThemedElementDetails}
-  {$ENDIF ~CLR}
   TThemedElementDetails = {$IFDEF COMPILER7_UP}Themes{$ELSE}ThemeSrv{$ENDIF}.TThemedElementDetails; {$EXTERNALSYM TThemedElementDetails}
   TThemeServices = {$IFDEF COMPILER7_UP}Themes{$ELSE}ThemeSrv{$ENDIF}.TThemeServices; {$EXTERNALSYM TThemeServices}
 
@@ -797,9 +795,9 @@ procedure DrawGlassableImageList(ImageList: HIMAGELIST; Index: Integer; Dest: HD
 {$IFDEF UNITVERSIONING}
 const
   UnitVersioning: TUnitVersionInfo = (
-    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_36_PREPARATION/run/JvThemes.pas $';
-    Revision: '$Revision: 12049 $';
-    Date: '$Date: 2008-11-18 00:32:53 +0100 (mar., 18 nov. 2008) $';
+    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_40_PREPARATION/run/JvThemes.pas $';
+    Revision: '$Revision: 12579 $';
+    Date: '$Date: 2009-10-26 20:59:53 +0100 (lun., 26 oct. 2009) $';
     LogPath: 'JVCL\run'
   );
 {$ENDIF UNITVERSIONING}
@@ -841,7 +839,7 @@ begin
         PerformEraseBackground(Control, Canvas.Handle, R)
       else
         ThemeServices.DrawParentBackground(TWinControl(Control).Handle, Canvas.Handle, nil,
-          False, {$IFNDEF CLR}@{$ENDIF}R);
+          False, @R);
     end
     else
       PerformEraseBackground(Control, Canvas.Handle, R)
@@ -866,7 +864,7 @@ var
 {$ENDIF JVCLThemesEnabled}
 begin
   {$IFDEF JVCLThemesEnabled}
-  GetObject(Brush, SizeOf(LogBrush), {$IFNDEF CLR}@{$ENDIF}LogBrush);
+  GetObject(Brush, SizeOf(LogBrush), @LogBrush);
   if ThemeServices.ThemesEnabled and
      (Control.Parent <> nil) and
      (LogBrush.lbColor = Cardinal(ColorToRGB(TWinControlThemeInfo(Control.Parent).Color))) and
@@ -878,8 +876,7 @@ begin
       if TWinControl(Control).DoubleBuffered then
         PerformEraseBackground(Control, DC, R)
       else
-        ThemeServices.DrawParentBackground(TWinControl(Control).Handle, DC, nil, False,
-          {$IFNDEF CLR}@{$ENDIF}R);
+        ThemeServices.DrawParentBackground(TWinControl(Control).Handle, DC, nil, False, @R);
     end
     else
       PerformEraseBackground(Control, DC, R)
@@ -1291,7 +1288,7 @@ var
 {$ENDIF COMPILER11_UP}
 begin
   {$IFDEF COMPILER11_UP}
-  if ThemeServices.ThemesEnabled then
+  if ThemeServices.ThemesEnabled and CheckWin32Version(6, 0) then
   begin
     FillChar(Options, SizeOf(Options), 0);
     Options.dwSize := SizeOf(Options);
@@ -1331,7 +1328,7 @@ var
 {$ENDIF COMPILER11_UP}
 begin
   {$IFDEF COMPILER11_UP}
-  if PaintOnGlass then
+  if PaintOnGlass and CheckWin32Version(6, 0) then
   begin
     { TODO : Not working correctly on a JvSpeedButton. But it works if used direcly on
              a sheet of glass. Some optimizations could be done. }
@@ -1887,12 +1884,12 @@ begin
       Exit;
 
     Code.Jmp := $E9;
-    Code.Offset := Integer(@WMEraseBkgndHook) - (Integer(@P) + 1) - SizeOf(Code);
+    Code.Offset := PAnsiChar(@WMEraseBkgndHook) - (PAnsiChar(@P) + 1) - SizeOf(Code);
 
     { The strange thing is that the $e9 cannot be overriden with a "PUSH xxx" }
-    if ReadProcessMemory(GetCurrentProcess, Pointer(Cardinal(@P) + 1),
+    if ReadProcessMemory(GetCurrentProcess, Pointer(PAnsiChar(@P) + 1),
                          @SavedWinControlCode, SizeOf(SavedWinControlCode), N) and
-      WriteProtectedMemory(Pointer(Cardinal(@P) + 1), @Code, SizeOf(Code), N) then
+      WriteProtectedMemory(Pointer(PAnsiChar(@P) + 1), @Code, SizeOf(Code), N) then
     begin
       WinControlHookInstalled := True;
       ThemeHooks.FEraseBkgndHooked := True;

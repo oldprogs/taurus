@@ -326,6 +326,7 @@ type
     cbDelOld: TCheckBox;
     seDelOld: TJvSpinEdit;
     sbMainAKABrowse: TButton;
+    cbUptime1251: TCheckBox;
     procedure tvPagesChange(Sender: TObject; Node: TTreeNode);
     procedure FormCreate(Sender: TObject);
     procedure btnReloadRASEntriesClick(Sender: TObject);
@@ -439,6 +440,7 @@ begin
   IniFile.AutoNodelist := cbCompileNodelist.Checked;
   IniFile.playsounds := cbPlaySounds.Checked;
   IniFile.WriteBool('Main', 'VersionTransmit', cbVersionTransmit.Checked);
+  IniFile.WriteBool('Main', 'Uptime1251', cbUptime1251.Checked);
   //Main end
 
   //System tab
@@ -750,8 +752,8 @@ begin
     cbCloseBtnAction.ItemIndex := IniFile.OnClose;
   cbUseNodelistData.Checked := IniFile.UseNodelistData;
   cbCompileNodelist.Checked := IniFile.AutoNodelist;
-  cbVersionTransmit.Checked := IniFile.ReadBool('Main', 'VersionTransmit',
-    True);
+  cbVersionTransmit.Checked := IniFile.ReadBool('Main', 'VersionTransmit', True);
+  cbUptime1251.Checked := IniFile.ReadBool('Main', 'Uptime1251', True);
   cbPlaySounds.Checked := IniFile.playsounds;
   //Main end
 

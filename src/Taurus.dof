@@ -90,7 +90,7 @@ MaxStackSize=1048576
 ImageBase=4194304
 ExeDescription=
 [Directories]
-OutputDir=C:\fido\taurus
+OutputDir=E:\Mail\Radius
 UnitOutputDir=X:\Radius\taurus\DCU
 PackageDLLOutputDir=
 PackageDCPOutputDir=
@@ -104,7 +104,7 @@ RunParams=
 HostApplication=
 Launcher=
 UseLauncher=0
-DebugCWD=C:\fido\taurus
+DebugCWD=E:\Mail\Radius
 [Language]
 ActiveLang=
 ProjectLang=
@@ -113,12 +113,12 @@ RootDir=
 IncludeVerInfo=1
 AutoIncBuild=1
 MajorVer=5
-MinorVer=101
+MinorVer=112
 Release=2009
-Build=53
-Debug=1
-PreRelease=1
-Special=1
+Build=71
+Debug=0
+PreRelease=0
+Special=0
 Private=0
 DLL=0
 Locale=1033
@@ -126,9 +126,9 @@ CodePage=1252
 [Version Info Keys]
 CompanyName=Taurus
 FileDescription=FTN-Mailer
-FileVersion=5.101.2009.53
+FileVersion=5.112.2009.91
 InternalName=Taurus
-LegalCopyright=2004 by Taurus
+LegalCopyright=2004-2010 by Taurus
 LegalTrademarks=Originally by RIT Labs
 OriginalFilename=Argus.exe
 ProductName=Taurus
@@ -137,6 +137,7 @@ Comments=
 SpecialBuild=
 [Excluded Packages]
 C:\WINDOWS\system32\ibevnt70.bpl=Borland Interbase Event Alerter Component
+F:\Program Files\Borland\BPL\MYCOMPS70.bpl=Bakhvaloff's Components
 [HistoryLists\hlConditionals]
 Count=2
 Item0=FullDebugMode
@@ -157,5 +158,5 @@ Item0=X:\Radius\taurus\DCU
 Item1=G:\KIN\PAS\Radius\Dcu
 [HistoryLists\hlOutputDirectorry]
 Count=2
-Item0=C:\fido\taurus
-Item1=E:\Mail\Radius
+Item0=E:\Mail\Radius
+Item1=C:\fido\taurus

@@ -16,11 +16,11 @@ All Rights Reserved.
 Contributor(s):
 
 You may retrieve the latest version of this file at the Project JEDI's JVCL home page,
-located at http://jvcl.sourceforge.net
+located at http://jvcl.delphi-jedi.org
 
 Known Issues:
 -----------------------------------------------------------------------------}
-// $Id: JvTranslateString.pas 11642 2007-12-24 22:20:02Z obones $
+// $Id: JvTranslateString.pas 12461 2009-08-14 17:21:33Z obones $
 
 unit JvTranslateString;
 
@@ -84,11 +84,7 @@ type
     procedure SetDateTimeFormat(const Value: string);
   public
     constructor Create(AOwner: TComponent); override;
-    {$IFDEF BCB5}
-    function TranslateStringWithChanged(InString: string; var Changed: Boolean): string; 
-    {$ELSE}
     function TranslateString(InString: string; var Changed: Boolean): string; overload;
-    {$ENDIF BCB5}
     function TranslateString(InString: string): string; overload;
   published
     property DateFormat: string read FDateFormat write FDateFormat;
@@ -102,9 +98,9 @@ type
 {$IFDEF UNITVERSIONING}
 const
   UnitVersioning: TUnitVersionInfo = (
-    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_36_PREPARATION/run/JvTranslateString.pas $';
-    Revision: '$Revision: 11642 $';
-    Date: '$Date: 2007-12-24 23:20:02 +0100 (lun., 24 déc. 2007) $';
+    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_40_PREPARATION/run/JvTranslateString.pas $';
+    Revision: '$Revision: 12461 $';
+    Date: '$Date: 2009-08-14 19:21:33 +0200 (ven., 14 août 2009) $';
     LogPath: 'JVCL\run'
     );
 {$ENDIF UNITVERSIONING}
@@ -112,11 +108,7 @@ const
 implementation
 
 uses
-  SysUtils,
-  {$IFDEF HAS_UNIT_TYPES}
-  Types,
-  {$ENDIF HAS_UNIT_TYPES}
-  ExtCtrls, ComCtrls, StdCtrls, Forms, Dialogs,
+  SysUtils, Types, ExtCtrls, ComCtrls, StdCtrls, Forms, Dialogs,
   JclFileUtils,
   JvJVCLUtils;
 
@@ -189,16 +181,6 @@ begin
 end;
 
 function TJvTranslateString.GetVersionInfoAppName: string;
-{$IFDEF CLR} // todo: TJclFileVersionInfo for .NET
-begin
-  if not FAppNameHandled then
-  begin
-    FAppName := cDefaultAppName;
-    FAppNameHandled := True;
-  end;
-  Result := FAppName;
-end;
-{$ELSE}
 var
   VersionInfo: TJclFileVersionInfo;
 begin
@@ -226,19 +208,8 @@ begin
     raise;
   end;
 end;
-{$ENDIF CLR}
 
 function TJvTranslateString.GetVersionInfoFileVersion: string;
-{$IFDEF CLR} // todo: TJclFileVersionInfo for .NET
-begin
-  if not FFileVersionHandled then
-  begin
-    FFileVersion := cDefaultVersion;
-    FFileVersionHandled := True;
-  end;
-  Result := FFileVersion;
-end;
-{$ELSE}
 var
   VersionInfo: TJclFileVersionInfo;
 begin
@@ -266,19 +237,8 @@ begin
     raise;
   end;
 end;
-{$ENDIF CLR}
 
 function TJvTranslateString.GetVersionInfoProductVersion: string;
-{$IFDEF CLR} // todo: TJclFileVersionInfo for .NET
-begin
-  if not FProductVersionHandled then
-  begin
-    FProductVersion := cDefaultVersion;
-    FProductVersionHandled := True;
-  end;
-  Result := FProductVersion;
-end;
-{$ELSE}
 var
   VersionInfo: TJclFileVersionInfo;
 begin
@@ -306,19 +266,8 @@ begin
     raise;
   end;
 end;
-{$ENDIF CLR}
 
 function TJvTranslateString.GetVersionInfoCompanyName: string;
-{$IFDEF CLR} // todo: TJclFileVersionInfo for .NET
-begin
-  if not FCompanyNameHandled then
-  begin
-    FCompanyName := cDefaultCompanyName;
-    FCompanyNameHandled := True;
-  end;
-  Result := FCompanyName;
-end;
-{$ELSE}
 var
   VersionInfo: TJclFileVersionInfo;
 begin
@@ -346,7 +295,6 @@ begin
     raise;
   end;
 end;
-{$ENDIF CLR}
 
 function TJvTranslateString.ProcessCommand(const Command: string; var CommandResult: string): Boolean;
 var
@@ -457,11 +405,7 @@ begin
   end;
 end;
 
-{$IFDEF BCB5}
-function TJvTranslateString.TranslateStringWithChanged(InString: string; var Changed: Boolean): string;
-{$ELSE}
 function TJvTranslateString.TranslateString(InString: string; var Changed: Boolean): string;
-{$ENDIF BCB5}
 var
   I, J: Integer;
   Command: string;
@@ -507,5 +451,4 @@ finalization
 {$ENDIF UNITVERSIONING}
 
 end.
-
 

@@ -17,11 +17,11 @@ All Rights Reserved.
 Contributor(s): Michael Beck [mbeck att bigfoot dott com].
 
 You may retrieve the latest version of this file at the Project JEDI's JVCL home page,
-located at http://jvcl.sourceforge.net
+located at http://jvcl.delphi-jedi.org
 
 Known Issues:
 -----------------------------------------------------------------------------}
-// $Id: JvMaxPixel.pas 10612 2006-05-19 19:04:09Z jfudickar $
+// $Id: JvMaxPixel.pas 12461 2009-08-14 17:21:33Z obones $
 
 unit JvMaxPixel;
 
@@ -64,9 +64,9 @@ type
 {$IFDEF UNITVERSIONING}
 const
   UnitVersioning: TUnitVersionInfo = (
-    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_36_PREPARATION/run/JvMaxPixel.pas $';
-    Revision: '$Revision: 10612 $';
-    Date: '$Date: 2006-05-19 21:04:09 +0200 (ven., 19 mai 2006) $';
+    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_40_PREPARATION/run/JvMaxPixel.pas $';
+    Revision: '$Revision: 12461 $';
+    Date: '$Date: 2009-08-14 19:21:33 +0200 (ven., 14 août 2009) $';
     LogPath: 'JVCL\run'
   );
 {$ENDIF UNITVERSIONING}
@@ -141,7 +141,7 @@ begin
 
       Result := TextWidth(Value) > Length;
       while (Value <> '') and (TextWidth(Value) > Length) do
-        Delete(Value, {$IFDEF CLR}Borland.Delphi.{$ENDIF}System.Length(Value), 1);
+        Delete(Value, System.Length(Value), 1);
     finally
       Free;
     end;
@@ -161,4 +161,3 @@ finalization
 {$ENDIF UNITVERSIONING}
 
 end.
-

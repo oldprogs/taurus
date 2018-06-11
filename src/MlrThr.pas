@@ -16787,7 +16787,8 @@ begin
    //  FreeObject(PollsCron);
    //  FreeObject(PollsAddrs);
   FreeObject(PerPolls);
-  FreeAndNil(ProcsLogger);
+  if not (ProcsLogger <> nil) then 
+    FreeAndNil(ProcsLogger);
   ZeroHandle(ProcsLogFHandle);
   inherited Destroy;
 end;

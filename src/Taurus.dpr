@@ -3,6 +3,7 @@ program Taurus;
 //{$IMAGEBASE $400000}
 
 {$R 'folders.res' 'folders.rc'}
+{.$R 'VerInfo.RES' 'VerInfo.rc'}
 {$R 'main.res' 'main.rc'}
 {$R 'xOutline.res' 'xOutline.rc'}
 {$I DEFINE.INC}

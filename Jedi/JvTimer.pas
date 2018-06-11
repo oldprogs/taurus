@@ -16,11 +16,11 @@ Copyright (c) 2001,2002 SGB Software
 All Rights Reserved.
 
 You may retrieve the latest version of this file at the Project JEDI's JVCL home page,
-located at http://jvcl.sourceforge.net
+located at http://jvcl.delphi-jedi.org
 
 Known Issues:
 -----------------------------------------------------------------------------}
-// $Id: JvTimer.pas 11991 2008-10-26 12:29:03Z ahuser $
+// $Id: JvTimer.pas 12502 2009-09-16 17:35:10Z ahuser $
 
 unit JvTimer;
 
@@ -48,6 +48,7 @@ type
     FTimer: TTimer;
     FEventTime: TJvTimerEventTime;
     FThreadPriority: TThreadPriority;
+    FInTimerEvent: Boolean;
     procedure SetThreadPriority(Value: TThreadPriority);
     procedure SetThreaded(Value: Boolean);
     procedure SetEnabled(Value: Boolean);
@@ -55,7 +56,8 @@ type
     procedure SetOnTimer(Value: TNotifyEvent);
     procedure UpdateTimer;
   protected
-    procedure Timer; dynamic;
+    procedure DoTimer(Sender: TObject);
+    procedure Timer; virtual;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -73,9 +75,9 @@ type
 {$IFDEF UNITVERSIONING}
 const
   UnitVersioning: TUnitVersionInfo = (
-    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_36_PREPARATION/run/JvTimer.pas $';
-    Revision: '$Revision: 11991 $';
-    Date: '$Date: 2008-10-26 13:29:03 +0100 (dim., 26 oct. 2008) $';
+    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_40_PREPARATION/run/JvTimer.pas $';
+    Revision: '$Revision: 12502 $';
+    Date: '$Date: 2009-09-16 19:35:10 +0200 (mer., 16 sept. 2009) $';
     LogPath: 'JVCL\run'
   );
 {$ENDIF UNITVERSIONING}
@@ -84,7 +86,7 @@ implementation
 
 uses
   Forms, Consts, SyncObjs,
-  JvJVCLUtils;
+  JvJVCLUtils, JvResources;
 
 //=== { TJvTimerThread } =====================================================
 
@@ -96,6 +98,8 @@ type
     FException: Exception;
     FPaused: Boolean;
     FPauseSection: TCriticalSection;
+    FCurrentDuration: Cardinal;
+
     procedure HandleException;
     procedure SetPaused(const Value: Boolean);
     function GetPaused: Boolean;
@@ -104,9 +108,6 @@ type
   public
     constructor Create(Timer: TJvTimer; Enabled: Boolean);
     destructor Destroy; override;
-    {$IFDEF CLR}
-    procedure Synchronize(Method: TThreadMethod); // makes method public
-    {$ENDIF CLR}
     property Terminated;
 
     property Paused: Boolean read GetPaused write SetPaused;
@@ -136,16 +137,9 @@ begin
     FPauseSection.Release;
 
     if not FPaused and Suspended then
-      Resume;
+      Suspended := False;
   end;
 end;
-
-{$IFDEF CLR}
-procedure TJvTimerThread.Synchronize(Method: TThreadMethod);
-begin
-  inherited Synchronize(Method);
-end;
-{$ENDIF CLR}
 
 destructor TJvTimerThread.Destroy;
 begin
@@ -159,7 +153,6 @@ procedure TJvTimerThread.Execute;
 const
   Step = 10;  // Time of a wait slot, in milliseconds
 var
-  CurrentDuration: Cardinal;
   EventTime: TJvTimerEventTime;
 
   function ThreadClosed: Boolean;
@@ -174,11 +167,11 @@ begin
     if EventTime = tetPost then
     begin
       { Wait first and then trigger the event }
-      CurrentDuration := 0;
-      while not ThreadClosed and (CurrentDuration < FInterval) do
+      FCurrentDuration := 0;
+      while not ThreadClosed and (FCurrentDuration < FInterval) do
       begin
         SleepEx(Step, False);
-        Inc(CurrentDuration, Step);
+        Inc(FCurrentDuration, Step);
       end;
     end;
 
@@ -205,11 +198,11 @@ begin
     if EventTime = tetPre then
     begin
       { Wait after the event was triggered }
-      CurrentDuration := 0;
-      while not ThreadClosed and (CurrentDuration < FInterval) do
+      FCurrentDuration := 0;
+      while not ThreadClosed and (FCurrentDuration < FInterval) do
       begin
         SleepEx(Step, False);
-        Inc(CurrentDuration, Step);
+        Inc(FCurrentDuration, Step);
       end;
     end;
 
@@ -240,7 +233,7 @@ begin
   FSyncEvent := True;
   FThreaded := True;
   FThreadPriority := tpNormal;
-  FTimerThread := TJvTimerThread.Create(Self, False);
+  FTimerThread := nil;
   FTimer := nil;
 end;
 
@@ -250,42 +243,64 @@ begin
   FEnabled := False;
   FOnTimer := nil;
   {TTimerThread(FTimerThread).FOwner := nil;}
-  FTimerThread.Terminate;
-  while FTimerThread.Suspended do
-    FTimerThread.Resume;
-  (FTimerThread as TJvTimerThread).Paused := False;
-  FTimerThread.Free;
+  if Assigned(FTimerThread) then
+  begin
+    FTimerThread.Terminate;
+    (FTimerThread as TJvTimerThread).Paused := False;
+    FTimerThread.Free;
+  end;
   FTimer.Free;
   inherited Destroy;
 end;
 
+procedure TJvTimer.DoTimer(Sender: TObject);
+begin
+  Timer;
+end;
+
 procedure TJvTimer.UpdateTimer;
 begin
-  if FThreaded then
+  if (FInterval <> 0) and FEnabled and Assigned(FOnTimer) then
   begin
-    FreeAndNil(FTimer);
-    (FTimerThread as TJvTimerThread).Paused := True;
-{    if not FTimerThread.Suspended then
-      FTimerThread.Suspend;}
-    TJvTimerThread(FTimerThread).FInterval := FInterval;
-    if (FInterval <> 0) and FEnabled and Assigned(FOnTimer) then
+    if FThreaded then
     begin
+      FreeAndNil(FTimer);
+      if not Assigned(FTimerThread) then
+        FTimerThread := TJvTimerThread.Create(Self, False);
+
+      TJvTimerThread(FTimerThread).Paused := True;
+      TJvTimerThread(FTimerThread).FCurrentDuration := 0;
+      TJvTimerThread(FTimerThread).FInterval := FInterval;
+
       FTimerThread.Priority := FThreadPriority;
 
-      (FTimerThread as TJvTimerThread).Paused := False;
-(*      while FTimerThread.Suspended do
-        FTimerThread.Resume;*)
+      TJvTimerThread(FTimerThread).Paused := False;
+    end
+    else
+    begin
+      FreeAndNil(FTimerThread);
+
+      if not Assigned(FTimer) then
+        FTimer := TTimer.Create(Self);
+      FTimer.Interval := FInterval;
+      FTimer.OnTimer := DoTimer;
+      FTimer.Enabled := True;
     end;
   end
   else
   begin
-    if not FTimerThread.Suspended then
-      FTimerThread.Suspend;
-    if not Assigned(FTimer) then
-      FTimer := TTimer.Create(Self);
-    FTimer.Interval := FInterval;
-    FTimer.OnTimer := FOnTimer;
-    FTimer.Enabled := (FInterval <> 0) and FEnabled and Assigned(FOnTimer);
+    { Don't destroy the thread or the timer if we are currently in the event }
+    if FInTimerEvent then
+    begin
+      if FTimerThread <> nil then
+        TJvTimerThread(FTimerThread).Paused := True;
+      if FTimer <> nil then
+        FTimer.Enabled := False;
+      Exit;
+    end;
+
+    FreeAndNil(FTimerThread);
+    FreeAndNil(FTimer);
   end;
 end;
 
@@ -311,6 +326,8 @@ procedure TJvTimer.SetThreaded(Value: Boolean);
 begin
   if Value <> FThreaded then
   begin
+    if FInTimerEvent then
+      raise Exception.CreateResFmt(@RsCannotChangeInTimerEvent, ['TJvTimer.Threaded']); // do not localize
     FThreaded := Value;
     UpdateTimer;
   end;
@@ -356,7 +373,14 @@ end;
 procedure TJvTimer.Timer;
 begin
   if FEnabled and not (csDestroying in ComponentState) and Assigned(FOnTimer) then
-    FOnTimer(Self);
+  begin
+    FInTimerEvent := True;
+    try
+      FOnTimer(Self);
+    finally
+      FInTimerEvent := False;
+    end;
+  end;
 end;
 
 {$IFDEF UNITVERSIONING}
@@ -368,4 +392,3 @@ finalization
 {$ENDIF UNITVERSIONING}
 
 end.
-

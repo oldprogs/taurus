@@ -22,12 +22,12 @@ Contributers:
   Andreas Hausladen
 
 You may retrieve the latest version of this file at the Project JEDI's JVCL home page,
-located at http://jvcl.sourceforge.net
+located at http://jvcl.delphi-jedi.org
 
 Known Issues:
   (rb) Move button related functionality from TJvCustomComboEdit to TJvEditButton
 -----------------------------------------------------------------------------}
-// $Id: JvToolEdit.pas 12049 2008-11-17 23:32:53Z ahuser $
+// $Id: JvToolEdit.pas 12831 2010-09-05 12:51:00Z obones $
 
 unit JvToolEdit;
 
@@ -40,23 +40,17 @@ uses
   {$IFDEF UNITVERSIONING}
   JclUnitVersioning,
   {$ENDIF UNITVERSIONING}
-  {$IFDEF CLR}
-  Types, WinUtils, System.Text, System.IO, System.Reflection,
-  System.Runtime.InteropServices,
-  {$ENDIF CLR}
   {$IFDEF MSWINDOWS}
   Windows, Messages, ShellAPI, ActiveX,
   {$ENDIF MSWINDOWS}
   ShlObj,
-  {$IFDEF HAS_UNIT_VARIANTS}
   Variants,
-  {$ENDIF HAS_UNIT_VARIANTS}
   SysUtils, Classes, Graphics, Controls, Forms, Dialogs, StdCtrls, Menus,
   Buttons, FileCtrl, Mask, ImgList, ActnList, ExtDlgs,
   JclBase,
-  JvVCL5Utils, JvConsts,
+  JvConsts,
   JvExControls, JvSpeedButton, JvTypes, JvExMask, JvExForms, JvButton,
-  JvDataSourceIntf;
+  JvDataSourceIntf, JvBrowseFolder;
 
 const
   scAltDown = scAlt + VK_DOWN;
@@ -125,10 +119,6 @@ type
     procedure MouseUp(Button: TMouseButton; Shift: TShiftState;
       X, Y: Integer); override;
     procedure CloseUp(Accept: Boolean); virtual;
-    {$IFDEF CLR}
-    procedure KeyDown(var Key: Word; Shift: TShiftState); override;
-    procedure KeyPress(var Key: Char); override;
-    {$ENDIF CLR}
   public
     constructor Create(AOwner: TComponent); override;
     function GetPopupText: string; virtual;
@@ -276,9 +266,7 @@ type
     procedure SetNumGlyphs(const Value: TNumGlyphs);
     procedure SetShowButton(const Value: Boolean);
     procedure SetDataConnector(const Value: TJvCustomComboEditDataConnector);
-    {$IFDEF COMPILER6_UP}
     procedure UpdateBtnBounds(var NewLeft, NewTop, NewWidth, NewHeight: Integer);
-    {$ENDIF COMPILER6_UP}
     { (rb) renamed from UpdateEdit }
     procedure UpdateGroup;
     procedure CMWantSpecialKey(var Msg: TCMWantSpecialKey); message CM_WANTSPECIALKEY;
@@ -301,10 +289,8 @@ type
     FFocused: Boolean;
     FPopup: TWinControl;
     function CreateDataConnector: TJvCustomComboEditDataConnector; virtual;
-    {$IFDEF COMPILER6_UP}
     procedure CustomAlignPosition(Control: TControl; var NewLeft, NewTop, NewWidth,
       NewHeight: Integer; var AlignRect: TRect; AlignInfo: TAlignInfo); override;
-    {$ENDIF COMPILER6_UP}
     procedure WndProc(var Msg: TMessage); override;
     procedure WMClear(var Msg: TMessage); message WM_CLEAR;
     procedure WMCut(var Msg: TMessage); message WM_CUT;
@@ -426,12 +412,10 @@ type
     property AutoSize;
     property AutoCompleteItems;
     property AutoCompleteOptions;
-    {$IFDEF COMPILER6_UP}
     property BevelEdges;
     property BevelInner;
     property BevelKind default bkNone;
     property BevelOuter;
-    {$ENDIF COMPILER6_UP}
     property BiDiMode;
     property DragCursor;
     property DragKind;
@@ -628,12 +612,10 @@ type
     property DefaultExt: TFileExt read GetDefaultExt write SetDefaultExt;
     property AutoCompleteOptions;
     property AutoCompleteFileOptions default [acfFileSystem];
-    {$IFDEF COMPILER6_UP}
     property BevelEdges;
     property BevelInner;
     property BevelKind default bkNone;
     property BevelOuter;
-    {$ENDIF COMPILER6_UP}
     property Flat;
     property ParentFlat;
     { (rb) Obsolete; added 'stored False', eventually remove }
@@ -717,6 +699,8 @@ type
     FDialogKind: TDirDialogKind;
     FPhysicalDirectory: string;
     FDisplayLocalizedName: Boolean;
+    FOptionsWin32: TOptionsDir;
+
     procedure SetDirectory(const Value: string);
     function GetDirectory: string;
     procedure SetDisplayLocalizedName(const Value: Boolean);
@@ -744,15 +728,14 @@ type
     property DisplayLocalizedName: Boolean read FDisplayLocalizedName write SetDisplayLocalizedName default False;
     property AutoCompleteOptions;
     property AutoCompleteFileOptions default [acfFileSystem, acfFileSysDirs];
-    {$IFDEF COMPILER6_UP}
     property BevelEdges;
     property BevelInner;
     property BevelKind default bkNone;
     property BevelOuter;
-    {$ENDIF COMPILER6_UP}
     property Flat;
     property ParentFlat;
     property DialogOptions: TSelectDirOpts read FOptions write FOptions default [sdAllowCreate];
+    property DialogOptionsWin32: TOptionsDir read FOptionsWin32 write FOptionsWin32 default DefaultJvBrowseFolderDialogOptions;
     property InitialDir: string read FInitialDir write FInitialDir;
     property MultipleDirs: Boolean read FMultipleDirs write FMultipleDirs default False;
     property AutoSelect;
@@ -991,12 +974,10 @@ type
     property DialogTitle;
     property DirectInput;
     property DragCursor;
-    {$IFDEF COMPILER6_UP}
     property BevelEdges;
     property BevelInner;
     property BevelKind default bkNone;
     property BevelOuter;
-    {$ENDIF COMPILER6_UP}
     property BiDiMode;
     property DragKind;
     property Flat;
@@ -1089,9 +1070,9 @@ function IsInWordArray(Value: Word; const A: array of Word): Boolean;
 {$IFDEF UNITVERSIONING}
 const
   UnitVersioning: TUnitVersionInfo = (
-    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_36_PREPARATION/run/JvToolEdit.pas $';
-    Revision: '$Revision: 12049 $';
-    Date: '$Date: 2008-11-18 00:32:53 +0100 (mar., 18 nov. 2008) $';
+    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_40_PREPARATION/run/JvToolEdit.pas $';
+    Revision: '$Revision: 12831 $';
+    Date: '$Date: 2010-09-05 14:51:00 +0200 (dim., 05 sept. 2010) $';
     LogPath: 'JVCL\run'
   );
 {$ENDIF UNITVERSIONING}
@@ -1099,41 +1080,20 @@ const
 implementation
 
 uses
-  {$IFDEF HAS_UNIT_RTLCONSTS}
-  RTLConsts,
-  {$ENDIF HAS_UNIT_RTLCONSTS}
-  Math, Consts,
-  {$IFDEF COMPILER6_UP}
-  MaskUtils,
-  {$ENDIF COMPILER6_UP}
+  RTLConsts, Math, Consts, MaskUtils,
   MultiMon,
-  {$IFNDEF CLR}
-  JvBrowseFolder,
-  {$ENDIF !CLR}
-  JclFileUtils,
+  JclFileUtils, JclStrings,
   JvPickDate, JvJCLUtils, JvJVCLUtils,
   JvThemes, JvResources;
 
 {$R JvToolEdit.res}
 
 type
-  {$IFDEF CLR}
-  TCustomEditAccessProtected = class(TCustomEdit)
-  public
-    property Ctl3D;
-    property BorderStyle;
-  end;
-  {$ELSE}
-
   {$HINTS OFF}
   TCustomMaskEditAccessPrivate = class(TCustomEdit)
   private
     // Do not remove these fields, although they are not used.
-    {$IFDEF COMPILER6_UP}
     FEditMask: TEditMask;
-    {$ELSE}
-    FEditMask: string;
-    {$ENDIF COMPILER6_UP}
     FMaskBlank: Char;
     FMaxChars: Integer;
     FMaskSave: Boolean;
@@ -1146,7 +1106,6 @@ type
   {$HINTS ON}
 
   TCustomEditAccessProtected = class(TCustomEdit);
-  {$ENDIF CLR}
   TCustomFormAccessProtected = class(TCustomForm);
   TWinControlAccessProtected = class(TWinControl);
 
@@ -1176,40 +1135,17 @@ const
   //IID_IACList2: TGUID = (D1:$470141a0; D2:$5186; D3:$11d2; D4:($bb, $b6, $00, $60, $97, $7b, $46, $4c));
   //IID_ICurrentWorkingDirectory: TGUID = (D1:$91956d21; D2:$9276; D3:$11d1; D4:($92, $1a, $00, $60, $97, $df, $5b, $d4));
 
-  {$IFDEF CLR}
-  CLSID_AutoComplete = '{00BB2763-6A77-11D0-A535-00C04FD7D062}';
-  CLSID_ACLMulti     = '{00BB2765-6A77-11D0-A535-00C04FD7D062}';
-  CLSID_ACLHistory   = '{00BB2764-6A77-11D0-A535-00C04FD7D062}';
-  CLSID_ACLMRU       = '{6756A641-DE71-11D0-831B-00AA005B4383}';
-  CLSID_ACListISF    = '{03C036F1-A186-11D0-824A-00AA005B4383}';
-  {$ELSE}
   CLSID_AutoComplete: TGUID = (D1:$00BB2763; D2:$6A77; D3:$11D0; D4:($A5, $35, $00, $C0, $4F, $D7, $D0, $62));
   CLSID_ACLHistory: TGUID = (D1:$00BB2764; D2:$6A77; D3:$11D0; D4:($A5, $35, $00, $C0, $4F, $D7, $D0, $62));
   CLSID_ACListISF: TGUID = (D1:$03C036F1; D2:$A186; D3:$11D0; D4:($82, $4A, $00, $AA, $00, $5B, $43, $83));
   CLSID_ACLMRU: TGUID = (D1:$6756a641; D2:$de71; D3:$11d0; D4:($83, $1b, $0, $aa, $0, $5b, $43, $83));
   CLSID_ACLMulti: TGUID = (D1:$00BB2765; D2:$6A77; D3:$11D0; D4:($A5, $35, $00, $C0, $4F, $D7, $D0, $62));
-  {$ENDIF CLR}
 
   //#if (_WIN32_IE >= 0x0600)
   //CLSID_ACLCustomMRU: TGUID = (D1:$6935db93; D2:$21e8; D3:$4ccc; D4:($be, $b9, $9f, $e3, $c7, $7a, $29, $7a));
   //#endif
 
 type
-{$IFDEF CLR}
-  TAutoCompleteSource = class(TInterfacedObject, IEnumString)
-  private
-    FComboEdit: TJvCustomComboEdit;
-    FCurrentIndex: Integer;
-  protected
-    { IEnumString }
-    function Next(celt: Longint; rgelt: array of string; out pceltFetched: Longint): HResult;
-    function Skip(celt: Longint): HResult;
-    function Reset: HResult;
-    function Clone(out enm: IEnumString): HResult;
-  public
-    constructor Create(AComboEdit: TJvCustomComboEdit; const StartIndex: Integer); virtual;
-  end;
-{$ELSE}
   TAutoCompleteSource = class(TInterfacedObject, IEnumString)
   private
     FComboEdit: TJvCustomComboEdit;
@@ -1223,37 +1159,22 @@ type
   public
     constructor Create(AComboEdit: TJvCustomComboEdit; const StartIndex: Integer); virtual;
   end;
-{$ENDIF CLR}
 
-  {$IFDEF CLR}
-  [ComImport, InterfaceTypeAttribute(ComInterfaceType.InterfaceIsIUnknown)]
-  {$ENDIF CLR}
   IACList = interface(IUnknown)
     ['{77A130B0-94FD-11D0-A544-00C04FD7d062}']
-    {$IFDEF CLR}[PreserveSig]{$ENDIF CLR}
-    function Expand(pszExpand: string): HRESULT; {$IFNDEF CLR}stdcall;{$ENDIF}
+    function Expand(pszExpand: string): HRESULT; stdcall;
   end;
 
-  {$IFDEF CLR}
-  [ComImport, InterfaceTypeAttribute(ComInterfaceType.InterfaceIsIUnknown)]
-  {$ENDIF CLR}
   IACList2 = interface(IACList)
     ['{470141a0-5186-11d2-bbb6-0060977b464c}']
-    {$IFDEF CLR}[PreserveSig]{$ENDIF CLR}
-    function SetOptions(dwFlag: DWORD): HRESULT; {$IFNDEF CLR}stdcall;{$ENDIF}
-    {$IFDEF CLR}[PreserveSig]{$ENDIF CLR}
-    function GetOptions(var pdwFlag: DWORD): HRESULT; {$IFNDEF CLR}stdcall;{$ENDIF}
+    function SetOptions(dwFlag: DWORD): HRESULT; stdcall;
+    function GetOptions(var pdwFlag: DWORD): HRESULT; stdcall;
   end;
 
-  {$IFDEF CLR}
-  [ComImport, InterfaceTypeAttribute(ComInterfaceType.InterfaceIsIUnknown)]
-  {$ENDIF CLR}
   IObjMgr = interface(IUnknown)
     ['{00BB2761-6A77-11D0-a535-00c04fd7d062}']
-    {$IFDEF CLR}[PreserveSig]{$ENDIF CLR}
-    function Append(punk: IUnknown): HRESULT; {$IFNDEF CLR}stdcall;{$ENDIF}
-    {$IFDEF CLR}[PreserveSig]{$ENDIF CLR}
-    function Remove(punk: IUnknown): HRESULT; {$IFNDEF CLR}stdcall;{$ENDIF}
+    function Append(punk: IUnknown): HRESULT; stdcall;
+    function Remove(punk: IUnknown): HRESULT; stdcall;
   end;
 
 type
@@ -1343,8 +1264,6 @@ end;
 //=== Global procedures ======================================================
 
 procedure DateFormatChanged;
-var
-  I: Integer;
 
   procedure IterateControls(AControl: TWinControl);
   var
@@ -1361,6 +1280,8 @@ var
       end;
   end;
 
+var
+  I: Integer;
 begin
   if Screen <> nil then
     for I := 0 to Screen.FormCount - 1 do
@@ -1369,48 +1290,22 @@ end;
 
 function EditorTextMargins(Editor: TCustomEdit): TPoint;
 var
-  DC: HDC;
   I: Integer;
-  SaveFont: HFONT;
-  SysMetrics, Metrics: TTextMetric;
   ed: TCustomEditAccessProtected;
 begin
   ed := TCustomEditAccessProtected(Editor);
-  if NewStyleControls then
-  begin
-    if ed.BorderStyle = bsNone then
-      I := 0
-    else
-    if ed.Ctl3D then
-      I := 1
-    else
-      I := 2;
-    if GetWindowLong(ed.Handle, GWL_STYLE) and ES_MULTILINE = 0 then
-      Result.X := (SendMessage(ed.Handle, EM_GETMARGINS, 0, 0) and $0000FFFF) + I
-    else
-      Result.X := I;
-    Result.Y := I;
-  end
+  if ed.BorderStyle = bsNone then
+    I := 0
   else
-  begin
-    if ed.BorderStyle = bsNone then
-      I := 0
-    else
-    begin
-      DC := GetDC(HWND_DESKTOP);
-      GetTextMetrics(DC, SysMetrics);
-      SaveFont := SelectObject(DC, ed.Font.Handle);
-      GetTextMetrics(DC, Metrics);
-      SelectObject(DC, SaveFont);
-      ReleaseDC(HWND_DESKTOP, DC);
-      I := SysMetrics.tmHeight;
-      if I > Metrics.tmHeight then
-        I := Metrics.tmHeight;
-      I := I div 4;
-    end;
+  if ed.Ctl3D then
+    I := 1
+  else
+    I := 2;
+  if GetWindowLong(ed.Handle, GWL_STYLE) and ES_MULTILINE = 0 then
+    Result.X := (SendMessage(ed.Handle, EM_GETMARGINS, 0, 0) and $0000FFFF) + I
+  else
     Result.X := I;
-    Result.Y := I;
-  end;
+  Result.Y := I;
 end;
 
 function IsInWordArray(Value: Word; const A: array of Word): Boolean;
@@ -1426,14 +1321,9 @@ end;
 
 function LoadDefaultBitmap(Bmp: TBitmap; Item: Integer): Boolean;
 begin
-  {$IFDEF CLR}
-  Bmp.Handle := LoadBitmap(0, Item);
-  {$ELSE}
   Bmp.Handle := LoadBitmap(0, PChar(Item));
-  {$ENDIF CLR}
   Result := Bmp.Handle <> 0;
 end;
-
 
 function PaintComboEdit(Editor: TJvCustomComboEdit; const AText: string;
   AAlignment: TAlignment; StandardPaint: Boolean;
@@ -1507,7 +1397,7 @@ begin
     with ACanvas do
     begin
       SendRectMessage(Editor.Handle, EM_GETRECT, 0, EditRect);
-      if not (NewStyleControls and TEd(Editor).Ctl3D) and (TEd(Editor).BorderStyle = bsSingle) then
+      if not TEd(Editor).Ctl3D and (TEd(Editor).BorderStyle = bsSingle) then
       begin
         Brush.Color := clWindowFrame;
         FrameRect(TEd(Editor).ClientRect);
@@ -1576,37 +1466,6 @@ begin
   end;
 end;
 
-{$IFDEF CLR}
-function TAutoCompleteSource.Next(celt: Longint; rgelt: array of string; out pceltFetched: Longint): HResult;
-var
-  Fetched: Integer;
-  S: string;
-begin
-  if Length(rgelt) = 0 then
-  begin
-    Result := E_FAIL;
-    Exit;
-  end;
-
-  Fetched := 0;
-
-  while (Fetched < celt) and (FCurrentIndex < FComboEdit.AutoCompleteItems.Count) do
-  begin
-    S := FComboEdit.AutoCompleteItems[FCurrentIndex];
-    rgelt[Fetched] := S;
-    Inc(FCurrentIndex);
-    Inc(Fetched);
-  end;
-
-  if TObject(pceltFetched) <> nil then
-    pceltFetched := Fetched;
-
-  if Fetched = celt then
-    Result := S_OK
-  else
-    Result := S_FALSE;
-end;
-{$ELSE}
 function TAutoCompleteSource.Next(celt: Integer; out elt;
   pceltFetched: PLongint): HRESULT;
 var
@@ -1649,7 +1508,6 @@ begin
   else
     Result := S_FALSE;
 end;
-{$ENDIF CLR}
 
 function TAutoCompleteSource.Reset: HRESULT;
 begin
@@ -1706,20 +1564,20 @@ end;
 
 procedure TDateHook.Hook;
 begin
-  if FHooked then
-    Exit;
-
-  Application.HookMainWindow(FormatSettingsChange);
-  FHooked := True;
+  if not FHooked then
+  begin
+    Application.HookMainWindow(FormatSettingsChange);
+    FHooked := True;
+  end;
 end;
 
 procedure TDateHook.UnHook;
 begin
-  if not FHooked then
-    Exit;
-
-  Application.UnhookMainWindow(FormatSettingsChange);
-  FHooked := False;
+  if FHooked then
+  begin
+    Application.UnhookMainWindow(FormatSettingsChange);
+    FHooked := False;
+  end;
 end;
 
 //=== { TJvCustomComboEditDataConnector } ====================================
@@ -1768,11 +1626,7 @@ begin
   FBtnControl.Height := 17;
   FBtnControl.Visible := True;
   FBtnControl.Parent := Self;
-  {$IFDEF COMPILER6_UP}
   FBtnControl.Align := alCustom;
-  {$ELSE}
-  FBtnControl.Align := alRight;
-  {$ENDIF COMPILER6_UP}
   FButton := TJvEditButton.Create(Self);
   FButton.SetBounds(0, 0, FBtnControl.Width, FBtnControl.Height);
   FButton.Visible := True;
@@ -1860,21 +1714,11 @@ begin
   GetTextMetrics(DC, Metrics);
   SelectObject(DC, SaveFont);
   ReleaseDC(HWND_DESKTOP, DC);
-  if NewStyleControls then
-  begin
-    if not Flat then
-      I := 8
-    else
-      I := 6;
-    I := GetSystemMetrics(SM_CYBORDER) * I;
-  end
+  if not Flat then
+    I := 8
   else
-  begin
-    I := SysMetrics.tmHeight;
-    if I > Metrics.tmHeight then
-      I := Metrics.tmHeight;
-    I := I div 4 + GetSystemMetrics(SM_CYBORDER) * 4;
-  end;
+    I := 6;
+  I := GetSystemMetrics(SM_CYBORDER) * I;
   if Height < Metrics.tmHeight + I then
     Height := Metrics.tmHeight + I;
 end;
@@ -1979,13 +1823,10 @@ var
   TextColor: Longint;
 begin
   inherited;
-  if NewStyleControls then
-  begin
-    TextColor := ColorToRGB(Font.Color);
-    if not Enabled and (ColorToRGB(Color) <> ColorToRGB(clGrayText)) then
-      TextColor := ColorToRGB(clGrayText);
-    SetTextColor(Msg.WParam, TextColor);
-  end;
+  TextColor := ColorToRGB(Font.Color);
+  if not Enabled and (ColorToRGB(Color) <> ColorToRGB(clGrayText)) then
+    TextColor := ColorToRGB(clGrayText);
+  SetTextColor(Msg.WParam, TextColor);
 end;
 
 procedure TJvCustomComboEdit.CreateAutoComplete;
@@ -1994,14 +1835,8 @@ begin
     {not Assigned(FAutoCompleteIntf) and} (AutoCompleteOptions <> []) then
   begin
     { Create the autocomplete object. }
-    {$IFDEF CLR}
-    FAutoCompleteIntf :=
-      Activator.CreateInstance(System.Type.GetTypeFromCLSID(Guid.Create(CLSID_AutoComplete))) as IAutoComplete;
-    if FAutoCompleteIntf <> nil then
-    {$ELSE}
     if Succeeded(CoCreateInstance(CLSID_AutoComplete, nil, CLSCTX_INPROC_SERVER, IAutoComplete,
       FAutoCompleteIntf)) then
-    {$ENDIF CLR}
     begin
       { Initialize the autocomplete object. }
       FAutoCompleteIntf.Init(Self.Handle, GetAutoCompleteSource, nil, nil);
@@ -2042,7 +1877,6 @@ begin
   end;
 end;
 
-{$IFDEF COMPILER6_UP}
 procedure TJvCustomComboEdit.CustomAlignPosition(Control: TControl;
   var NewLeft, NewTop, NewWidth, NewHeight: Integer;
   var AlignRect: TRect; AlignInfo: TAlignInfo);
@@ -2050,7 +1884,6 @@ begin
   if Control = FBtnControl then
     UpdateBtnBounds(NewLeft, NewTop, NewWidth, NewHeight);
 end;
-{$ENDIF COMPILER6_UP}
 
 class function TJvCustomComboEdit.DefaultImageIndex: TImageIndex;
 begin
@@ -2134,7 +1967,7 @@ begin
     if GetCursorPos(Pt) then
     begin
       Pt := ScreenToClient(Pt);
-      PostMessage(Handle, CM_FIXCARETPOSITION, 0, LPARAM((Pt.Y shl 16) or (Pt.X and $FFFF)));
+      PostMessage(Handle, CM_FIXCARETPOSITION, 0, MakeLong(Word(Pt.X), Word(Pt.Y)));
     end;
   end;
   inherited DoEnter;
@@ -2326,11 +2159,7 @@ end;
 
 function TJvCustomComboEdit.GetSettingCursor: Boolean;
 begin
-  {$IFDEF CLR}
-  Result := Boolean(GetNonPublicField(Self, 'FSettingCursor'));
-  {$ELSE}
   Result := TCustomMaskEditAccessPrivate(Self).FSettingCursor;
-  {$ENDIF CLR}
 end;
 
 function TJvCustomComboEdit.GetShowButton: Boolean;
@@ -2377,7 +2206,6 @@ begin
   Result := not ParentCtl3D;
 end;
 
-
 function TJvCustomComboEdit.IsImageIndexStored: Boolean;
 begin
   Result :=
@@ -2397,21 +2225,13 @@ begin
       VK_RETURN:
         if (Form <> nil) {and Form.KeyPreview} then
         begin
-          {$IFDEF CLR}
-          InvokeNonPublicMethod(Form, 'KeyDown', [Key, Shift]);
-          {$ELSE}
           TWinControlAccessProtected(Form).KeyDown(Key, Shift);
-          {$ENDIF CLR}
           Key := 0;
         end;
       VK_TAB:
         if (Form <> nil) {and Form.KeyPreview} then
         begin
-          {$IFDEF CLR}
-          InvokeNonPublicMethod(Form, 'KeyDown', [Key, Shift]);
-          {$ELSE}
           TWinControlAccessProtected(Form).KeyDown(Key, Shift);
-          {$ENDIF CLR}
           Key := 0;
         end;
     end;
@@ -2454,11 +2274,7 @@ begin
     Key := #0;
     { (rb) Next code has no use because Key = #0? }
     if (Form <> nil) {and Form.KeyPreview} then
-      {$IFDEF CLR}
-      InvokeNonPublicMethod(Form, 'KeyPress', [Key]);
-      {$ELSE}
       TWinControlAccessProtected(Form).KeyPress(Key);
-      {$ENDIF CLR}
   end;
   inherited KeyPress(Key);
 
@@ -2937,10 +2753,8 @@ end;
 
 procedure TJvCustomComboEdit.SetImages(const Value: TCustomImageList);
 begin
-  FImages := Value;
-  if FImages <> nil then
-    FImages.FreeNotification(Self)
-  else
+  ReplaceComponentReference(Self, Value, TComponent(FImages));
+  if FImages = nil then
     SetImageIndex(-1);
   if ImageKind = ikCustom then
   begin
@@ -3049,53 +2863,67 @@ begin
   end;
 end;
 
-{$IFDEF COMPILER6_UP}
 procedure TJvCustomComboEdit.UpdateBtnBounds(var NewLeft, NewTop, NewWidth, NewHeight: Integer);
 var
   BtnRect: TRect;
 begin
-  if NewStyleControls then
-    {$IFDEF JVCLThemesEnabled}
-    if ThemeServices.ThemesEnabled then
+  {$IFDEF JVCLThemesEnabled}
+  if ThemeServices.ThemesEnabled then
+  begin
+    if BorderStyle = bsSingle then
     begin
-      if BorderStyle = bsSingle then
-      begin
-        if Ctl3D then
-          BtnRect := Bounds(Width - FButton.Width - 2, 0,
-            FButton.Width, Height - 2)
-        else
-          BtnRect := Bounds(Width - FButton.Width - 1, 1,
-            FButton.Width, Height - 2);
-      end
+      if Ctl3D then
+        BtnRect := Bounds(Width - FButton.Width - 2, 0,
+          FButton.Width, Height - 2)
       else
-        BtnRect := Bounds(Width - FButton.Width, 0,
-          FButton.Width, Height);
+        BtnRect := Bounds(Width - FButton.Width - 1, 1,
+          FButton.Width, Height - 2);
     end
     else
-    {$ENDIF JVCLThemesEnabled}
-    begin
-      if BorderStyle = bsSingle then
-      begin
-        if not Flat then
-          BtnRect := Bounds(Width - FButton.Width - 4, 0,
-            FButton.Width, Height - 4)
-        else
-          BtnRect := Bounds(Width - FButton.Width - 2, 2,
-            FButton.Width, Height - 4)
-      end
-      else
-        BtnRect := Bounds(Width - FButton.Width, 0,
-          FButton.Width, Height);
-    end
+      BtnRect := Bounds(Width - FButton.Width, 0,
+        FButton.Width, Height);
+  end
   else
-    BtnRect := Bounds(Width - FButton.Width, 0, FButton.Width, Height);
+  {$ENDIF JVCLThemesEnabled}
+  begin
+    if BorderStyle = bsSingle then
+    begin
+      if not Flat then
+        BtnRect := Bounds(Width - FButton.Width - 4, 0,
+          FButton.Width, Height - 4)
+      else
+        BtnRect := Bounds(Width - FButton.Width - 2, 2,
+          FButton.Width, Height - 4)
+    end
+    else
+      BtnRect := Bounds(Width - FButton.Width, 0,
+        FButton.Width, Height);
+  end;
+
+  // Mantis 4754: Bevels must be taken into account
+  if BevelKind <> bkNone then
+  begin
+    if BevelInner <> bvNone then
+    begin
+      Dec(BtnRect.Left, 2);
+      Dec(BtnRect.Right, 2);
+      Dec(BtnRect.Bottom, 2);
+    end;
+
+    if BevelOuter <> bvNone then
+    begin
+      Dec(BtnRect.Left, 2);
+      Dec(BtnRect.Right, 2);
+      Dec(BtnRect.Bottom, 2);
+    end;
+  end;
+
 
   NewLeft := BtnRect.Left;
   NewTop := BtnRect.Top;
   NewWidth := BtnRect.Right - BtnRect.Left;
   NewHeight := BtnRect.Bottom - BtnRect.Top;
 end;
-{$ENDIF COMPILER6_UP}
 
 procedure TJvCustomComboEdit.UpdateControls;
 begin
@@ -3177,21 +3005,11 @@ end;
 
 {$IFDEF JVCLThemesEnabled}
 procedure TJvCustomComboEdit.WMNCCalcSize(var Msg: TWMNCCalcSize);
-{$IFDEF CLR}
-var
-  CalcSizeParams: TNCCalcSizeParams;
-{$ENDIF CLR}
 begin
   if ThemeServices.ThemesEnabled and Ctl3D and (BorderStyle = bsSingle) then
   begin
-    {$IFDEF CLR}
-    CalcSizeParams := Msg.CalcSize_Params;
-    InflateRect(CalcSizeParams.rgrc0, 1, 1);
-    Msg.CalcSize_Params := CalcSizeParams;
-    {$ELSE}
     with Msg.CalcSize_Params^ do
       InflateRect(rgrc[0], 1, 1);
-    {$ENDIF CLR}
   end;
   inherited;
 end;
@@ -3218,7 +3036,8 @@ var
   DrawRect: TRect;
   Details: TThemedElementDetails;
 begin
-  if ThemeServices.ThemesEnabled and Ctl3D and (BorderStyle = bsSingle) then
+  if ThemeServices.ThemesEnabled and Ctl3D and (BorderStyle = bsSingle) and
+     (Win32MajorVersion < 6) then // Vista draws the border animated and not with teEditTextNormal
   begin
     DC := GetWindowDC(Handle);
     try
@@ -3238,7 +3057,6 @@ begin
     inherited;
 end;
 {$ENDIF JVCLThemesEnabled}
-
 
 procedure TJvCustomComboEdit.WMPaint(var Msg: TWMPaint);
 var
@@ -3264,11 +3082,16 @@ begin
      not SettingCursor and PopupVisible and
     (FPopup is TJvPopupWindow) and Assigned(TJvPopupWindow(FPopup).ActiveControl) then
   begin
-    with Msg do
-      Result := TJvPopupWindow(FPopup).ActiveControl.Perform(Msg, WParam, LParam);
+    // Mantis 4872: Avoid stack overflow.
+    if (Msg.Msg <> WM_CONTEXTMENU) or
+       (ControlAtPos(ScreenToClient(SmallPointToPoint(TWMContextMenu(Msg).Pos)), False) = TJvPopupWindow(FPopup).ActiveControl) then
+    begin
+      with Msg do
+        Result := TJvPopupWindow(FPopup).ActiveControl.Perform(Msg, WParam, LParam);
 
-    if Msg.Result = 0 then
-      Exit;
+      if Msg.Result = 0 then
+        Exit;
+    end;
   end;
 
   { The AutoComplete functionality sends a WM_SETTEXT. But only SetTextBuf()
@@ -3648,11 +3471,7 @@ end;
 
 function TJvCustomDateEdit.IsCustomTitle: Boolean;
 begin
-  {$IFDEF CLR}
-  Result := (CompareStr(RsDateDlgCaption, DialogTitle) <> 0) and (DialogTitle <> '');
-  {$ELSE}
   Result := (AnsiCompareStr(RsDateDlgCaption, DialogTitle) <> 0) and (DialogTitle <> '');
-  {$ENDIF CLR}
 end;
 
 function TJvCustomDateEdit.IsDateStored: Boolean;
@@ -3836,11 +3655,7 @@ begin
       if FDateAutoBetween then
         SetMinDate(Value)
       else
-        {$IFDEF CLR}
-        raise EJVCLException.CreateFmt(RsEDateMaxLimit, [DateToStr(FMinDate)]);
-        {$ELSE}
         raise EJVCLException.CreateResFmt(@RsEDateMaxLimit, [DateToStr(FMinDate)]);
-        {$ENDIF CLR}
     FMaxDate := Value;
     UpdatePopup;
     if FDateAutoBetween then
@@ -3859,11 +3674,7 @@ begin
       if FDateAutoBetween then
         SetMaxDate(Value)
       else
-        {$IFDEF CLR}
-        raise EJVCLException.CreateFmt(RsEDateMinLimit, [DateToStr(FMaxDate)]);
-        {$ELSE}
         raise EJVCLException.CreateResFmt(@RsEDateMinLimit, [DateToStr(FMaxDate)]);
-        {$ENDIF CLR}
     FMinDate := Value;
     UpdatePopup;
     if FDateAutoBetween then
@@ -3990,11 +3801,7 @@ end;
 
 function TJvCustomDateEdit.TextStored: Boolean;
 begin
-  {$IFDEF CLR}
-  Result := not IsEmptyStr(Text, [#0, ' ', AnsiChar(DateSeparator[1]), AnsiChar(FBlanksChar)]);
-  {$ELSE}
-  Result := not IsEmptyStr(Text, [#0, ' ', DateSeparator, FBlanksChar]);
-  {$ENDIF CLR}
+  Result := not IsEmptyStr(Text, [#0, ' ', {$IFDEF RTL220_UP}FormatSettings.{$ENDIF RTL220_UP}DateSeparator, FBlanksChar]);
 end;
 
 procedure TJvCustomDateEdit.UpdateFormat;
@@ -4044,7 +3851,7 @@ end;
 
 procedure TJvCustomDateEdit.ValidateEdit;
 begin
-  if TextStored then
+  if TextStored and CheckOnExit then
     CheckValidDate;
 end;
 
@@ -4071,27 +3878,15 @@ begin
     begin
       if ((FMinDate <> NullDate) and (FMaxDate <> NullDate) and
         ((Value < FMinDate) or (Value > FMaxDate))) then
-        {$IFDEF CLR}
-        raise EJVCLException.CreateFmt(RsEDateOutOfRange, [FormatDateTime(FDateFormat, Value),
-        {$ELSE}
         raise EJVCLException.CreateResFmt(@RsEDateOutOfRange, [FormatDateTime(FDateFormat, Value),
-        {$ENDIF CLR}
           FormatDateTime(FDateFormat, FMinDate), FormatDateTime(FDateFormat, FMaxDate)])
       else
       if (FMinDate <> NullDate) and (Value < FMinDate) then
-        {$IFDEF CLR}
-        raise EJVCLException.CreateFmt(RsEDateOutOfMin, [FormatDateTime(FDateFormat, Value),
-        {$ELSE}
         raise EJVCLException.CreateResFmt(@RsEDateOutOfMin, [FormatDateTime(FDateFormat, Value),
-        {$ENDIF CLR}
           FormatDateTime(FDateFormat, FMinDate)])
       else
       if (FMaxDate <> NullDate) and (Value > FMaxDate) then
-        {$IFDEF CLR}
-        raise EJVCLException.CreateFmt(RsEDateOutOfMax, [FormatDateTime(FDateFormat, Value),
-        {$ELSE}
         raise EJVCLException.CreateResFmt(@RsEDateOutOfMax, [FormatDateTime(FDateFormat, Value),
-        {$ENDIF CLR}
           FormatDateTime(FDateFormat, FMaxDate)]);
     end;
   inherited SetDate(Value);
@@ -4103,6 +3898,7 @@ constructor TJvDirectoryEdit.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
   FOptions := [sdAllowCreate];
+  FOptionsWin32 := DefaultJvBrowseFolderDialogOptions;
   FAutoCompleteFileOptions := [acfFileSystem, acfFileSysDirs];
   FDialogKind := dkWin32;
 end;
@@ -4284,6 +4080,7 @@ procedure TJvDirectoryEdit.PopupDropDown(DisableEdit: Boolean);
 var
   Temp, Txt: string;
   Action: Boolean;
+  BrowseForFolder: TJvBrowseForFolderDialog;
 begin
   Temp := Directory;
   Action := True;
@@ -4300,17 +4097,32 @@ begin
 
   if not DirectoryExists(Temp) then
     Temp := PathDelim;
-  DisableSysErrors;
-  try
-    {$IFNDEF CLR}
-    if NewStyleControls and (DialogKind = dkWin32) then
-      Action := BrowseForFolder(FDialogText, sdAllowCreate in DialogOptions, Temp, Self.HelpContext)
-    else
-    {$ENDIF !CLR}
-      Action := SelectDirectory(Temp, FOptions, Self.HelpContext);
-  finally
-    EnableSysErrors;
+
+  case DialogKind of
+    dkVCL:
+      begin
+        DisableSysErrors;
+        try
+          Action := SelectDirectory(Temp, FOptions, Self.HelpContext);
+        finally
+          EnableSysErrors;
+        end;
+      end;
+    dkWin32:
+      begin
+        BrowseForFolder := TJvBrowseForFolderDialog.Create(Self);
+        try
+          BrowseForFolder.Options := DialogOptionsWin32;
+          BrowseForFolder.Directory := Temp;
+          BrowseForFolder.StatusText := DialogText;
+          Action := BrowseForFolder.Execute;
+          Temp := BrowseForFolder.Directory;
+        finally
+          BrowseForFolder.Free;
+        end;
+      end;
   end;
+
   if CanFocus then
     SetFocus;
   DoAfterDialog(Temp, Action);
@@ -4333,9 +4145,9 @@ var
   Temp: string;
 begin
   if FileExists(AFileName) then
-    Temp := ExtractFilePath(AFileName)
+    Temp := StrEnsureNoSuffix(PathDelim, ExtractFilePath(AFileName))
   else
-    Temp := AFileName;
+    Temp := StrEnsureNoSuffix(PathDelim, AFileName);
   if (Text = '') or not MultipleDirs then
     Text := Temp
   else
@@ -4430,10 +4242,7 @@ begin
     if FState <> rbsDown then
       with Canvas do
       begin
-        if NewStyleControls then
-          Pen.Color := clBtnFace
-        else
-          Pen.Color := clBtnShadow;
+        Pen.Color := clBtnFace;
         MoveTo(0, 0);
         LineTo(0, Self.Height - 1);
         Pen.Color := clBtnHighlight;
@@ -4573,13 +4382,8 @@ end;
 
 function TJvFileDirEdit.GetAutoCompleteSource: IEnumString;
 begin
-  {$IFDEF CLR}
-  FAutoCompleteSourceIntf :=
-    Activator.CreateInstance(System.Type.GetTypeFromCLSID(Guid.Create(CLSID_ACLMulti))) as IEnumString;
-  {$ELSE}
   if Failed(CoCreateInstance(CLSID_ACLMulti, nil, CLSCTX_INPROC_SERVER, IEnumString, FAutoCompleteSourceIntf)) then
     FAutoCompleteSourceIntf := nil;
-  {$ENDIF CLR}
   Result := FAutoCompleteSourceIntf;
 end;
 
@@ -4631,12 +4435,7 @@ begin
     if acfURLMRU in AutoCompleteFileOptions then
     begin
       if not Assigned(FMRUList) and
-        {$IFDEF CLR}
-        SucceededCom(FMRUList,
-          Activator.CreateInstance(System.Type.GetTypeFromCLSID(Guid.Create(CLSID_ACLMRU)))) then
-        {$ELSE}
         Succeeded(CoCreateInstance(CLSID_ACLMRU, nil, CLSCTX_INPROC_SERVER, IUnknown, FMRUList)) then
-        {$ENDIF CLR}
       begin
         ObjMgr.Append(FMRUList);
       end
@@ -4651,12 +4450,7 @@ begin
     if acfURLHistory in AutoCompleteFileOptions then
     begin
       if not Assigned(FHistoryList) and
-        {$IFDEF CLR}
-        SucceededCom(FHistoryList,
-          Activator.CreateInstance(System.Type.GetTypeFromCLSID(Guid.Create(CLSID_ACLHistory)))) then
-        {$ELSE}
         Succeeded(CoCreateInstance(CLSID_ACLHistory, nil, CLSCTX_INPROC_SERVER, IUnknown, FHistoryList)) then
-        {$ENDIF CLR}
       begin
         ObjMgr.Append(FHistoryList);
       end;
@@ -4671,12 +4465,7 @@ begin
     if [acfFileSystem, acfFileSysDirs] * AutoCompleteFileOptions <> [] then
     begin
       if not Assigned(FFileSystemList) and
-        {$IFDEF CLR}
-        SucceededCom(FFileSystemList,
-          Activator.CreateInstance(System.Type.GetTypeFromCLSID(Guid.Create(CLSID_ACListISF)))) then
-        {$ELSE}
         Succeeded(CoCreateInstance(CLSID_ACListISF, nil, CLSCTX_INPROC_SERVER, IUnknown, FFileSystemList)) then
-        {$ENDIF CLR}
       begin
         ObjMgr.Append(FFileSystemList);
       end;
@@ -4701,11 +4490,7 @@ end;
 
 procedure TJvFileDirEdit.WMDropFiles(var Msg: TWMDropFiles);
 var
-  {$IFDEF CLR}
-  AFileName: StringBuilder;
-  {$ELSE}
   AFileName: array [0..255] of Char;
-  {$ENDIF CLR}
   I, Num: Cardinal;
 begin
   Msg.Result := 0;
@@ -4716,14 +4501,8 @@ begin
       ClearFileList;
       for I := 0 to Num - 1 do
       begin
-        {$IFDEF CLR}
-        AFileName := StringBuilder.Create(256);
-        DragQueryFile(Msg.Drop, I, AFileName, 255);
-        ReceptFileDir(AFileName.ToString());
-        {$ELSE}
         DragQueryFile(Msg.Drop, I, PChar(@AFileName[0]), Pred(SizeOf(AFileName)));
         ReceptFileDir(StrPas(AFileName));
-        {$ENDIF CLR}
         if not FMultipleDirs then
           Break;
       end;
@@ -4890,20 +4669,12 @@ end;
 
 function TJvFilenameEdit.IsCustomFilter: Boolean;
 begin
-  {$IFDEF CLR}
-  Result := CompareStr(RsDefaultFilter, FDialog.Filter) <> 0;
-  {$ELSE}
   Result := AnsiCompareStr(RsDefaultFilter, FDialog.Filter) <> 0;
-  {$ENDIF CLR}
 end;
 
 function TJvFilenameEdit.IsCustomTitle: Boolean;
 begin
-  {$IFDEF CLR}
-  Result := CompareStr(RsBrowseCaption, FDialog.Title) <> 0;
-  {$ELSE}
   Result := AnsiCompareStr(RsBrowseCaption, FDialog.Title) <> 0;
-  {$ENDIF CLR}
 end;
 
 procedure TJvFilenameEdit.DoEnter;
@@ -4978,7 +4749,7 @@ begin
     ClearFileList;
   end
   else
-    raise EComboEditError.CreateResFmt({$IFNDEF CLR}@{$ENDIF}SInvalidFilename, [Value]);
+    raise EComboEditError.CreateResFmt(@SInvalidFilename, [Value]);
 end;
 
 function TJvFilenameEdit.GetFileName: TFileName;
@@ -5130,21 +4901,6 @@ begin
     FCloseUp(Self, Accept);
 end;
 
-{$IFDEF CLR}
-
-{ Allow this unit to access protected members of anchestors. }
-procedure TJvPopupWindow.KeyDown(var Key: Word; Shift: TShiftState);
-begin
-  inherited KeyDown(Key, Shift);
-end;
-
-procedure TJvPopupWindow.KeyPress(var Key: Char);
-begin
-  inherited KeyPress(Key);
-end;
-
-{$ENDIF CLR}
-
 procedure TJvPopupWindow.CreateParams(var Params: TCreateParams);
 begin
   inherited CreateParams(Params);
@@ -5177,11 +4933,7 @@ begin
       SetRect(R, 0, 0, ClientWidth - FBtnControl.Width {Polaris - 2}, ClientHeight + 1)
   else
     R := FEditor.ClientRect;
-  {$IFDEF CLR}
-  InvalidateRect(FEditor.Handle, R, False);
-  {$ELSE}
   Windows.InvalidateRect(FEditor.Handle, @R, False);
-  {$ENDIF CLR}
   UpdateWindow(FEditor.Handle);
 end;
 
@@ -5228,10 +4980,8 @@ initialization
   {$ENDIF UNITVERSIONING}
 
 finalization
-  {$IFNDEF CLR}
   FreeAndNil(GDateHook);
   FreeAndNil(GDefaultComboEditImagesList);
-  {$ENDIF !CLR}
   {$IFDEF UNITVERSIONING}
   UnregisterUnitVersion(HInstance);
   {$ENDIF UNITVERSIONING}

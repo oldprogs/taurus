@@ -1,35 +1,25 @@
-{$IFNDEF WINDOWSONLY_INC}
-{$DEFINE WINDOWSONLY_INC}
+{-----------------------------------------------------------------------------
+The contents of this file are subject to the Mozilla Public License
+Version 1.1 (the "License"); you may not use this file except in compliance
+with the License. You may obtain a copy of the License at
+http://www.mozilla.org/MPL/MPL-1.1.html
 
-{**************************************************************************************************}
-{                                                                                                  }
-{  The contents of this file are subject to the Mozilla Public License Version 1.1 (the "License");}
-{  you may not use this file except in compliance with the License. You may obtain a copy of the   }
-{  License at http://www.mozilla.org/MPL/                                                          }
-{                                                                                                  }
-{  Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF  }
-{  ANY KIND, either express or implied. See the License for the specific language governing rights }
-{  and limitations under the License.                                                              }
-{                                                                                                  }
-{  The Original Code is: windowsonly.inc, released on 2002-07-04.                                  }
-{                                                                                                  }
-{  You may retrieve the latest version of this file at the JCL home page,                          }
-{  located at http://jcl.sourceforge.net/                                                          }
-{                                                                                                  }
-{**************************************************************************************************}
-{                                                                                                  }
-{ Last modified: $Date:: 2008-08-16 13:55:02 +0200 (sam., 16 août 2008)                         $ }
-{ Revision:      $Rev:: 2423                                                                     $ }
-{ Author:        $Author:: outchy                                                                $ }
-{                                                                                                  }
-{**************************************************************************************************}
+Software distributed under the License is distributed on an "AS IS" basis,
+WITHOUT WARRANTY OF ANY KIND, either expressed or implied. See the License for
+the specific language governing rights and limitations under the License.
 
-{$IFNDEF JEDI_INC}
-ALERT_jedi_inc_missing
+The Original Code is: WINDOWSONLY.INC, released on 2002-07-04.
+
+You may retrieve the latest version of this file at the Project JEDI's JVCL home page,
+located at http://jvcl.delphi-jedi.org
+
+Known Issues:
+-----------------------------------------------------------------------------}
+// $Id: windowsonly.inc 12461 2009-08-14 17:21:33Z obones $
+
 // This inc file depends on jedi.inc which has to
 // be included first (usually indirectly through
-// the inclusion of jcl.inc).
-{$ENDIF ~JEDI_INC}
+// the inclusion of jvcl.inc).
 
 // Suppress platform warnings which are irrelevant
 // because the including unit can only be compiled
@@ -48,7 +38,4 @@ ALERT_jedi_inc_missing
   {$ELSE}
     'This unit is only supported on Windows!'
   {$ENDIF SUPPORTS_COMPILETIME_MESSAGES}
-{$ENDIF ~MSWINDOWS}
-
-{$ENDIF ~WINDOWSONLY_INC}
-
+{$ENDIF !MSWINDOWS}

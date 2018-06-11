@@ -8,6 +8,10 @@ if exist ..\RELEASE\argus.exe del ..\RELEASE\argus.exe
 if exist e:\mail\radius\radius.exe del e:\mail\radius\radius.exe
 if exist e:\mail\radius\taurus.exe del e:\mail\radius\taurus.exe
 echo * (2) Make new Radius build
+copy X:\Radius\taurus\src\VerInfo.rc X:\Radius\taurus\src\VerInfo.rc.2
+IncVer.exe X:\Radius\taurus\src\VerInfo.rc
+GoRC.exe X:\Radius\taurus\src\VerInfo.rc
+E:\Mail\Radius\reshack\ResHacker.exe -addoverwrite X:\Radius\taurus\src\Taurus.res, X:\Radius\taurus\src\Taurus.res, X:\Radius\taurus\src\VerInfo.RES, VERSIONINFO,,
 "%DELPHI_PATH%\bin\dcc32" -DNT -B Taurus >..\out\res.txt
 if errorlevel 1 goto error
 echo * (3) Delete previous packed Radius build
@@ -26,6 +30,9 @@ goto exit
 :error
 echo * (3) Error occured. Exiting...
 type ..\out\res.txt
+echo * (3) Error occured. Exiting...
+del /q X:\Radius\taurus\src\VerInfo.rc 2>nul
+ren X:\Radius\taurus\src\VerInfo.rc.2 X:\Radius\taurus\src\VerInfo.rc
 pause
 :exit
 exit

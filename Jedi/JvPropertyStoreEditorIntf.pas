@@ -17,11 +17,11 @@ Contributor(s):
   Jens Fudickar [jens dott fudickar att oratool dott de]
 
 You may retrieve the latest version of this file at the Project JEDI's JVCL home page,
-located at http://jvcl.sourceforge.net
+located at http://jvcl.delphi-jedi.org
 
 Known Issues:
 -----------------------------------------------------------------------------}
-// $Id: JvPropertyStoreEditorIntf.pas 11743 2008-02-21 23:17:13Z jfudickar $
+// $Id: JvPropertyStoreEditorIntf.pas 12694 2010-02-08 23:11:12Z jfudickar $
 unit JvPropertyStoreEditorIntf;
 
 {$I jvcl.inc}
@@ -35,10 +35,6 @@ uses
   Classes;
 
 type
-  {$IFDEF CLR}
-  IUnknown = IInterface;
-  {$ENDIF CLR}
-
   IJvPropertyEditorHandler = interface
     ['{7DD4CC1F-335E-44F7-AE90-9DB630BF5B31}']
     function EditIntf_GetVisibleObjectName : string;
@@ -53,7 +49,9 @@ type
     ['{BC1F664F-867F-4041-B718-0FD76A0CA3E8}']
     function ListEditIntf_ObjectCount : integer;
     function ListEditIntf_GetObject(Index : integer): TPersistent;
+    function ListEditIntf_IndexOfObject(AObject : TPersistent) : Integer;
     procedure ListEditIntf_MoveObjectPosition (Index : Integer; PosDelta : Integer);
+    procedure ListEditIntf_SortObjects (iAscending : Boolean);
     function ListEditIntf_CreateNewObject: TPersistent;
     function ListEditIntf_CloneNewObject(Index : integer): TPersistent;
     procedure ListEditIntf_DeleteObject (Index : integer);
@@ -62,9 +60,9 @@ type
 {$IFDEF UNITVERSIONING}
 const
   UnitVersioning: TUnitVersionInfo = (
-    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_36_PREPARATION/run/JvPropertyStoreEditorIntf.pas $';
-    Revision: '$Revision: 11743 $';
-    Date: '$Date: 2008-02-22 00:17:13 +0100 (ven., 22 févr. 2008) $';
+    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_40_PREPARATION/run/JvPropertyStoreEditorIntf.pas $';
+    Revision: '$Revision: 12694 $';
+    Date: '$Date: 2010-02-09 00:11:12 +0100 (mar., 09 févr. 2010) $';
     LogPath: 'JVCL\run'
   );
 {$ENDIF UNITVERSIONING}

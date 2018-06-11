@@ -18,11 +18,11 @@ Contributor(s): -
                dejoy.
 
 You may retrieve the latest version of this file at the Project JEDI's JVCL home page,
-located at http://jvcl.sourceforge.net
+located at http://jvcl.delphi-jedi.org
 
 Known Issues:
 -----------------------------------------------------------------------------}
-// $Id: JvExControls.pas 12014 2008-11-01 23:42:24Z ahuser $
+// $Id: JvExControls.pas 12645 2010-01-07 15:15:13Z ahuser $
 
 unit JvExControls;
 
@@ -39,17 +39,8 @@ unit JvExControls;
 interface
 
 uses
-  Windows, Messages,
-  {$IFDEF HAS_UNIT_TYPES}
-  Types,
-  {$ENDIF HAS_UNIT_TYPES}
-  {$IFDEF CLR}
-  System.Runtime.InteropServices,
-  {$ENDIF CLR}
+  Windows, Messages, Types,
   SysUtils, Classes, Graphics, Controls, Forms,
-  {$IFDEF COMPILER5}
-  JvConsts, JvVCL5Utils,
-  {$ENDIF COMPILER5}
   {$IFDEF UNITVERSIONING}
   JclUnitVersioning,
   {$ENDIF UNITVERSIONING}
@@ -79,16 +70,9 @@ type
 
   TStructPtrMessage = class(TObject)
   private
-    {$IFDEF CLR}
-    FBuf: IntPtr;
-    FLParam: &Object;
-    {$ENDIF CLR}
   public
     Msg: TMessage;
     constructor Create(Msg: Integer; WParam: Integer; var LParam);
-    {$IFDEF CLR}
-    destructor Destroy; override;
-    {$ENDIF CLR}
   end;
 
 procedure SetDotNetFrameColors(FocusedColor, UnfocusedColor: TColor);
@@ -107,10 +91,6 @@ function DlgCodesToDlgc(Value: TDlgCodes): Longint;
 procedure GetHintColor(var HintInfo: THintInfo; AControl: TControl; HintColor: TColor);
 function DispatchIsDesignMsg(Control: TControl; var Msg: TMessage): Boolean;
 
-{$IFDEF COMPILER5}
-procedure TOpenControl_SetAutoSize(AControl: TControl; Value: Boolean);
-{$ENDIF COMPILER5}
-
 type
   TJvExControl = class(TControl, IJvExControl)
   private
@@ -126,9 +106,7 @@ type
     function BaseWndProcEx(Msg: Integer; WParam: Integer; var LParam): Integer;
   protected
     procedure WndProc(var Msg: TMessage); override;
-    {$IFNDEF CLR}
     procedure FocusChanged(AControl: TWinControl); dynamic;
-    {$ENDIF !CLR}
     procedure VisibleChanged; reintroduce; dynamic;
     procedure EnabledChanged; reintroduce; dynamic;
     procedure TextChanged; reintroduce; virtual;
@@ -142,12 +120,6 @@ type
     function HitTest(X, Y: Integer): Boolean; reintroduce; virtual;
     procedure MouseEnter(AControl: TControl); reintroduce; dynamic;
     procedure MouseLeave(AControl: TControl); reintroduce; dynamic;
-    {$IFDEF COMPILER5}
-    {$IFNDEF HASAUTOSIZE}
-    procedure CMSetAutoSize(var Msg: TMessage); message CM_SETAUTOSIZE;
-    procedure SetAutoSize(Value: Boolean); virtual;
-    {$ENDIF !HASAUTOSIZE}
-    {$ENDIF COMPILER5}
     property MouseOver: Boolean read FMouseOver write FMouseOver;
     property HintColor: TColor read FHintColor write FHintColor default clDefault;
     property OnMouseEnter: TNotifyEvent read FOnMouseEnter write FOnMouseEnter;
@@ -174,9 +146,7 @@ type
     function BaseWndProcEx(Msg: Integer; WParam: Integer; var LParam): Integer;
   protected
     procedure WndProc(var Msg: TMessage); override;
-    {$IFNDEF CLR}
     procedure FocusChanged(AControl: TWinControl); dynamic;
-    {$ENDIF !CLR}
     procedure VisibleChanged; reintroduce; dynamic;
     procedure EnabledChanged; reintroduce; dynamic;
     procedure TextChanged; reintroduce; virtual;
@@ -190,12 +160,6 @@ type
     function HitTest(X, Y: Integer): Boolean; reintroduce; virtual;
     procedure MouseEnter(AControl: TControl); reintroduce; dynamic;
     procedure MouseLeave(AControl: TControl); reintroduce; dynamic;
-    {$IFDEF COMPILER5}
-    {$IFNDEF HASAUTOSIZE}
-    procedure CMSetAutoSize(var Msg: TMessage); message CM_SETAUTOSIZE;
-    procedure SetAutoSize(Value: Boolean); virtual;
-    {$ENDIF !HASAUTOSIZE}
-    {$ENDIF COMPILER5}
     property MouseOver: Boolean read FMouseOver write FMouseOver;
     property HintColor: TColor read FHintColor write FHintColor default clDefault;
     property OnMouseEnter: TNotifyEvent read FOnMouseEnter write FOnMouseEnter;
@@ -213,21 +177,19 @@ type
     procedure CursorChanged; reintroduce; dynamic;
     procedure ShowingChanged; reintroduce; dynamic;
     procedure ShowHintChanged; reintroduce; dynamic;
-    {$IFNDEF CLR}
     procedure ControlsListChanging(Control: TControl; Inserting: Boolean); reintroduce; dynamic;
     procedure ControlsListChanged(Control: TControl; Inserting: Boolean); reintroduce; dynamic;
-    {$ENDIF !CLR}
     procedure GetDlgCode(var Code: TDlgCodes); virtual;
     procedure FocusSet(PrevWnd: THandle); virtual;
     procedure FocusKilled(NextWnd: THandle); virtual;
     function DoEraseBackground(Canvas: TCanvas; Param: Integer): Boolean; virtual;
-  {$IFDEF JVCLThemesEnabledD56}
+  {$IFDEF JVCLThemesEnabledD6}
   private
     function GetParentBackground: Boolean;
   protected
     procedure SetParentBackground(Value: Boolean); virtual;
     property ParentBackground: Boolean read GetParentBackground write SetParentBackground;
-  {$ENDIF JVCLThemesEnabledD56}
+  {$ENDIF JVCLThemesEnabledD6}
   published
     property DotNetHighlighting: Boolean read FDotNetHighlighting write FDotNetHighlighting default False;
   end;
@@ -246,9 +208,7 @@ type
     function BaseWndProcEx(Msg: Integer; WParam: Integer; var LParam): Integer;
   protected
     procedure WndProc(var Msg: TMessage); override;
-    {$IFNDEF CLR}
     procedure FocusChanged(AControl: TWinControl); dynamic;
-    {$ENDIF !CLR}
     procedure VisibleChanged; reintroduce; dynamic;
     procedure EnabledChanged; reintroduce; dynamic;
     procedure TextChanged; reintroduce; virtual;
@@ -262,12 +222,6 @@ type
     function HitTest(X, Y: Integer): Boolean; reintroduce; virtual;
     procedure MouseEnter(AControl: TControl); reintroduce; dynamic;
     procedure MouseLeave(AControl: TControl); reintroduce; dynamic;
-    {$IFDEF COMPILER5}
-    {$IFNDEF HASAUTOSIZE}
-    procedure CMSetAutoSize(var Msg: TMessage); message CM_SETAUTOSIZE;
-    procedure SetAutoSize(Value: Boolean); virtual;
-    {$ENDIF !HASAUTOSIZE}
-    {$ENDIF COMPILER5}
     property MouseOver: Boolean read FMouseOver write FMouseOver;
     property HintColor: TColor read FHintColor write FHintColor default clDefault;
     property OnMouseEnter: TNotifyEvent read FOnMouseEnter write FOnMouseEnter;
@@ -285,21 +239,19 @@ type
     procedure CursorChanged; reintroduce; dynamic;
     procedure ShowingChanged; reintroduce; dynamic;
     procedure ShowHintChanged; reintroduce; dynamic;
-    {$IFNDEF CLR}
     procedure ControlsListChanging(Control: TControl; Inserting: Boolean); reintroduce; dynamic;
     procedure ControlsListChanged(Control: TControl; Inserting: Boolean); reintroduce; dynamic;
-    {$ENDIF !CLR}
     procedure GetDlgCode(var Code: TDlgCodes); virtual;
     procedure FocusSet(PrevWnd: THandle); virtual;
     procedure FocusKilled(NextWnd: THandle); virtual;
     function DoEraseBackground(Canvas: TCanvas; Param: Integer): Boolean; virtual;
-  {$IFDEF JVCLThemesEnabledD56}
+  {$IFDEF JVCLThemesEnabledD6}
   private
     function GetParentBackground: Boolean;
   protected
     procedure SetParentBackground(Value: Boolean); virtual;
     property ParentBackground: Boolean read GetParentBackground write SetParentBackground;
-  {$ENDIF JVCLThemesEnabledD56}
+  {$ENDIF JVCLThemesEnabledD6}
   published
     property DotNetHighlighting: Boolean read FDotNetHighlighting write FDotNetHighlighting default False;
   end;
@@ -318,9 +270,7 @@ type
     function BaseWndProcEx(Msg: Integer; WParam: Integer; var LParam): Integer;
   protected
     procedure WndProc(var Msg: TMessage); override;
-    {$IFNDEF CLR}
     procedure FocusChanged(AControl: TWinControl); dynamic;
-    {$ENDIF !CLR}
     procedure VisibleChanged; reintroduce; dynamic;
     procedure EnabledChanged; reintroduce; dynamic;
     procedure TextChanged; reintroduce; virtual;
@@ -334,12 +284,6 @@ type
     function HitTest(X, Y: Integer): Boolean; reintroduce; virtual;
     procedure MouseEnter(AControl: TControl); reintroduce; dynamic;
     procedure MouseLeave(AControl: TControl); reintroduce; dynamic;
-    {$IFDEF COMPILER5}
-    {$IFNDEF HASAUTOSIZE}
-    procedure CMSetAutoSize(var Msg: TMessage); message CM_SETAUTOSIZE;
-    procedure SetAutoSize(Value: Boolean); virtual;
-    {$ENDIF !HASAUTOSIZE}
-    {$ENDIF COMPILER5}
     property MouseOver: Boolean read FMouseOver write FMouseOver;
     property HintColor: TColor read FHintColor write FHintColor default clDefault;
     property OnMouseEnter: TNotifyEvent read FOnMouseEnter write FOnMouseEnter;
@@ -366,9 +310,7 @@ type
     function BaseWndProcEx(Msg: Integer; WParam: Integer; var LParam): Integer;
   protected
     procedure WndProc(var Msg: TMessage); override;
-    {$IFNDEF CLR}
     procedure FocusChanged(AControl: TWinControl); dynamic;
-    {$ENDIF !CLR}
     procedure VisibleChanged; reintroduce; dynamic;
     procedure EnabledChanged; reintroduce; dynamic;
     procedure TextChanged; reintroduce; virtual;
@@ -382,12 +324,6 @@ type
     function HitTest(X, Y: Integer): Boolean; reintroduce; virtual;
     procedure MouseEnter(AControl: TControl); reintroduce; dynamic;
     procedure MouseLeave(AControl: TControl); reintroduce; dynamic;
-    {$IFDEF COMPILER5}
-    {$IFNDEF HASAUTOSIZE}
-    procedure CMSetAutoSize(var Msg: TMessage); message CM_SETAUTOSIZE;
-    procedure SetAutoSize(Value: Boolean); virtual;
-    {$ENDIF !HASAUTOSIZE}
-    {$ENDIF COMPILER5}
     property MouseOver: Boolean read FMouseOver write FMouseOver;
     property HintColor: TColor read FHintColor write FHintColor default clDefault;
     property OnMouseEnter: TNotifyEvent read FOnMouseEnter write FOnMouseEnter;
@@ -405,21 +341,19 @@ type
     procedure CursorChanged; reintroduce; dynamic;
     procedure ShowingChanged; reintroduce; dynamic;
     procedure ShowHintChanged; reintroduce; dynamic;
-    {$IFNDEF CLR}
     procedure ControlsListChanging(Control: TControl; Inserting: Boolean); reintroduce; dynamic;
     procedure ControlsListChanged(Control: TControl; Inserting: Boolean); reintroduce; dynamic;
-    {$ENDIF !CLR}
     procedure GetDlgCode(var Code: TDlgCodes); virtual;
     procedure FocusSet(PrevWnd: THandle); virtual;
     procedure FocusKilled(NextWnd: THandle); virtual;
     function DoEraseBackground(Canvas: TCanvas; Param: Integer): Boolean; virtual;
-  {$IFDEF JVCLThemesEnabledD56}
+  {$IFDEF JVCLThemesEnabledD6}
   private
     function GetParentBackground: Boolean;
   protected
     procedure SetParentBackground(Value: Boolean); virtual;
     property ParentBackground: Boolean read GetParentBackground write SetParentBackground;
-  {$ENDIF JVCLThemesEnabledD56}
+  {$ENDIF JVCLThemesEnabledD6}
   published
     property DotNetHighlighting: Boolean read FDotNetHighlighting write FDotNetHighlighting default False;
   end;
@@ -438,9 +372,9 @@ type
 {$IFDEF UNITVERSIONING}
 const
   UnitVersioning: TUnitVersionInfo = (
-    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_36_PREPARATION/run/JvExControls.pas $';
-    Revision: '$Revision: 12014 $';
-    Date: '$Date: 2008-11-02 00:42:24 +0100 (dim., 02 nov. 2008) $';
+    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_40_PREPARATION/run/JvExControls.pas $';
+    Revision: '$Revision: 12645 $';
+    Date: '$Date: 2010-01-07 16:15:13 +0100 (jeu., 07 janv. 2010) $';
     LogPath: 'JVCL\run'
   );
 {$ENDIF UNITVERSIONING}
@@ -529,58 +463,30 @@ end;
 
 function CreateWMMessage(Msg: Integer; WParam: Integer; LParam: Longint): TMessage;
 begin
-  {$IFNDEF CLR}
   Result.Msg := Msg;
   Result.WParam := WParam;
   Result.LParam := LParam;
-  {$ELSE}
-  Result := TMessage.Create(Msg, WParam, LParam);
-  {$ENDIF CLR}
   Result.Result := 0;
 end;
 
 function CreateWMMessage(Msg: Integer; WParam: Integer; LParam: TControl): TMessage;
 begin
-  {$IFNDEF CLR}
   Result := CreateWMMessage(Msg, WParam, Integer(LParam));
-  {$ELSE}
-  Result := CreateWMMessage(Msg, WParam, 0);
-  {$ENDIF !CLR}
 end;
 
 { TStructPtrMessage }
 constructor TStructPtrMessage.Create(Msg: Integer; WParam: Integer; var LParam);
 begin
   inherited Create;
-  {$IFNDEF CLR}
   Self.Msg.Msg := Msg;
   Self.Msg.WParam := WParam;
-  Self.Msg.LParam := Longint(@LParam);
-  {$ELSE}
-  FBuf := Marshal.AllocHGlobal(Marshal.SizeOf(TObject(LParam)));
-  FLParam := &Object(LParam);
-  Marshal.StructureToPtr(FLParam, FBuf, False);
-  Self.Msg := TMessage.Create(Msg, WParam, Longint(FBuf));
-  {$ENDIF !CLR}
+  Self.Msg.LParam := Windows.LPARAM(@LParam);
   Self.Msg.Result := 0;
 end;
 
-{$IFDEF CLR}
-destructor TStructPtrMessage.Destroy;
-begin
-  FLParam := Marshal.PtrToStructure(FBuf, TypeOf(FLParam));
-  Marshal.DestroyStructure(FBuf, TypeOf(FLParam));
-  inherited Destroy;
-end;
-{$ENDIF CLR}
-
 function SmallPointToLong(const Pt: TSmallPoint): Longint;
 begin
-  {$IFDEF CLR}
-  Result := Int32(Pt.X) shl 16 or Pt.Y;
-  {$ELSE}
   Result := Longint(Pt);
-  {$ENDIF CLR}
 end;
 
 function ShiftStateToKeyData(Shift: TShiftState): Longint;
@@ -654,11 +560,7 @@ begin
         if Assigned(AControl) and Assigned(AControl.Parent) then
         begin
           AHintInfo := HintInfo;
-          {$IFNDEF CLR}
-          AControl.Parent.Perform(CM_HINTSHOW, 0, Integer(@AHintInfo));
-          {$ELSE}
-          AControl.Parent.Perform(CM_HINTSHOW, 0, AHintInfo);
-          {$ENDIF !CLR}
+          AControl.Parent.Perform(CM_HINTSHOW, 0, LPARAM(@AHintInfo));
           HintInfo.HintColor := AHintInfo.HintColor;
         end;
       end;
@@ -687,63 +589,6 @@ begin
       Result := True;
   end;
 end;
-
-{$IFDEF COMPILER5}
-
-{ Delphi 5's SetAutoSize is private and not virtual. This code installs a
-  JUMP-Hook into SetAutoSize that jumps to our function. }
-var
-  AutoSizeOffset: Cardinal;
-  TControl_SetAutoSize: Pointer;
-
-type
-  PBoolean = ^Boolean;
-  TControlAccessProtected = class(TControl)
-  published
-    property AutoSize;
-  end;
-
-procedure OrgSetAutoSize(AControl: TControl; Value: Boolean);
-asm
-        DD    0, 0, 0, 0  // 16 Bytes
-end;
-
-procedure TOpenControl_SetAutoSize(AControl: TControl; Value: Boolean);
-begin
-  // same as OrgSetAutoSize(AControl, Value); but secure
-  with TControlAccessProtected(AControl) do
-    if AutoSize <> Value then
-    begin
-      PBoolean(Cardinal(AControl) + AutoSizeOffset)^ := Value;
-      if Value then
-        AdjustSize;
-    end;
-end;
-
-procedure SetAutoSizeHook(AControl: TControl; Value: Boolean);
-var
-  Msg: TMessage;
-begin
-  if AControl.GetInterfaceEntry(IJvExControl) <> nil then
-  begin
-    Msg.Msg := CM_SETAUTOSIZE;
-    Msg.WParam := Ord(Value);
-    AControl.Dispatch(Msg);
-  end
-  else
-    TOpenControl_SetAutoSize(AControl, Value);
-end;
-
-procedure InitHookVars;
-var
-  Info: PPropInfo;
-begin
-  Info := GetPropInfo(TControlAccessProtected, 'AutoSize');
-  AutoSizeOffset := Integer(Info.GetProc) and $00FFFFFF;
-  TControl_SetAutoSize := Info.SetProc;
-end;
-
-{$ENDIF COMPILER5}
 
 constructor TJvExControl.Create(AOwner: TComponent);
 begin
@@ -858,65 +703,30 @@ begin
     FOnMouseLeave(Self);
 end;
 
-{$IFNDEF CLR}
 procedure TJvExControl.FocusChanged(AControl: TWinControl);
 begin
   BaseWndProc(CM_FOCUSCHANGED, 0, AControl);
 end;
-{$ENDIF !CLR}
-
-{$IFDEF COMPILER5}
-{$IFNDEF HASAUTOSIZE}
-
-procedure TJvExControl.CMSetAutoSize(var Msg: TMessage);
-begin
-  SetAutoSize(Msg.WParam <> 0);
-end;
-
-procedure TJvExControl.SetAutoSize(Value: Boolean);
-begin
-  TOpenControl_SetAutoSize(Self, Value);
-end;
-
-{$ENDIF !HASAUTOSIZE}
-{$ENDIF COMPILER5}
 
 procedure TJvExControl.WndProc(var Msg: TMessage);
-{$IFDEF CLR}
-var
-  AHintInfo: THintInfo;
-{$ENDIF CLR}
 begin
   if not DispatchIsDesignMsg(Self, Msg) then
   case Msg.Msg of
     CM_DENYSUBCLASSING:
-      {$IFNDEF CLR}
       Msg.Result := Ord(GetInterfaceEntry(IJvDenySubClassing) <> nil);
-      {$ELSE}
-      Msg.Result := Integer(Supports(Self, IJvDenySubClassing));
-      {$ENDIF !CLR}
     CM_DIALOGCHAR:
       with TCMDialogChar{$IFDEF CLR}.Create{$ENDIF}(Msg) do
         Result := Ord(WantKey(CharCode, KeyDataToShiftState(KeyData), WideChar(CharCode)));
     CM_HINTSHOW:
-      {$IFNDEF CLR}
       with TCMHintShow(Msg) do
         Result := Integer(HintShow(HintInfo^));
-      {$ELSE}
-      with TCMHintShow.Create(Msg) do
-      begin
-        AHintInfo := HintInfo;
-        Result := Integer(HintShow(AHintInfo));
-        HintInfo := AHintInfo;
-      end;
-      {$ENDIF !CLR}
     CM_HITTEST:
-      with TCMHitTest{$IFDEF CLR}.Create{$ENDIF}(Msg) do
+      with TCMHitTest(Msg) do
         Result := Integer(HitTest(XPos, YPos));
     CM_MOUSEENTER:
-      MouseEnter({$IFDEF CLR}nil{$ELSE}TControl(Msg.LParam){$ENDIF});
+      MouseEnter(TControl(Msg.LParam));
     CM_MOUSELEAVE:
-      MouseLeave({$IFDEF CLR}nil{$ELSE}TControl(Msg.LParam){$ENDIF});
+      MouseLeave(TControl(Msg.LParam));
     CM_VISIBLECHANGED:
       VisibleChanged;
     CM_ENABLEDCHANGED:
@@ -927,10 +737,8 @@ begin
       FontChanged;
     CM_COLORCHANGED:
       ColorChanged;
-    {$IFNDEF CLR}
     CM_FOCUSCHANGED:
       FocusChanged(TWinControl(Msg.LParam));
-    {$ENDIF !CLR}
     CM_PARENTFONTCHANGED:
       ParentFontChanged;
     CM_PARENTCOLORCHANGED:
@@ -1057,28 +865,10 @@ begin
     FOnMouseLeave(Self);
 end;
 
-{$IFNDEF CLR}
 procedure TJvExWinControl.FocusChanged(AControl: TWinControl);
 begin
   BaseWndProc(CM_FOCUSCHANGED, 0, AControl);
 end;
-{$ENDIF !CLR}
-
-{$IFDEF COMPILER5}
-{$IFNDEF HASAUTOSIZE}
-
-procedure TJvExWinControl.CMSetAutoSize(var Msg: TMessage);
-begin
-  SetAutoSize(Msg.WParam <> 0);
-end;
-
-procedure TJvExWinControl.SetAutoSize(Value: Boolean);
-begin
-  TOpenControl_SetAutoSize(Self, Value);
-end;
-
-{$ENDIF !HASAUTOSIZE}
-{$ENDIF COMPILER5}
 
 procedure TJvExWinControl.BoundsChanged;
 begin
@@ -1099,7 +889,6 @@ begin
   BaseWndProc(CM_SHOWHINTCHANGED);
 end;
 
-{$IFNDEF CLR}
 { VCL sends CM_CONTROLLISTCHANGE and CM_CONTROLCHANGE in a different order than
   the CLX methods are used. So we must correct it by evaluating "Inserting". }
 procedure TJvExWinControl.ControlsListChanging(Control: TControl; Inserting: Boolean);
@@ -1117,7 +906,6 @@ begin
   else
     BaseWndProc(CM_CONTROLCHANGE, Integer(Control), Integer(Inserting));
 end;
-{$ENDIF !CLR}
 
 procedure TJvExWinControl.GetDlgCode(var Code: TDlgCodes);
 begin
@@ -1138,7 +926,7 @@ begin
   Result := BaseWndProc(WM_ERASEBKGND, Canvas.Handle, Param) <> 0;
 end;
 
-{$IFDEF JVCLThemesEnabledD56}
+{$IFDEF JVCLThemesEnabledD6}
 function TJvExWinControl.GetParentBackground: Boolean;
 begin
   Result := JvThemes.GetParentBackground(Self);
@@ -1148,48 +936,32 @@ procedure TJvExWinControl.SetParentBackground(Value: Boolean);
 begin
   JvThemes.SetParentBackground(Self, Value);
 end;
-{$ENDIF JVCLThemesEnabledD56}
+{$ENDIF JVCLThemesEnabledD6}
 
 procedure TJvExWinControl.WndProc(var Msg: TMessage);
 var
   IdSaveDC: Integer;
   DlgCodes: TDlgCodes;
   Canvas: TCanvas;
-  {$IFDEF CLR}
-  AHintInfo: THintInfo;
-  {$ENDIF CLR}
 begin
   if not DispatchIsDesignMsg(Self, Msg) then
   begin
     case Msg.Msg of
       CM_DENYSUBCLASSING:
-      {$IFNDEF CLR}
       Msg.Result := Ord(GetInterfaceEntry(IJvDenySubClassing) <> nil);
-      {$ELSE}
-      Msg.Result := Integer(Supports(Self, IJvDenySubClassing));
-      {$ENDIF !CLR}
     CM_DIALOGCHAR:
       with TCMDialogChar{$IFDEF CLR}.Create{$ENDIF}(Msg) do
         Result := Ord(WantKey(CharCode, KeyDataToShiftState(KeyData), WideChar(CharCode)));
     CM_HINTSHOW:
-      {$IFNDEF CLR}
       with TCMHintShow(Msg) do
         Result := Integer(HintShow(HintInfo^));
-      {$ELSE}
-      with TCMHintShow.Create(Msg) do
-      begin
-        AHintInfo := HintInfo;
-        Result := Integer(HintShow(AHintInfo));
-        HintInfo := AHintInfo;
-      end;
-      {$ENDIF !CLR}
     CM_HITTEST:
-      with TCMHitTest{$IFDEF CLR}.Create{$ENDIF}(Msg) do
+      with TCMHitTest(Msg) do
         Result := Integer(HitTest(XPos, YPos));
     CM_MOUSEENTER:
-      MouseEnter({$IFDEF CLR}nil{$ELSE}TControl(Msg.LParam){$ENDIF});
+      MouseEnter(TControl(Msg.LParam));
     CM_MOUSELEAVE:
-      MouseLeave({$IFDEF CLR}nil{$ELSE}TControl(Msg.LParam){$ENDIF});
+      MouseLeave(TControl(Msg.LParam));
     CM_VISIBLECHANGED:
       VisibleChanged;
     CM_ENABLEDCHANGED:
@@ -1200,10 +972,8 @@ begin
       FontChanged;
     CM_COLORCHANGED:
       ColorChanged;
-    {$IFNDEF CLR}
     CM_FOCUSCHANGED:
       FocusChanged(TWinControl(Msg.LParam));
-    {$ENDIF !CLR}
     CM_PARENTFONTCHANGED:
       ParentFontChanged;
     CM_PARENTCOLORCHANGED:
@@ -1216,7 +986,6 @@ begin
       ShowingChanged;
     CM_SHOWHINTCHANGED:
       ShowHintChanged;
-    {$IFNDEF CLR}
     CM_CONTROLLISTCHANGE:
       if Msg.LParam <> 0 then
         ControlsListChanging(TControl(Msg.WParam), True)
@@ -1227,7 +996,6 @@ begin
         ControlsListChanging(TControl(Msg.WParam), False)
       else
         ControlsListChanged(TControl(Msg.WParam), True);
-    {$ENDIF !CLR}
     WM_SETFOCUS:
       FocusSet(THandle(Msg.WParam));
     WM_KILLFOCUS:
@@ -1398,65 +1166,30 @@ begin
     FOnMouseLeave(Self);
 end;
 
-{$IFNDEF CLR}
 procedure TJvExGraphicControl.FocusChanged(AControl: TWinControl);
 begin
   BaseWndProc(CM_FOCUSCHANGED, 0, AControl);
 end;
-{$ENDIF !CLR}
-
-{$IFDEF COMPILER5}
-{$IFNDEF HASAUTOSIZE}
-
-procedure TJvExGraphicControl.CMSetAutoSize(var Msg: TMessage);
-begin
-  SetAutoSize(Msg.WParam <> 0);
-end;
-
-procedure TJvExGraphicControl.SetAutoSize(Value: Boolean);
-begin
-  TOpenControl_SetAutoSize(Self, Value);
-end;
-
-{$ENDIF !HASAUTOSIZE}
-{$ENDIF COMPILER5}
 
 procedure TJvExGraphicControl.WndProc(var Msg: TMessage);
-{$IFDEF CLR}
-var
-  AHintInfo: THintInfo;
-{$ENDIF CLR}
 begin
   if not DispatchIsDesignMsg(Self, Msg) then
   case Msg.Msg of
     CM_DENYSUBCLASSING:
-      {$IFNDEF CLR}
       Msg.Result := Ord(GetInterfaceEntry(IJvDenySubClassing) <> nil);
-      {$ELSE}
-      Msg.Result := Integer(Supports(Self, IJvDenySubClassing));
-      {$ENDIF !CLR}
     CM_DIALOGCHAR:
       with TCMDialogChar{$IFDEF CLR}.Create{$ENDIF}(Msg) do
         Result := Ord(WantKey(CharCode, KeyDataToShiftState(KeyData), WideChar(CharCode)));
     CM_HINTSHOW:
-      {$IFNDEF CLR}
       with TCMHintShow(Msg) do
         Result := Integer(HintShow(HintInfo^));
-      {$ELSE}
-      with TCMHintShow.Create(Msg) do
-      begin
-        AHintInfo := HintInfo;
-        Result := Integer(HintShow(AHintInfo));
-        HintInfo := AHintInfo;
-      end;
-      {$ENDIF !CLR}
     CM_HITTEST:
-      with TCMHitTest{$IFDEF CLR}.Create{$ENDIF}(Msg) do
+      with TCMHitTest(Msg) do
         Result := Integer(HitTest(XPos, YPos));
     CM_MOUSEENTER:
-      MouseEnter({$IFDEF CLR}nil{$ELSE}TControl(Msg.LParam){$ENDIF});
+      MouseEnter(TControl(Msg.LParam));
     CM_MOUSELEAVE:
-      MouseLeave({$IFDEF CLR}nil{$ELSE}TControl(Msg.LParam){$ENDIF});
+      MouseLeave(TControl(Msg.LParam));
     CM_VISIBLECHANGED:
       VisibleChanged;
     CM_ENABLEDCHANGED:
@@ -1467,10 +1200,8 @@ begin
       FontChanged;
     CM_COLORCHANGED:
       ColorChanged;
-    {$IFNDEF CLR}
     CM_FOCUSCHANGED:
       FocusChanged(TWinControl(Msg.LParam));
-    {$ENDIF !CLR}
     CM_PARENTFONTCHANGED:
       ParentFontChanged;
     CM_PARENTCOLORCHANGED:
@@ -1597,28 +1328,10 @@ begin
     FOnMouseLeave(Self);
 end;
 
-{$IFNDEF CLR}
 procedure TJvExCustomControl.FocusChanged(AControl: TWinControl);
 begin
   BaseWndProc(CM_FOCUSCHANGED, 0, AControl);
 end;
-{$ENDIF !CLR}
-
-{$IFDEF COMPILER5}
-{$IFNDEF HASAUTOSIZE}
-
-procedure TJvExCustomControl.CMSetAutoSize(var Msg: TMessage);
-begin
-  SetAutoSize(Msg.WParam <> 0);
-end;
-
-procedure TJvExCustomControl.SetAutoSize(Value: Boolean);
-begin
-  TOpenControl_SetAutoSize(Self, Value);
-end;
-
-{$ENDIF !HASAUTOSIZE}
-{$ENDIF COMPILER5}
 
 procedure TJvExCustomControl.BoundsChanged;
 begin
@@ -1639,7 +1352,6 @@ begin
   BaseWndProc(CM_SHOWHINTCHANGED);
 end;
 
-{$IFNDEF CLR}
 { VCL sends CM_CONTROLLISTCHANGE and CM_CONTROLCHANGE in a different order than
   the CLX methods are used. So we must correct it by evaluating "Inserting". }
 procedure TJvExCustomControl.ControlsListChanging(Control: TControl; Inserting: Boolean);
@@ -1657,7 +1369,6 @@ begin
   else
     BaseWndProc(CM_CONTROLCHANGE, Integer(Control), Integer(Inserting));
 end;
-{$ENDIF !CLR}
 
 procedure TJvExCustomControl.GetDlgCode(var Code: TDlgCodes);
 begin
@@ -1678,7 +1389,7 @@ begin
   Result := BaseWndProc(WM_ERASEBKGND, Canvas.Handle, Param) <> 0;
 end;
 
-{$IFDEF JVCLThemesEnabledD56}
+{$IFDEF JVCLThemesEnabledD6}
 function TJvExCustomControl.GetParentBackground: Boolean;
 begin
   Result := JvThemes.GetParentBackground(Self);
@@ -1688,48 +1399,32 @@ procedure TJvExCustomControl.SetParentBackground(Value: Boolean);
 begin
   JvThemes.SetParentBackground(Self, Value);
 end;
-{$ENDIF JVCLThemesEnabledD56}
+{$ENDIF JVCLThemesEnabledD6}
 
 procedure TJvExCustomControl.WndProc(var Msg: TMessage);
 var
   IdSaveDC: Integer;
   DlgCodes: TDlgCodes;
   Canvas: TCanvas;
-  {$IFDEF CLR}
-  AHintInfo: THintInfo;
-  {$ENDIF CLR}
 begin
   if not DispatchIsDesignMsg(Self, Msg) then
   begin
     case Msg.Msg of
       CM_DENYSUBCLASSING:
-      {$IFNDEF CLR}
       Msg.Result := Ord(GetInterfaceEntry(IJvDenySubClassing) <> nil);
-      {$ELSE}
-      Msg.Result := Integer(Supports(Self, IJvDenySubClassing));
-      {$ENDIF !CLR}
     CM_DIALOGCHAR:
       with TCMDialogChar{$IFDEF CLR}.Create{$ENDIF}(Msg) do
         Result := Ord(WantKey(CharCode, KeyDataToShiftState(KeyData), WideChar(CharCode)));
     CM_HINTSHOW:
-      {$IFNDEF CLR}
       with TCMHintShow(Msg) do
         Result := Integer(HintShow(HintInfo^));
-      {$ELSE}
-      with TCMHintShow.Create(Msg) do
-      begin
-        AHintInfo := HintInfo;
-        Result := Integer(HintShow(AHintInfo));
-        HintInfo := AHintInfo;
-      end;
-      {$ENDIF !CLR}
     CM_HITTEST:
-      with TCMHitTest{$IFDEF CLR}.Create{$ENDIF}(Msg) do
+      with TCMHitTest(Msg) do
         Result := Integer(HitTest(XPos, YPos));
     CM_MOUSEENTER:
-      MouseEnter({$IFDEF CLR}nil{$ELSE}TControl(Msg.LParam){$ENDIF});
+      MouseEnter(TControl(Msg.LParam));
     CM_MOUSELEAVE:
-      MouseLeave({$IFDEF CLR}nil{$ELSE}TControl(Msg.LParam){$ENDIF});
+      MouseLeave(TControl(Msg.LParam));
     CM_VISIBLECHANGED:
       VisibleChanged;
     CM_ENABLEDCHANGED:
@@ -1740,10 +1435,8 @@ begin
       FontChanged;
     CM_COLORCHANGED:
       ColorChanged;
-    {$IFNDEF CLR}
     CM_FOCUSCHANGED:
       FocusChanged(TWinControl(Msg.LParam));
-    {$ENDIF !CLR}
     CM_PARENTFONTCHANGED:
       ParentFontChanged;
     CM_PARENTCOLORCHANGED:
@@ -1756,7 +1449,6 @@ begin
       ShowingChanged;
     CM_SHOWHINTCHANGED:
       ShowHintChanged;
-    {$IFNDEF CLR}
     CM_CONTROLLISTCHANGE:
       if Msg.LParam <> 0 then
         ControlsListChanging(TControl(Msg.WParam), True)
@@ -1767,7 +1459,6 @@ begin
         ControlsListChanging(TControl(Msg.WParam), False)
       else
         ControlsListChanged(TControl(Msg.WParam), True);
-    {$ENDIF !CLR}
     WM_SETFOCUS:
       FocusSet(THandle(Msg.WParam));
     WM_KILLFOCUS:
@@ -1938,28 +1629,10 @@ begin
     FOnMouseLeave(Self);
 end;
 
-{$IFNDEF CLR}
 procedure TJvExHintWindow.FocusChanged(AControl: TWinControl);
 begin
   BaseWndProc(CM_FOCUSCHANGED, 0, AControl);
 end;
-{$ENDIF !CLR}
-
-{$IFDEF COMPILER5}
-{$IFNDEF HASAUTOSIZE}
-
-procedure TJvExHintWindow.CMSetAutoSize(var Msg: TMessage);
-begin
-  SetAutoSize(Msg.WParam <> 0);
-end;
-
-procedure TJvExHintWindow.SetAutoSize(Value: Boolean);
-begin
-  TOpenControl_SetAutoSize(Self, Value);
-end;
-
-{$ENDIF !HASAUTOSIZE}
-{$ENDIF COMPILER5}
 
 procedure TJvExHintWindow.BoundsChanged;
 begin
@@ -1980,7 +1653,6 @@ begin
   BaseWndProc(CM_SHOWHINTCHANGED);
 end;
 
-{$IFNDEF CLR}
 { VCL sends CM_CONTROLLISTCHANGE and CM_CONTROLCHANGE in a different order than
   the CLX methods are used. So we must correct it by evaluating "Inserting". }
 procedure TJvExHintWindow.ControlsListChanging(Control: TControl; Inserting: Boolean);
@@ -1998,7 +1670,6 @@ begin
   else
     BaseWndProc(CM_CONTROLCHANGE, Integer(Control), Integer(Inserting));
 end;
-{$ENDIF !CLR}
 
 procedure TJvExHintWindow.GetDlgCode(var Code: TDlgCodes);
 begin
@@ -2019,7 +1690,7 @@ begin
   Result := BaseWndProc(WM_ERASEBKGND, Canvas.Handle, Param) <> 0;
 end;
 
-{$IFDEF JVCLThemesEnabledD56}
+{$IFDEF JVCLThemesEnabledD6}
 function TJvExHintWindow.GetParentBackground: Boolean;
 begin
   Result := JvThemes.GetParentBackground(Self);
@@ -2029,48 +1700,32 @@ procedure TJvExHintWindow.SetParentBackground(Value: Boolean);
 begin
   JvThemes.SetParentBackground(Self, Value);
 end;
-{$ENDIF JVCLThemesEnabledD56}
+{$ENDIF JVCLThemesEnabledD6}
 
 procedure TJvExHintWindow.WndProc(var Msg: TMessage);
 var
   IdSaveDC: Integer;
   DlgCodes: TDlgCodes;
   Canvas: TCanvas;
-  {$IFDEF CLR}
-  AHintInfo: THintInfo;
-  {$ENDIF CLR}
 begin
   if not DispatchIsDesignMsg(Self, Msg) then
   begin
     case Msg.Msg of
       CM_DENYSUBCLASSING:
-      {$IFNDEF CLR}
       Msg.Result := Ord(GetInterfaceEntry(IJvDenySubClassing) <> nil);
-      {$ELSE}
-      Msg.Result := Integer(Supports(Self, IJvDenySubClassing));
-      {$ENDIF !CLR}
     CM_DIALOGCHAR:
       with TCMDialogChar{$IFDEF CLR}.Create{$ENDIF}(Msg) do
         Result := Ord(WantKey(CharCode, KeyDataToShiftState(KeyData), WideChar(CharCode)));
     CM_HINTSHOW:
-      {$IFNDEF CLR}
       with TCMHintShow(Msg) do
         Result := Integer(HintShow(HintInfo^));
-      {$ELSE}
-      with TCMHintShow.Create(Msg) do
-      begin
-        AHintInfo := HintInfo;
-        Result := Integer(HintShow(AHintInfo));
-        HintInfo := AHintInfo;
-      end;
-      {$ENDIF !CLR}
     CM_HITTEST:
-      with TCMHitTest{$IFDEF CLR}.Create{$ENDIF}(Msg) do
+      with TCMHitTest(Msg) do
         Result := Integer(HitTest(XPos, YPos));
     CM_MOUSEENTER:
-      MouseEnter({$IFDEF CLR}nil{$ELSE}TControl(Msg.LParam){$ENDIF});
+      MouseEnter(TControl(Msg.LParam));
     CM_MOUSELEAVE:
-      MouseLeave({$IFDEF CLR}nil{$ELSE}TControl(Msg.LParam){$ENDIF});
+      MouseLeave(TControl(Msg.LParam));
     CM_VISIBLECHANGED:
       VisibleChanged;
     CM_ENABLEDCHANGED:
@@ -2081,10 +1736,8 @@ begin
       FontChanged;
     CM_COLORCHANGED:
       ColorChanged;
-    {$IFNDEF CLR}
     CM_FOCUSCHANGED:
       FocusChanged(TWinControl(Msg.LParam));
-    {$ENDIF !CLR}
     CM_PARENTFONTCHANGED:
       ParentFontChanged;
     CM_PARENTCOLORCHANGED:
@@ -2097,7 +1750,6 @@ begin
       ShowingChanged;
     CM_SHOWHINTCHANGED:
       ShowHintChanged;
-    {$IFNDEF CLR}
     CM_CONTROLLISTCHANGE:
       if Msg.LParam <> 0 then
         ControlsListChanging(TControl(Msg.WParam), True)
@@ -2108,7 +1760,6 @@ begin
         ControlsListChanging(TControl(Msg.WParam), False)
       else
         ControlsListChanged(TControl(Msg.WParam), True);
-    {$ENDIF !CLR}
     WM_SETFOCUS:
       FocusSet(THandle(Msg.WParam));
     WM_KILLFOCUS:
@@ -2170,19 +1821,11 @@ initialization
   {$IFDEF UNITVERSIONING}
   RegisterUnitVersion(HInstance, UnitVersioning);
   {$ENDIF UNITVERSIONING}
-  {$IFDEF COMPILER5}
-  InitHookVars;
-  InstallProcHook(TControl_SetAutoSize, @SetAutoSizeHook, @OrgSetAutoSize);
-  {$ENDIF COMPILER5}
 
 finalization
-  {$IFDEF COMPILER5}
-  UninstallProcHook(@OrgSetAutoSize);
-  {$ENDIF COMPILER5}
   {$IFDEF UNITVERSIONING}
   UnregisterUnitVersion(HInstance);
   {$ENDIF UNITVERSIONING}
 
 end.
-
 

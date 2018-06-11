@@ -20,11 +20,11 @@ Contributor(s): Michael Beck [mbeck att bigfoot dott com],
                 Peter Thornqvist [peter3 at sourceforge dot net].
 
 You may retrieve the latest version of this file at the Project JEDI's JVCL home page,
-located at http://jvcl.sourceforge.net
+located at http://jvcl.delphi-jedi.org
 
 Known Issues:
 -----------------------------------------------------------------------------}
-// $Id: JvMaskEdit.pas 11610 2007-12-16 13:24:19Z ahuser $
+// $Id: JvMaskEdit.pas 12461 2009-08-14 17:21:33Z obones $
 
 unit JvMaskEdit;
 
@@ -67,7 +67,7 @@ type
     procedure SetPasswordChar(const Value: Char);
     function GetPasswordChar: Char;
     function GetText: TCaption;
-    procedure SetText(const Value: TCaption); {$IFDEF CLR}reintroduce;{$ENDIF}
+    procedure SetText(const Value: TCaption);
   protected
     procedure CreateParams(var Params: TCreateParams); override;
     procedure CaretChanged(Sender: TObject); dynamic;
@@ -112,12 +112,10 @@ type
 
   TJvMaskEdit = class(TJvCustomMaskEdit)
   published
-    {$IFDEF COMPILER6_UP}
     property BevelEdges;
     property BevelInner;
     property BevelKind default bkNone;
     property BevelOuter;
-    {$ENDIF COMPILER6_UP}
     property Alignment;
     property Caret;
     property ClipboardCommands;
@@ -187,9 +185,9 @@ type
 {$IFDEF UNITVERSIONING}
 const
   UnitVersioning: TUnitVersionInfo = (
-    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_36_PREPARATION/run/JvMaskEdit.pas $';
-    Revision: '$Revision: 11610 $';
-    Date: '$Date: 2007-12-16 14:24:19 +0100 (dim., 16 déc. 2007) $';
+    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_40_PREPARATION/run/JvMaskEdit.pas $';
+    Revision: '$Revision: 12461 $';
+    Date: '$Date: 2009-08-14 19:21:33 +0200 (ven., 14 août 2009) $';
     LogPath: 'JVCL\run'
   );
 {$ENDIF UNITVERSIONING}

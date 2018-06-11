@@ -603,6 +603,7 @@ LANGUAGE LANG_ENGLISH,0
         "cbUseNodelistData|Use Nodelist Data\n"\
         "cbCompileNodelist|Auto compile nodelists\n"\
         "cbVersionTransmit|Transmit version on BinkP\n"\
+        "cbUptime1251|Write uptime in ANSI\n"\
         "cbDelOld|Delete old bundles\n"\
         "cbWinsockVersion||Winsock auto|Winsock v1|Winsock v2\n"\
         "cbDisableWinsockTraps|Disable Winsock traps\n"\

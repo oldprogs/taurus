@@ -19,11 +19,11 @@ Contributor(s):
   Polaris Software
 
 You may retrieve the latest version of this file at the Project JEDI's JVCL home page,
-located at http://jvcl.sourceforge.net
+located at http://jvcl.delphi-jedi.org
 
 Known Issues:
 -----------------------------------------------------------------------------}
-// $Id: JvClock.pas 11893 2008-09-09 20:45:14Z obones $
+// $Id: JvClock.pas 12831 2010-09-05 12:51:00Z obones $
 
 unit JvClock;
 
@@ -193,9 +193,9 @@ type
 {$IFDEF UNITVERSIONING}
 const
   UnitVersioning: TUnitVersionInfo = (
-    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_36_PREPARATION/run/JvClock.pas $';
-    Revision: '$Revision: 11893 $';
-    Date: '$Date: 2008-09-09 22:45:14 +0200 (mar., 09 sept. 2008) $';
+    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_40_PREPARATION/run/JvClock.pas $';
+    Revision: '$Revision: 12831 $';
+    Date: '$Date: 2010-09-05 14:51:00 +0200 (dim., 05 sept. 2010) $';
     LogPath: 'JVCL\run'
   );
 {$ENDIF UNITVERSIONING}
@@ -203,9 +203,7 @@ const
 implementation
 
 uses
-  {$IFDEF HAS_UNIT_RTLCONSTS}
   RTLConsts,
-  {$ENDIF HAS_UNIT_RTLCONSTS}
   {$IFDEF COMPILER7_UP}
   SysConst,
   {$ENDIF COMPILER7_UP}
@@ -267,11 +265,7 @@ const
   TailShift = (HandPositions div 2); { ...180 degrees of clock }
 
 var
-  {$IFDEF CLR}
-  CircleTab: array of TSmallPoint;
-  {$ELSE}
   CircleTab: PPointArray;
-  {$ENDIF CLR}
   HRes: Integer; { width of the display (in pixels)                    }
   VRes: Integer; { height of the display (in raster lines)             }
   AspectH: Longint; { number of pixels per decimeter on the display       }
@@ -283,9 +277,9 @@ procedure InvalidTime(Hour, Min, Sec: Word);
 var
   sTime: string;
 begin
-  sTime := IntToStr(Hour) + TimeSeparator + IntToStr(Min) +
-    TimeSeparator + IntToStr(Sec);
-  raise EConvertError.CreateResFmt({$IFNDEF CLR}@{$ENDIF}SInvalidTime, [sTime]);
+  sTime := IntToStr(Hour) + {$IFDEF RTL220_UP}FormatSettings.{$ENDIF RTL220_UP}TimeSeparator + IntToStr(Min) +
+    {$IFDEF RTL220_UP}FormatSettings.{$ENDIF RTL220_UP}TimeSeparator + IntToStr(Sec);
+  raise EConvertError.CreateResFmt(@SInvalidTime, [sTime]);
 end;
 
 function VertEquiv(L: Integer): Integer;
@@ -329,9 +323,6 @@ var
   Pos: Integer; { hand position Index into the circle table }
   vSize: Integer; { height of the display in millimeters      }
   hSize: Integer; { width of the display in millimeters       }
-  {$IFDEF CLR}
-  I: Integer;
-  {$ENDIF CLR}
   DC: HDC;
 begin
   DC := GetDC(HWND_DESKTOP);
@@ -345,16 +336,7 @@ begin
   end;
   AspectV := (Longint(VRes) * MmPerDm) div Longint(vSize);
   AspectH := (Longint(HRes) * MmPerDm) div Longint(hSize);
-  {$IFDEF CLR}
-  SetLength(CircleTab, Length(ClockData) div 2);
-  for I := 0 to High(CircleTab) do
-  begin
-    CircleTab[I].X := ClockData[I * 2];
-    CircleTab[I].Y := ClockData[I * 2 + 1];
-  end;
-  {$ELSE}
   CircleTab := PPointArray(@ClockData);
-  {$ENDIF CLR}
   for Pos := 0 to HandPositions - 1 do
     CircleTab[Pos].Y := VertEquiv(CircleTab[Pos].Y);
 end;
@@ -417,7 +399,7 @@ begin
   FShowSeconds := True;
   FLeadingZero := True;
   FShowDate := False;
-  FDateFormat := ShortDateFormat;
+  FDateFormat := {$IFDEF RTL220_UP}FormatSettings.{$ENDIF RTL220_UP}ShortDateFormat;
   GetTime(FDisplayTime);
   if FDisplayTime.Hour >= 12 then
     Dec(FDisplayTime.Hour, 12);
@@ -580,10 +562,10 @@ begin
       TimeStr := TimeStr + '888';
     if FTwelveHour then
     begin
-      if Canvas.TextWidth(TimeAMString) > Canvas.TextWidth(TimePMString) then
-        TimeStr := TimeStr + ' ' + TimeAMString
+      if Canvas.TextWidth({$IFDEF RTL220_UP}FormatSettings.{$ENDIF RTL220_UP}TimeAMString) > Canvas.TextWidth({$IFDEF RTL220_UP}FormatSettings.{$ENDIF RTL220_UP}TimePMString) then
+        TimeStr := TimeStr + ' ' + {$IFDEF RTL220_UP}FormatSettings.{$ENDIF RTL220_UP}TimeAMString
       else
-        TimeStr := TimeStr + ' ' + TimePMString;
+        TimeStr := TimeStr + ' ' + {$IFDEF RTL220_UP}FormatSettings.{$ENDIF RTL220_UP}TimePMString;
     end;
     SetNewFontSize(Canvas, TimeStr, H, W);
     Font := Canvas.Font;
@@ -619,9 +601,7 @@ end;
 
 procedure TJvClock.SetAutoSize(Value: Boolean);
 begin
-  {$IFDEF COMPILER6_UP}
   inherited SetAutoSize(Value);
-  {$ENDIF COMPILER6_UP}
   FAutoSize := Value;
   if FAutoSize then
   begin
@@ -1194,13 +1174,8 @@ begin
     if ShowDate then
     begin
       DateStr := FormatDateTime(DateFormat + ' ', GetSystemDate);
-      {$IFDEF CLR}
-      DrawText(Canvas, DateStr, Length(DateStr), Rect,
-        DT_EXPANDTABS or DT_VCENTER or DT_NOCLIP or DT_SINGLELINE);
-      {$ELSE}
       DrawText(Canvas, PChar(DateStr), Length(DateStr), Rect,
         DT_EXPANDTABS or DT_VCENTER or DT_NOCLIP or DT_SINGLELINE);
-      {$ENDIF CLR}
       Inc(Rect.Left, Length(DateFormat) * FontWidth);
     end;
     for I := 1 to L do
@@ -1212,13 +1187,8 @@ begin
     if FullTime or (NewTime.Hour <> FDisplayTime.Hour) then
     begin
       Rect.Right := Rect.Left + TextWidth(SAmPm);
-      {$IFDEF CLR}
-      DrawText(Canvas, SAmPm, Length(SAmPm), Rect,
-        DT_EXPANDTABS or DT_VCENTER or DT_NOCLIP or DT_SINGLELINE);
-      {$ELSE}
       DrawText(Canvas, @SAmPm[1], Length(SAmPm), Rect,    // DO NOT CHANGE @SAmPm[1], it is used to get a PChar to the string
         DT_EXPANDTABS or DT_VCENTER or DT_NOCLIP or DT_SINGLELINE);
-      {$ENDIF CLR}
     end;
   end;
   FDisplayTime := NewTime;
@@ -1280,4 +1250,3 @@ finalization
 {$ENDIF UNITVERSIONING}
 
 end.
-

@@ -16,11 +16,11 @@ Copyright (c) 2001,2002 SGB Software
 All Rights Reserved.
 
 You may retrieve the latest version of this file at the Project JEDI's JVCL home page,
-located at http://jvcl.sourceforge.net
+located at http://jvcl.delphi-jedi.org
 
 Known Issues:
 -----------------------------------------------------------------------------}
-// $Id: JvConsts.pas 12138 2009-01-10 13:35:10Z jfudickar $
+// $Id: JvConsts.pas 12831 2010-09-05 12:51:00Z obones $
 
 unit JvConsts;
 
@@ -32,9 +32,6 @@ uses
   {$IFDEF UNITVERSIONING}
   JclUnitVersioning,
   {$ENDIF UNITVERSIONING}
-  {$IFDEF COMPILER5}
-  JvWin32,
-  {$ENDIF COMPILER5}
   SysUtils, Classes, Forms, Controls, Graphics, Windows, TypInfo;
 
 const
@@ -53,12 +50,6 @@ const
   IdentifierSymbols = IdentifierFirstSymbols + DigitSymbols;
   HexadecimalSymbols = DigitSymbols + HexadecimalUppercaseLetters + HexadecimalLowercaseLetters;
 
-  {$IFDEF DELPHI5}
-  SDelphiKey = 'Software\Borland\Delphi\5.0';
-  {$ENDIF DELPHI5}
-  {$IFDEF BCB5}
-  SDelphiKey = 'Software\Borland\C++Builder\5.0';
-  {$ENDIF BCB5}
   {$IFDEF DELPHI6}
   SDelphiKey = 'Software\Borland\Delphi\6.0';
   {$ENDIF DELPHI6}
@@ -83,6 +74,12 @@ const
   {$IFDEF DELPHI12}
   SDelphiKey = 'Software\CodeGear\BDS\6.0';
   {$ENDIF DELPHI12}
+  {$IFDEF DELPHI14}
+  SDelphiKey = 'Software\CodeGear\BDS\7.0';
+  {$ENDIF DELPHI14}
+  {$IFDEF DELPHI15}
+  SDelphiKey = 'Software\Embarcadero\BDS\8.0';
+  {$ENDIF DELPHI15}
   { JvDataProvider constants }
   { Consumer attributes }
   DPA_RenderDisabledAsGrayed = 1;
@@ -149,28 +146,6 @@ const
   DEFAULT_SYSCOLOR_MASK = $80000000;
   {$ENDIF COMPILER7_UP}
 
-  {$IFDEF COMPILER5}
-  // Delphi colors not defined in Delphi 5
-  clMoneyGreen = TColor($C0DCC0);
-  clSkyBlue = TColor($F0CAA6);
-  clCream = TColor($F0FBFF);
-  clMedGray = TColor($A4A0A0);
-  // (outchy) = TColor(COLOR_XXXXXXXXXXX or $80000000);
-  clGradientActiveCaption = TColor(COLOR_GRADIENTACTIVECAPTION or DEFAULT_SYSCOLOR_MASK);
-  clGradientInactiveCaption = TColor(COLOR_GRADIENTINACTIVECAPTION or DEFAULT_SYSCOLOR_MASK);
-  clHotLight = TColor(COLOR_HOTLIGHT or DEFAULT_SYSCOLOR_MASK);
-  clMenuHighlight = TColor(COLOR_MENUHILIGHT or DEFAULT_SYSCOLOR_MASK);
-  clMenuBar = TColor(COLOR_MENUBAR or DEFAULT_SYSCOLOR_MASK);
-  {$ENDIF COMPILER5}
-
-  {$IFDEF COMPILER5}
-  {$IFDEF MSWINDOWS}
-  sLineBreak = #13#10;
-  {$ENDIF MSWINDOWS}
-  {$IFDEF UNIX}
-  sLineBreak = #10;
-  {$ENDIF UNIX}
-  {$ENDIF COMPILER5}
   sLineBreakStr = string(sLineBreak); // "native string" line break constant
   sLineBreakLen = Length(sLineBreak);
 
@@ -245,9 +220,9 @@ const
 {$IFDEF UNITVERSIONING}
 const
   UnitVersioning: TUnitVersionInfo = (
-    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_36_PREPARATION/run/JvConsts.pas $';
-    Revision: '$Revision: 12138 $';
-    Date: '$Date: 2009-01-10 14:35:10 +0100 (sam., 10 janv. 2009) $';
+    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_40_PREPARATION/run/JvConsts.pas $';
+    Revision: '$Revision: 12831 $';
+    Date: '$Date: 2010-09-05 14:51:00 +0200 (dim., 05 sept. 2010) $';
     LogPath: 'JVCL\run'
   );
 {$ENDIF UNITVERSIONING}
@@ -263,5 +238,4 @@ finalization
 {$ENDIF UNITVERSIONING}
 
 end.
-
 

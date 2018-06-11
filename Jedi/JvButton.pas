@@ -17,11 +17,11 @@ All Rights Reserved.
 Contributor(s): Michael Beck [mbeck att bigfoot dott com].
 
 You may retrieve the latest version of this file at the Project JEDI's JVCL home page,
-located at http://jvcl.sourceforge.net
+located at http://jvcl.delphi-jedi.org
 
 Known Issues:
 -----------------------------------------------------------------------------}
-// $Id: JvButton.pas 11474 2007-08-18 13:57:48Z ahuser $
+// $Id: JvButton.pas 12741 2010-04-02 10:43:13Z ahuser $
 
 unit JvButton;
 
@@ -179,9 +179,9 @@ type
 {$IFDEF UNITVERSIONING}
 const
   UnitVersioning: TUnitVersionInfo = (
-    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_36_PREPARATION/run/JvButton.pas $';
-    Revision: '$Revision: 11474 $';
-    Date: '$Date: 2007-08-18 15:57:48 +0200 (sam., 18 août 2007) $';
+    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_40_PREPARATION/run/JvButton.pas $';
+    Revision: '$Revision: 12741 $';
+    Date: '$Date: 2010-04-02 12:43:13 +0200 (ven., 02 avr. 2010) $';
     LogPath: 'JVCL\run'
   );
 {$ENDIF UNITVERSIONING}
@@ -189,10 +189,7 @@ const
 implementation
 
 uses
-  SysUtils, Forms,
-  {$IFDEF COMPILER6_UP}
-  Types,
-  {$ENDIF COMPILER6_UP}
+  SysUtils, Forms, Types,
   JvJVCLUtils, JvThemes;
 
 const
@@ -580,12 +577,9 @@ end;
 
 procedure TJvCustomGraphicButton.SetDropDownMenu(const Value: TPopupMenu);
 begin
-  if FDropDownMenu <> Value then
-  begin
-    FDropDownMenu := Value;
+  if ReplaceComponentReference(Self, Value, TComponent(FDropDownMenu)) then
     if DropArrow then
       Invalidate;
-  end;
 end;
 
 
@@ -843,7 +837,7 @@ begin
   if (Parent <> nil) and Parent.HandleAllocated then
   begin
     R := BoundsRect;
-    InvalidateRect(Parent.Handle, {$IFNDEF CLR}@{$ENDIF}R, True);
+    InvalidateRect(Parent.Handle, @R, True);
   end;
   Repaint;
 end;
@@ -940,4 +934,3 @@ finalization
   {$ENDIF UNITVERSIONING}
 
 end.
-

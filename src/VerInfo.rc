@@ -1,0 +1,31 @@
+
+1 VERSIONINFO
+FILEVERSION 5,112,2011,9
+PRODUCTVERSION 5,112,2011,9
+FILEOS 0x4
+FILETYPE 0x1
+{
+BLOCK "StringFileInfo"
+{
+  BLOCK "040904E4"
+  {
+    VALUE "CompanyName", "Taurus"
+    VALUE "FileDescription", "FTN-Mailer"
+    VALUE "FileVersion", "5.112.2011.9"
+    VALUE "InternalName", "Taurus"
+    VALUE "LegalCopyright", "2004-2011 by Taurus"
+    VALUE "LegalTrademarks", "Originally by RIT Labs"
+    VALUE "OriginalFilename", "Taurus.exe"
+    VALUE "ProductName", "Taurus"
+    VALUE "ProductVersion", "5"
+    VALUE "Comments", ""
+    VALUE "SpecialBuild", ""
+  }
+}
+
+BLOCK "VarFileInfo"
+{
+  VALUE "Translation", 0x0409 0x04E4
+}
+}
+

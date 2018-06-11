@@ -1,6 +1,6 @@
 object SetupForm: TSetupForm
   Left = 289
-  Top = 128
+  Top = 169
   HelpContext = 11000
   BorderStyle = bsDialog
   Caption = 'Taurus Setup'
@@ -135,6 +135,7 @@ object SetupForm: TSetupForm
     Width = 420
     Height = 360
     Anchors = [akLeft, akTop, akRight, akBottom]
+    PageIndex = 13
     TabOrder = 1
     object TPage
       Left = 0
@@ -1657,7 +1658,7 @@ object SetupForm: TSetupForm
         Width = 215
         Height = 23
         Style = csDropDownList
-        ItemHeight = 0
+        ItemHeight = 15
         TabOrder = 0
       end
       object btnReloadRASEntries: TButton
@@ -2607,7 +2608,7 @@ object SetupForm: TSetupForm
       object lTempInbound: TLabel
         Left = 9
         Top = 105
-        Width = 83
+        Width = 82
         Height = 15
         Caption = 'Temp inbound:'
       end
@@ -2853,7 +2854,7 @@ object SetupForm: TSetupForm
       end
       object lCloseBtnActn: TLabel
         Left = 20
-        Top = 101
+        Top = 162
         Width = 109
         Height = 15
         Caption = '&Close button action:'
@@ -2861,21 +2862,21 @@ object SetupForm: TSetupForm
       end
       object lMinFreeSpace: TLabel
         Left = 217
-        Top = 101
+        Top = 162
         Width = 83
         Height = 15
         Caption = 'Min free space:'
       end
       object lDelOld: TLabel
         Left = 217
-        Top = 154
+        Top = 215
         Width = 73
         Height = 15
         Caption = 'Bundles age:'
       end
       object lDays: TLabel
         Left = 295
-        Top = 176
+        Top = 237
         Width = 26
         Height = 15
         Caption = 'days'
@@ -2890,7 +2891,7 @@ object SetupForm: TSetupForm
       end
       object cbCreateSessionFail: TCheckBox
         Left = 15
-        Top = 39
+        Top = 48
         Width = 190
         Height = 17
         Caption = 'Create SESSION.FAIL'
@@ -2899,22 +2900,22 @@ object SetupForm: TSetupForm
       object cbUseSPACE: TCheckBox
         Left = 217
         Top = 22
-        Width = 180
+        Width = 190
         Height = 17
         Caption = 'Use SPACE to flush'
         TabOrder = 2
       end
       object cbFixedRetryTimeout: TCheckBox
         Left = 217
-        Top = 39
-        Width = 180
+        Top = 48
+        Width = 190
         Height = 17
         Caption = 'Fixed retry timeout'
         TabOrder = 3
       end
       object cbCloseBtnAction: TComboBox
         Left = 15
-        Top = 120
+        Top = 181
         Width = 145
         Height = 23
         Style = csDropDownList
@@ -2927,7 +2928,7 @@ object SetupForm: TSetupForm
       end
       object seMinFreeSpace: TJvSpinEdit
         Left = 217
-        Top = 120
+        Top = 181
         Width = 73
         Height = 24
         ButtonKind = bkStandard
@@ -2935,7 +2936,7 @@ object SetupForm: TSetupForm
       end
       object cbUseNodelistData: TCheckBox
         Left = 15
-        Top = 56
+        Top = 74
         Width = 190
         Height = 17
         Caption = 'Use Nodelist Data'
@@ -2943,15 +2944,15 @@ object SetupForm: TSetupForm
       end
       object cbPlaySounds: TCheckBox
         Left = 217
-        Top = 56
-        Width = 180
+        Top = 74
+        Width = 190
         Height = 17
         Caption = 'Play Sounds'
         TabOrder = 7
       end
       object cbCompileNodelist: TCheckBox
         Left = 15
-        Top = 73
+        Top = 100
         Width = 190
         Height = 17
         Caption = 'Auto compile nodelist'
@@ -2959,7 +2960,7 @@ object SetupForm: TSetupForm
       end
       object cbVersionTransmit: TCheckBox
         Left = 217
-        Top = 73
+        Top = 100
         Width = 190
         Height = 17
         Caption = 'Transmit version on BinkP'
@@ -2967,7 +2968,7 @@ object SetupForm: TSetupForm
       end
       object cbDelOld: TCheckBox
         Left = 15
-        Top = 172
+        Top = 233
         Width = 190
         Height = 17
         Caption = 'Delete old bundles'
@@ -2976,11 +2977,19 @@ object SetupForm: TSetupForm
       end
       object seDelOld: TJvSpinEdit
         Left = 217
-        Top = 172
+        Top = 233
         Width = 73
         Height = 24
         ButtonKind = bkStandard
         TabOrder = 10
+      end
+      object cbUptime1251: TCheckBox
+        Left = 217
+        Top = 127
+        Width = 190
+        Height = 17
+        Caption = 'Write uptime in ANSI'
+        TabOrder = 12
       end
     end
   end

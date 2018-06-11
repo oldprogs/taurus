@@ -17,11 +17,11 @@ All Rights Reserved.
 Contributor(s): Michael Beck [mbeck att bigfoot dott com].
 
 You may retrieve the latest version of this file at the Project JEDI's JVCL home page,
-located at http://jvcl.sourceforge.net
+located at http://jvcl.delphi-jedi.org
 
 Known Issues:
 -----------------------------------------------------------------------------}
-// $Id: JvBitBtn.pas 10612 2006-05-19 19:04:09Z jfudickar $
+// $Id: JvBitBtn.pas 12461 2009-08-14 17:21:33Z obones $
 
 unit JvBitBtn;
 
@@ -33,10 +33,7 @@ uses
   {$IFDEF UNITVERSIONING}
   JclUnitVersioning,
   {$ENDIF UNITVERSIONING}
-  Windows, Messages, Classes, Graphics, Controls, Menus,
-  {$IFDEF HAS_UNIT_TYPES}
-  Types,
-  {$ENDIF HAS_UNIT_TYPES}
+  Windows, Messages, Classes, Graphics, Controls, Menus, Types,
   JvTypes, JvExButtons;
 
 type
@@ -83,9 +80,9 @@ type
 {$IFDEF UNITVERSIONING}
 const
   UnitVersioning: TUnitVersionInfo = (
-    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_36_PREPARATION/run/JvBitBtn.pas $';
-    Revision: '$Revision: 10612 $';
-    Date: '$Date: 2006-05-19 21:04:09 +0200 (ven., 19 mai 2006) $';
+    RCSfile: '$URL: https://jvcl.svn.sourceforge.net/svnroot/jvcl/branches/JVCL3_40_PREPARATION/run/JvBitBtn.pas $';
+    Revision: '$Revision: 12461 $';
+    Date: '$Date: 2009-08-14 19:21:33 +0200 (ven., 14 août 2009) $';
     LogPath: 'JVCL\run'
   );
 {$ENDIF UNITVERSIONING}
@@ -195,7 +192,7 @@ end;
 procedure TJvBitBtn.CNDrawItem(var Msg: TWMDrawItem);
 begin
   inherited;
-  DrawItem(Msg.DrawItemStruct{$IFNDEF CLR}^{$ENDIF});
+  DrawItem(Msg.DrawItemStruct^);
 end;
 
 procedure TJvBitBtn.DrawItem(const DrawItemStruct: TDrawItemStruct);
@@ -208,11 +205,7 @@ begin
   FCanvas.Handle := DrawItemStruct.hDC;
   R := ClientRect;
   IsDown := DrawItemStruct.itemState and ODS_SELECTED <> 0;
-  {$IFDEF USEJVCL}
-  if (not MouseOver) and (not IsDown) then
-  {$ELSE}
-  if not IsDown then
-  {$ENDIF USEJVCL}
+  if not MouseOver and not IsDown then
   begin
     with FCanvas do
     begin
@@ -255,4 +248,3 @@ finalization
 {$ENDIF UNITVERSIONING}
 
 end.
-

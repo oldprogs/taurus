@@ -2477,6 +2477,8 @@ var
   n: TOutNode;
   E: Boolean;
   dsk: byte;
+  suf: String;
+  mul: Integer;
 
   procedure floutb;
   var
@@ -2512,9 +2514,23 @@ var
             os := os + plus.GetFileSize(TOutFile(filec.At(_j)).Name)
           end;
     end;
-    //    lOutboundSize.Caption := FloatToStr(Round(os / {1048576}1024)) + ' Kb';
-    lOutboundSize.Caption := FloatToStr(Round(FidoOut.OutboundSize / {1048576}
-      1024)) + ' Kb';
+//    lOutboundSize.Caption := FloatToStr(Round(os / {1048576}1024)) + ' Kb';
+//    lOutboundSize.Caption := FloatToStr(Round(FidoOut.OutboundSize / {1048576} 1024)) + ' Kb';
+    case FidoOut.OutboundSize of
+      1..1023: begin
+        suf := ' b';
+        mul := 1;
+      end;
+      1024..(1024 * 1024 - 1): begin
+        suf := ' Kb';
+        mul := 1024;
+      end;
+      else begin
+        suf := ' Mb';
+        mul := 1024 * 1024;
+      end;
+    end;
+    lOutboundSize.Caption := Format('%.0n' + suf, [Int(FidoOut.OutboundSize / mul)]);
     FreeObject(OutMgrNodes);
   end;
 
@@ -2545,8 +2561,8 @@ begin
     dsk := 0
   else
     dsk := ord(Upcase(IniFile.InSecure[1])) - $40;
-  lAvaibleAtInbound.Caption := FloatToStr(Round(DiskFree(dsk) / 1048576 -
-    IniFile.FreeSpaceLmt)) + ' Mb';
+//  lAvaibleAtInbound.Caption := FloatToStr(Round(DiskFree(dsk) / 1048576 - IniFile.FreeSpaceLmt)) + ' Mb';
+  lAvaibleAtInbound.Caption := Format('%.0n Mb', [Int(DiskFree(dsk) / (1024 * 1024) - IniFile.FreeSpaceLmt)]);
   floutb;
 end;
 
@@ -4682,7 +4698,10 @@ begin
     begin
       UpTimeText := AddBackSlash(IniFile.ReadString('Paths', 'Logs')) + IniFile.ReadString('LogNames', 'uptime.log');
 //ShowMessage(UpTimeText);
-      UpTimer := LngStr(rsUptimeStr) + ShowTime;
+      if IniFile.ReadBool('Main', 'Uptime1251', True) then
+        UpTimer := LngStr(rsUptimeStr) + ShowTime
+      else
+        UpTimer := Win2DOS(LngStr(rsUptimeStr) + ShowTime);
 //ShowMessage(UpTimer);
       UpTimerHandle := CreateFile(PChar(UpTimeText), GENERIC_WRITE, 
         FILE_SHARE_READ, nil, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);

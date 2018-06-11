@@ -13,7 +13,7 @@ The Original Code is: JVCL.INC, released on 2004-12-22.
 Last Modified: 2004-12-22
 
 You may retrieve the latest version of this file at the Project JEDI's JVCL home page,
-located at http://jvcl.sourceforge.net
+located at http://jvcl.delphi-jedi.org
 
 Known Issues:
 -----------------------------------------------------------------------------}
@@ -23,16 +23,13 @@ Known Issues:
 {------------------------------------------------------------------------------}
 
 {%hidden%}
-{ Activate this define if you are using Delphi 5 Standard or one of the D6/D7 Personal Editions. }
+{ Enable this define if you are using the Delphi 6, 7 or 2005 Personal Edition. }
 {.$DEFINE DelphiPersonalEdition}
 
-{ Some new libraries and packages (currently JvUIB, JvWizard and JvTimeFrameWork) can be
-installed either in "stand-alone" mode or in "JVCL" mode. These packages use the
-USEJVCL define to determine whether they are installed in JVCL mode or not.
-By default, this define is enabled.
-NOTE: if you undefine USEJVCL, you can/should remove JvCoreXXX.dcp from the
-requires node in the affected package(s). }
-{$DEFINE USEJVCL}
+{%hidden%}
+{ The installer enables this define if you compile JVCL for Delphi and C++ Builder. It disables
+  the class constructor/destructor support that is not supported by C++Builder. }
+{.$DEFINE JVCL_GENERATE_CPP_PACKAGE_FILES}
 
 { Enable this define if you have the dxgettext (http://dxgettext.sourceforge.net)
 translation tool installed and want to use it with the JVCL. }
@@ -52,7 +49,7 @@ of qrpt. NB! JVCL_UseQuickReport must also be defined}
 (http://www.lischke-online.de) installed and available and
 you are using D6/BCB6 or below. The ThemeManager package must
 be compiled as "never-build package". }
-{$DEFINE JVCLThemesEnabled}
+{.$DEFINE JVCLThemesEnabled}
 
 { Activates MIDAS components (DBRemoteLogin).
 NOTE: if you activate this, you must also manually add JvDlgsXXX.dcp to
@@ -95,22 +92,22 @@ which revision, date and filename the unit has. }
 { Activates SM-Export Wrapper Components (in DBActions) 
 For further informations have a look at http://www.scalabium.com 
 ATTENTION : 
-BEFORE YOU ACTIVATE THIS OPTION YOU MUST CHANGE THE 
+BEFORE YOU ACTIVATE THIS OPTION YOU MUST CHANGE THE
 SMEXPORT PACKAGE FROM AUTOMATIC COMPILE NO MANUAL COMPILE }
 {.$DEFINE USE_3RDPARTY_SMEXPORT}
 
 { Activates SM-Import Wrapper Components (in DBActions)
-For further informations have a look at http://www.scalabium.com 
-ATTENTION : 
-BEFORE YOU ACTIVATE THIS OPTION YOU MUST CHANGE THE 
+For further informations have a look at http://www.scalabium.com
+ATTENTION :
+BEFORE YOU ACTIVATE THIS OPTION YOU MUST CHANGE THE
 SMIMPORT PACKAGE FROM AUTOMATIC COMPILE NO MANUAL COMPILE }
 {.$DEFINE USE_3RDPARTY_SMIMPORT}
 
-{ Activates the DevExpress cxEditor-Controls
+{ Activates Support for the DevExpress cxEditor-Controls
 For further informations have a look at http://www.devexpress.com }
 {.$DEFINE USE_3RDPARTY_DEVEXPRESS_CXEDITOR}
 
-{ Activates the DevExpress cxEditor-Controls
+{ Activates Support for the DevExpress cxGrid-Controls
 For further informations have a look at http://www.devexpress.com }
 {.$DEFINE USE_3RDPARTY_DEVEXPRESS_CXGRID}
 
@@ -135,18 +132,17 @@ You MUST also activate $DEFINE USE_3RDPARTY_INDY for the compilation to work
 For further informations have a look at http://www.indyproject.org }
 {.$DEFINE USE_3RDPARTY_INDY10}
 
-{ Activates the ICS-Components (Internet component suite
-For further informations have a look at http://www.overbyte.be/ 
-ATTENTION : 
-BEFORE YOU ACTIVATE THIS OPTION YOU MUST CHANGE THE 
-ICS* PACKAGE FROM AUTOMATIC COMPILE NO MANUAL COMPILE }
+{ Activates Support for the ICS-Components (Internet component suite
+For further informations have a look at http://www.overbyte.be/
+ATTENTION :
+BEFORE YOU ACTIVATE THIS OPTION YOU MUST CHANGE THE
+ICS* PACKAGE FROM AUTOMATIC COMPILE TO MANUAL COMPILE }
 {.$DEFINE USE_3RDPARTY_ICS}
 
-{ Activates Direct Oracle Access Components
+{ Activates Support for Direct Oracle Access Components
 For further informations have a look at http://www.allroundautomations.com }
 {.$DEFINE USE_3RDPARTY_DOA}
 
-{ Activates the CoreLabs VCL Oracle Data Access Components 
+{ Activates Support for the CoreLabs VCL Oracle Data Access Components
 For further informations have a look at http://www.crlab.com }
 {.$DEFINE USE_3RDPARTY_CORELAB_ODAC}
-
